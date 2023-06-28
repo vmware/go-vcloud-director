@@ -495,6 +495,14 @@ type VSphereVirtualCenter struct {
 	ProxyConfigurationUrn string `json:"proxyConfigurationUrn"`
 }
 
+type ResourcePoolSummary struct {
+	Associations []struct {
+		EntityId      string `json:"entityId"`
+		AssociationId string `json:"associationId"`
+	} `json:"associations"`
+	Values []ResourcePool `json:"values"`
+}
+
 // ResourcePool defines a vSphere Resource Pool
 type ResourcePool struct {
 	Moref             string `json:"moref"`
@@ -513,25 +521,6 @@ type OpenApiSupportedHardwareVersions struct {
 		IsDefault bool   `json:"isDefault"`
 		Name      string `json:"name"`
 	} `json:"supportedVersions"`
-}
-
-// NetworkPoolSummary retrieves a list of network pool summaries
-type NetworkPoolSummary struct {
-	Associations []struct {
-		EntityId      string `json:"entityId"`
-		AssociationId string `json:"associationId"`
-	} `json:"associations"`
-	Values []struct {
-		Status             string           `json:"status"`
-		Id                 string           `json:"id"`
-		Name               string           `json:"name"`
-		Description        string           `json:"description"`
-		PoolType           string           `json:"poolType"`
-		PromiscuousMode    bool             `json:"promiscuousMode"`
-		TotalBackingsCount int              `json:"totalBackingsCount"`
-		UsedBackingsCount  int              `json:"usedBackingsCount"`
-		ManagingOwnerRef   OpenApiReference `json:"managingOwnerRef"`
-	} `json:"values"`
 }
 
 // NetworkPool is the full data retrieved for a provider network pool

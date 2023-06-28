@@ -411,8 +411,9 @@ const (
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 	OpenApiEndpointVirtualCenters                     = "virtualCenters"
-	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse" // '%s' is vCenter ID
-	OpenApiEndpointResourcePoolHardware               = "virtualCenters/%s/resourcePools/%s/hwv" // first '%s' is vCenter ID. Second one is Resource Pool MoRef
+	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse"    // '%s' is vCenter ID
+	OpenApiEndpointResourcePoolsBrowseAll             = "virtualCenters/%s/resourcePools/browseAll" // '%s' is vCenter ID
+	OpenApiEndpointResourcePoolHardware               = "virtualCenters/%s/resourcePools/%s/hwv"    // first '%s' is vCenter ID. Second one is Resource Pool MoRef
 	OpenApiEndpointNetworkPools                       = "networkPools/"
 	OpenApiEndpointNetworkPoolSummaries               = "networkPools/networkPoolSummaries"
 
