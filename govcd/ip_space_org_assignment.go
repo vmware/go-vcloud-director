@@ -130,7 +130,7 @@ func (ipSpace *IpSpace) GetOrgAssignmentByOrgId(orgId string) (*IpSpaceOrgAssign
 	return singleResult, nil
 }
 
-// Update updates Org Assignment
+// Update Org Assignment
 func (ipSpaceOrgAssignment *IpSpaceOrgAssignment) Update(ipSpaceOrgAssignmentConfig *types.IpSpaceOrgAssignment) (*IpSpaceOrgAssignment, error) {
 	client := ipSpaceOrgAssignment.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceOrgAssignments
