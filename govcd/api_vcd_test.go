@@ -199,8 +199,8 @@ type TestConfig struct {
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Vsphere struct {
-		resourcePoolForVcd1 string `yaml:"resourcePoolForVcd1,omitempty"`
-		resourcePoolForVcd2 string `yaml:"resourcePoolForVcd2,omitempty"`
+		ResourcePoolForVcd1 string `yaml:"resourcePoolForVcd1,omitempty"`
+		ResourcePoolForVcd2 string `yaml:"resourcePoolForVcd2,omitempty"`
 	} `yaml:"vsphere,omitempty"`
 	Logging struct {
 		Enabled          bool   `yaml:"enabled,omitempty"`
