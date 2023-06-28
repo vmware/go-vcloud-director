@@ -195,6 +195,14 @@ func hideSensitive(in string, onScreen bool) string {
 	re7 := regexp.MustCompile(`(refresh_token)=(\S+)`)
 	out = re7.ReplaceAllString(out, `${1}=*******`)
 
+	// Bearer token inside JSON response
+	re8 := regexp.MustCompile(`("access_token":\s*)"[^"]*`)
+	out = re8.ReplaceAllString(out, `${1}*******`)
+
+	// Token inside JSON response
+	re9 := regexp.MustCompile(`("refresh_token":\s*)"[^"]*`)
+	out = re9.ReplaceAllString(out, `${1}*******`)
+
 	return out
 }
 
