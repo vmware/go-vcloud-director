@@ -277,7 +277,6 @@ func (vcdClient *VCDClient) CreateProviderVdc(params *types.ProviderVdcCreation)
 
 // TODO: add update functions
 // AddResourcePool POST	https://atl1-vcd-static-133-104.eng.vmware.com/api/admin/extension/providervdc/22361a82-992c-44a4-85fa-f78950782961/action/updateResourcePools
-// Update
 
 // Disable changes the Provider VDC state from enabled to disabled
 func (pvdc *ProviderVdcExtended) Disable() error {
@@ -350,27 +349,13 @@ func (pvdc *ProviderVdcExtended) Delete() (Task, error) {
 		"", "error deleting provider VDC: %s", nil)
 }
 
-func (pvdc *ProviderVdcExtended) Rename(name, description string) error {
-	// WIP
-	params := types.ProviderVdcUpdate{
-		Href:                            pvdc.VMWProviderVdc.HREF,
-		Id:                              pvdc.VMWProviderVdc.ID,
-		Type:                            pvdc.VMWProviderVdc.Type,
-		Name:                            name,
-		Description:                     description,
-		HighestSupportedHardwareVersion: pvdc.VMWProviderVdc.HighestSupportedHardwareVersion,
-		IsEnabled:                       *pvdc.VMWProviderVdc.IsEnabled,
-		VimServer:                       []*types.Reference{pvdc.VMWProviderVdc.VimServer},
-		NsxTManagerReference:            pvdc.VMWProviderVdc.NsxTManagerReference,
-		ComputeProviderScope:            pvdc.VMWProviderVdc.ComputeProviderScope,
-		NetworkPoolReferences:           pvdc.VMWProviderVdc.NetworkPoolReferences,
-		HostReferences:                  pvdc.VMWProviderVdc.HostReferences,
-	}
+func (pvdc *ProviderVdcExtended) Update() error {
+
 	text := bytes.Buffer{}
 	encoder := json.NewEncoder(&text)
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent(" ", " ")
-	err := encoder.Encode(params)
+	err := encoder.Encode(pvdc.VMWProviderVdc)
 	if err != nil {
 		return err
 	}
@@ -392,6 +377,7 @@ func (pvdc *ProviderVdcExtended) Rename(name, description string) error {
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
+		util.ProcessResponseOutput("Rename", resp, string(body))
 		var jsonError types.OpenApiError
 		err = json.Unmarshal(body, &jsonError)
 		// By default, we return the whole response body as error message. This may also contain the stack trace
@@ -409,4 +395,10 @@ func (pvdc *ProviderVdcExtended) Rename(name, description string) error {
 		return err
 	}
 	return pvdc.Refresh()
+}
+
+func (pvdc *ProviderVdcExtended) Rename(name, description string) error {
+	pvdc.VMWProviderVdc.Name = name
+	pvdc.VMWProviderVdc.Description = description
+	return pvdc.Update()
 }

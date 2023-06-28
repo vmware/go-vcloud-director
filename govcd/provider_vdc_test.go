@@ -163,6 +163,9 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+	if vcd.config.Vsphere.ResourcePoolForVcd1 == "" {
+		check.Skip("no resource pool defined for this VCD")
+	}
 	providerVdcName := check.TestName()
 	providerVdcDescription := check.TestName()
 	storageProfileList, err := vcd.client.Client.QueryAllProviderVdcStorageProfiles()
@@ -180,17 +183,9 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vcenter, NotNil)
 
-	resourcePools, err := vcenter.GetAllAvailableResourcePools(nil)
+	resourcePool, err := vcenter.GetResourcePoolByName(vcd.config.Vsphere.ResourcePoolForVcd1)
 	check.Assert(err, IsNil)
-	if len(resourcePools) == 0 {
-		check.Skip("no available resource pools found for this deployment")
-	}
-
-	resourcePool := resourcePools[0]
 	check.Assert(resourcePool, NotNil)
-	//resourcePool, err = vcenter.GetAvailableResourcePoolById(resourcePool.ResourcePool.Moref)
-	//check.Assert(err, IsNil)
-	//check.Assert(resourcePool, NotNil)
 
 	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)
@@ -267,15 +262,15 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 	check.Assert(retrievedPvdc.VMWProviderVdc.IsEnabled, NotNil)
 	check.Assert(*retrievedPvdc.VMWProviderVdc.IsEnabled, Equals, true)
 
-	//err = retrievedPvdc.Rename("newName", "newDescription")
-	//check.Assert(err, IsNil)
-	//check.Assert(retrievedPvdc.VMWProviderVdc.Name, Equals, "newName")
-	//check.Assert(retrievedPvdc.VMWProviderVdc.Description, Equals, "newDescription")
-	//
-	//err = retrievedPvdc.Rename(providerVdcName, providerVdcDescription)
-	//check.Assert(err, IsNil)
-	//check.Assert(retrievedPvdc.VMWProviderVdc.Name, Equals, providerVdcName)
-	//check.Assert(retrievedPvdc.VMWProviderVdc.Description, Equals, providerVdcDescription)
+	err = retrievedPvdc.Rename("newName", "newDescription")
+	check.Assert(err, IsNil)
+	check.Assert(retrievedPvdc.VMWProviderVdc.Name, Equals, "newName")
+	check.Assert(retrievedPvdc.VMWProviderVdc.Description, Equals, "newDescription")
+
+	err = retrievedPvdc.Rename(providerVdcName, providerVdcDescription)
+	check.Assert(err, IsNil)
+	check.Assert(retrievedPvdc.VMWProviderVdc.Name, Equals, providerVdcName)
+	check.Assert(retrievedPvdc.VMWProviderVdc.Description, Equals, providerVdcDescription)
 
 	// Deleting while the Provider VDC is still enables will fail
 	task, err := retrievedPvdc.Delete()
