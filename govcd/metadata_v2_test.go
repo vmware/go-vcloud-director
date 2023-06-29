@@ -1,4 +1,4 @@
-//go:build vapp || vdc || metadata || functional || ALL
+//go:build (vapp || vdc || metadata || functional || ALL) && !skipLong
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
