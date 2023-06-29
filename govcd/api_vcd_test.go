@@ -178,19 +178,19 @@ type TestConfig struct {
 		VimServer                    string `yaml:"vimServer,omitempty"`
 		LdapServer                   string `yaml:"ldapServer,omitempty"`
 		Nsxt                         struct {
-			Manager             string `yaml:"manager"`
-			Tier0router         string `yaml:"tier0router"`
-			Tier0routerVrf      string `yaml:"tier0routerVrf"`
-			NsxtDvpg            string `yaml:"nsxtDvpg"`
-			GatewayQosProfile   string `yaml:"gatewayQosProfile"`
-			Vdc                 string `yaml:"vdc"`
-			ExternalNetwork     string `yaml:"externalNetwork"`
-			EdgeGateway         string `yaml:"edgeGateway"`
-			NsxtImportSegment   string `yaml:"nsxtImportSegment"`
-			VdcGroup            string `yaml:"vdcGroup"`
-			VdcGroupEdgeGateway string `yaml:"vdcGroupEdgeGateway"`
-			NsxtEdgeCluster     string `yaml:"nsxtEdgeCluster"`
-
+			Manager                   string `yaml:"manager"`
+			Tier0router               string `yaml:"tier0router"`
+			Tier0routerVrf            string `yaml:"tier0routerVrf"`
+			NsxtDvpg                  string `yaml:"nsxtDvpg"`
+			GatewayQosProfile         string `yaml:"gatewayQosProfile"`
+			Vdc                       string `yaml:"vdc"`
+			ExternalNetwork           string `yaml:"externalNetwork"`
+			EdgeGateway               string `yaml:"edgeGateway"`
+			NsxtImportSegment         string `yaml:"nsxtImportSegment"`
+			VdcGroup                  string `yaml:"vdcGroup"`
+			VdcGroupEdgeGateway       string `yaml:"vdcGroupEdgeGateway"`
+			NsxtEdgeCluster           string `yaml:"nsxtEdgeCluster"`
+			RoutedNetwork             string `yaml:"routedNetwork"`
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
