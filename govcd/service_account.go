@@ -205,6 +205,11 @@ func (sa *ServiceAccount) Grant() error {
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccountGrant
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return fmt.Errorf("error granting service account: %s", err)
@@ -215,7 +220,7 @@ func (sa *ServiceAccount) Grant() error {
 		return fmt.Errorf("error granting service account: %s", err)
 	}
 
-	err = client.OpenApiPostItem("37.0", urlRef, nil, userCode, nil, getTenantContextHeader(tenantContext))
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, userCode, nil, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return fmt.Errorf("error granting service account: %s", err)
 	}
