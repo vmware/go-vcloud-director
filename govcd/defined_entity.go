@@ -204,6 +204,100 @@ func (rdeType *DefinedEntityType) Delete() error {
 	return nil
 }
 
+// GetAllBehaviors retrieves all the Behaviors of the receiver RDE Type. Query parameters can be supplied to modify pagination.
+func (rdeType *DefinedEntityType) GetAllBehaviors(queryParameters url.Values) ([]*types.Behavior, error) {
+	if rdeType.DefinedEntityType.ID == "" {
+		return nil, fmt.Errorf("ID of the receiver Defined Entity Type is empty")
+	}
+	return getAllBehaviors(rdeType.client, rdeType.DefinedEntityType.ID, types.OpenApiEndpointRdeTypeBehaviors, queryParameters)
+}
+
+// GetBehaviorById retrieves a unique Behavior that belongs to the receiver RDE Type and is determined by the
+// input ID.
+func (rdeType *DefinedEntityType) GetBehaviorById(id string) (*types.Behavior, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
+	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), id)
+	if err != nil {
+		return nil, err
+	}
+
+	response := types.Behavior{}
+	err = rdeType.client.OpenApiGetItem(apiVersion, urlRef, nil, &response, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+// GetBehaviorByName retrieves a unique Behavior that belongs to the receiver RDE Type and is named after
+// the input.
+func (rdeType *DefinedEntityType) GetBehaviorByName(name string) (*types.Behavior, error) {
+	behaviors, err := rdeType.GetAllBehaviors(nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not get the Behaviors of the RDE Type with ID '%s': %s", rdeType.DefinedEntityType.ID, err)
+	}
+	for _, b := range behaviors {
+		if b.Name == name {
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("could not find any Behavior with name '%s' in RDE Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
+}
+
+// AddBehaviorAccessControl adds a new Behavior to the receiver DefinedInterface.
+// Only allowed if the Interface is not in use.
+func (det *DefinedEntityType) AddBehaviorAccessControl(ac types.BehaviorAccess) error {
+	if det.DefinedEntityType.ID == "" {
+		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls
+	apiVersion, err := det.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := det.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, det.DefinedEntityType.ID))
+	if err != nil {
+		return err
+	}
+
+	err = det.client.OpenApiPostItem(apiVersion, urlRef, nil, ac, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetAllBehaviorsAccessControls gets all the Behaviors Access Controls from the receiver DefinedEntityType. Query parameters can be supplied to modify pagination.
+func (det *DefinedEntityType) GetAllBehaviorsAccessControls(queryParameters url.Values) ([]*types.BehaviorAccess, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls
+	apiVersion, err := det.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := det.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, det.DefinedEntityType.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.BehaviorAccess{{}}
+	err = det.client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponses, nil
+}
+
 // GetAllRdes gets all the RDE instances of the given vendor, nss and version.
 func (vcdClient *VCDClient) GetAllRdes(vendor, nss, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
 	return getAllRdes(&vcdClient.Client, vendor, nss, version, queryParameters)

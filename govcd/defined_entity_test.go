@@ -357,3 +357,70 @@ func loadRdeTypeSchemaFromTestResources() (map[string]interface{}, error) {
 
 	return unmarshaledJson, nil
 }
+
+// Test_RdeTypeBehavior tests the CRUD methods of RDE Types to create Behaviors, as a System administrator and tenant user.
+// This test can be run with GOVCD_SKIP_VAPP_CREATION option enabled.
+func (vcd *TestVCD) Test_RdeTypeBehavior(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeTypeBehaviors)
+
+	// Create a new RDE Type from scratch
+	unmarshaledRdeTypeSchema, err := loadRdeTypeSchemaFromTestResources()
+	check.Assert(err, IsNil)
+	check.Assert(true, Equals, len(unmarshaledRdeTypeSchema) > 0)
+	sanizitedTestName := strings.NewReplacer("_", "", ".", "").Replace(check.TestName())
+	rdeType, err := vcd.client.CreateRdeType(&types.DefinedEntityType{
+		Name:        sanizitedTestName,
+		Description: "Created by " + check.TestName(),
+		Nss:         "nss",
+		Version:     "1.0.0",
+		Vendor:      "vmware",
+		Schema:      unmarshaledRdeTypeSchema,
+		Interfaces:  []string{"urn:vcloud:interface:vmware:k8s:1.0.0"},
+	})
+	check.Assert(err, IsNil)
+	AddToCleanupListOpenApi(rdeType.DefinedEntityType.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntityTypes+rdeType.DefinedEntityType.ID)
+
+	// Get all the behaviors of the RDE Type. As it referenced the K8s Interface, it inherits its Behaviors, so it
+	// has one Behavior without anyone creating it.
+	allBehaviors, err := rdeType.GetAllBehaviors(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allBehaviors), Equals, 1)
+	check.Assert(allBehaviors[0].Name, Equals, "createKubeConfig")
+	check.Assert(len(allBehaviors[0].Execution), Equals, 2)
+	check.Assert(allBehaviors[0].Execution["id"], Equals, "CreateKubeConfigActivity")
+	check.Assert(allBehaviors[0].Execution["type"], Equals, "Activity")
+
+	// Error getting non-existing Behaviors
+	_, err = rdeType.GetBehaviorById("urn:vcloud:behavior-type:notexist:notexist:notexist:9.9.9")
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), "RDE_INVALID_BEHAVIOR_SCOPE"), Equals, true)
+
+	_, err = rdeType.GetBehaviorByName("DoesNotExist")
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), ErrorEntityNotFound.Error()), Equals, true)
+
+	// Getting behaviors correctly
+	retrievedBehavior, err := rdeType.GetBehaviorById(allBehaviors[0].ID)
+	check.Assert(err, IsNil)
+	check.Assert(retrievedBehavior, NotNil)
+	check.Assert(retrievedBehavior.Name, Equals, allBehaviors[0].Name)
+	check.Assert(retrievedBehavior.Description, Equals, allBehaviors[0].Description)
+	check.Assert(retrievedBehavior.Execution, DeepEquals, allBehaviors[0].Execution)
+
+	retrievedBehavior2, err := rdeType.GetBehaviorByName(allBehaviors[0].Name)
+	check.Assert(err, IsNil)
+	check.Assert(retrievedBehavior, NotNil)
+	check.Assert(retrievedBehavior, DeepEquals, retrievedBehavior2)
+
+	allAccCtrl, err := rdeType.GetAllBehaviorsAccessControls(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allAccCtrl), Equals, 0)
+
+	// TODO: Test rdeType.AddBehaviorAccessControl()
+
+	err = rdeType.Delete()
+	check.Assert(err, IsNil)
+}
