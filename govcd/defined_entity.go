@@ -213,7 +213,7 @@ func (rdeType *DefinedEntityType) GetAllBehaviors(queryParameters url.Values) ([
 }
 
 // GetBehaviorById retrieves a unique Behavior that belongs to the receiver RDE Type and is determined by the
-// input ID.
+// input ID. The ID can be a RDE Interface Behavior ID or a RDE Type overridden Behavior ID.
 func (rdeType *DefinedEntityType) GetBehaviorById(id string) (*types.Behavior, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
 	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
@@ -240,14 +240,68 @@ func (rdeType *DefinedEntityType) GetBehaviorById(id string) (*types.Behavior, e
 func (rdeType *DefinedEntityType) GetBehaviorByName(name string) (*types.Behavior, error) {
 	behaviors, err := rdeType.GetAllBehaviors(nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not get the Behaviors of the RDE Type with ID '%s': %s", rdeType.DefinedEntityType.ID, err)
+		return nil, fmt.Errorf("could not get the Behaviors of the Defined Entity Type with ID '%s': %s", rdeType.DefinedEntityType.ID, err)
 	}
 	for _, b := range behaviors {
 		if b.Name == name {
 			return b, nil
 		}
 	}
-	return nil, fmt.Errorf("could not find any Behavior with name '%s' in RDE Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
+	return nil, fmt.Errorf("could not find any Behavior with name '%s' in Defined Entity Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
+}
+
+// OverrideBehavior given a valid input Behavior with a valid ID, overrides it.
+// Only Behavior description and execution can be overridden.
+// It returns the new Behavior, result of the override (with a new ID).
+func (rdeType *DefinedEntityType) OverrideBehavior(behavior types.Behavior) (*types.Behavior, error) {
+	if rdeType.DefinedEntityType.ID == "" {
+		return nil, fmt.Errorf("ID of the receiver Defined Entity Type is empty")
+	}
+	if behavior.ID == "" {
+		return nil, fmt.Errorf("ID of the Behavior to override is empty")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
+	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), behavior.ID)
+	if err != nil {
+		return nil, err
+	}
+	response := types.Behavior{}
+	err = rdeType.client.OpenApiPutItem(apiVersion, urlRef, nil, behavior, &response, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+// DeleteBehaviorOverride removes a Behavior specified by its ID from the receiver Defined Entity Type.
+func (rdeType *DefinedEntityType) DeleteBehaviorOverride(behaviorId string) error {
+	if rdeType.DefinedEntityType.ID == "" {
+		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
+	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), behaviorId)
+	if err != nil {
+		return err
+	}
+	err = rdeType.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // AddBehaviorAccessControl adds a new Behavior to the receiver DefinedInterface.
