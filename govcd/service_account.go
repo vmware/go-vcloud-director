@@ -180,7 +180,8 @@ func (sa *ServiceAccount) Authorize() error {
 		return fmt.Errorf("error getting request url from %s: %s", urlRef.String(), err)
 	}
 
-	err = client.OpenApiPostUrlEncoded(urlRef, nil, data, &sa.authParams, nil)
+	// Not an OpenAPI endpoint so hardcoding the Service Account minimal version
+	err = client.OpenApiPostUrlEncoded("37.0", urlRef, nil, data, &sa.authParams, nil)
 	if err != nil {
 		return fmt.Errorf("error authorizing service account: %s", err)
 	}

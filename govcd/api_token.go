@@ -179,7 +179,9 @@ func (client *Client) getAccessToken(org, funcName string, payloadMap map[string
 	}
 
 	newToken := &types.ApiTokenRefresh{}
-	err = client.OpenApiPostUrlEncoded(urlRef, nil, payloadMap, &newToken, nil)
+
+	// Not an OpenAPI endpoint so hardcoding the API token minimal version
+	err = client.OpenApiPostUrlEncoded("36.1", urlRef, nil, payloadMap, &newToken, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error authorizing service account: %s", err)
 	}
