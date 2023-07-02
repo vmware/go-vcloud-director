@@ -554,3 +554,9 @@ type VlanIdRange struct {
 	StartId int `json:"startId"`
 	EndId   int `json:"endId"`
 }
+
+// OpenApiStorageProfile defines a storage profile before it is assigned to a provider VDC
+type OpenApiStorageProfile struct {
+	Moref string `json:"moref"`
+	Name  string `json:"name"`
+}
