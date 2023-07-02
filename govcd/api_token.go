@@ -79,6 +79,7 @@ func (vcdClient *VCDClient) GetTokenById(tokenId string) (*Token, error) {
 	return apiToken, nil
 }
 
+// GetAllTokens gets all tokens with the specified query parameters
 func (vcdClient *VCDClient) GetAllTokens(queryParameters url.Values) ([]*Token, error) {
 	client := vcdClient.Client
 
@@ -110,7 +111,7 @@ func (vcdClient *VCDClient) GetAllTokens(queryParameters url.Values) ([]*Token, 
 	return results, nil
 }
 
-// GetTokenByNameForCurrentUser retrieves a Token by name and username
+// GetTokenByNameAndUsername retrieves a Token by name and username
 func (vcdClient *VCDClient) GetTokenByNameAndUsername(tokenName, userName string) (*Token, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("(name==%s;owner.name==%s;(type==PROXY,type==REFRESH))", tokenName, userName))
@@ -128,6 +129,8 @@ func (vcdClient *VCDClient) GetTokenByNameAndUsername(tokenName, userName string
 	return token, nil
 }
 
+// RegisterToken registers an API token with the given name. The access token can still be fetched for the API
+// token using token.GetInitialApiToken()
 func (vcdClient *VCDClient) RegisterToken(org string, tokenParams *types.ApiTokenParams) (*types.ApiTokenParams, error) {
 	client := vcdClient.Client
 

@@ -17,6 +17,7 @@ type ServiceAccount struct {
 	org            *Org
 }
 
+// GetServiceAccountById gets a Service Account by its ID
 func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount, error) {
 	client := org.client
 
@@ -44,6 +45,7 @@ func (org *Org) GetServiceAccountById(serviceAccountId string) (*ServiceAccount,
 	return newServiceAccount, nil
 }
 
+// GetAllServiceAccounts gets all service accounts with the specified query parameters
 func (org *Org) GetAllServiceAccounts(queryParams url.Values) ([]*ServiceAccount, error) {
 	client := org.client
 
@@ -63,7 +65,7 @@ func (org *Org) GetAllServiceAccounts(queryParams url.Values) ([]*ServiceAccount
 		return nil, err
 	}
 
-	// VCD has a pageSize limit on this specifi endpoint
+	// VCD has a pageSize limit on this specific endpoint
 	queryParams.Add("pageSize", "32")
 	typeResponses := []*types.ServiceAccount{{}}
 	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &typeResponses, getTenantContextHeader(tenantContext))
@@ -83,6 +85,7 @@ func (org *Org) GetAllServiceAccounts(queryParams url.Values) ([]*ServiceAccount
 	return results, nil
 }
 
+// GetServiceAccountByName gets a service account by its name
 func (org *Org) GetServiceAccountByName(name string) (*ServiceAccount, error) {
 	queryParams := url.Values{}
 	queryParams.Add("filter", fmt.Sprintf("name==%s", name))
@@ -129,7 +132,7 @@ func (vcdClient *VCDClient) CreateServiceAccount(orgName, name, scope, softwareI
 	return serviceAccount, nil
 }
 
-// Update updates the modifiable fields of a Service ACcount
+// Update updates the modifiable fields of a Service Account
 func (sa *ServiceAccount) Update(saConfig *types.ServiceAccount) (*ServiceAccount, error) {
 	client := sa.org.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts
