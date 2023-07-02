@@ -73,6 +73,7 @@ vcd:
     nsxt_provider_vdc:
       name: nsxTPvdc1
       storage_profile: "*"
+      storage_profile_2: "Development2"
       network_pool: "NSX-T Overlay 1"
       # A VM Group that needs to exist in the backing vSphere. This VM Group can be used
       # to create VM Placement Policies.

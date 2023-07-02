@@ -146,6 +146,7 @@ type TestConfig struct {
 		NsxtProviderVdc struct {
 			Name                   string `yaml:"name"`
 			StorageProfile         string `yaml:"storage_profile"`
+			StorageProfile2        string `yaml:"storage_profile_2"`
 			NetworkPool            string `yaml:"network_pool"`
 			PlacementPolicyVmGroup string `yaml:"placementPolicyVmGroup,omitempty"`
 		} `yaml:"nsxt_provider_vdc"`
