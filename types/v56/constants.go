@@ -416,6 +416,7 @@ const (
 	OpenApiEndpointResourcePoolHardware               = "virtualCenters/%s/resourcePools/%s/hwv"    // first '%s' is vCenter ID. Second one is Resource Pool MoRef
 	OpenApiEndpointNetworkPools                       = "networkPools/"
 	OpenApiEndpointNetworkPoolSummaries               = "networkPools/networkPoolSummaries"
+	OpenApiEndpointStorageProfiles                    = "virtualCenters/%s/storageProfiles" // '%s' is vCenter ID
 
 	OpenApiEndpointIpSpaces         = "ipSpaces/"
 	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"
