@@ -15,13 +15,6 @@ type VCenter struct {
 	client         *VCDClient
 }
 
-func NewVcenter(client *VCDClient) *VCenter {
-	return &VCenter{
-		VSphereVcenter: &types.VSphereVirtualCenter{},
-		client:         client,
-	}
-}
-
 func (vcdClient VCDClient) GetAllVcenters(queryParams url.Values) ([]*VCenter, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters
