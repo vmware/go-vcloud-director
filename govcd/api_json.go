@@ -1,0 +1,65 @@
+/*
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ */
+
+package govcd
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+)
+
+// ExecuteJsonRequest is a wrapper around regular API call operations, similar to client.ExecuteRequest, but with JSON payback
+// Returns a http.Response object, which, in case of success, has its body still unread
+func (client Client) ExecuteJsonRequest(href, httpMethod string, inputStructure any, errorMessage string) (*http.Response, error) {
+
+	text := bytes.Buffer{}
+	encoder := json.NewEncoder(&text)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent(" ", " ")
+	err := encoder.Encode(inputStructure)
+	if err != nil {
+		return nil, err
+	}
+	requestHref, err := url.Parse(href)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp *http.Response
+	body := strings.NewReader(text.String())
+	apiVersion := client.APIVersion
+	headAccept := http.Header{}
+	headAccept.Set("Accept", fmt.Sprintf("application/*+json;version=%s", apiVersion))
+	headAccept.Set("Content-Type", "application/*+json")
+	request := client.newRequest(nil, nil, httpMethod, *requestHref, body, apiVersion, headAccept)
+	resp, err = client.Http.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf(errorMessage, err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		util.ProcessResponseOutput(util.CallFuncName(), resp, string(body))
+		var jsonError types.OpenApiError
+		err = json.Unmarshal(body, &jsonError)
+		// By default, we return the whole response body as error message. This may also contain the stack trace
+		message := string(body)
+		// if the body contains a valid JSON representation of the error, we return a more agile message, using the
+		// exposed fields, and hiding the stack trace from view
+		if err == nil {
+			message = fmt.Sprintf("%s - %s", jsonError.MinorErrorCode, jsonError.Message)
+		}
+		util.ProcessResponseOutput(util.CallFuncName(), resp, string(body))
+		return resp, fmt.Errorf(errorMessage, message)
+	}
+
+	return checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.Error{})
+}
