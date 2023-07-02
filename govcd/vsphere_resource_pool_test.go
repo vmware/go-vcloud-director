@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_GetResourcePools(check *C) {
 		hw, err := rp.GetAvailableHardwareVersions()
 		check.Assert(err, IsNil)
 		if testVerbose {
-			fmt.Printf(" %#v\n", hw)
+			fmt.Printf("%s %#v\n", rp.ResourcePool.Name, hw)
 		}
 	}
 }
