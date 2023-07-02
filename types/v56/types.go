@@ -474,12 +474,12 @@ type AdminVdc struct {
 // Since: 0.9
 type ProviderVdc struct {
 	//Xmlns        string `xml:"xmlns,attr"`
-	HREF         string `xml:"href,attr,omitempty" json:"href,attr,omitempty"`
-	Type         string `xml:"type,attr,omitempty" json:"type,attr,omitempty"`
-	ID           string `xml:"id,attr,omitempty" json:"id,attr,omitempty"`
-	OperationKey string `xml:"operationKey,attr,omitempty" json:"operationKey,attr,omitempty"`
-	Name         string `xml:"name,attr" json:"name,attr"`
-	Status       int    `xml:"status,attr,omitempty" json:"status,attr,omitempty"` // -1 (creation failed), 0 (not ready), 1 (ready), 2 (unknown), 3 (unrecognized)
+	HREF         string `xml:"href,attr,omitempty" json:"href,omitempty"`
+	Type         string `xml:"type,attr,omitempty" json:"type,omitempty"`
+	ID           string `xml:"id,attr,omitempty" json:"id,omitempty"`
+	OperationKey string `xml:"operationKey,attr,omitempty" json:"operationKey,omitempty"`
+	Name         string `xml:"name,attr" json:"name"`
+	Status       int    `xml:"status,attr,omitempty" json:"status,omitempty"` // -1 (creation failed), 0 (not ready), 1 (ready), 2 (unknown), 3 (unrecognized)
 
 	AvailableNetworks     *AvailableNetworks       `xml:"AvailableNetworks,omitempty" json:"availableNetworks,omitempty"`         // Read-only list of available networks.
 	Capabilities          *Capabilities            `xml:"Capabilities,omitempty" json:"capabilities,omitempty"`                   // Read-only list of virtual hardware versions supported by this Provider VDC.
@@ -677,7 +677,7 @@ type Task struct {
 	EndTime          string           `xml:"endTime,attr,omitempty" json:"endTime,omitempty"`                   // The date and time that processing of the task was completed. May not be present if the task is still being executed.
 	ExpiryTime       string           `xml:"expiryTime,attr,omitempty" json:"expiryTime,omitempty"`             // The date and time at which the task resource will be destroyed and no longer available for retrieval. May not be present if the task has not been executed or is still being executed.
 	CancelRequested  bool             `xml:"cancelRequested,attr,omitempty" json:"cancelRequested,omitempty"`   // Whether user has requested this processing to be canceled.
-	Link             *Link            `xml:"Link,omitempty" json:"link,omitempty"`                              // A reference to an entity or operation associated with this object.
+	Link             *LinkList        `xml:"Link,omitempty" json:"link,omitempty"`                              // A reference to an entity or operation associated with this object.
 	Description      string           `xml:"Description,omitempty" json:"description,omitempty"`                // Optional description.
 	Tasks            *TasksInProgress `xml:"Tasks,omitempty" json:"tasks,omitempty"`                            // A list of queued, running, or recently completed tasks associated with this entity.
 	Owner            *Reference       `xml:"Owner,omitempty" json:"owner,omitempty"`                            // Reference to the owner of the task. This is typically the object that the task is creating or updating.
@@ -1168,11 +1168,11 @@ type Owner struct {
 // Description: The standard error message type used in the vCloud REST API.
 // Since: 0.9
 type Error struct {
-	Message                 string `xml:"message,attr"`
-	MajorErrorCode          int    `xml:"majorErrorCode,attr"`
-	MinorErrorCode          string `xml:"minorErrorCode,attr"`
-	VendorSpecificErrorCode string `xml:"vendorSpecificErrorCode,attr,omitempty"`
-	StackTrace              string `xml:"stackTrace,attr,omitempty"`
+	Message                 string `xml:"message,attr" json:"message,omitempty"`
+	MajorErrorCode          int    `xml:"majorErrorCode,attr" json:"majorErrorCode,omitempty"`
+	MinorErrorCode          string `xml:"minorErrorCode,attr" json:"minorErrorCode,omitempty"`
+	VendorSpecificErrorCode string `xml:"vendorSpecificErrorCode,attr,omitempty" json:"vendorSpecificErrorCode,omitempty"`
+	StackTrace              string `xml:"stackTrace,attr,omitempty" json:"stackTrace,omitempty"`
 }
 
 func (err Error) Error() string {
@@ -3292,4 +3292,27 @@ type ProviderVdcCreation struct {
 	NsxTManagerReference            Reference      `json:"nsxTManagerReference"`
 	NetworkPool                     Reference      `json:"networkPool"`
 	AutoCreateNetworkPool           bool           `json:"autoCreateNetworkPool"`
+}
+
+// AddResourcePool is used to add one or more resource pools to a provider VDC
+type AddResourcePool struct {
+	VimObjectRef []*VimObjectRef `xml:"AddItem" json:"addItem"`
+}
+
+// DeleteResourcePool is used to remove one or more resource pools from a provider VDC
+type DeleteResourcePool struct {
+	ResourcePoolRefs []*Reference `xml:"DeleteItem" json:"deleteItem"`
+}
+
+// AddStorageProfiles is used to add storage profiles to an existing provider VDC
+type AddStorageProfiles struct {
+	AddStorageProfile []string `json:"addStorageProfile"`
+}
+
+type EnableStorageProfile struct {
+	Enabled bool `json:"enabled"`
+}
+
+type RemoveStorageProfile struct {
+	RemoveStorageProfile []*Reference `json:"removeStorageProfile"`
 }
