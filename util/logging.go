@@ -203,6 +203,7 @@ func isBinary(data string, req *http.Request) bool {
 	reContentRange := regexp.MustCompile(`(?i)content-range`)
 	reMultipart := regexp.MustCompile(`(?i)multipart/form`)
 	reMediaXml := regexp.MustCompile(`(?i)media+xml;`)
+	uiPlugin := regexp.MustCompile(`manifest\.json|bundle\.js`)
 	for key, value := range req.Header {
 		if reContentRange.MatchString(key) {
 			return true
@@ -216,7 +217,7 @@ func isBinary(data string, req *http.Request) bool {
 			}
 		}
 	}
-	return false
+	return uiPlugin.MatchString(data)
 }
 
 // SanitizedHeader returns a http.Header with sensitive fields masked

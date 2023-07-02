@@ -1,4 +1,4 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -786,9 +786,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		// RDE Framework has a bug in VCD 10.3.0 that causes "not found" errors to return as "400 bad request",
 		// so we need to amend them
-		isBuggyRdeError := strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointRdeInterfaces)
-		if isBuggyRdeError {
+		if strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointRdeInterfaces) {
 			err = amendRdeApiError(&vcd.client.Client, err)
+		}
+		// UI Plugin has a bug in VCD 10.4.x that causes "not found" errors to return a NullPointerException,
+		// so we need to amend them
+		if strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointExtensionsUi) {
+			err = amendUIPluginGetByIdError(entity.Name, err)
 		}
 
 		if ContainsNotFound(err) {

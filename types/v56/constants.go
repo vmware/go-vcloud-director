@@ -417,6 +417,13 @@ const (
 	OpenApiEndpointNetworkPools                       = "networkPools/"
 	OpenApiEndpointNetworkPoolSummaries               = "networkPools/networkPoolSummaries"
 	OpenApiEndpointStorageProfiles                    = "virtualCenters/%s/storageProfiles" // '%s' is vCenter ID
+	OpenApiEndpointExtensionsUi                       = "extensions/ui/"
+	OpenApiEndpointExtensionsUiPlugin                 = "extensions/ui/%s/plugin"
+	OpenApiEndpointExtensionsUiTenants                = "extensions/ui/%s/tenants"
+	OpenApiEndpointExtensionsUiTenantsPublishAll      = "extensions/ui/%s/tenants/publishAll"
+	OpenApiEndpointExtensionsUiTenantsPublish         = "extensions/ui/%s/tenants/publish"
+	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
+	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 
 	OpenApiEndpointIpSpaces         = "ipSpaces/"
 	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"

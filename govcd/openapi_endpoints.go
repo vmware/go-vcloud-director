@@ -101,6 +101,15 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools:               "36.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries:       "36.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointStorageProfiles:            "33.0",
+
+	// Extensions API endpoints. These are not versioned
+	types.OpenApiEndpointExtensionsUi:                    "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiPlugin:              "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenants:             "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsPublishAll:   "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsPublish:      "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsUnpublishAll: "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsUnpublish:    "35.0", // VCD 10.2+
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
