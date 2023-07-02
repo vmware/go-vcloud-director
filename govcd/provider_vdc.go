@@ -1,15 +1,13 @@
 package govcd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
+	"time"
 )
 
 // ProviderVdc is the basic Provider VDC structure, contains the minimum set of attributes.
@@ -205,44 +203,16 @@ func (vcdClient *VCDClient) CreateProviderVdc(params *types.ProviderVdcCreation)
 	if params.VimServer == nil {
 		return nil, fmt.Errorf("vim server is needed to create a provider VDC")
 	}
-	text := bytes.Buffer{}
-	encoder := json.NewEncoder(&text)
-	encoder.SetEscapeHTML(false)
-	err := encoder.Encode(params)
-	if err != nil {
-		return nil, err
-	}
 	pvdcCreateHREF := vcdClient.Client.VCDHREF
 	pvdcCreateHREF.Path += "/admin/extension/providervdcsparams"
 
-	body := strings.NewReader(text.String())
-	apiVersion := vcdClient.Client.APIVersion
-	headAccept := http.Header{}
-	headAccept.Set("Accept", fmt.Sprintf("application/*+json;version=%s", apiVersion))
-	headAccept.Set("Content-Type", "application/*+json")
-	request := vcdClient.Client.newRequest(nil, nil, http.MethodPost, pvdcCreateHREF, body, apiVersion, headAccept)
-	resp, err := vcdClient.Client.Http.Do(request)
+	resp, err := vcdClient.Client.ExecuteJsonRequest(pvdcCreateHREF.String(), http.MethodPost, params, "error creating provider VDC: %s")
 	if err != nil {
 		return nil, err
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		var jsonError types.OpenApiError
-		err = json.Unmarshal(body, &jsonError)
-		// By default, we return the whole response body as error message. This may also contain the stack trace
-		message := string(body)
-		// if the body contains a valid JSON representation of the error, we return a more agile message, using the
-		// exposed fields, and hiding the stack trace from view
-		if err == nil {
-			message = fmt.Sprintf("%s - %s", jsonError.MinorErrorCode, jsonError.Message)
-		}
-		return nil, fmt.Errorf("error creating provider VDC %s: %s (%d) - %s", params.Name, resp.Status, resp.StatusCode, message)
 	}
 
-	_, err = checkResp(resp, err)
-	if err != nil {
-		return nil, err
-	}
+	body, _ := io.ReadAll(resp.Body)
+	util.ProcessResponseOutput(util.CallFuncName(), resp, string(body))
 
 	pvdc, err := vcdClient.GetProviderVdcExtendedByName(params.Name)
 	if err != nil {
@@ -274,9 +244,6 @@ func (vcdClient *VCDClient) CreateProviderVdc(params *types.ProviderVdcCreation)
 	err = pvdc.Refresh()
 	return pvdc, err
 }
-
-// TODO: add update functions
-// AddResourcePool POST	https://atl1-vcd-static-133-104.eng.vmware.com/api/admin/extension/providervdc/22361a82-992c-44a4-85fa-f78950782961/action/updateResourcePools
 
 // Disable changes the Provider VDC state from enabled to disabled
 func (pvdc *ProviderVdcExtended) Disable() error {
@@ -349,56 +316,274 @@ func (pvdc *ProviderVdcExtended) Delete() (Task, error) {
 		"", "error deleting provider VDC: %s", nil)
 }
 
+// Update can change some of the provider VDC internals
+// In practical terms, only name and description are guaranteed to be changed through this method.
+// The other admitted changes need to go through separate API calls
 func (pvdc *ProviderVdcExtended) Update() error {
 
-	text := bytes.Buffer{}
-	encoder := json.NewEncoder(&text)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent(" ", " ")
-	err := encoder.Encode(pvdc.VMWProviderVdc)
-	if err != nil {
-		return err
-	}
-	pvdcUpdateHref, err := url.Parse(pvdc.VMWProviderVdc.HREF)
+	_, err := pvdc.client.ExecuteJsonRequest(pvdc.VMWProviderVdc.HREF, http.MethodPut, pvdc.VMWProviderVdc,
+		"error updating provider VDC: %s")
+
 	if err != nil {
 		return err
 	}
 
-	body := strings.NewReader(text.String())
-	apiVersion := pvdc.client.APIVersion
-	headAccept := http.Header{}
-	headAccept.Set("Accept", fmt.Sprintf("application/*+json;version=%s", apiVersion))
-	headAccept.Set("Content-Type", "application/*+json")
-	request := pvdc.client.newRequest(nil, nil, http.MethodPut, *pvdcUpdateHref, body, apiVersion, headAccept)
-	resp, err := pvdc.client.Http.Do(request)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
-		util.ProcessResponseOutput("Rename", resp, string(body))
-		var jsonError types.OpenApiError
-		err = json.Unmarshal(body, &jsonError)
-		// By default, we return the whole response body as error message. This may also contain the stack trace
-		message := string(body)
-		// if the body contains a valid JSON representation of the error, we return a more agile message, using the
-		// exposed fields, and hiding the stack trace from view
-		if err == nil {
-			message = fmt.Sprintf("%s - %s", jsonError.MinorErrorCode, jsonError.Message)
+	timeout := 30 * time.Second
+	start := time.Now()
+	for ResourceInProgress(pvdc.VMWProviderVdc.Tasks) {
+		err = pvdc.Refresh()
+		if err != nil {
+			return err
 		}
-		return fmt.Errorf("error updating provider VDC %s: %s (%d) - %s", pvdc.VMWProviderVdc.Name, resp.Status, resp.StatusCode, message)
+		time.Sleep(200 * time.Millisecond)
+		if time.Since(start) > timeout {
+			return fmt.Errorf("error updating provider VDC within %s", timeout)
+		}
 	}
 
-	_, err = checkResp(resp, err)
+	return nil
+}
+
+// Rename changes name and/or description from a provider VDC
+func (pvdc *ProviderVdcExtended) Rename(name, description string) error {
+	if name == "" {
+		return fmt.Errorf("provider VDC name cannot be empty")
+	}
+	pvdc.VMWProviderVdc.Name = name
+	pvdc.VMWProviderVdc.Description = description
+	return pvdc.Update()
+}
+
+// AddResourcePools adds resource pools to the Provider VDC
+func (pvdc *ProviderVdcExtended) AddResourcePools(resourcePools []*ResourcePool) error {
+	util.Logger.Printf("[TRACE] ProviderVdc.AddResourcePools")
+
+	href, err := url.JoinPath(pvdc.VMWProviderVdc.HREF, "action", "updateResourcePools")
+	if err != nil {
+		return err
+	}
+
+	var items []*types.VimObjectRef
+
+	for _, rp := range resourcePools {
+		vcenterUrl, err := rp.vcenter.GetVimServerUrl()
+		if err != nil {
+			return err
+		}
+		item := types.VimObjectRef{
+			MoRef:         rp.ResourcePool.Moref,
+			VimObjectType: "RESOURCE_POOL",
+			VimServerRef: &types.Reference{
+				HREF: vcenterUrl,
+				ID:   extractUuid(rp.vcenter.VSphereVcenter.VcId),
+				Name: rp.vcenter.VSphereVcenter.Name,
+				Type: "application/vnd.vmware.admin.vmwvirtualcenter+xml",
+			},
+		}
+		items = append(items, &item)
+	}
+
+	input := types.AddResourcePool{VimObjectRef: items}
+
+	resp, err := pvdc.client.ExecuteJsonRequest(href, http.MethodPost, input, "error updating provider VDC resource pools: %s")
+	if err != nil {
+		return err
+	}
+	task := NewTask(pvdc.client)
+	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
 	if err != nil {
 		return err
 	}
 	return pvdc.Refresh()
 }
 
-func (pvdc *ProviderVdcExtended) Rename(name, description string) error {
-	pvdc.VMWProviderVdc.Name = name
-	pvdc.VMWProviderVdc.Description = description
-	return pvdc.Update()
+// DeleteResourcePools removes resource pools from the Provider VDC
+func (pvdc *ProviderVdcExtended) DeleteResourcePools(resourcePools []*ResourcePool) error {
+	util.Logger.Printf("[TRACE] ProviderVdc.DeleteResourcePools")
+
+	href, err := url.JoinPath(pvdc.VMWProviderVdc.HREF, "action", "updateResourcePools")
+	if err != nil {
+		return err
+	}
+
+	usedResourcePools, err := pvdc.GetResourcePools()
+	if err != nil {
+		return fmt.Errorf("error retrieving used resource pools: %s", err)
+	}
+
+	var items []*types.Reference
+
+	for _, rp := range resourcePools {
+
+		var foundUsed *types.QueryResultResourcePoolRecordType
+		for _, urp := range usedResourcePools {
+			if rp.ResourcePool.Moref == urp.Moref {
+				foundUsed = urp
+				break
+			}
+		}
+		if foundUsed == nil {
+			return fmt.Errorf("resource pool %s not found in provider VDC %s", rp.ResourcePool.Name, pvdc.VMWProviderVdc.Name)
+		}
+		if foundUsed.IsPrimary {
+			return fmt.Errorf("resource pool %s (%s) caannot be removed, because it is the primary one for provider VDC %s",
+				rp.ResourcePool.Name, rp.ResourcePool.Moref, pvdc.VMWProviderVdc.Name)
+		}
+		if foundUsed.IsEnabled {
+			err = disableResourcePool(pvdc.client, foundUsed.HREF)
+			if err != nil {
+				return fmt.Errorf("error disabling resource pool %s: %s", foundUsed.Name, err)
+			}
+		}
+
+		item := types.Reference{
+			HREF: foundUsed.HREF,
+			ID:   extractUuid(foundUsed.HREF),
+			Name: foundUsed.Name,
+			Type: "application/vnd.vmware.admin.vmwProviderVdcResourcePool+xml",
+		}
+		items = append(items, &item)
+	}
+
+	input := types.DeleteResourcePool{ResourcePoolRefs: items}
+
+	resp, err := pvdc.client.ExecuteJsonRequest(href, http.MethodPost, input, "error removing resource pools from provider VDC: %s")
+	if err != nil {
+		return err
+	}
+	task := NewTask(pvdc.client)
+	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+	return pvdc.Refresh()
+}
+
+// GetResourcePools returns the Resource Pools belonging to this provider VDC
+func (pvdc *ProviderVdcExtended) GetResourcePools() ([]*types.QueryResultResourcePoolRecordType, error) {
+	resourcePools, err := pvdc.client.cumulativeQuery(types.QtResourcePool, map[string]string{
+		"type":          types.QtResourcePool,
+		"filter":        fmt.Sprintf("providerVdc==%s", url.QueryEscape(extractUuid(pvdc.VMWProviderVdc.HREF))),
+		"filterEncoded": "true",
+	}, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not get the Resource pool: %s", err)
+	}
+	return resourcePools.Results.ResourcePoolRecord, nil
+}
+
+// disableResourcePool disables a resource pool while it is assigned to a provider VDC
+// Calling this function is a prerequisite to removing a resource pool from a provider VDC
+func disableResourcePool(client *Client, resourcePoolHref string) error {
+	href, err := url.JoinPath(resourcePoolHref, "action", "disable")
+	if err != nil {
+		return err
+	}
+	return client.ExecuteRequestWithoutResponse(href, http.MethodPost, "", "error disabling resource pool: %s", nil)
+}
+
+// AddStorageProfiles adds the given storage profiles in this provider VDC
+func (pvdc *ProviderVdcExtended) AddStorageProfiles(storageProfileNames []string) error {
+	href, err := url.JoinPath(pvdc.VMWProviderVdc.HREF, "storageProfiles")
+	if err != nil {
+		return err
+	}
+
+	addStorageProfiles := &types.AddStorageProfiles{AddStorageProfile: storageProfileNames}
+
+	_, err = pvdc.client.ExecuteJsonRequest(href, http.MethodPost, addStorageProfiles,
+		"error adding storage profiles to provider VDC: %s")
+
+	if err != nil {
+		return err
+	}
+
+	err = pvdc.Refresh()
+	if err != nil {
+		return err
+	}
+
+	timeout := 30 * time.Second
+	start := time.Now()
+	for ResourceInProgress(pvdc.VMWProviderVdc.Tasks) {
+		err = pvdc.Refresh()
+		if err != nil {
+			return err
+		}
+		time.Sleep(200 * time.Millisecond)
+		if time.Since(start) > timeout {
+			return fmt.Errorf("error completing AddStorageProfiles operation within %s", timeout)
+		}
+	}
+	return nil
+}
+
+// disableStorageProfile disables a storage profile while it is assigned to a provider VDC
+// Calling this function is a prerequisite to removing a storage profile from a provider VDC
+func disableStorageProfile(client *Client, storageProfileHref string) error {
+	disablePayload := &types.EnableStorageProfile{Enabled: false}
+	_, err := client.ExecuteJsonRequest(storageProfileHref, http.MethodPut, disablePayload,
+		"error disabling storage profile in provider VDC: %s")
+
+	return err
+}
+
+// DeleteStorageProfiles removes storage profiles from the Provider VDC
+func (pvdc *ProviderVdcExtended) DeleteStorageProfiles(storageProfiles []string) error {
+	util.Logger.Printf("[TRACE] ProviderVdc.DeleteStorageProfiles")
+
+	href, err := url.JoinPath(pvdc.VMWProviderVdc.HREF, "storageProfiles")
+	if err != nil {
+		return err
+	}
+
+	usedStorageProfileRefs := pvdc.VMWProviderVdc.StorageProfiles.ProviderVdcStorageProfile
+
+	var toBeDeleted []*types.Reference
+
+	for _, sp := range storageProfiles {
+		var foundUsed bool
+		for _, usp := range usedStorageProfileRefs {
+			if sp == usp.Name {
+				foundUsed = true
+				toBeDeleted = append(toBeDeleted, &types.Reference{HREF: usp.HREF})
+				break
+			}
+		}
+		if !foundUsed {
+			return fmt.Errorf("storage profile %s not found in provider VDC %s", sp, pvdc.VMWProviderVdc.Name)
+		}
+	}
+
+	for _, sp := range toBeDeleted {
+		err = disableStorageProfile(pvdc.client, sp.HREF)
+		if err != nil {
+			return fmt.Errorf("error disabling storage profile %s from provider VDC %s: %s", sp.Name, pvdc.VMWProviderVdc.Name, err)
+		}
+	}
+	input := &types.RemoveStorageProfile{RemoveStorageProfile: toBeDeleted}
+
+	resp, err := pvdc.client.ExecuteJsonRequest(href, http.MethodPost, input, "error removing storage profiles from provider VDC: %s")
+	if err != nil {
+		return err
+	}
+	task := NewTask(pvdc.client)
+	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+	return pvdc.Refresh()
 }

@@ -159,7 +159,7 @@ func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
 	check.Assert(providerVdc.ProviderVdc.Link, NotNil)
 }
 
-func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
+func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
@@ -201,7 +201,6 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 	check.Assert(err, IsNil)
 	networkPoolHref, err := networkPool.GetOpenApiUrl()
 	check.Assert(err, IsNil)
-	//fmt.Printf("%# v \n(%s)\n", pretty.Formatter(networkPool.NetworkPool), networkPoolHref)
 
 	providerVdcCreation := types.ProviderVdcCreation{
 		Name:                            providerVdcName,
@@ -242,13 +241,14 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 		},
 		AutoCreateNetworkPool: false,
 	}
+	printVerbose("  creating provider VDC '%s' using resource pool '%s' and storage profile '%s'\n",
+		providerVdcName, resourcePool.ResourcePool.Name, storageProfile.Name)
 	providerVdcJson, err := vcd.client.CreateProviderVdc(&providerVdcCreation)
 	check.Assert(err, IsNil)
 	check.Assert(providerVdcJson, NotNil)
 	check.Assert(providerVdcJson.VMWProviderVdc.Name, Equals, providerVdcName)
 
 	AddToCleanupList(providerVdcName, "provider_vdc", "", check.TestName())
-	//time.Sleep(10 * time.Second)
 	retrievedPvdc, err := vcd.client.GetProviderVdcExtendedByName(providerVdcName)
 	check.Assert(err, IsNil)
 
@@ -262,28 +262,69 @@ func (vcd *TestVCD) Test_CreateProviderVdc(check *C) {
 	check.Assert(retrievedPvdc.VMWProviderVdc.IsEnabled, NotNil)
 	check.Assert(*retrievedPvdc.VMWProviderVdc.IsEnabled, Equals, true)
 
-	err = retrievedPvdc.Rename("newName", "newDescription")
+	newProviderVdcName := "TestNewName"
+	newProviderVdcDescription := "Test New provider VDC description"
+	printVerbose("  renaming provider VDC to '%s'\n", newProviderVdcName)
+	err = retrievedPvdc.Rename(newProviderVdcName, newProviderVdcDescription)
 	check.Assert(err, IsNil)
-	check.Assert(retrievedPvdc.VMWProviderVdc.Name, Equals, "newName")
-	check.Assert(retrievedPvdc.VMWProviderVdc.Description, Equals, "newDescription")
+	check.Assert(retrievedPvdc.VMWProviderVdc.Name, Equals, newProviderVdcName)
+	check.Assert(retrievedPvdc.VMWProviderVdc.Description, Equals, newProviderVdcDescription)
 
+	printVerbose("  renaming back provider VDC to '%s'\n", providerVdcName)
 	err = retrievedPvdc.Rename(providerVdcName, providerVdcDescription)
 	check.Assert(err, IsNil)
 	check.Assert(retrievedPvdc.VMWProviderVdc.Name, Equals, providerVdcName)
 	check.Assert(retrievedPvdc.VMWProviderVdc.Description, Equals, providerVdcDescription)
 
-	// Deleting while the Provider VDC is still enables will fail
+	secondResourcePoolName := vcd.config.Vsphere.ResourcePoolForVcd2
+	if secondResourcePoolName != "" {
+		printVerbose("  adding resource pool '%s' to provider VDC\n", secondResourcePoolName)
+		secondResourcePool, err := vcenter.GetResourcePoolByName(secondResourcePoolName)
+		check.Assert(err, IsNil)
+		check.Assert(secondResourcePool, NotNil)
+		err = retrievedPvdc.AddResourcePools([]*ResourcePool{secondResourcePool})
+		check.Assert(err, IsNil)
+		err = retrievedPvdc.Refresh()
+		check.Assert(err, IsNil)
+		check.Assert(len(retrievedPvdc.VMWProviderVdc.ResourcePoolRefs.VimObjectRef), Equals, 2)
+
+		printVerbose("  removing resource pool '%s' from provider VDC\n", secondResourcePoolName)
+		err = retrievedPvdc.DeleteResourcePools([]*ResourcePool{secondResourcePool})
+		check.Assert(err, IsNil)
+		err = retrievedPvdc.Refresh()
+		check.Assert(err, IsNil)
+		check.Assert(len(retrievedPvdc.VMWProviderVdc.ResourcePoolRefs.VimObjectRef), Equals, 1)
+	}
+
+	secondStorageProfile := vcd.config.VCD.NsxtProviderVdc.StorageProfile2
+	if secondStorageProfile != "" {
+		printVerbose("  adding storage profile '%s' to provider VDC\n", secondStorageProfile)
+		// Adds a storage profile
+		err = retrievedPvdc.AddStorageProfiles([]string{secondStorageProfile})
+		check.Assert(err, IsNil)
+		check.Assert(len(retrievedPvdc.VMWProviderVdc.StorageProfiles.ProviderVdcStorageProfile), Equals, 2)
+
+		fmt.Printf("  removing storage profile '%s' from provider VDC\n", secondStorageProfile)
+		// Remove a storage profile
+		err = retrievedPvdc.DeleteStorageProfiles([]string{secondStorageProfile})
+		check.Assert(err, IsNil)
+		check.Assert(len(retrievedPvdc.VMWProviderVdc.StorageProfiles.ProviderVdcStorageProfile), Equals, 1)
+	}
+
+	// Deleting while the Provider VDC is still enabled will fail
 	task, err := retrievedPvdc.Delete()
 	check.Assert(err, NotNil)
 
+	// Properly deleting provider VDC: first disabling, then removing
+	printVerbose("  disabling provider VDC '%s'\n", providerVdcName)
 	err = retrievedPvdc.Disable()
 	check.Assert(err, IsNil)
 	check.Assert(retrievedPvdc.VMWProviderVdc.IsEnabled, NotNil)
 	check.Assert(*retrievedPvdc.VMWProviderVdc.IsEnabled, Equals, false)
 
+	printVerbose("  removing provider VDC '%s'\n", providerVdcName)
 	task, err = retrievedPvdc.Delete()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-
 }
