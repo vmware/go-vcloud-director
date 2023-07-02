@@ -131,6 +131,11 @@ func (vcd *TestVCD) Test_GetFilteredTokensOrg(check *C) {
 	if !isApiTokenEnabled {
 		check.Skip("This test requires VCD 10.3.1 or greater")
 	}
+
+	if vcd.config.Tenants == nil || len(vcd.config.Tenants) < 2 {
+		check.Skip("no tenants found in configuration")
+	}
+
 	orgName := vcd.config.Tenants[0].SysOrg
 	userName := vcd.config.Tenants[0].User
 	password := vcd.config.Tenants[0].Password
