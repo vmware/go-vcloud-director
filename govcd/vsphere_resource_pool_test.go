@@ -11,6 +11,9 @@ import (
 
 func (vcd *TestVCD) Test_GetResourcePools(check *C) {
 
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("this test requires system administrator privileges")
+	}
 	vcenters, err := vcd.client.GetAllVcenters(nil)
 	check.Assert(err, IsNil)
 
