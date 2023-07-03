@@ -43,7 +43,10 @@ func (vcd *TestVCD) Test_GetProviderVdc(check *C) {
 		check.Assert(*providerVdc.ProviderVdc.IsEnabled, Equals, true)
 		check.Assert(providerVdc.ProviderVdc.ComputeCapacity, NotNil)
 		check.Assert(providerVdc.ProviderVdc.Status, Equals, 1)
-		check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
+		// This test may fail when the VCD has more than one network pool depending on the same NSX-T manager
+		//check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
+		check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference) > 0, Equals, true)
+
 		foundNetworkPool := false
 		for _, networkPool := range providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference {
 			if networkPool.Name == vcd.config.VCD.NsxtProviderVdc.NetworkPool {
@@ -87,7 +90,9 @@ func (vcd *TestVCD) Test_GetProviderVdcExtended(check *C) {
 		check.Assert(*providerVdcExtended.VMWProviderVdc.IsEnabled, Equals, true)
 		check.Assert(providerVdcExtended.VMWProviderVdc.ComputeCapacity, NotNil)
 		check.Assert(providerVdcExtended.VMWProviderVdc.Status, Equals, 1)
-		check.Assert(len(providerVdcExtended.VMWProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
+		// This test may fail when the NSX-T manager has more than one network pool
+		//check.Assert(len(providerVdcExtended.VMWProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
+		check.Assert(len(providerVdcExtended.VMWProviderVdc.NetworkPoolReferences.NetworkPoolReference) > 0, Equals, true)
 		foundNetworkPool := false
 		for _, networkPool := range providerVdcExtended.VMWProviderVdc.NetworkPoolReferences.NetworkPoolReference {
 			if networkPool.Name == vcd.config.VCD.NsxtProviderVdc.NetworkPool {
@@ -154,8 +159,17 @@ func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
 	check.Assert(foundStorageProfile, Equals, true)
 	check.Assert(*providerVdc.ProviderVdc.IsEnabled, Equals, true)
 	check.Assert(providerVdc.ProviderVdc.Status, Equals, 1)
-	check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
-	check.Assert(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference[0].Name, Equals, vcd.config.VCD.NsxtProviderVdc.NetworkPool)
+	// This test may fail when the NSX-T manager has more than one network pool
+	//check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference), Equals, 1)
+	check.Assert(len(providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference) > 0, Equals, true)
+	foundNetworkPool := false
+
+	for _, np := range providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference {
+		if np.Name == vcd.config.VCD.NsxtProviderVdc.NetworkPool {
+			foundNetworkPool = true
+		}
+	}
+	check.Assert(foundNetworkPool, Equals, true)
 	check.Assert(providerVdc.ProviderVdc.Link, NotNil)
 }
 
@@ -304,7 +318,7 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(len(retrievedPvdc.VMWProviderVdc.StorageProfiles.ProviderVdcStorageProfile), Equals, 2)
 
-		fmt.Printf("  removing storage profile '%s' from provider VDC\n", secondStorageProfile)
+		printVerbose("  removing storage profile '%s' from provider VDC\n", secondStorageProfile)
 		// Remove a storage profile
 		err = retrievedPvdc.DeleteStorageProfiles([]string{secondStorageProfile})
 		check.Assert(err, IsNil)
