@@ -336,6 +336,7 @@ func (client *Client) OpenApiPostItemAndGetHeaders(apiVersion string, urlRef *ur
 
 // OpenApiPostUrlEncoded is a non-standard function used to send a POST request with `x-www-form-urlencoded` format.
 // Accepts a map in format of key:value, marshals the response body in JSON format to outType.
+// If additionalHeader contains a "Content-Type" header, it will be overwritten to "x-www-form-urlencoded"
 func (client *Client) OpenApiPostUrlEncoded(apiVersion string, urlRef *url.URL, params url.Values, payloadMap map[string]string, outType interface{}, additionalHeaders map[string]string) error {
 	urlRefCopy := copyUrlRef(urlRef)
 
