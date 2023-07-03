@@ -15,6 +15,7 @@ type NetworkPool struct {
 	vcdClient   *VCDClient
 }
 
+// GetOpenApiUrl retrieves the full URL of a network pool
 func (np NetworkPool) GetOpenApiUrl() (string, error) {
 	response, err := url.JoinPath(np.vcdClient.sessionHREF.String(), "admin", "extension", "networkPool", np.NetworkPool.Id)
 	if err != nil {
@@ -23,6 +24,7 @@ func (np NetworkPool) GetOpenApiUrl() (string, error) {
 	return response, nil
 }
 
+// GetNetworkPoolSummaries retrieves the list of all available network pools
 func (vcdClient VCDClient) GetNetworkPoolSummaries(queryParameters url.Values) ([]*types.NetworkPool, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries
@@ -44,7 +46,7 @@ func (vcdClient VCDClient) GetNetworkPoolSummaries(queryParameters url.Values) (
 	return typeResponse, nil
 }
 
-// GetNetworkPoolById retrieves IP Space with a given ID
+// GetNetworkPoolById retrieves Network Pool with a given ID
 func (vcdClient VCDClient) GetNetworkPoolById(id string) (*NetworkPool, error) {
 	if id == "" {
 		return nil, fmt.Errorf("network pool lookup requires ID")
@@ -75,7 +77,7 @@ func (vcdClient VCDClient) GetNetworkPoolById(id string) (*NetworkPool, error) {
 	return response, nil
 }
 
-// GetNetworkPoolByName retrieves IP Space with a given name
+// GetNetworkPoolByName retrieves a network pool with a given name
 // Note. It will return an error if multiple network pools exist with the same name
 func (vcdClient VCDClient) GetNetworkPoolByName(name string) (*NetworkPool, error) {
 	if name == "" {
@@ -91,7 +93,7 @@ func (vcdClient VCDClient) GetNetworkPoolByName(name string) (*NetworkPool, erro
 	}
 
 	if len(filteredNetworkPools) == 0 {
-		return nil, fmt.Errorf("no network pool found with name '%s'", name)
+		return nil, fmt.Errorf("no network pool found with name '%s' - %s", name, ErrorEntityNotFound)
 	}
 
 	if len(filteredNetworkPools) > 1 {
