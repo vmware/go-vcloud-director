@@ -397,7 +397,7 @@ type OrgVDCNetwork struct {
 // Description: Contains a list of VMware virtual hardware versions supported in this vDC.
 // Since: 1.5
 type SupportedHardwareVersions struct {
-	SupportedHardwareVersion []*Reference `xml:"OpenApiSupportedHardwareVersions,omitempty"` // A virtual hardware version supported in this vDC.
+	SupportedHardwareVersion []Reference `xml:"SupportedHardwareVersion,omitempty"` // A virtual hardware version supported in this vDC.
 }
 
 // Capabilities collection of supported hardware capabilities.
