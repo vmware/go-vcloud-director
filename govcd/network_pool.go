@@ -15,13 +15,6 @@ type NetworkPool struct {
 	vcdClient   *VCDClient
 }
 
-func NewNetworkPool(client *VCDClient) *NetworkPool {
-	return &NetworkPool{
-		NetworkPool: &types.NetworkPool{},
-		vcdClient:   client,
-	}
-}
-
 func (np NetworkPool) GetOpenApiUrl() (string, error) {
 	response, err := url.JoinPath(np.vcdClient.sessionHREF.String(), "admin", "extension", "networkPool", np.NetworkPool.Id)
 	if err != nil {
