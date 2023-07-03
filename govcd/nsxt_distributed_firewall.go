@@ -13,17 +13,15 @@ import (
 // DistributedFirewall contains a types.DistributedFirewallRules which handles Distributed Firewall
 // rules in a VDC Group
 type DistributedFirewall struct {
-	DistributedFirewallRuleContainer    *types.DistributedFirewallRules
-	DistributedFirewallRuleRawContainer *types.DistributedFirewallRulesRaw
-	client                              *Client
-	VdcGroup                            *VdcGroup
-}
-
-type DistributedFirewallRule struct {
-	Rule                             *types.DistributedFirewallRule
 	DistributedFirewallRuleContainer *types.DistributedFirewallRules
 	client                           *Client
 	VdcGroup                         *VdcGroup
+}
+
+type DistributedFirewallRule struct {
+	Rule     *types.DistributedFirewallRule
+	client   *Client
+	VdcGroup *VdcGroup
 }
 
 // GetDistributedFirewall retrieves Distributed Firewall in a VDC Group which contains all rules
@@ -317,10 +315,9 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 
 	// Single Rule
 	returnObjectSingleRule := &DistributedFirewallRule{
-		Rule:                             returnObject.DistributedFirewallRuleContainer.Values[newRulePosition],
-		DistributedFirewallRuleContainer: &types.DistributedFirewallRules{},
-		client:                           client,
-		VdcGroup:                         vdcGroup,
+		Rule:     returnObject.DistributedFirewallRuleContainer.Values[newRulePosition],
+		client:   client,
+		VdcGroup: vdcGroup,
 	}
 	// singleReturnedRule := returnObjectSingleRule.DistributedFirewallRuleContainer.Values[newRulePosition]
 
