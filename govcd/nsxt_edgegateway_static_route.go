@@ -51,18 +51,9 @@ func (egw *NsxtEdgeGateway) CreateStaticRoute(staticRouteConfig *types.NsxtEdgeG
 		return nil, fmt.Errorf("error creating NSX-T Edge Gateway Static Route: %s", err)
 	}
 
-	// API is not consistent across different versions therefore explicit manual handling is
-	// required to lookup newly created object
-	//
-	// VCD 10.4.1 -> no ID for newly created object is returned at all
-	// VCD 10.3 -> `Details` field in task contains ID of newly created object
-	// To cover all cases this code will at first look for ID in `Details` field and fall back to
-	// lookup by name if `Details` field is empty.
-	//
-	// The drawback of this is that it is possible to create duplicate records with the same name on
-	// VCD versions that don't return IDs, but there is no better way for VCD versions that don't
-	// return IDs for created objects
-
+	// API does not return an ID for created object - we know that it is expected to be in
+	// task.Task.Details therefore attempt to find it, but if it is empty - look for an entity by a
+	// set of requested parameters
 	staticRouteId := task.Task.Details
 	if staticRouteId != "" {
 		getUrlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID), staticRouteId)
@@ -74,13 +65,12 @@ func (egw *NsxtEdgeGateway) CreateStaticRoute(staticRouteConfig *types.NsxtEdgeG
 			return nil, fmt.Errorf("error retrieving NSX-T Edge Gateway Static Route after creation: %s", err)
 		}
 	} else {
-
 		// ID was not present in response, therefore Static Route needs to be found manually. Using
 		// 'Name', 'Description' and 'NetworkCidr' for finding the entity. Duplicate entries can
 		// exist, but but it should be a good enough combination for finding unique entry until VCD API is fixed
 		allStaticRoutes, err := egw.GetAllStaticRoutes(nil)
 		if err != nil {
-			return nil, fmt.Errorf("error retrieving NSX-T Edge Gateway Static Route by CIDR after creation: %s", err)
+			return nil, fmt.Errorf("error retrieving NSX-T Edge Gateway Static Route after creation: %s", err)
 		}
 
 		var foundStaticRoute bool
@@ -105,8 +95,6 @@ func (egw *NsxtEdgeGateway) CreateStaticRoute(staticRouteConfig *types.NsxtEdgeG
 
 // GetAllStaticRoutes retrieves all Static Routes for a particular NSX-T Edge Gateway
 func (egw *NsxtEdgeGateway) GetAllStaticRoutes(queryParameters url.Values) ([]*NsxtEdgeGatewayStaticRoute, error) {
-	queryParams := copyOrNewUrlValues(queryParameters)
-
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayStaticRoutes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -121,7 +109,7 @@ func (egw *NsxtEdgeGateway) GetAllStaticRoutes(queryParameters url.Values) ([]*N
 	}
 
 	typeResponses := []*types.NsxtEdgeGatewayStaticRoute{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &typeResponses, nil)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +140,6 @@ func (egw *NsxtEdgeGateway) GetStaticRouteByNetworkCidr(networkCidr string) (*Ns
 	}
 
 	filteredByNetworkCidr := make([]*NsxtEdgeGatewayStaticRoute, 0)
-	// First - filter by name
 	for _, sr := range allStaticRoutes {
 		if sr.NsxtEdgeGatewayStaticRoute.NetworkCidr == networkCidr {
 			filteredByNetworkCidr = append(filteredByNetworkCidr, sr)
@@ -199,7 +186,7 @@ func (egw *NsxtEdgeGateway) GetStaticRouteByName(name string) (*NsxtEdgeGatewayS
 // GetStaticRouteById retrieves Static Route by given ID
 func (egw *NsxtEdgeGateway) GetStaticRouteById(id string) (*NsxtEdgeGatewayStaticRoute, error) {
 	if id == "" {
-		return nil, fmt.Errorf("id is required")
+		return nil, fmt.Errorf("ID is required")
 	}
 
 	client := egw.client

@@ -708,9 +708,7 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	}
 
 	// Inject JSON mime type
-	if req.Header.Get("Content-Type") == "" {
-		req.Header.Add("Content-Type", types.JSONMime)
-	}
+	req.Header.Add("Content-Type", types.JSONMime)
 
 	setHttpUserAgent(client.UserAgent, req)
 
