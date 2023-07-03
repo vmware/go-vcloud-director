@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
@@ -304,9 +305,8 @@ func (rdeType *DefinedEntityType) DeleteBehaviorOverride(behaviorId string) erro
 	return nil
 }
 
-// AddBehaviorAccessControl adds a new Behavior to the receiver DefinedInterface.
-// Only allowed if the Interface is not in use.
-func (det *DefinedEntityType) AddBehaviorAccessControl(ac types.BehaviorAccess) error {
+// SetBehaviorAccessControls sets the given slice of BehaviorAccess to the receiver Defined Entity Type.
+func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAccess) error {
 	if det.DefinedEntityType.ID == "" {
 		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
 	}
@@ -322,7 +322,16 @@ func (det *DefinedEntityType) AddBehaviorAccessControl(ac types.BehaviorAccess) 
 		return err
 	}
 
-	err = det.client.OpenApiPostItem(apiVersion, urlRef, nil, ac, nil, nil)
+	// Wrap it in OpenAPI pages, this endpoint requires it
+	rawMessage, err := json.Marshal(acls)
+	if err != nil {
+		return fmt.Errorf("error setting Access controls in payload: %s", err)
+	}
+	payload := types.OpenApiPages{
+		Values: rawMessage,
+	}
+
+	err = det.client.OpenApiPutItem(apiVersion, urlRef, nil, payload, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -644,5 +653,27 @@ func (rde *DefinedEntity) Delete() error {
 
 	rde.DefinedEntity = &types.DefinedEntity{}
 	rde.Etag = ""
+	return nil
+}
+
+// InvokeBehavior calls a Behavior identified by the given ID with the given execution parameters.
+func (rde *DefinedEntity) InvokeBehavior(behaviorId string, invocation types.BehaviorInvocation) error {
+	client := rde.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesBehaviorsInvocations
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rde.DefinedEntity.ID, behaviorId))
+	if err != nil {
+		return err
+	}
+
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, invocation, nil, nil)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

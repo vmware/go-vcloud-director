@@ -408,6 +408,7 @@ const (
 	OpenApiEndpointRdeEntities                        = "entities/"
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
+	OpenApiEndpointRdeEntitiesBehaviorsInvocations    = "entities/%s/behaviors/%s/invocations"
 
 	OpenApiEndpointIpSpaces         = "ipSpaces/"
 	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"

@@ -443,7 +443,7 @@ func (vcd *TestVCD) Test_RdeTypeBehavior(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(retrOverridden, DeepEquals, rdeTypeBehavior)
 
-	testRdeTypeAccessControls(check, rdeType)
+	testRdeTypeAccessControls(check, rdeType, retrOverridden)
 
 	// Delete the Behavior with original RDE Interface Behavior ID. It doesn't care if we use the original or the overridden.
 	err = rdeType.DeleteBehaviorOverride(originalBehavior.ID)
@@ -460,10 +460,42 @@ func (vcd *TestVCD) Test_RdeTypeBehavior(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func testRdeTypeAccessControls(check *C, rdeType *DefinedEntityType) {
+func testRdeTypeAccessControls(check *C, rdeType *DefinedEntityType, behavior *types.Behavior) {
 	allAccCtrl, err := rdeType.GetAllBehaviorsAccessControls(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allAccCtrl), Equals, 0)
 
-	// TODO: Test rdeType.AddBehaviorAccessControl()
+	// Add the behavior access controls
+	behaviorAccess := &types.BehaviorAccess{
+		AccessLevelId: "urn:vcloud:accessLevel:ReadOnly",
+		BehaviorId:    behavior.ID,
+	}
+	err = rdeType.SetBehaviorAccessControls([]*types.BehaviorAccess{behaviorAccess})
+	check.Assert(err, IsNil)
+
+	allAccCtrl, err = rdeType.GetAllBehaviorsAccessControls(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allAccCtrl), Equals, 1)
+	check.Assert(*allAccCtrl[0], DeepEquals, *behaviorAccess)
+
+	// Update the behavior access controls
+	behaviorAccess = &types.BehaviorAccess{
+		AccessLevelId: "urn:vcloud:accessLevel:ReadWrite",
+		BehaviorId:    behavior.ID,
+	}
+	err = rdeType.SetBehaviorAccessControls([]*types.BehaviorAccess{behaviorAccess})
+	check.Assert(err, IsNil)
+
+	allAccCtrl, err = rdeType.GetAllBehaviorsAccessControls(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allAccCtrl), Equals, 1)
+	check.Assert(*allAccCtrl[0], DeepEquals, *behaviorAccess)
+
+	// Delete the behavior access controls
+	err = rdeType.SetBehaviorAccessControls([]*types.BehaviorAccess{})
+	check.Assert(err, IsNil)
+
+	allAccCtrl, err = rdeType.GetAllBehaviorsAccessControls(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allAccCtrl), Equals, 0)
 }

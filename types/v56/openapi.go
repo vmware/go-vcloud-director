@@ -452,6 +452,12 @@ type BehaviorAccess struct {
 	BehaviorId    string `json:"behaviorId,omitempty"`    // The ID of the Behavior. It can be both a behavior-interface or an overridden behavior-type ID
 }
 
+// BehaviorInvocation is an invocation of a Behavior on a Defined Entity instance. Currently, the Behavior interfaces are key-value maps specified in the Behavior description.
+type BehaviorInvocation struct {
+	Arguments interface{} `json:"arguments,omitempty"`
+	Metadata  interface{} `json:"metadata,omitempty"`
+}
+
 // DefinedEntityType describes what a Defined Entity Type should look like.
 type DefinedEntityType struct {
 	ID               string                 `json:"id,omitempty"`               // The id of the defined entity type in URN format
