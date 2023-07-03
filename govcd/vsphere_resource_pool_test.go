@@ -31,7 +31,9 @@ func (vcd *TestVCD) Test_GetResourcePools(check *C) {
 		check.Assert(rpByID.ResourcePool.Name, Equals, rp.ResourcePool.Name)
 		rpByName, err := vc.GetResourcePoolByName(rp.ResourcePool.Name)
 		if err != nil && strings.Contains(err.Error(), "more than one") {
-			fmt.Printf("%s\n", err)
+			if testVerbose {
+				fmt.Printf("%s\n", err)
+			}
 			continue
 		}
 		check.Assert(err, IsNil)
