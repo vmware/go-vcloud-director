@@ -191,10 +191,6 @@ func (ipSpaceAllocation *IpSpaceIpAllocation) Delete() error {
 
 	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, getTenantContextHeader(tenantContext))
 	if err != nil {
-		return err
-	}
-
-	if err != nil {
 		return fmt.Errorf("error deleting IP Space IP Allocation: %s", err)
 	}
 
