@@ -251,8 +251,7 @@ func (rdeType *DefinedEntityType) GetBehaviorByName(name string) (*types.Behavio
 	return nil, fmt.Errorf("could not find any Behavior with name '%s' in Defined Entity Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
 }
 
-// OverrideBehavior given a valid input Behavior with a valid ID, overrides it.
-// Only Behavior description and execution can be overridden.
+// OverrideBehavior overrides an Interface Behavior. Only Behavior description and execution can be overridden.
 // It returns the new Behavior, result of the override (with a new ID).
 func (rdeType *DefinedEntityType) OverrideBehavior(behavior types.Behavior) (*types.Behavior, error) {
 	if rdeType.DefinedEntityType.ID == "" {
@@ -282,6 +281,7 @@ func (rdeType *DefinedEntityType) OverrideBehavior(behavior types.Behavior) (*ty
 }
 
 // DeleteBehaviorOverride removes a Behavior specified by its ID from the receiver Defined Entity Type.
+// The ID can be the Interface Behavior ID or the Type Behavior ID (the overridden one).
 func (rdeType *DefinedEntityType) DeleteBehaviorOverride(behaviorId string) error {
 	if rdeType.DefinedEntityType.ID == "" {
 		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
@@ -339,7 +339,8 @@ func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAc
 	return nil
 }
 
-// GetAllBehaviorsAccessControls gets all the Behaviors Access Controls from the receiver DefinedEntityType. Query parameters can be supplied to modify pagination.
+// GetAllBehaviorsAccessControls gets all the Behaviors Access Controls from the receiver DefinedEntityType.
+// Query parameters can be supplied to modify pagination.
 func (det *DefinedEntityType) GetAllBehaviorsAccessControls(queryParameters url.Values) ([]*types.BehaviorAccess, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls
 	apiVersion, err := det.client.getOpenApiHighestElevatedVersion(endpoint)

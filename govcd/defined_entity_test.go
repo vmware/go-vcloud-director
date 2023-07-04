@@ -383,7 +383,7 @@ func (vcd *TestVCD) Test_RdeTypeBehavior(check *C) {
 	check.Assert(err, IsNil)
 	AddToCleanupListOpenApi(rdeType.DefinedEntityType.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntityTypes+rdeType.DefinedEntityType.ID)
 	defer func() {
-		err = rdeType.Delete()
+		err := rdeType.Delete()
 		check.Assert(err, IsNil)
 	}()
 
@@ -498,7 +498,7 @@ func testRdeBehaviorInvocation(check *C, rdeType *DefinedEntityType, behavior *t
 	check.Assert(err, IsNil)
 	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntities+rde.DefinedEntity.ID)
 	defer func() {
-		err = rde.Delete()
+		err := rde.Delete()
 		check.Assert(err, IsNil)
 	}()
 

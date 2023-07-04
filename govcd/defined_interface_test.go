@@ -143,6 +143,10 @@ func (vcd *TestVCD) Test_DefinedInterfaceBehavior(check *C) {
 	})
 	check.Assert(err, IsNil)
 	AddToCleanupListOpenApi(di.DefinedInterface.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeInterfaces+di.DefinedInterface.ID)
+	defer func() {
+		err := di.Delete()
+		check.Assert(err, IsNil)
+	}()
 
 	// Create a new Behavior payload with an Activity type.
 	behaviorPayload := types.Behavior{
@@ -155,7 +159,6 @@ func (vcd *TestVCD) Test_DefinedInterfaceBehavior(check *C) {
 	}
 	behavior, err := di.AddBehavior(behaviorPayload)
 	check.Assert(err, IsNil)
-	AddToCleanupListOpenApi(behavior.ID, check.TestName(), types.OpenApiPathVersion1_0_0+fmt.Sprintf(types.OpenApiEndpointRdeInterfaceBehaviors, di.DefinedInterface.ID)+behavior.ID)
 	check.Assert(behavior.Name, Equals, behaviorPayload.Name)
 	check.Assert(behavior.Description, Equals, behaviorPayload.Description)
 	check.Assert(behavior.Ref, Equals, fmt.Sprintf("urn:vcloud:behavior-interface:%s:%s:%s:%s", behaviorPayload.Name, di.DefinedInterface.Vendor, di.DefinedInterface.Nss, di.DefinedInterface.Version))
