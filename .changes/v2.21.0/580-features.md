@@ -1,4 +1,3 @@
-* Added method `Client.ExecuteJsonRequest` to run JSON API calls [GH-580]
 * Added method `VCDClient.QueryNsxtManagerByHref` to retrieve a NSX-T manager by its ID/HREF [GH-580]
 * Added method `VCDClient.CreateProviderVdc` to create a Provider VDC [GH-580]
 * Added method `VCDClient.ResourcePoolsFromIds` to convert list of IDs to resource pools [GH-580]

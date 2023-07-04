@@ -16,9 +16,9 @@ import (
 	"strings"
 )
 
-// ExecuteJsonRequest is a wrapper around regular API call operations, similar to client.ExecuteRequest, but with JSON payback
+// executeJsonRequest is a wrapper around regular API call operations, similar to client.ExecuteRequest, but with JSON payback
 // Returns a http.Response object, which, in case of success, has its body still unread
-func (client Client) ExecuteJsonRequest(href, httpMethod string, inputStructure any, errorMessage string) (*http.Response, error) {
+func (client Client) executeJsonRequest(href, httpMethod string, inputStructure any, errorMessage string) (*http.Response, error) {
 
 	text := bytes.Buffer{}
 	encoder := json.NewEncoder(&text)
