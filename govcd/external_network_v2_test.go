@@ -26,6 +26,9 @@ func (vcd *TestVCD) Test_CreateExternalNetworkV2NsxtSegment(check *C) {
 }
 
 func (vcd *TestVCD) testCreateExternalNetworkV2Nsxt(check *C, backingName, backingType string, useIpSpace bool, ownerOrgId string) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 	skipNoNsxtConfiguration(vcd, check)
