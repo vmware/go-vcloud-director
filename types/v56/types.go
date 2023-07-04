@@ -473,7 +473,6 @@ type AdminVdc struct {
 // Description: Represents a Provider VDC.
 // Since: 0.9
 type ProviderVdc struct {
-	//Xmlns        string `xml:"xmlns,attr"`
 	HREF         string `xml:"href,attr,omitempty" json:"href,omitempty"`
 	Type         string `xml:"type,attr,omitempty" json:"type,omitempty"`
 	ID           string `xml:"id,attr,omitempty" json:"id,omitempty"`
