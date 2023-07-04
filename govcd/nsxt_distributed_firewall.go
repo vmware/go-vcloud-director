@@ -109,6 +109,7 @@ func (firewall *DistributedFirewall) DeleteAllRules() error {
 	return firewall.VdcGroup.DeleteAllDistributedFirewallRules()
 }
 
+// GetDistributedFirewallRuleById retrieves single Distributed Firewall Rule by ID
 func (vdcGroup *VdcGroup) GetDistributedFirewallRuleById(id string) (*DistributedFirewallRule, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id must be specified")
@@ -141,6 +142,7 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleById(id string) (*Distribute
 	return returnObject, nil
 }
 
+// GetDistributedFirewallRuleByName retrieves single firewall rule by name
 func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*DistributedFirewallRule, error) {
 	if name == "" {
 		return nil, fmt.Errorf("name must be specified")
@@ -166,19 +168,31 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*Distri
 	return vdcGroup.GetDistributedFirewallRuleById(oneByName.ID)
 }
 
-// CreateDistributedFirewallRule is a convenience method that represents no real endpoint in the API
-// While the API has only a mechanism to create all rules in one API go, there is a need in some
-// cases to handle firewall rules one by one.
-// It works by:
-// 1. Getting all existing firewall rules
-// 2. Checking that
+// CreateDistributedFirewallRule is a wrapper around "vdcGroups/%s/dfwPolicies/%s/rules" endpoint
+// which handles all firewall rules at once. While there is no real endpoint to create single
+// firewall rule, it is a requirements for some cases (e.g. using in Terraform)
+// The code works by doing the following steps:
 //
-// Note. Multiple instances of this function cannot be run in parallel as it will cause corruption.
-// It is up to the consumer to handle locks
+// 1. Getting all Distributed Firewall Rules and storing them in `types.DistributedFirewallRulesRaw`
+// which holds a []json.RawMessage (text) instead of exact types. This will prevent altering
+// existing rules in any way (for example if a new field appears in schema in future VCD versions)
 //
-// 1. Retrieve all firewall rules in []json.RawMessage
-// 2. Convert this result into DistributedFirewallRules.Values so that it can be searched based on
-// fields (the order of slice remains the same as in []json.RawMessage, which is important)
+// 2. Converting these []json.RawMessage into a string and Unmarshalling it into exact type
+// `types.DistributedFirewallRules` that will allow checking ID field values (it is important to
+// note that the order and quantity of elements in both slices remains the same). It will be used
+// for finding and matching `optionalAboveRuleId`
+//
+// 3. Converting the give `rule` into json.RawMessage so that it is provided in the same format as other already retrieved rules
+//
+// 4. Creating a new structure of []json.RawMessage which puts the new rule into one of places:
+// 4.1. to the end of []json.RawMessage - bottom of the list
+// 4.2. if `optionalAboveRuleId` argument is specified - identifying the position and placing new
+// rule above it
+//
+// 5. Perform a PUT (update) call to the "vdcGroups/%s/dfwPolicies/%s/rules" endpoint
+//
+// Note. Running this function concurently will probably corrupt firewall rules as it uses an
+// endpoint that manage all rules ("vdcGroups/%s/dfwPolicies/%s/rules")
 func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId string, rule *types.DistributedFirewallRule) (*DistributedFirewall, *DistributedFirewallRule, error) {
 	client := vdcGroup.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
@@ -193,6 +207,7 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		return nil, nil, err
 	}
 
+	// 1.
 	// We're retrieving a []json.RawMessage so that the configuration is not altered at all
 	// (even if it has fields, that are missing in types.DistributedFirewallRules{}, which can
 	// happen as new versions of VCD are introduced)
@@ -202,7 +217,7 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		return nil, nil, fmt.Errorf("error retrieving Distributed Firewall rules in raw format: %s", err)
 	}
 
-	// Make a string out of
+	// 2.
 	var rawJsonBodies []string
 	for _, singleObject := range rawBodyStructure.Values {
 		rawJsonBodies = append(rawJsonBodies, string(singleObject))
@@ -220,6 +235,7 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		return nil, nil, fmt.Errorf("error decoding values into type types.DistributedFirewallRules{}: %s", err)
 	}
 
+	// 3.
 	//////// convert given firewall rule config parameter to raw JSON message so that it can be
 	//injected into original rules listed in []json.RawMessage at a selected position
 	ruleByteSlice, err := json.Marshal(rule)
@@ -230,26 +246,27 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 	newRuleJsonMessage := json.RawMessage(ruleString)
 
 	var dfwRulePayload []json.RawMessage
-
 	var newRulePosition int
 
 	// decide the position of new rule within a list of existing ones
 	switch {
-	case optionalAboveRuleId == "": // an optionalAboveRuleId - it means that the new firewall rule will go to the bottom of the list by default
+	// 4.1
+	case optionalAboveRuleId == "": // an optionalAboveRuleId - it means that the new firewall rule will be appended to the bottom of the list
 		rawBodyStructure.Values = append(rawBodyStructure.Values, newRuleJsonMessage)
 		dfwRulePayload = rawBodyStructure.Values
 		newRulePosition = len(dfwRulePayload) - 1 // -1 to match for slice index
 
 		// optionalAboveRuleId was given - need to search for a position of a rule with that ID so
 		// that its index within []json.RawMessage can be found
-	case optionalAboveRuleId != "":
+		// 4.2
+	case optionalAboveRuleId != "": // an optionalAboveRuleId is specified - new rule has to be placed above the specified rule
 		util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule 'optionalAboveRuleId=%s'. Searching within '%d' items", optionalAboveRuleId, len(dfwRules.Values))
 		// Search above rule ID in the list of responses
 		var aboveRuleSliceIndex *int
 		for index := range dfwRules.Values {
 			if dfwRules.Values[index].ID == optionalAboveRuleId {
-				// using function `addrOf` to get copy of `*index` value as taking a direct address
-				// of `&index` will shift before it is used in later code
+				// using function `addrOf` to get copy of `index` value as taking a direct address
+				// of `&index` will shift before it is used in later code due to how Go range works
 				aboveRuleSliceIndex = addrOf(index)
 
 				util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule found existing Firewall Rule with ID '%s' at position '%d'", optionalAboveRuleId, index)
@@ -290,25 +307,17 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		dfwRulePayload = newSlice
 	}
 
-	// Make the API call
-	// for _, singleObject := range rawBodyStructure.Values {
-	// 	rawJsonBodies = append(rawJsonBodies, string(singleObject))
-	// }
-	// rawJsonBodies contains a slice of all response objects and they must be formatted as a JSON slice (wrapped
-	// into `[]`, separated with semicolons) so that unmarshalling to specified `outType` works in one go
-	// allResponses = `[` + strings.Join(rawJsonBodies, ",") + `]`
-
 	returnObject := &DistributedFirewall{
 		DistributedFirewallRuleContainer: &types.DistributedFirewallRules{},
 		client:                           client,
 		VdcGroup:                         vdcGroup,
 	}
 
-	wrappedPayload := &types.DistributedFirewallRulesRaw{
+	wrappedRawMessagePayload := &types.DistributedFirewallRulesRaw{
 		Values: dfwRulePayload,
 	}
 
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, wrappedPayload, returnObject.DistributedFirewallRuleContainer, nil)
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, wrappedRawMessagePayload, returnObject.DistributedFirewallRuleContainer, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error updating Distributed Firewall rules: %s", err)
 	}
@@ -319,7 +328,6 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		client:   client,
 		VdcGroup: vdcGroup,
 	}
-	// singleReturnedRule := returnObjectSingleRule.DistributedFirewallRuleContainer.Values[newRulePosition]
 
 	return returnObject, returnObjectSingleRule, nil
 }

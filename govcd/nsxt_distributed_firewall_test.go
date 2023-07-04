@@ -331,15 +331,12 @@ func test_NsxtDistributedFirewallRule(vcd *TestVCD, check *C, vdcGroupId string,
 		check.Assert(err, IsNil)
 		err = dfw.DeleteAllRules()
 		check.Assert(err, IsNil)
-
 		_, err = vdcGroup.DisableDefaultPolicy()
 		check.Assert(err, IsNil)
-
-		// Cleanup IP Set and Security Group
-		err2 := ipSet.Delete()
-		err3 := secGroup.Delete()
-		check.Assert(err2, IsNil)
-		check.Assert(err3, IsNil)
+		err = ipSet.Delete()
+		check.Assert(err, IsNil)
+		err = secGroup.Delete()
+		check.Assert(err, IsNil)
 	}()
 
 	randomizedFwRuleSubSet := randomizedFwRuleDefs[0:5] // taking only first 10 rules to limit time of testing
@@ -387,7 +384,7 @@ func testDistributedFirewallRuleSequence(vcd *TestVCD, check *C, randomizedFwRul
 	check.Assert(err, IsNil)
 	check.Assert(len(allRules.DistributedFirewallRuleContainer.Values), Equals, len(randomizedFwRuleSubSet))
 
-	// Check that all created IDs are in the final output (none of the firewall rules were recreated)
+	// check that rule order is exactly as expected (either reverse of randomizedFwRuleSubSet or exactly the same based on reverseOrder parameter)
 	if reverseOrder {
 		for ruleIndex, rule := range allRules.DistributedFirewallRuleContainer.Values {
 			reverseRuleIndex := len(randomizedFwRuleSubSet) - ruleIndex - 1
@@ -401,7 +398,7 @@ func testDistributedFirewallRuleSequence(vcd *TestVCD, check *C, randomizedFwRul
 		}
 	}
 
-	// Check if there are any keys that have false
+	// Check that all created IDs are in the final output (none of the firewall rules were recreated)
 	for _, value := range createdIdsFound {
 		check.Assert(value, Equals, true)
 	}
