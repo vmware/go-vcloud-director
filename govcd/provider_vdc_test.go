@@ -174,6 +174,10 @@ func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
 }
 
 func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
+	// Note: you need to have at least one free resource pool to test provider VDC creation,
+	// and at least two of them to test update. They should be indicated in
+	// vcd.config.Vsphere.ResourcePoolForVcd1 and vcd.config.Vsphere.ResourcePoolForVcd2
+
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
