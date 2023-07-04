@@ -657,22 +657,48 @@ func (rde *DefinedEntity) Delete() error {
 }
 
 // InvokeBehavior calls a Behavior identified by the given ID with the given execution parameters.
-func (rde *DefinedEntity) InvokeBehavior(behaviorId string, invocation types.BehaviorInvocation) error {
+// Returns the invocation result as a raw string.
+func (rde *DefinedEntity) InvokeBehavior(behaviorId string, invocation types.BehaviorInvocation) (string, error) {
 	client := rde.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesBehaviorsInvocations
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rde.DefinedEntity.ID, behaviorId))
 	if err != nil {
+		return "", err
+	}
+
+	task, err := client.OpenApiPostItemAsync(apiVersion, urlRef, nil, invocation)
+	if err != nil {
+		return "", err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return "", err
+	}
+
+	if task.Task.Result == nil {
+		return "", fmt.Errorf("the Task '%s' returned an empty Result content", task.Task.ID)
+	}
+
+	return task.Task.Result.ResultContent.Text, nil
+}
+
+// InvokeBehaviorAndMarshal calls a Behavior identified by the given ID with the given execution parameters.
+// Returns the invocation result marshaled with the input object.
+func (rde *DefinedEntity) InvokeBehaviorAndMarshal(behaviorId string, invocation types.BehaviorInvocation, output interface{}) error {
+	result, err := rde.InvokeBehavior(behaviorId, invocation)
+	if err != nil {
 		return err
 	}
 
-	err = client.OpenApiPostItem(apiVersion, urlRef, nil, invocation, nil, nil)
+	err = json.Unmarshal([]byte(result), &output)
 	if err != nil {
-		return err
+		return fmt.Errorf("error marshaling the invocation result '%s': %s", result, err)
 	}
 
 	return nil

@@ -6,4 +6,4 @@
   `DefinedEntityType.DeleteBehaviorOverride` [GH-584]
 * Added RDE Defined Entity Type Behavior Access Controls support with methods `DefinedEntityType.GetAllBehaviorsAccessControls` and 
   `DefinedEntityType.SetBehaviorAccessControls` [GH-584]
-* Added method to invoke Behaviors on Defined Entities `DefinedEntity.InvokeBehavior` [GH-584]
+* Added method to invoke Behaviors on Defined Entities `DefinedEntity.InvokeBehavior` and `DefinedEntity.InvokeBehaviorAndMarshal` [GH-584]
