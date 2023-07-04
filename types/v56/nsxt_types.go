@@ -1,7 +1,5 @@
 package types
 
-import "encoding/json"
-
 // OpenAPIEdgeGateway structure supports marshalling both - NSX-V and NSX-T edge gateways as returned by OpenAPI
 // endpoint (cloudapi/1.0.0edgeGateways/), but the endpoint only allows users to create NSX-T edge gateways.
 type OpenAPIEdgeGateway struct {
@@ -1381,10 +1379,6 @@ type DistributedFirewallRule struct {
 
 type DistributedFirewallRules struct {
 	Values []*DistributedFirewallRule `json:"values"`
-}
-
-type DistributedFirewallRulesRaw struct {
-	Values []json.RawMessage `json:"values"`
 }
 
 type DistributedFirewallRuleVersion struct {

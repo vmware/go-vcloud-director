@@ -173,16 +173,17 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*Distri
 // create single firewall rule, it is a requirements for some cases (e.g. using in Terraform)
 // The code works by doing the following steps:
 //
-// 1. Getting all Distributed Firewall Rules and storing them in `types.DistributedFirewallRulesRaw`
-// which holds a []json.RawMessage (text) instead of exact types. This will prevent altering
-// existing rules in any way (for example if a new field appears in schema in future VCD versions)
+// 1. Getting all Distributed Firewall Rules and storing them in private intermediate
+// type`distributedFirewallRulesRaw` which holds a []json.RawMessage (text) instead of exact types.
+// This will prevent altering existing rules in any way (for example if a new field appears in
+// schema in future VCD versions)
 //
 
-// 3. Converting the give `rule` into json.RawMessage so that it is provided in the same format as other already retrieved rules
+// 2. Converting the give `rule` into json.RawMessage so that it is provided in the same format as other already retrieved rules
 //
-// 4. Creating a new structure of []json.RawMessage which puts the new rule into one of places:
-// 4.1. to the end of []json.RawMessage - bottom of the list
-// 4.2. if `optionalAboveRuleId` argument is specified - identifying the position and placing new
+// 3. Creating a new structure of []json.RawMessage which puts the new rule into one of places:
+// 3.1. to the end of []json.RawMessage - bottom of the list
+// 3.2. if `optionalAboveRuleId` argument is specified - identifying the position and placing new
 // rule above it
 // 2. Converting these []json.RawMessage into a string and Unmarshalling it into exact type
 // `types.DistributedFirewallRules` that will allow checking ID field values (it is important to
@@ -207,22 +208,18 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		return nil, nil, err
 	}
 
-	// 1. Retrieving a []json.RawMessage so that the configuration is not altered at all (even if it
-	// has fields, that are missing in types.DistributedFirewallRules{}, which can happen as new
-	// versions of VCD are introduced)
-	rawBodyStructure := &types.DistributedFirewallRulesRaw{}
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, rawBodyStructure, nil)
+	// 1.
+	rawJsonExistingFirewallRules := &distributedFirewallRulesRaw{}
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, rawJsonExistingFirewallRules, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error retrieving Distributed Firewall rules in raw format: %s", err)
 	}
 
-	// 3. Convert new given firewall rule config parameter to raw JSON message so that it can be
-	//injected into original rules listed in []json.RawMessage at a selected position
-	newRuleByteSlice, err := json.Marshal(rule)
+	// 2.
+	newRuleRawJson, err := firewallRuleToRawJson(rule)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error marshalling 'rule': %s", err)
+		return nil, nil, err
 	}
-	newRuleJsonMessage := json.RawMessage(string(newRuleByteSlice))
 
 	// dfwRuleUpdatePayload will contain complete request for Distributed Firewall Rule Update
 	// operation. Its content will be decided based on whether 'optionalAboveRuleId' parameter was
@@ -232,72 +229,43 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 	var newRuleSlicePosition int
 
 	switch {
-	// 4.1
+	// 3.1
 	case optionalAboveRuleId == "": // an optionalAboveRuleId is empty - it means that the new firewall rule will be appended to the bottom of the list
-		rawBodyStructure.Values = append(rawBodyStructure.Values, newRuleJsonMessage)
-		dfwRuleUpdatePayload = rawBodyStructure.Values
+		rawJsonExistingFirewallRules.Values = append(rawJsonExistingFirewallRules.Values, newRuleRawJson)
+		dfwRuleUpdatePayload = rawJsonExistingFirewallRules.Values
 		newRuleSlicePosition = len(dfwRuleUpdatePayload) - 1 // -1 to match for slice index
 
 		// optionalAboveRuleId was given - need to search for a position of a rule with that ID so
 		// that its index within []json.RawMessage can be found
-		// 4.2
+		// 3.2
 	case optionalAboveRuleId != "": // an optionalAboveRuleId is specified - new rule has to be placed above the specified rule
-		// 2. Convert '[]json.Rawmessage' to 'types.DistributedFirewallRules'
-		dfwRules, err := convertRawMessageToFirewallRules(rawBodyStructure)
+		// 3.2.1 Convert '[]json.Rawmessage' to 'types.DistributedFirewallRules'
+		dfwRules, err := convertRawJsonToFirewallRules(rawJsonExistingFirewallRules)
+		if err != nil {
+			return nil, nil, err
+		}
+		// 3.2.2 Find index for specified 'optionalAboveRuleId' rule
+		newFwRuleSliceIndex, err := getFirewallRuleIndexById(dfwRules, optionalAboveRuleId)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule 'optionalAboveRuleId=%s'. Searching within '%d' items",
-			optionalAboveRuleId, len(dfwRules.Values))
-		var aboveRuleSliceIndex *int
-		for index := range dfwRules.Values {
-			if dfwRules.Values[index].ID == optionalAboveRuleId {
-				// using function `addrOf` to get copy of `index` value as taking a direct address
-				// of `&index` will shift before it is used in later code due to how Go range works
-				aboveRuleSliceIndex = addrOf(index)
-				util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule found existing Firewall Rule with ID '%s' at position '%d'",
-					optionalAboveRuleId, index)
-				continue
-			}
+		// 3.2.3 Compose new update (PUT) payload with all firewall rules and inject
+		// 'newRuleRawJson' into position 'newFwRuleSliceIndex' and shift other rules to the bottom
+		dfwRuleUpdatePayload, err = composeUpdatePayloadWithNewRulePosition(newFwRuleSliceIndex, rawJsonExistingFirewallRules, newRuleRawJson)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error creating update payload with optionalAboveRuleId '%s' :%s", optionalAboveRuleId, err)
 		}
-
-		if aboveRuleSliceIndex == nil {
-			return nil, nil, fmt.Errorf("specified above rule ID '%s' does not exist in current Distributed Firewall Rule list", optionalAboveRuleId)
-		}
-
-		newRuleSlicePosition = *aboveRuleSliceIndex
-		util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule Creating new structure with above rule ID '%s' in new position '%d' above rule ID '%s'",
-			optionalAboveRuleId, newRuleSlicePosition, optionalAboveRuleId)
-
-		// Create a new slice with 1 additional capacity to add new firewall rule
-		newSlice := make([]json.RawMessage, len(rawBodyStructure.Values)+1)
-		util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule new container slice of size '%d' with previous element count '%d'", len(newSlice), len(rawBodyStructure.Values))
-		// if newRulePosition is not 0 (at the top), then previous rules need to be copied to the beginning of new slice
-		if newRuleSlicePosition != 0 {
-			util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule copying first '%d' slice [:%d]", newRuleSlicePosition, newRuleSlicePosition)
-			copy(newSlice[:newRuleSlicePosition], rawBodyStructure.Values[:newRuleSlicePosition])
-		}
-
-		// Insert the new element at the specified position
-		util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule inserting new element into position %d", newRuleSlicePosition)
-		newSlice[newRuleSlicePosition] = newRuleJsonMessage
-
-		// Copy the remaining elements after new rule
-		copy(newSlice[newRuleSlicePosition+1:], rawBodyStructure.Values[newRuleSlicePosition:])
-		util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule copying remaining items '%d'", newRuleSlicePosition)
-
-		dfwRuleUpdatePayload = newSlice
+	}
+	// Request payload with new configuration using 'dfwRuleUpdatePayload'
+	updateRequestPayload := &distributedFirewallRulesRaw{
+		Values: dfwRuleUpdatePayload,
 	}
 
 	returnAllFirewallRules := &DistributedFirewall{
 		DistributedFirewallRuleContainer: &types.DistributedFirewallRules{},
 		client:                           client,
 		VdcGroup:                         vdcGroup,
-	}
-
-	updateRequestPayload := &types.DistributedFirewallRulesRaw{
-		Values: dfwRuleUpdatePayload,
 	}
 
 	err = client.OpenApiPutItem(apiVersion, urlRef, nil, updateRequestPayload, returnAllFirewallRules.DistributedFirewallRuleContainer, nil)
@@ -315,6 +283,7 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 	return returnAllFirewallRules, returnObjectSingleRule, nil
 }
 
+// Update a single Distributed Firewall Rule
 func (dfwRule *DistributedFirewallRule) Update(rule *types.DistributedFirewallRule) (*DistributedFirewallRule, error) {
 	if dfwRule.Rule.ID == "" {
 		return nil, fmt.Errorf("cannot update NSX-T Distribute Firewall Rule without ID")
@@ -348,6 +317,7 @@ func (dfwRule *DistributedFirewallRule) Update(rule *types.DistributedFirewallRu
 	return returnObjectSingleRule, nil
 }
 
+// Delete a single Distributed Firewall Rule
 func (dfwRule *DistributedFirewallRule) Delete() error {
 	if dfwRule.Rule.ID == "" {
 		return fmt.Errorf("cannot delete NSX-T Distribute Firewall Rule without ID")
@@ -374,10 +344,45 @@ func (dfwRule *DistributedFirewallRule) Delete() error {
 	return nil
 }
 
-// convertRawMessageToFirewallRules converts []json.RawMessage to
+// getFirewallRuleIndexById searches for 'firewallRuleId' going through a list of available firewall
+// rules and returns its index or error if the firewall rule is not found
+func getFirewallRuleIndexById(dfwRules *types.DistributedFirewallRules, firewallRuleId string) (int, error) {
+	util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule 'optionalAboveRuleId=%s'. Searching within '%d' items",
+		firewallRuleId, len(dfwRules.Values))
+	var aboveRuleSliceIndex *int
+	for index := range dfwRules.Values {
+		if dfwRules.Values[index].ID == firewallRuleId {
+			// using function `addrOf` to get copy of `index` value as taking a direct address
+			// of `&index` will shift before it is used in later code due to how Go range works
+			aboveRuleSliceIndex = addrOf(index)
+			util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule found existing Firewall Rule with ID '%s' at position '%d'",
+				firewallRuleId, index)
+			continue
+		}
+	}
+
+	if aboveRuleSliceIndex == nil {
+		return 0, fmt.Errorf("specified above rule ID '%s' does not exist in current Distributed Firewall Rule list", firewallRuleId)
+	}
+
+	return *aboveRuleSliceIndex, nil
+}
+
+// firewallRuleToRawJson Marshal a single `types.DistributedFirewallRule` into `json.RawMessage`
+// representation
+func firewallRuleToRawJson(rule *types.DistributedFirewallRule) (json.RawMessage, error) {
+	ruleByteSlice, err := json.Marshal(rule)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling 'rule': %s", err)
+	}
+	ruleJsonMessage := json.RawMessage(string(ruleByteSlice))
+	return ruleJsonMessage, nil
+}
+
+// convertRawJsonToFirewallRules converts []json.RawMessage to
 // types.DistributedFirewallRules.Values so that entries can be filtered by ID or other fields.
 // Note. Slice order remains the same
-func convertRawMessageToFirewallRules(rawBodyStructure *types.DistributedFirewallRulesRaw) (*types.DistributedFirewallRules, error) {
+func convertRawJsonToFirewallRules(rawBodyStructure *distributedFirewallRulesRaw) (*types.DistributedFirewallRules, error) {
 	var rawJsonBodies []string
 	for _, singleObject := range rawBodyStructure.Values {
 		rawJsonBodies = append(rawJsonBodies, string(singleObject))
@@ -396,4 +401,35 @@ func convertRawMessageToFirewallRules(rawBodyStructure *types.DistributedFirewal
 	}
 
 	return dfwRules, nil
+}
+
+// composeUpdatePayloadWithNewRulePosition takes a slice of existing firewall rules and injects new
+// firewall rule at a given position `newRuleSlicePosition`
+func composeUpdatePayloadWithNewRulePosition(newRuleSlicePosition int, rawBodyStructure *distributedFirewallRulesRaw, newRuleJsonMessage json.RawMessage) ([]json.RawMessage, error) {
+	// Create a new slice with 1 additional capacity to add new firewall rule
+	newSlice := make([]json.RawMessage, len(rawBodyStructure.Values)+1)
+	util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule new container slice of size '%d' with previous element count '%d'", len(newSlice), len(rawBodyStructure.Values))
+	// if newRulePosition is not 0 (at the top), then previous rules need to be copied to the beginning of new slice
+	if newRuleSlicePosition != 0 {
+		util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule copying first '%d' slice [:%d]", newRuleSlicePosition, newRuleSlicePosition)
+		copy(newSlice[:newRuleSlicePosition], rawBodyStructure.Values[:newRuleSlicePosition])
+	}
+
+	// Insert the new element at the specified position
+	util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule inserting new element into position %d", newRuleSlicePosition)
+	newSlice[newRuleSlicePosition] = newRuleJsonMessage
+
+	// Copy the remaining elements after new rule
+	copy(newSlice[newRuleSlicePosition+1:], rawBodyStructure.Values[newRuleSlicePosition:])
+	util.Logger.Printf("[DEBUG] CreateDistributedFirewallRule copying remaining items '%d'", newRuleSlicePosition)
+
+	return newSlice, nil
+}
+
+// distributedFirewallRulesRaw is a copy of `types.DistributedFirewallRules` so that values can be
+// unmarshalled into json.RawMessage (as strings) instead of exact types `DistributedFirewallRule`
+// It has Public field Values so that marshalling can work, but is not exported itself as it is only
+// an intermediate type
+type distributedFirewallRulesRaw struct {
+	Values []json.RawMessage `json:"values"`
 }
