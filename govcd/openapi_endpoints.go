@@ -98,6 +98,15 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "35.0",
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
+
+	// Extensions API endpoints. These are not versioned
+	types.OpenApiEndpointExtensionsUi:                    "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiPlugin:              "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenants:             "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsPublishAll:   "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsPublish:      "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsUnpublishAll: "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsUnpublish:    "35.0", // VCD 10.2+
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions

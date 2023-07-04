@@ -410,6 +410,14 @@ const (
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 	OpenApiEndpointRdeEntitiesBehaviorsInvocations    = "entities/%s/behaviors/%s/invocations"
 
+	OpenApiEndpointExtensionsUi                    = "extensions/ui/"
+	OpenApiEndpointExtensionsUiPlugin              = "extensions/ui/%s/plugin"
+	OpenApiEndpointExtensionsUiTenants             = "extensions/ui/%s/tenants"
+	OpenApiEndpointExtensionsUiTenantsPublishAll   = "extensions/ui/%s/tenants/publishAll"
+	OpenApiEndpointExtensionsUiTenantsPublish      = "extensions/ui/%s/tenants/publish"
+	OpenApiEndpointExtensionsUiTenantsUnpublishAll = "extensions/ui/%s/tenants/unpublishAll"
+	OpenApiEndpointExtensionsUiTenantsUnpublish    = "extensions/ui/%s/tenants/unpublish"
+
 	OpenApiEndpointIpSpaces         = "ipSpaces/"
 	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"
 
