@@ -206,7 +206,7 @@ func (vcdClient *VCDClient) CreateProviderVdc(params *types.ProviderVdcCreation)
 	pvdcCreateHREF := vcdClient.Client.VCDHREF
 	pvdcCreateHREF.Path += "/admin/extension/providervdcsparams"
 
-	resp, err := vcdClient.Client.ExecuteJsonRequest(pvdcCreateHREF.String(), http.MethodPost, params, "error creating provider VDC: %s")
+	resp, err := vcdClient.Client.executeJsonRequest(pvdcCreateHREF.String(), http.MethodPost, params, "error creating provider VDC: %s")
 	if err != nil {
 		return nil, err
 	}
@@ -321,27 +321,14 @@ func (pvdc *ProviderVdcExtended) Delete() (Task, error) {
 // The other admitted changes need to go through separate API calls
 func (pvdc *ProviderVdcExtended) Update() error {
 
-	_, err := pvdc.client.ExecuteJsonRequest(pvdc.VMWProviderVdc.HREF, http.MethodPut, pvdc.VMWProviderVdc,
+	_, err := pvdc.client.executeJsonRequest(pvdc.VMWProviderVdc.HREF, http.MethodPut, pvdc.VMWProviderVdc,
 		"error updating provider VDC: %s")
 
 	if err != nil {
 		return err
 	}
 
-	timeout := 30 * time.Second
-	start := time.Now()
-	for ResourceInProgress(pvdc.VMWProviderVdc.Tasks) {
-		err = pvdc.Refresh()
-		if err != nil {
-			return err
-		}
-		time.Sleep(200 * time.Millisecond)
-		if time.Since(start) > timeout {
-			return fmt.Errorf("error updating provider VDC within %s", timeout)
-		}
-	}
-
-	return nil
+	return pvdc.checkProgress("updating")
 }
 
 // Rename changes name and/or description from a provider VDC
@@ -385,7 +372,7 @@ func (pvdc *ProviderVdcExtended) AddResourcePools(resourcePools []*ResourcePool)
 
 	input := types.AddResourcePool{VimObjectRef: items}
 
-	resp, err := pvdc.client.ExecuteJsonRequest(href, http.MethodPost, input, "error updating provider VDC resource pools: %s")
+	resp, err := pvdc.client.executeJsonRequest(href, http.MethodPost, input, "error updating provider VDC resource pools: %s")
 	if err != nil {
 		return err
 	}
@@ -452,7 +439,7 @@ func (pvdc *ProviderVdcExtended) DeleteResourcePools(resourcePools []*ResourcePo
 
 	input := types.DeleteResourcePool{ResourcePoolRefs: items}
 
-	resp, err := pvdc.client.ExecuteJsonRequest(href, http.MethodPost, input, "error removing resource pools from provider VDC: %s")
+	resp, err := pvdc.client.executeJsonRequest(href, http.MethodPost, input, "error removing resource pools from provider VDC: %s")
 	if err != nil {
 		return err
 	}
@@ -500,30 +487,39 @@ func (pvdc *ProviderVdcExtended) AddStorageProfiles(storageProfileNames []string
 
 	addStorageProfiles := &types.AddStorageProfiles{AddStorageProfile: storageProfileNames}
 
-	_, err = pvdc.client.ExecuteJsonRequest(href, http.MethodPost, addStorageProfiles,
+	_, err = pvdc.client.executeJsonRequest(href, http.MethodPost, addStorageProfiles,
 		"error adding storage profiles to provider VDC: %s")
 
 	if err != nil {
 		return err
 	}
 
-	err = pvdc.Refresh()
+	return pvdc.checkProgress("adding storage profiles")
+}
+
+func (pvdc *ProviderVdcExtended) checkProgress(label string) error {
+	// Let's keep this timeout as a precaution against an infinite wait
+	timeout := 2 * time.Minute
+	start := time.Now()
+	err := pvdc.Refresh()
 	if err != nil {
 		return err
 	}
 
-	timeout := 30 * time.Second
-	start := time.Now()
+	var elapsed time.Duration
 	for ResourceInProgress(pvdc.VMWProviderVdc.Tasks) {
 		err = pvdc.Refresh()
 		if err != nil {
-			return err
+			return fmt.Errorf("error %s: %s", label, err)
 		}
 		time.Sleep(200 * time.Millisecond)
-		if time.Since(start) > timeout {
-			return fmt.Errorf("error completing AddStorageProfiles operation within %s", timeout)
+		elapsed = time.Since(start)
+		if elapsed > timeout {
+			return fmt.Errorf("error %s within %s", label, timeout)
 		}
 	}
+	util.Logger.Printf("[ProviderVdcExtended.checkProgress] called by %s - running %s - elapsed: %s\n",
+		util.CallFuncName(), label, elapsed)
 	return nil
 }
 
@@ -531,7 +527,7 @@ func (pvdc *ProviderVdcExtended) AddStorageProfiles(storageProfileNames []string
 // Calling this function is a prerequisite to removing a storage profile from a provider VDC
 func disableStorageProfile(client *Client, storageProfileHref string) error {
 	disablePayload := &types.EnableStorageProfile{Enabled: false}
-	_, err := client.ExecuteJsonRequest(storageProfileHref, http.MethodPut, disablePayload,
+	_, err := client.executeJsonRequest(storageProfileHref, http.MethodPut, disablePayload,
 		"error disabling storage profile in provider VDC: %s")
 
 	return err
@@ -572,7 +568,7 @@ func (pvdc *ProviderVdcExtended) DeleteStorageProfiles(storageProfiles []string)
 	}
 	input := &types.RemoveStorageProfile{RemoveStorageProfile: toBeDeleted}
 
-	resp, err := pvdc.client.ExecuteJsonRequest(href, http.MethodPost, input, "error removing storage profiles from provider VDC: %s")
+	resp, err := pvdc.client.executeJsonRequest(href, http.MethodPost, input, "error removing storage profiles from provider VDC: %s")
 	if err != nil {
 		return err
 	}
