@@ -173,6 +173,16 @@ func (vcd *TestVCD) Test_GetProviderVdcConvertFromExtendedToNormal(check *C) {
 	check.Assert(providerVdc.ProviderVdc.Link, NotNil)
 }
 
+type providerVdcCreationElements struct {
+	label            string
+	name             string
+	description      string
+	resourcePoolName string
+	params           *types.ProviderVdcCreation
+	vcenter          *VCenter
+	config           TestConfig
+}
+
 func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 	// Note: you need to have at least one free resource pool to test provider VDC creation,
 	// and at least two of them to test update. They should be indicated in
@@ -246,12 +256,12 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 			},
 		},
 		StorageProfile: []string{storageProfile.Name},
-		NsxTManagerReference: types.Reference{
+		NsxTManagerReference: &types.Reference{
 			HREF: nsxtManagers[0].HREF,
 			ID:   extractUuid(nsxtManagers[0].HREF),
 			Name: nsxtManagers[0].Name,
 		},
-		NetworkPool: types.Reference{
+		NetworkPool: &types.Reference{
 			HREF: networkPoolHref,
 			Name: networkPool.NetworkPool.Name,
 			ID:   extractUuid(networkPool.NetworkPool.Id),
@@ -259,15 +269,81 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 		},
 		AutoCreateNetworkPool: false,
 	}
+	providerVdcNoNetworkPoolCreation := types.ProviderVdcCreation{
+		Name:                            providerVdcName,
+		Description:                     providerVdcDescription,
+		HighestSupportedHardwareVersion: hwVersion,
+		IsEnabled:                       true,
+		VimServer: []*types.Reference{
+			{
+				HREF: vcenterUrl,
+				ID:   extractUuid(vcenter.VSphereVcenter.VcId),
+				Name: vcenter.VSphereVcenter.Name,
+			},
+		},
+		ResourcePoolRefs: &types.VimObjectRefs{
+			VimObjectRef: []*types.VimObjectRef{
+				{
+					VimServerRef: &types.Reference{
+						HREF: vcenterUrl,
+						ID:   extractUuid(vcenter.VSphereVcenter.VcId),
+						Name: vcenter.VSphereVcenter.Name,
+					},
+					MoRef:         resourcePool.ResourcePool.Moref,
+					VimObjectType: "RESOURCE_POOL",
+				},
+			},
+		},
+		StorageProfile:        []string{storageProfile.Name},
+		AutoCreateNetworkPool: false,
+	}
+	testProviderVdcCreation(vcd.client, check, providerVdcCreationElements{
+		label:            "ProviderVDC with network pool",
+		name:             providerVdcName,
+		description:      providerVdcDescription,
+		resourcePoolName: resourcePool.ResourcePool.Name,
+		params:           &providerVdcCreation,
+		vcenter:          vcenter,
+		config:           vcd.config,
+	})
+	testProviderVdcCreation(vcd.client, check, providerVdcCreationElements{
+		label:            "ProviderVDC without network pool",
+		name:             providerVdcName,
+		description:      providerVdcDescription,
+		resourcePoolName: resourcePool.ResourcePool.Name,
+		params:           &providerVdcNoNetworkPoolCreation,
+		vcenter:          vcenter,
+		config:           vcd.config,
+	})
+	providerVdcNoNetworkPoolCreation.AutoCreateNetworkPool = true
+	testProviderVdcCreation(vcd.client, check, providerVdcCreationElements{
+		label:            "ProviderVDC with automatic network pool",
+		name:             providerVdcName,
+		description:      providerVdcDescription,
+		resourcePoolName: resourcePool.ResourcePool.Name,
+		params:           &providerVdcNoNetworkPoolCreation,
+		vcenter:          vcenter,
+		config:           vcd.config,
+	})
+}
+
+func testProviderVdcCreation(client *VCDClient, check *C, creationElements providerVdcCreationElements) {
+
+	fmt.Printf("*** %s\n", creationElements.label)
+	providerVdcName := creationElements.name
+	providerVdcDescription := creationElements.description
+	storageProfileName := creationElements.params.StorageProfile[0]
+	resourcePoolName := creationElements.resourcePoolName
+
 	printVerbose("  creating provider VDC '%s' using resource pool '%s' and storage profile '%s'\n",
-		providerVdcName, resourcePool.ResourcePool.Name, storageProfile.Name)
-	providerVdcJson, err := vcd.client.CreateProviderVdc(&providerVdcCreation)
+		providerVdcName, resourcePoolName, storageProfileName)
+	providerVdcJson, err := client.CreateProviderVdc(creationElements.params)
 	check.Assert(err, IsNil)
 	check.Assert(providerVdcJson, NotNil)
 	check.Assert(providerVdcJson.VMWProviderVdc.Name, Equals, providerVdcName)
 
 	AddToCleanupList(providerVdcName, "provider_vdc", "", check.TestName())
-	retrievedPvdc, err := vcd.client.GetProviderVdcExtendedByName(providerVdcName)
+	retrievedPvdc, err := client.GetProviderVdcExtendedByName(providerVdcName)
 	check.Assert(err, IsNil)
 
 	err = retrievedPvdc.Disable()
@@ -294,10 +370,10 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 	check.Assert(retrievedPvdc.VMWProviderVdc.Name, Equals, providerVdcName)
 	check.Assert(retrievedPvdc.VMWProviderVdc.Description, Equals, providerVdcDescription)
 
-	secondResourcePoolName := vcd.config.Vsphere.ResourcePoolForVcd2
+	secondResourcePoolName := creationElements.config.Vsphere.ResourcePoolForVcd2
 	if secondResourcePoolName != "" {
 		printVerbose("  adding resource pool '%s' to provider VDC\n", secondResourcePoolName)
-		secondResourcePool, err := vcenter.GetResourcePoolByName(secondResourcePoolName)
+		secondResourcePool, err := creationElements.vcenter.GetResourcePoolByName(secondResourcePoolName)
 		check.Assert(err, IsNil)
 		check.Assert(secondResourcePool, NotNil)
 		err = retrievedPvdc.AddResourcePools([]*ResourcePool{secondResourcePool})
@@ -314,7 +390,7 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 		check.Assert(len(retrievedPvdc.VMWProviderVdc.ResourcePoolRefs.VimObjectRef), Equals, 1)
 	}
 
-	secondStorageProfile := vcd.config.VCD.NsxtProviderVdc.StorageProfile2
+	secondStorageProfile := creationElements.config.VCD.NsxtProviderVdc.StorageProfile2
 	if secondStorageProfile != "" {
 		printVerbose("  adding storage profile '%s' to provider VDC\n", secondStorageProfile)
 		// Adds a storage profile

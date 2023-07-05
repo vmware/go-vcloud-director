@@ -3288,8 +3288,8 @@ type ProviderVdcCreation struct {
 	IsEnabled                       bool           `json:"isEnabled"`
 	VimServer                       []*Reference   `json:"vimServer"`
 	StorageProfile                  []string       `json:"storageProfile"`
-	NsxTManagerReference            Reference      `json:"nsxTManagerReference"`
-	NetworkPool                     Reference      `json:"networkPool"`
+	NsxTManagerReference            *Reference     `json:"nsxTManagerReference"`
+	NetworkPool                     *Reference     `json:"networkPool"`
 	AutoCreateNetworkPool           bool           `json:"autoCreateNetworkPool"`
 }
 
