@@ -287,6 +287,9 @@ func dumpDistributedFirewallRulesToScreen(rules []*types.DistributedFirewallRule
 // Test_NsxtDistributedFirewallRule tests the capability of managing FIrewall Rules one by one using
 // `DistributedFirewallRule` type.
 func (vcd *TestVCD) Test_NsxtDistributedFirewallRule(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
 
