@@ -170,7 +170,7 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*Distri
 }
 
 // CreateDistributedFirewallRule is a wrapper around "vdcGroups/%s/dfwPolicies/%s/rules" endpoint
-// which handles all distributed firewall (dfw) rules at once. While there is no real endpoint to
+// which handles all distributed firewall (DFW) rules at once. While there is no real endpoint to
 // create single firewall rule, it is a requirements for some cases (e.g. using in Terraform)
 // The code works by doing the following steps:
 //
@@ -179,7 +179,7 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*Distri
 // This will prevent altering existing rules in any way (for example if a new field appears in
 // schema in future VCD versions)
 //
-// 2. Converting the give `rule` into json.RawMessage so that it is provided in the same format as
+// 2. Converting the given `rule` into json.RawMessage so that it is provided in the same format as
 // other already retrieved rules
 //
 // 3. Creating a new structure of []json.RawMessage which puts the new rule into one of places:
