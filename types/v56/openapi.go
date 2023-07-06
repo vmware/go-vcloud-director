@@ -437,7 +437,7 @@ type DefinedInterface struct {
 	IsReadOnly bool   `json:"readonly,omitempty"` // True if the entity type cannot be modified
 }
 
-// Behavior defines a interface for a defined entity. The combination of nss+version+vendor should be unique
+// Behavior defines a concept similar to a "procedure" that lives inside Defined Interfaces or Defined Entity Types as overrides.
 type Behavior struct {
 	ID          string                 `json:"id,omitempty"`          // The Behavior ID is generated and is an output-only property
 	Description string                 `json:"description,omitempty"` // A description specifying the contract of the Behavior
