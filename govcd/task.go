@@ -473,7 +473,7 @@ func buildFilterTextWithLogicalOr(filter map[string]string) string {
 // IP Space Uplinks). Updating such an object sometimes results in a separate task for Route
 // Advertisement being spun up (name="ipSpaceUplinkRouteAdvertisementSync"). When such
 // task is running - other operations may fail so it is best to wait for completion of such task
-// before trigerring any other jobs.
+// before triggerring any other jobs.
 func (client *Client) WaitForRunningTasksByName(name string) error {
 	if name == "" {
 		return fmt.Errorf("name must be set")

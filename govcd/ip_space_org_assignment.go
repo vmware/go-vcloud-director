@@ -15,7 +15,7 @@ import (
 // default quotas which are being set in IP Space itself.
 // The behavior of IpSpaceOrgAssignment is specific - whenever an NSX-T Edge Gateway backed by
 // Provider gateway using IP Spaces is being created - Org Assignment is created implicitly. One can
-// look that assignment by IP Space and Org to update `types.IpSpaceOrgAssignment.CustomQuotas`
+// look up that assignment by IP Space and Org to update `types.IpSpaceOrgAssignment.CustomQuotas`
 // field
 type IpSpaceOrgAssignment struct {
 	IpSpaceOrgAssignment *types.IpSpaceOrgAssignment

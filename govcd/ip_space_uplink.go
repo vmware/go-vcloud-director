@@ -45,7 +45,7 @@ func (vcdClient *VCDClient) CreateIpSpaceUplink(ipSpaceUplinkConfig *types.IpSpa
 	return result, nil
 }
 
-// GetAllIpSpaceUplinks retrieves all IP Space Uplink for a given External Network ID
+// GetAllIpSpaceUplinks retrieves all IP Space Uplinks for a given External Network ID
 //
 // externalNetworkId is mandatory
 func (vcdClient *VCDClient) GetAllIpSpaceUplinks(externalNetworkId string, queryParameters url.Values) ([]*IpSpaceUplink, error) {

@@ -201,7 +201,7 @@ type IPPrefixSequence struct {
 	AllocatedPrefixPercentage float32 `json:"allocatedPrefixPercentage,omitempty"`
 }
 
-// IpSpaceUplink sSpecifies the IP Space Uplink configuration for Provider Gateway (External network
+// IpSpaceUplink specifies the IP Space Uplink configuration for Provider Gateway (External network
 // with T0 or T0 VRF backing)
 type IpSpaceUplink struct {
 	ID          string `json:"id,omitempty"`
@@ -216,12 +216,11 @@ type IpSpaceUplink struct {
 	Status      string `json:"status,omitempty"`
 }
 
-// IpSpaceIpAllocationRequest is an IP Space IP Allocation request object. An IP Space IP allocation request can
-// either request a specific IP address/IP prefix or request a specific number of any free IP
-// Addresses/IP Prefixes within an IP Space. To allocate a specific IP Address or IP Prefix, the
-// value field should be used and the IP Address or Prefix should be specified. To allocate up to 5
-// of any free IP Addresses or Prefixes within the IP Space, use the quantity field to specify the
-// amount. The value and quantity fields should not be set simultaneously.
+// IpSpaceIpAllocationRequest is an IP Space IP Allocation request object. An IP Space IP allocation
+// request can either request a specific IP address/IP prefix or request a specific number of any
+// free IP Addresses/IP Prefixes within an IP Space. To allocate a specific IP Address or IP Prefix,
+// the value field should be used and the IP Address or Prefix should be specified. Use the quantity
+// field to specify the amount. The value and quantity fields should not be set simultaneously.
 type IpSpaceIpAllocationRequest struct {
 	// The prefix length of an IP Prefix to allocate. This is required if type is IP_PREFIX. This
 	// field is only required if the request is for a specific quantity of IP Prefixes and not
