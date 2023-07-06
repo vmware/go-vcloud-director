@@ -755,7 +755,7 @@ func (client *Client) GetStorageProfileByHref(url string) (*types.VdcStorageProf
 func (vcdClient *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCHref string) (*types.QueryResultProviderVdcStorageProfileRecordType, error) {
 
 	results, err := vcdClient.Client.cumulativeQuery(types.QtProviderVdcStorageProfile, map[string]string{
-		"type": types.QtAdminOrgVdcStorageProfile,
+		"type": types.QtProviderVdcStorageProfile,
 	}, nil)
 	if err != nil {
 		return nil, err
