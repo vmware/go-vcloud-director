@@ -137,7 +137,7 @@ func createIpSpaceUplink(vcd *TestVCD, check *C, extNetId, ipSpaceId string) *Ip
 	AddToCleanupListOpenApi(createdIpSpaceUplink.IpSpaceUplink.Name, check.TestName(), openApiEndpoint)
 
 	time.Sleep(3 * time.Second)
-	err = vcd.client.Client.WaitForRunningTasksByName("ipSpaceUplinkRouteAdvertisementSync")
+	err = vcd.client.Client.WaitForRouteAdvertisementTasks()
 	check.Assert(err, IsNil)
 
 	return createdIpSpaceUplink
