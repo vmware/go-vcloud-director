@@ -18,6 +18,7 @@ import (
 
 // executeJsonRequest is a wrapper around regular API call operations, similar to client.ExecuteRequest, but with JSON payback
 // Returns a http.Response object, which, in case of success, has its body still unread
+// Caller function has the responsibility for closing the response body
 func (client Client) executeJsonRequest(href, httpMethod string, inputStructure any, errorMessage string) (*http.Response, error) {
 
 	text := bytes.Buffer{}
@@ -62,4 +63,12 @@ func (client Client) executeJsonRequest(href, httpMethod string, inputStructure 
 	}
 
 	return checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.Error{})
+}
+
+// closeBody is a wrapper function that should be used with "defer" after calling executeJsonRequest
+func closeBody(resp *http.Response) {
+	err := resp.Body.Close()
+	if err != nil {
+		util.Logger.Printf("error closing response body - Called by %s: %s\n", util.CallFuncName(), err)
+	}
 }

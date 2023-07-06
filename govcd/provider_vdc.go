@@ -214,6 +214,8 @@ func (vcdClient *VCDClient) CreateProviderVdc(params *types.ProviderVdcCreation)
 	body, _ := io.ReadAll(resp.Body)
 	util.ProcessResponseOutput(util.CallFuncName(), resp, string(body))
 
+	defer closeBody(resp)
+
 	pvdc, err := vcdClient.GetProviderVdcExtendedByName(params.Name)
 	if err != nil {
 		return nil, err
@@ -321,12 +323,13 @@ func (pvdc *ProviderVdcExtended) Delete() (Task, error) {
 // The other admitted changes need to go through separate API calls
 func (pvdc *ProviderVdcExtended) Update() error {
 
-	_, err := pvdc.client.executeJsonRequest(pvdc.VMWProviderVdc.HREF, http.MethodPut, pvdc.VMWProviderVdc,
+	resp, err := pvdc.client.executeJsonRequest(pvdc.VMWProviderVdc.HREF, http.MethodPut, pvdc.VMWProviderVdc,
 		"error updating provider VDC: %s")
 
 	if err != nil {
 		return err
 	}
+	defer closeBody(resp)
 
 	return pvdc.checkProgress("updating")
 }
@@ -382,6 +385,7 @@ func (pvdc *ProviderVdcExtended) AddResourcePools(resourcePools []*ResourcePool)
 		return err
 	}
 
+	defer closeBody(resp)
 	err = task.WaitTaskCompletion()
 	if err != nil {
 		return err
@@ -443,6 +447,7 @@ func (pvdc *ProviderVdcExtended) DeleteResourcePools(resourcePools []*ResourcePo
 	if err != nil {
 		return err
 	}
+	defer closeBody(resp)
 	task := NewTask(pvdc.client)
 	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
 	if err != nil {
@@ -487,12 +492,10 @@ func (pvdc *ProviderVdcExtended) AddStorageProfiles(storageProfileNames []string
 
 	addStorageProfiles := &types.AddStorageProfiles{AddStorageProfile: storageProfileNames}
 
-	_, err = pvdc.client.executeJsonRequest(href, http.MethodPost, addStorageProfiles,
+	resp, err := pvdc.client.executeJsonRequest(href, http.MethodPost, addStorageProfiles,
 		"error adding storage profiles to provider VDC: %s")
 
-	if err != nil {
-		return err
-	}
+	defer closeBody(resp)
 
 	return pvdc.checkProgress("adding storage profiles")
 }
@@ -527,9 +530,10 @@ func (pvdc *ProviderVdcExtended) checkProgress(label string) error {
 // Calling this function is a prerequisite to removing a storage profile from a provider VDC
 func disableStorageProfile(client *Client, storageProfileHref string) error {
 	disablePayload := &types.EnableStorageProfile{Enabled: false}
-	_, err := client.executeJsonRequest(storageProfileHref, http.MethodPut, disablePayload,
+	resp, err := client.executeJsonRequest(storageProfileHref, http.MethodPut, disablePayload,
 		"error disabling storage profile in provider VDC: %s")
 
+	defer closeBody(resp)
 	return err
 }
 
@@ -572,6 +576,7 @@ func (pvdc *ProviderVdcExtended) DeleteStorageProfiles(storageProfiles []string)
 	if err != nil {
 		return err
 	}
+	defer closeBody(resp)
 	task := NewTask(pvdc.client)
 	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
 	if err != nil {
