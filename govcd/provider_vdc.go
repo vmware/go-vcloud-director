@@ -494,6 +494,9 @@ func (pvdc *ProviderVdcExtended) AddStorageProfiles(storageProfileNames []string
 
 	resp, err := pvdc.client.executeJsonRequest(href, http.MethodPost, addStorageProfiles,
 		"error adding storage profiles to provider VDC: %s")
+	if err != nil {
+		return err
+	}
 
 	defer closeBody(resp)
 
