@@ -365,8 +365,8 @@ func (pvdc *ProviderVdcExtended) AddResourcePools(resourcePools []*ResourcePool)
 			VimObjectType: "RESOURCE_POOL",
 			VimServerRef: &types.Reference{
 				HREF: vcenterUrl,
-				ID:   extractUuid(rp.vcenter.VSphereVcenter.VcId),
-				Name: rp.vcenter.VSphereVcenter.Name,
+				ID:   extractUuid(rp.vcenter.VSphereVCenter.VcId),
+				Name: rp.vcenter.VSphereVCenter.Name,
 				Type: "application/vnd.vmware.admin.vmwvirtualcenter+xml",
 			},
 		}

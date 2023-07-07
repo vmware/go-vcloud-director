@@ -207,7 +207,7 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 	}
 	check.Assert(storageProfile.HREF, Not(Equals), "")
 
-	vcenter, err := vcd.client.GetVcenterByName(vcd.config.VCD.VimServer)
+	vcenter, err := vcd.client.GetVCenterByName(vcd.config.VCD.VimServer)
 	check.Assert(err, IsNil)
 	check.Assert(vcenter, NotNil)
 
@@ -238,8 +238,8 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 		VimServer: []*types.Reference{
 			{
 				HREF: vcenterUrl,
-				ID:   extractUuid(vcenter.VSphereVcenter.VcId),
-				Name: vcenter.VSphereVcenter.Name,
+				ID:   extractUuid(vcenter.VSphereVCenter.VcId),
+				Name: vcenter.VSphereVCenter.Name,
 			},
 		},
 		ResourcePoolRefs: &types.VimObjectRefs{
@@ -247,8 +247,8 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 				{
 					VimServerRef: &types.Reference{
 						HREF: vcenterUrl,
-						ID:   extractUuid(vcenter.VSphereVcenter.VcId),
-						Name: vcenter.VSphereVcenter.Name,
+						ID:   extractUuid(vcenter.VSphereVCenter.VcId),
+						Name: vcenter.VSphereVCenter.Name,
 					},
 					MoRef:         resourcePool.ResourcePool.Moref,
 					VimObjectType: "RESOURCE_POOL",
@@ -277,8 +277,8 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 		VimServer: []*types.Reference{
 			{
 				HREF: vcenterUrl,
-				ID:   extractUuid(vcenter.VSphereVcenter.VcId),
-				Name: vcenter.VSphereVcenter.Name,
+				ID:   extractUuid(vcenter.VSphereVCenter.VcId),
+				Name: vcenter.VSphereVCenter.Name,
 			},
 		},
 		ResourcePoolRefs: &types.VimObjectRefs{
@@ -286,8 +286,8 @@ func (vcd *TestVCD) Test_ProviderVdcCRUD(check *C) {
 				{
 					VimServerRef: &types.Reference{
 						HREF: vcenterUrl,
-						ID:   extractUuid(vcenter.VSphereVcenter.VcId),
-						Name: vcenter.VSphereVcenter.Name,
+						ID:   extractUuid(vcenter.VSphereVCenter.VcId),
+						Name: vcenter.VSphereVCenter.Name,
 					},
 					MoRef:         resourcePool.ResourcePool.Moref,
 					VimObjectType: "RESOURCE_POOL",

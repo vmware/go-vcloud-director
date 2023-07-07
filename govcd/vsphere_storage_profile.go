@@ -33,7 +33,7 @@ func (vcenter VCenter) GetAllStorageProfiles(resourcePoolId string, queryParams 
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vcenter.VSphereVcenter.VcId))
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vcenter.VSphereVCenter.VcId))
 	if err != nil {
 		return nil, err
 	}

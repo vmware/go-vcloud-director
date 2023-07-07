@@ -26,7 +26,7 @@ func (vcenter VCenter) GetAllResourcePools(queryParams url.Values) ([]*ResourceP
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vcenter.VSphereVcenter.VcId))
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vcenter.VSphereVCenter.VcId))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (rp ResourcePool) GetAvailableHardwareVersions() (*types.OpenApiSupportedHa
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rp.vcenter.VSphereVcenter.VcId, rp.ResourcePool.Moref))
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rp.vcenter.VSphereVCenter.VcId, rp.ResourcePool.Moref))
 	if err != nil {
 		return nil, err
 	}
@@ -138,9 +138,9 @@ func (vcenter VCenter) GetResourcePoolByName(name string) (*ResourcePool, error)
 }
 
 // GetAllResourcePools retrieves all available resource pool, across all vCenters
-func (vcdClient VCDClient) GetAllResourcePools(queryParams url.Values) ([]*ResourcePool, error) {
+func (vcdClient *VCDClient) GetAllResourcePools(queryParams url.Values) ([]*ResourcePool, error) {
 
-	vcenters, err := vcdClient.GetAllVcenters(queryParams)
+	vcenters, err := vcdClient.GetAllVCenters(queryParams)
 	if err != nil {
 		return nil, err
 	}

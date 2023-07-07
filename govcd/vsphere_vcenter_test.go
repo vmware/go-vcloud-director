@@ -11,18 +11,18 @@ func (vcd *TestVCD) Test_GetVcenters(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("this test requires system administrator privileges")
 	}
-	vcenters, err := vcd.client.GetAllVcenters(nil)
+	vcenters, err := vcd.client.GetAllVCenters(nil)
 	check.Assert(err, IsNil)
 
 	check.Assert(len(vcenters) > 0, Equals, true)
 
 	for _, vc := range vcenters {
-		vcenterById, err := vcd.client.GetVcenterById(vc.VSphereVcenter.VcId)
+		vcenterById, err := vcd.client.GetVCenterById(vc.VSphereVCenter.VcId)
 		check.Assert(err, IsNil)
-		check.Assert(vc.VSphereVcenter.VcId, Equals, vcenterById.VSphereVcenter.VcId)
-		vcenterByName, err := vcd.client.GetVcenterByName(vc.VSphereVcenter.Name)
+		check.Assert(vc.VSphereVCenter.VcId, Equals, vcenterById.VSphereVCenter.VcId)
+		vcenterByName, err := vcd.client.GetVCenterByName(vc.VSphereVCenter.Name)
 		check.Assert(err, IsNil)
-		check.Assert(vc.VSphereVcenter.VcId, Equals, vcenterByName.VSphereVcenter.VcId)
+		check.Assert(vc.VSphereVCenter.VcId, Equals, vcenterByName.VSphereVCenter.VcId)
 	}
 
 }

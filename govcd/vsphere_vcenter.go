@@ -11,11 +11,11 @@ import (
 )
 
 type VCenter struct {
-	VSphereVcenter *types.VSphereVirtualCenter
+	VSphereVCenter *types.VSphereVirtualCenter
 	client         *VCDClient
 }
 
-func (vcdClient VCDClient) GetAllVcenters(queryParams url.Values) ([]*VCenter, error) {
+func (vcdClient *VCDClient) GetAllVCenters(queryParams url.Values) ([]*VCenter, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
@@ -42,27 +42,27 @@ func (vcdClient VCDClient) GetAllVcenters(queryParams url.Values) ([]*VCenter, e
 
 	for _, r := range retrieved {
 		returnList = append(returnList, &VCenter{
-			VSphereVcenter: r,
-			client:         &vcdClient,
+			VSphereVCenter: r,
+			client:         vcdClient,
 		})
 	}
 	return returnList, nil
 }
 
-func (vcdClient VCDClient) GetVcenterByName(name string) (*VCenter, error) {
-	vcenters, err := vcdClient.GetAllVcenters(nil)
+func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
+	vcenters, err := vcdClient.GetAllVCenters(nil)
 	if err != nil {
 		return nil, err
 	}
 	for _, vc := range vcenters {
-		if vc.VSphereVcenter.Name == name {
+		if vc.VSphereVCenter.Name == name {
 			return vc, nil
 		}
 	}
 	return nil, fmt.Errorf("vcenter %s not found: %s", name, ErrorEntityNotFound)
 }
 
-func (vcdClient VCDClient) GetVcenterById(id string) (*VCenter, error) {
+func (vcdClient *VCDClient) GetVCenterById(id string) (*VCenter, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
@@ -76,11 +76,11 @@ func (vcdClient VCDClient) GetVcenterById(id string) (*VCenter, error) {
 	}
 
 	returnObject := &VCenter{
-		VSphereVcenter: &types.VSphereVirtualCenter{},
-		client:         &vcdClient,
+		VSphereVCenter: &types.VSphereVirtualCenter{},
+		client:         vcdClient,
 	}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, returnObject.VSphereVcenter, nil)
+	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, returnObject.VSphereVCenter, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting vCenter: %s", err)
 	}
@@ -89,5 +89,5 @@ func (vcdClient VCDClient) GetVcenterById(id string) (*VCenter, error) {
 }
 
 func (vcenter VCenter) GetVimServerUrl() (string, error) {
-	return url.JoinPath(vcenter.client.Client.VCDHREF.String(), "admin", "extension", "vimServer", extractUuid(vcenter.VSphereVcenter.VcId))
+	return url.JoinPath(vcenter.client.Client.VCDHREF.String(), "admin", "extension", "vimServer", extractUuid(vcenter.VSphereVCenter.VcId))
 }

@@ -25,7 +25,7 @@ func (np NetworkPool) GetOpenApiUrl() (string, error) {
 }
 
 // GetNetworkPoolSummaries retrieves the list of all available network pools
-func (vcdClient VCDClient) GetNetworkPoolSummaries(queryParameters url.Values) ([]*types.NetworkPool, error) {
+func (vcdClient *VCDClient) GetNetworkPoolSummaries(queryParameters url.Values) ([]*types.NetworkPool, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -47,7 +47,7 @@ func (vcdClient VCDClient) GetNetworkPoolSummaries(queryParameters url.Values) (
 }
 
 // GetNetworkPoolById retrieves Network Pool with a given ID
-func (vcdClient VCDClient) GetNetworkPoolById(id string) (*NetworkPool, error) {
+func (vcdClient *VCDClient) GetNetworkPoolById(id string) (*NetworkPool, error) {
 	if id == "" {
 		return nil, fmt.Errorf("network pool lookup requires ID")
 	}
@@ -65,7 +65,7 @@ func (vcdClient VCDClient) GetNetworkPoolById(id string) (*NetworkPool, error) {
 	}
 
 	response := &NetworkPool{
-		vcdClient:   &vcdClient,
+		vcdClient:   vcdClient,
 		NetworkPool: &types.NetworkPool{},
 	}
 
@@ -79,7 +79,7 @@ func (vcdClient VCDClient) GetNetworkPoolById(id string) (*NetworkPool, error) {
 
 // GetNetworkPoolByName retrieves a network pool with a given name
 // Note. It will return an error if multiple network pools exist with the same name
-func (vcdClient VCDClient) GetNetworkPoolByName(name string) (*NetworkPool, error) {
+func (vcdClient *VCDClient) GetNetworkPoolByName(name string) (*NetworkPool, error) {
 	if name == "" {
 		return nil, fmt.Errorf("network pool lookup requires name")
 	}
