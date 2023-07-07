@@ -731,6 +731,18 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntryWithDomain(
 }
 
 // ------------------------------------------------------------------------------------------------
+// Ignored metadata set/unset
+// ------------------------------------------------------------------------------------------------
+
+// SetMetadataToIgnore allows to update the metadata to be ignored in all metadata API calls with
+// the given input. It returns the old IgnoredMetadata configuration from the client
+func (vcdClient *VCDClient) SetMetadataToIgnore(ignoredMetadata []IgnoredMetadata) []IgnoredMetadata {
+	result := vcdClient.Client.IgnoredMetadata
+	vcdClient.Client.IgnoredMetadata = ignoredMetadata
+	return result
+}
+
+// ------------------------------------------------------------------------------------------------
 // Generic private functions
 // ------------------------------------------------------------------------------------------------
 
@@ -910,7 +922,17 @@ type IgnoredMetadata struct {
 }
 
 func (im IgnoredMetadata) String() string {
-	return fmt.Sprintf("IgnoredMetadata(ObjectType=%v, ObjectName=%v, KeyRegex=%v, ValueRegex=%v)", im.ObjectType, im.ObjectName, im.KeyRegex, im.ValueRegex)
+	objectType := "<nil>"
+	if im.ObjectType != nil {
+		objectType = *im.ObjectType
+	}
+
+	objectName := "<nil>"
+	if im.ObjectName != nil {
+		objectName = *im.ObjectName
+	}
+
+	return fmt.Sprintf("IgnoredMetadata(ObjectType=%v, ObjectName=%v, KeyRegex=%v, ValueRegex=%v)", objectType, objectName, im.KeyRegex, im.ValueRegex)
 }
 
 // filterMetadata filters all metadata entries, given a slice of metadata that needs to be ignored. It doesn't
@@ -964,7 +986,8 @@ func filterSingleMetadataEntry(key, href, objectName string, metadataEntry *type
 			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(objectName) == "" || *entryToIgnore.ObjectName == objectName) &&
 			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) &&
 			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) {
-			return nil, fmt.Errorf("the entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
+			util.Logger.Printf("[DEBUG] the metadata entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
+			return nil, fmt.Errorf("the metadata entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
 		}
 	}
 	return metadataEntry, nil
@@ -1003,6 +1026,7 @@ func filterMetadataToDelete(client *Client, key, href, objectName string, isSyst
 			}
 
 			if ignore {
+				util.Logger.Printf("[DEBUG] can't delete metadata entry %s as it is ignored", key)
 				return fmt.Errorf("can't delete metadata entry %s as it is ignored", key)
 			}
 			return nil

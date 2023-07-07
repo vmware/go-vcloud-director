@@ -364,6 +364,14 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 		}
 	}
 
+	// Test setter
+	previousIgnoredMetadata := vcd.client.SetMetadataToIgnore(nil)
+	check.Assert(vcd.client.Client.IgnoredMetadata, IsNil)
+	check.Assert(len(previousIgnoredMetadata) > 0, Equals, true)
+	previousIgnoredMetadata = vcd.client.SetMetadataToIgnore(previousIgnoredMetadata)
+	check.Assert(previousIgnoredMetadata, IsNil)
+	check.Assert(len(vcd.client.Client.IgnoredMetadata) > 0, Equals, true)
+
 	// We add another entry and retrieve all metadata, then it should return the one that is not filtered out
 	err = resource.AddMetadataEntryWithVisibility("test", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
 	check.Assert(err, IsNil)
