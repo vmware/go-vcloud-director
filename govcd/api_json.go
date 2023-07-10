@@ -5,7 +5,6 @@
 package govcd
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -21,11 +20,7 @@ import (
 // Caller function has the responsibility for closing the response body
 func (client Client) executeJsonRequest(href, httpMethod string, inputStructure any, errorMessage string) (*http.Response, error) {
 
-	text := bytes.Buffer{}
-	encoder := json.NewEncoder(&text)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent(" ", " ")
-	err := encoder.Encode(inputStructure)
+	text, err := json.MarshalIndent(inputStructure, " ", " ")
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +30,7 @@ func (client Client) executeJsonRequest(href, httpMethod string, inputStructure 
 	}
 
 	var resp *http.Response
-	body := strings.NewReader(text.String())
+	body := strings.NewReader(string(text))
 	apiVersion := client.APIVersion
 	headAccept := http.Header{}
 	headAccept.Set("Accept", fmt.Sprintf("application/*+json;version=%s", apiVersion))
