@@ -944,7 +944,7 @@ func (vcdClient *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryR
 func (vcdClient *VCDClient) QueryNsxtManagerByHref(href string) ([]*types.QueryResultNsxtManagerRecordType, error) {
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          "nsxTManager",
-		"filter":        fmt.Sprintf("href==%s", url.QueryEscape(extractUuid(href))),
+		"filter":        fmt.Sprintf("href==%s", extractUuid(href)),
 		"filterEncoded": "true",
 	})
 	if err != nil {
