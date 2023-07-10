@@ -80,6 +80,7 @@ func (egw *NsxtEdgeGateway) CreateStaticRoute(staticRouteConfig *types.NsxtEdgeG
 				singleStaticRoute.NsxtEdgeGatewayStaticRoute.Description == staticRouteConfig.Description {
 				foundStaticRoute = true
 				returnObject = singleStaticRoute
+				break
 			}
 		}
 
