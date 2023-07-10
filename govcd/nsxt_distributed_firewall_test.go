@@ -284,7 +284,7 @@ func dumpDistributedFirewallRulesToScreen(rules []*types.DistributedFirewallRule
 	}
 }
 
-// Test_NsxtDistributedFirewallRule tests the capability of managing FIrewall Rules one by one using
+// Test_NsxtDistributedFirewallRule tests the capability of managing Firewall Rules one by one using
 // `DistributedFirewallRule` type.
 func (vcd *TestVCD) Test_NsxtDistributedFirewallRule(check *C) {
 	if vcd.skipAdminTests {
@@ -305,14 +305,16 @@ func (vcd *TestVCD) Test_NsxtDistributedFirewallRule(check *C) {
 	check.Assert(vdc, NotNil)
 	check.Assert(vdcGroup, NotNil)
 
+	defer func() {
+		// Cleanup
+		err = vdcGroup.Delete()
+		check.Assert(err, IsNil)
+		err = vdc.DeleteWait(true, true)
+		check.Assert(err, IsNil)
+	}()
+
 	fmt.Println("# Running Distributed Firewall tests for single Rule")
 	test_NsxtDistributedFirewallRule(vcd, check, vdcGroup.VdcGroup.Id, vcd.client, vdc)
-
-	// Cleanup
-	err = vdcGroup.Delete()
-	check.Assert(err, IsNil)
-	err = vdc.DeleteWait(true, true)
-	check.Assert(err, IsNil)
 }
 
 func test_NsxtDistributedFirewallRule(vcd *TestVCD, check *C, vdcGroupId string, vcdClient *VCDClient, vdc *Vdc) {
@@ -342,7 +344,7 @@ func test_NsxtDistributedFirewallRule(vcd *TestVCD, check *C, vdcGroupId string,
 		check.Assert(err, IsNil)
 	}()
 
-	randomizedFwRuleSubSet := randomizedFwRuleDefs[0:5] // taking only first 10 rules to limit time of testing
+	randomizedFwRuleSubSet := randomizedFwRuleDefs[0:5] // taking only first 5 rules to limit time of testing
 
 	// removing default firewall rule which is created by VCD when vdcGroup.ActivateDfw() is executed
 	err = vdcGroup.DeleteAllDistributedFirewallRules()
