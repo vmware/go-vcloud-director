@@ -10,6 +10,9 @@ import (
 
 func (vcd *TestVCD) Test_GetNetworkPools(check *C) {
 
+	if vcd.skipAdminTests {
+		check.Skip("this test requires system administrator privileges")
+	}
 	knownNetworkPoolName := vcd.config.VCD.NsxtProviderVdc.NetworkPool
 	networkPools, err := vcd.client.GetNetworkPoolSummaries(nil)
 	check.Assert(err, IsNil)
