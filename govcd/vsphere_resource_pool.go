@@ -165,8 +165,17 @@ func (vcdClient *VCDClient) ResourcePoolsFromIds(resourcePoolIds []string) ([]*R
 
 	// 1. make sure there are no duplicates in the input IDs
 	uniqueIds := make(map[string]bool)
+	var duplicates []string
 	for _, id := range resourcePoolIds {
+		_, seen := uniqueIds[id]
+		if seen {
+			duplicates = append(duplicates, id)
+		}
 		uniqueIds[id] = true
+	}
+
+	if len(duplicates) > 0 {
+		return nil, fmt.Errorf("duplicate IDs found in input: %v", duplicates)
 	}
 
 	// 2. get all resource pools
