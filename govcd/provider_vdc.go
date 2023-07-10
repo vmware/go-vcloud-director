@@ -194,7 +194,7 @@ func (vcdClient *VCDClient) CreateProviderVdc(params *types.ProviderVdcCreation)
 	if params.Name == "" {
 		return nil, fmt.Errorf("a non-empty name is needed to create a provider VDC")
 	}
-	if len(params.ResourcePoolRefs.VimObjectRef) == 0 {
+	if params.ResourcePoolRefs == nil || len(params.ResourcePoolRefs.VimObjectRef) == 0 {
 		return nil, fmt.Errorf("resource pool is needed to create a provider VDC")
 	}
 	if len(params.StorageProfile) == 0 {
