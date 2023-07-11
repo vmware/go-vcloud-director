@@ -24,6 +24,8 @@ func NewVAppTemplate(cli *Client) *VAppTemplate {
 	}
 }
 
+// Deprecated: wrong implementation and result
+// Use vdc.CreateVappFromTemplate instead
 func (vdc *Vdc) InstantiateVAppTemplate(template *types.InstantiateVAppTemplateParams) error {
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
 	if err != nil {
