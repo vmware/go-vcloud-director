@@ -95,6 +95,24 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
 
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters:         "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools:          "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolsBrowseAll: "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolHardware:   "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools:           "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries:   "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointStorageProfiles:        "33.0",
+
+	// Extensions API endpoints. These are not versioned
+	types.OpenApiEndpointExtensionsUi:                    "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiPlugin:              "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenants:             "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsPublishAll:   "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsPublish:      "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsUnpublishAll: "35.0", // VCD 10.2+
+	types.OpenApiEndpointExtensionsUiTenantsUnpublish:    "35.0", // VCD 10.2+
+
+	// Endpoints for managing tokens and service accounts
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens:              "36.1", // VCD 10.3.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts:     "37.0", // VCD 10.4.0+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccountGrant: "37.0", // VCD 10.4.0+

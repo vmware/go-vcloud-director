@@ -166,6 +166,15 @@ func addResults(queryType string, cumulativeResults, newResults Results) (Result
 	case types.QtAdminTask:
 		cumulativeResults.Results.AdminTaskRecord = append(cumulativeResults.Results.AdminTaskRecord, newResults.Results.AdminTaskRecord...)
 		size = len(newResults.Results.AdminTaskRecord)
+	case types.QtNetworkPool:
+		cumulativeResults.Results.NetworkPoolRecord = append(cumulativeResults.Results.NetworkPoolRecord, newResults.Results.NetworkPoolRecord...)
+		size = len(newResults.Results.NetworkPoolRecord)
+	case types.QtProviderVdcStorageProfile:
+		cumulativeResults.Results.ProviderVdcStorageProfileRecord = append(cumulativeResults.Results.ProviderVdcStorageProfileRecord, newResults.Results.ProviderVdcStorageProfileRecord...)
+		size = len(newResults.Results.ProviderVdcStorageProfileRecord)
+	case types.QtResourcePool:
+		cumulativeResults.Results.ResourcePoolRecord = append(cumulativeResults.Results.ResourcePoolRecord, newResults.Results.ResourcePoolRecord...)
+		size = len(newResults.Results.ResourcePoolRecord)
 
 	default:
 		return Results{}, 0, fmt.Errorf("query type %s not supported", queryType)
@@ -200,6 +209,9 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 		types.QtAdminOrgVdc,
 		types.QtTask,
 		types.QtAdminTask,
+		types.QtResourcePool,
+		types.QtNetworkPool,
+		types.QtProviderVdcStorageProfile,
 	}
 	// Make sure the query type is supported
 	// We need to check early, as queries that would return less than 25 items (default page size) would succeed,
