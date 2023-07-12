@@ -21,7 +21,10 @@ func (vcd *TestVCD) Test_NsxEdgeStaticRoute(check *C) {
 	// Switch Edge Gateway to use dedicated uplink for the time of this test and then turn it off
 	err = switchEdgeGatewayDedication(edge, true) // Turn on Dedicated Tier 0 gateway
 	check.Assert(err, IsNil)
-	defer switchEdgeGatewayDedication(edge, false) // Turn off Dedicated Tier 0 gateway
+	defer func() {
+		err = switchEdgeGatewayDedication(edge, false)
+		check.Assert(err, IsNil)
+	}()
 
 	// Get Org VDC routed network
 	orgVdcNet, err := nsxtVdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Nsxt.RoutedNetwork)
