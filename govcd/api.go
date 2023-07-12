@@ -241,12 +241,12 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 		req.Header.Add("Authorization", "bearer "+client.VCDToken)
 	}
 
-	// Merge in additional headers before logging if any where specified in additionalHeader
+	// Merge in additional headers before logging if anywhere specified in additionalHeader
 	// parameter
 	if len(additionalHeader) > 0 {
 		for headerName, headerValueSlice := range additionalHeader {
 			for _, singleHeaderValue := range headerValueSlice {
-				req.Header.Add(headerName, singleHeaderValue)
+				req.Header.Set(headerName, singleHeaderValue)
 			}
 		}
 	}

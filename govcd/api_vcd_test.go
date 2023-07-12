@@ -1,4 +1,4 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || uiPlugin || ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -146,6 +146,7 @@ type TestConfig struct {
 		NsxtProviderVdc struct {
 			Name                   string `yaml:"name"`
 			StorageProfile         string `yaml:"storage_profile"`
+			StorageProfile2        string `yaml:"storage_profile_2"`
 			NetworkPool            string `yaml:"network_pool"`
 			PlacementPolicyVmGroup string `yaml:"placementPolicyVmGroup,omitempty"`
 		} `yaml:"nsxt_provider_vdc"`
@@ -198,6 +199,10 @@ type TestConfig struct {
 			NsxtAlbServiceEngineGroup string `yaml:"nsxtAlbServiceEngineGroup"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
+	Vsphere struct {
+		ResourcePoolForVcd1 string `yaml:"resourcePoolForVcd1,omitempty"`
+		ResourcePoolForVcd2 string `yaml:"resourcePoolForVcd2,omitempty"`
+	} `yaml:"vsphere,omitempty"`
 	Logging struct {
 		Enabled          bool   `yaml:"enabled,omitempty"`
 		LogFileName      string `yaml:"logFileName,omitempty"`
@@ -925,6 +930,29 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 		err = org.Delete(true, true)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+	case "provider_vdc":
+		pvdc, err := vcd.client.GetProviderVdcExtendedByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		err = pvdc.Disable()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		task, err := pvdc.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		err = task.WaitTaskCompletion()
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
