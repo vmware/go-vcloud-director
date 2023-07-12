@@ -251,9 +251,9 @@ func (rdeType *DefinedEntityType) GetBehaviorByName(name string) (*types.Behavio
 	return nil, fmt.Errorf("could not find any Behavior with name '%s' in Defined Entity Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
 }
 
-// OverrideBehavior overrides an Interface Behavior. Only Behavior description and execution can be overridden.
+// UpdateBehaviorOverride overrides an Interface Behavior. Only Behavior description and execution can be overridden.
 // It returns the new Behavior, result of the override (with a new ID).
-func (rdeType *DefinedEntityType) OverrideBehavior(behavior types.Behavior) (*types.Behavior, error) {
+func (rdeType *DefinedEntityType) UpdateBehaviorOverride(behavior types.Behavior) (*types.Behavior, error) {
 	if rdeType.DefinedEntityType.ID == "" {
 		return nil, fmt.Errorf("ID of the receiver Defined Entity Type is empty")
 	}

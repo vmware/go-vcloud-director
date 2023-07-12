@@ -421,7 +421,7 @@ func (vcd *TestVCD) Test_RdeTypeBehavior(check *C) {
 	check.Assert(originalBehavior, DeepEquals, behavior2)
 
 	// Override the behavior
-	rdeTypeBehavior, err := rdeType.OverrideBehavior(types.Behavior{
+	rdeTypeBehavior, err := rdeType.UpdateBehaviorOverride(types.Behavior{
 		ID:          originalBehavior.ID,
 		Description: originalBehavior.Description + "Overridden",
 		Execution: map[string]interface{}{
