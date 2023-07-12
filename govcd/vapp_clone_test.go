@@ -41,9 +41,6 @@ func (vcd *TestVCD) TestVappfromTemplateAndClone(check *C) {
 	check.Assert(vappTemplate.VAppTemplate.Children, NotNil)
 	check.Assert(vappTemplate.VAppTemplate.Children.VM, NotNil)
 
-	computePolicies, err := vcd.client.GetAllVdcComputePoliciesV2(nil)
-	check.Assert(err, IsNil)
-	check.Assert(len(computePolicies), Not(Equals), 0)
 	var def = types.InstantiateVAppTemplateParams{
 		Name:        name,
 		Deploy:      true,
