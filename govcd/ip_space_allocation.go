@@ -77,7 +77,7 @@ func (ipSpace *IpSpace) GetAllIpSpaceAllocations(allocationType string, queryPar
 		return nil, err
 	}
 
-	// Wrap all typeResponses into DefinedEntityType types with client
+	// Wrap all typeResponses into IpSpaceIpAllocation types with client
 	results := make([]*IpSpaceIpAllocation, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		results[sliceIndex] = &IpSpaceIpAllocation{
@@ -202,7 +202,6 @@ func allocateIpSpaceIp(client *Client, orgId, orgName, ipSpaceId string, ipAlloc
 		return nil, fmt.Errorf("IP Space must have all values Org ID, Org Name and IP Space ID populated")
 	}
 
-	// client := ipSpace.vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinksAllocate
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -267,7 +266,7 @@ func getAllIpSpaceAllocations(client *Client, ipSpaceId string, org *Org, queryP
 		return nil, err
 	}
 
-	// Wrap all typeResponses into DefinedEntityType types with client
+	// Wrap all typeResponses into IpSpaceIpAllocation types with client
 	results := make([]*IpSpaceIpAllocation, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		results[sliceIndex] = &IpSpaceIpAllocation{

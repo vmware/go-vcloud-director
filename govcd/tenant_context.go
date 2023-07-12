@@ -188,7 +188,7 @@ func (vdcGroup *VdcGroup) getTenantContext() (*TenantContext, error) {
 	return org.tenantContext()
 }
 
-// getTenantContext retrieves the tenant context for a VdcGroup
+// getTenantContext retrieves the tenant context for a IpSpaceIpAllocation
 func (ipSpaceAllocation *IpSpaceIpAllocation) getTenantContext() (*TenantContext, error) {
 	org := ipSpaceAllocation.parent
 

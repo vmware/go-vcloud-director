@@ -47,7 +47,7 @@ func (ipSpace *IpSpace) GetAllOrgAssignments(queryParameters url.Values) ([]*IpS
 		return nil, err
 	}
 
-	// Wrap all typeResponses into IpSpace types with client
+	// Wrap all typeResponses into IpSpaceOrgAssignment types with client
 	results := make([]*IpSpaceOrgAssignment, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		results[sliceIndex] = &IpSpaceOrgAssignment{

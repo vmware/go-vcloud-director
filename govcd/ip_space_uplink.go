@@ -73,7 +73,7 @@ func (vcdClient *VCDClient) GetAllIpSpaceUplinks(externalNetworkId string, query
 		return nil, err
 	}
 
-	// Wrap all typeResponses into DefinedEntityType types with client
+	// Wrap all typeResponses into IpSpaceUplink types with client
 	results := make([]*IpSpaceUplink, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		results[sliceIndex] = &IpSpaceUplink{
