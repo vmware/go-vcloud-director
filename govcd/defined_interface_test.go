@@ -164,6 +164,11 @@ func (vcd *TestVCD) Test_DefinedInterfaceBehavior(check *C) {
 	check.Assert(behavior.Ref, Equals, fmt.Sprintf("urn:vcloud:behavior-interface:%s:%s:%s:%s", behaviorPayload.Name, di.DefinedInterface.Vendor, di.DefinedInterface.Nss, di.DefinedInterface.Version))
 	check.Assert(behavior.ID, Equals, behavior.Ref)
 
+	// Try to add the same behavior again.
+	_, err = di.AddBehavior(behaviorPayload)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), "RDE_BEHAVIOR_ALREADY_EXISTS"), Equals, true)
+
 	// We check that the Behaviors can be retrieved
 	allBehaviors, err := di.GetAllBehaviors(nil)
 	check.Assert(err, IsNil)
