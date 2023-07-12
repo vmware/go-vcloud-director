@@ -3246,6 +3246,27 @@ type UpdateVdcStorageProfiles struct {
 	RemoveStorageProfile *Reference                      `xml:"RemoveStorageProfile,omitempty"`
 }
 
+// Token is used for managing VCD API Tokens for a User in an Org
+type Token struct {
+	ID    string            `json:"id,omitempty"`
+	Name  string            `json:"name,omitempty"`
+	Owner *OpenApiReference `json:"owner,omitempty"`
+	Org   *OpenApiReference `json:"org,omitempty"`
+	Type  string            `json:"type,omitempty"`
+}
+
+// ServiceAccount is used for managing a Service Account that belongs to a specific Org
+type ServiceAccount struct {
+	ID              string            `json:"id,omitempty"`
+	Name            string            `json:"name,omitempty"`
+	SoftwareID      string            `json:"softwareId,omitempty"`
+	SoftwareVersion string            `json:"softwareVersion,omitempty"`
+	Role            *OpenApiReference `json:"role,omitempty"`
+	URI             string            `json:"uri,omitempty"`
+	Org             *OpenApiReference `json:"org,omitempty"`
+	Status          string            `json:"status,omitempty"`
+}
+
 // ApiTokenRefresh contains the access token resulting from a refresh_token operation
 type ApiTokenRefresh struct {
 	AccessToken  string `json:"access_token,omitempty"`
@@ -3256,6 +3277,29 @@ type ApiTokenRefresh struct {
 	UpdatedOn    string `json:"updated_on,omitempty"`
 }
 
+// ApiTokenParams contains the parameters required and returned by oauth/register operation
+type ApiTokenParams struct {
+	ClientName              string   `json:"client_name"`
+	ClientID                string   `json:"client_id,omitempty"`
+	GrantTypes              []string `json:"grant_types,omitempty"`
+	TokenEndpointAuthMethod string   `json:"token_endpoint_auth_method,omitempty"`
+	ClientURI               string   `json:"client_uri,omitempty"`
+	SoftwareID              string   `json:"software_id,omitempty"`
+	SoftwareVersion         string   `json:"software_version,omitempty"`
+	Scope                   string   `json:"scope,omitempty"`
+}
+
+// ServiceAccountAuthParams is used to store the generated user code and device code that
+// are needed for granting and activating a Service Account
+type ServiceAccountAuthParams struct {
+	DeviceCode      string `json:"device_code,omitempty"`
+	UserCode        string `json:"user_code"`
+	VerificationURI string `json:"verification_uri,omitempty"`
+	ExpiresIn       int    `json:"expires_in,omitempty"`
+	Interval        int    `json:"interval,omitempty"`
+}
+
+/**/
 type QueryResultTaskRecordType struct {
 	HREF             string    `xml:"href,attr,omitempty"`             // Contains the URI to the resource.
 	ID               string    `xml:"id,attr,omitempty"`               //	The resource identifier, expressed in URN format. The value of this attribute uniquely identifies the resource, persists for the life of the resource, and is never reused. 	Yes 	Yes
