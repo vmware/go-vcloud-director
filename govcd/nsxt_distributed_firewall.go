@@ -169,9 +169,10 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*Distri
 	return vdcGroup.GetDistributedFirewallRuleById(oneByName.ID)
 }
 
-// CreateDistributedFirewallRule is a wrapper around "vdcGroups/%s/dfwPolicies/%s/rules" endpoint
-// which handles all distributed firewall (DFW) rules at once. While there is no real endpoint to
-// create single firewall rule, it is a requirements for some cases (e.g. using in Terraform)
+// CreateDistributedFirewallRule is a non-thread safe wrapper around
+// "vdcGroups/%s/dfwPolicies/%s/rules" endpoint which handles all distributed firewall (DFW) rules
+// at once. While there is no real endpoint to create single firewall rule, it is a requirements for
+// some cases (e.g. using in Terraform)
 // The code works by doing the following steps:
 //
 // 1. Getting all Distributed Firewall Rules and storing them in private intermediate
