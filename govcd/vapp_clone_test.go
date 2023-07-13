@@ -114,7 +114,6 @@ func (vcd *TestVCD) TestVappfromTemplateAndClone(check *C) {
 
 	vappRemove(vapp, check)
 	vappRemove(vapp2, check)
-
 }
 
 func vappRemove(vapp *VApp, check *C) {
