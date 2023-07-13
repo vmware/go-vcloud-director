@@ -392,6 +392,7 @@ func (vapp *VApp) Suspend() (Task, error) {
 
 // DiscardSuspendedState takes back a vApp from suspension
 func (vapp *VApp) DiscardSuspendedState() error {
+	// Status 3 means that the vApp is suspended
 	if vapp.VApp.Status != 3 {
 		return nil
 	}
