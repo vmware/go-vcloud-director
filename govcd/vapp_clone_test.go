@@ -33,7 +33,8 @@ func (vcd *TestVCD) TestVappfromTemplateAndClone(check *C) {
 	vappTemplate, err := catalog.GetVAppTemplateByName(vappTemplateName)
 	if err != nil {
 		if ContainsNotFound(err) {
-			check.Skip(fmt.Sprintf("vApp template %s not found - Make sure there is such template in catalog %s",
+			check.Skip(fmt.Sprintf("vApp template %s not found - Make sure there is such template in catalog %s -"+
+				" Using test_resources/vapp_with_3_vms.ova",
 				vappTemplateName, vcd.config.VCD.Catalog.NsxtBackedCatalogName))
 		}
 	}
