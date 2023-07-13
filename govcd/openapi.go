@@ -884,7 +884,7 @@ func copyUrlRef(in *url.URL) *url.URL {
 // When this function returns false, it returns the url.Values that are not encoded, so make sure that the
 // client encodes them before sending them.
 func shouldDoSlowSearch(filterKey, filterValue string) (bool, url.Values) {
-	if (strings.Contains(filterValue, ",") || strings.Contains(filterValue, ";")) ||
+	if strings.Contains(filterValue, ",") || strings.Contains(filterValue, ";") ||
 		strings.Contains(filterValue, " ") || strings.Contains(filterValue, "+") || strings.Contains(filterValue, "*") {
 		return true, nil
 	} else {
