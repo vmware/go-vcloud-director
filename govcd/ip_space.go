@@ -161,7 +161,7 @@ func (vcdClient *VCDClient) GetIpSpaceByNameAndOrgId(name, orgId string) (*IpSpa
 
 	singleIpSpace, err := oneOrError("name", name, filteredIpSpaces)
 	if err != nil {
-		return nil, fmt.Errorf("error ")
+		return nil, err
 	}
 
 	return vcdClient.GetIpSpaceById(singleIpSpace.IpSpace.ID)
@@ -193,7 +193,6 @@ func (ipSpace *IpSpace) Update(ipSpaceConfig *types.IpSpace) (*IpSpace, error) {
 	}
 
 	return returnIpSpace, nil
-
 }
 
 // Delete deletes IP Space

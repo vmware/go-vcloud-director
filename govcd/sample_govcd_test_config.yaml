@@ -73,6 +73,7 @@ vcd:
     nsxt_provider_vdc:
       name: nsxTPvdc1
       storage_profile: "*"
+      storage_profile_2: "Development2"
       network_pool: "NSX-T Overlay 1"
       # A VM Group that needs to exist in the backing vSphere. This VM Group can be used
       # to create VM Placement Policies.
@@ -174,6 +175,10 @@ vcd:
     # IP of a pre-configured LDAP server
     # using Docker image https://github.com/rroemhild/docker-test-openldap
     ldap_server: 10.10.10.99
+vsphere:
+  # resource pools needed to create new provider VDCs
+  resourcePoolForVcd1: resource-pool-for-vcd-01
+  resourcePoolForVcd2: resource-pool-for-vcd-02
 logging:
     # All items in this section are optional
     # Logging is disabled by default.
