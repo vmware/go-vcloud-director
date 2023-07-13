@@ -334,6 +334,56 @@ func (client *Client) OpenApiPostItemAndGetHeaders(apiVersion string, urlRef *ur
 	return resp.Header, nil
 }
 
+// OpenApiPostUrlEncoded is a non-standard function used to send a POST request with `x-www-form-urlencoded` format.
+// Accepts a map in format of key:value, marshals the response body in JSON format to outType.
+// If additionalHeader contains a "Content-Type" header, it will be overwritten to "x-www-form-urlencoded"
+func (client *Client) OpenApiPostUrlEncoded(apiVersion string, urlRef *url.URL, params url.Values, payloadMap map[string]string, outType interface{}, additionalHeaders map[string]string) error {
+	urlRefCopy := copyUrlRef(urlRef)
+
+	util.Logger.Printf("[TRACE] Sending a POST request with 'Content-Type: x-www-form-urlencoded' header to endpoint %s with expected response of type %s", urlRefCopy.String(), reflect.TypeOf(outType))
+
+	// Add all values of the payloadMap to the actual payload
+	urlValues := url.Values{}
+	for key, value := range payloadMap {
+		urlValues.Add(key, value)
+	}
+	body := strings.NewReader(urlValues.Encode())
+
+	// Create the header map if it's nil
+	if additionalHeaders == nil {
+		additionalHeaders = make(map[string]string)
+	}
+	// Overwrite the Content-Type header as this is a method only usable for x-www-form-urlencoded
+	additionalHeaders["Content-Type"] = "application/x-www-form-urlencoded"
+
+	req := client.newOpenApiRequest(apiVersion, params, http.MethodPost, urlRef, body, additionalHeaders)
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		return err
+	}
+
+	// resp is ignored below because it is the same the one above
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
+	if err != nil {
+		return fmt.Errorf("error in HTTP %s request: %s", http.MethodPost, err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		util.Logger.Printf("[TRACE] HTTP status code 200 expected. Got %d", resp.StatusCode)
+	}
+
+	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
+		return fmt.Errorf("error decoding JSON response after POST: %s", err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error closing response body: %s", err)
+	}
+
+	return nil
+}
+
 // OpenApiPutItemSync is a low level OpenAPI client function to perform PUT request for items that support synchronous
 // requests. The urlRef must point to ID of exact item (e.g. '/1.0.0/edgeGateways/{EDGE_ID}') and support synchronous
 // requests. It will return an error when endpoint does not support synchronous requests (HTTP response status code is not 201).
@@ -359,7 +409,6 @@ func (client *Client) OpenApiPutItemSync(apiVersion string, urlRef *url.URL, par
 
 	if resp.StatusCode != http.StatusCreated {
 		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 201). Got %d", resp.StatusCode)
-
 	}
 
 	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
@@ -707,8 +756,10 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 		req.Header.Add(k, v)
 	}
 
-	// Inject JSON mime type
-	req.Header.Add("Content-Type", types.JSONMime)
+	// Inject JSON mime type if there are no overwrites
+	if req.Header.Get("Content-Type") == "" {
+		req.Header.Add("Content-Type", types.JSONMime)
+	}
 
 	setHttpUserAgent(client.UserAgent, req)
 
