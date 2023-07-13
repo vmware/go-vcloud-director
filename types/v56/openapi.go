@@ -82,10 +82,37 @@ type ExternalNetworkV2 struct {
 	// Description of the network
 	Description string `json:"description"`
 	// Subnets define one or more subnets and IP allocation pools in edge gateway
-	Subnets ExternalNetworkV2Subnets `json:"subnets"`
+	Subnets ExternalNetworkV2Subnets `json:"subnets,omitempty"`
 	// NetworkBackings for this external network. Describes if this external network is backed by
 	// port groups, vCenter standard switch or an NSX-T Tier-0 router.
 	NetworkBackings ExternalNetworkV2Backings `json:"networkBackings"`
+
+	// UsingIpSpace indicates whether the external network is using IP Spaces or not. This field is
+	// applicable only to the external networks backed by NSX-T Tier-0 router.
+	// This field is only available in VCD 10.4.1+
+	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
+
+	// DedicatedEdgeGateway contains reference to the Edge Gateway that this external network is
+	// dedicated to. This is null if this is not a dedicated external network. This field is unset
+	// if external network is using IP Spaces.
+	DedicatedEdgeGateway *OpenApiReference `json:"dedicatedEdgeGateway,omitempty"`
+
+	// DedicatedOrg specifies the Organization that this external network belongs to. This is unset
+	// for the external networks which are available to more than one organization.
+	//
+	// If this external network is dedicated to an Edge Gateway, this field is read-only and will be
+	// set to the Organization of the Edge Gateway.
+	//
+	// If this external network is using IP Spaces, this field can
+	// be used to dedicate this external network to the specified Organization.
+	DedicatedOrg *OpenApiReference `json:"dedicatedOrg,omitempty"`
+
+	// TotalIpCount contains the number of IP addresses defined by the static ip pools. If the
+	// network contains any IPv6 subnets, the total ip count will be null.
+	TotalIpCount *int `json:"totalIpCount,omitempty"`
+
+	// UsedIpCount holds the number of IP address used from the static ip pools.
+	UsedIpCount *int `json:"usedIpCount,omitempty"`
 }
 
 // OpenApiIPRangeValues defines allocated IP pools for a subnet in external network

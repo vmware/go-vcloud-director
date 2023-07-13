@@ -427,8 +427,13 @@ const (
 	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 
-	OpenApiEndpointIpSpaces         = "ipSpaces/"
-	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"
+	// IP Spaces
+	OpenApiEndpointIpSpaces               = "ipSpaces/"
+	OpenApiEndpointIpSpaceSummaries       = "ipSpaces/summaries"
+	OpenApiEndpointIpSpaceUplinks         = "ipSpaceUplinks/"
+	OpenApiEndpointIpSpaceUplinksAllocate = "ipSpaces/%s/allocate"     // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceIpAllocations   = "ipSpaces/%s/allocations/" // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceOrgAssignments  = "ipSpaces/orgAssignments/" // '%s' is IP Space ID
 
 	// NSX-T ALB related endpoints
 
@@ -656,6 +661,19 @@ const (
 	IpSpaceShared  = "SHARED_SERVICES"
 	IpSpacePublic  = "PUBLIC"
 	IpSpacePrivate = "PRIVATE"
+)
+
+// IP Space IP Allocation Reservation Types
+const (
+	IpSpaceIpAllocationUsedManual = "USED_MANUAL"
+	IpSpaceIpAllocationUsed       = "USED"
+	IpSpaceIpAllocationUnused     = "UNUSED"
+)
+
+// IP Space IP Allocation Types
+const (
+	IpSpaceIpAllocationTypeFloatingIp = "FLOATING_IP"
+	IpSpaceIpAllocationTypeIpPrefix   = "IP_PREFIX"
 )
 
 // Values used for SAML metadata normalization and validation

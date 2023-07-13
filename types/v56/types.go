@@ -685,12 +685,21 @@ type Task struct {
 	Organization     *Reference       `xml:"Organization,omitempty" json:"organization,omitempty"`              // The organization to which the User belongs.
 	Progress         int              `xml:"Progress,omitempty" json:"progress,omitempty"`                      // Read-only indicator of task progress as an approximate percentage between 0 and 100. Not available for all tasks.
 	Details          string           `xml:"Details,omitempty" json:"details,omitempty"`                        // Detailed message about the task. Also contained by the Owner entity when task status is preRunning.
-
+	Result           *TaskResult      `xml:"Result,omitempty" json:"result,omitempty"`                          // Result contains additional details that the task may expose
 	//
 	// TODO: add the following fields
 	// Params      anyType        The parameters with which this task was started.
-	// Result      ResultType	    An optional element that can be used to hold the result of a task.
 	// VcTaskList  VcTaskListType List of Virtual Center tasks related to this vCD task.
+}
+
+// TaskResult contains additional details that the task may expose after finishing
+type TaskResult struct {
+	ResultContent struct {
+		Text string `xml:",chardata"`
+		Xsi  string `xml:"xsi,attr"`
+		Ns11 string `xml:"ns11,attr"`
+		Type string `xml:"type,attr"`
+	} `xml:"ResultContent"`
 }
 
 // CapacityWithUsage represents a capacity and usage of a given resource.

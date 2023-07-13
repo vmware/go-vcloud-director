@@ -464,3 +464,35 @@ func buildFilterTextWithLogicalOr(filter map[string]string) string {
 	}
 	return filterText
 }
+
+// WaitForRouteAdvertisementTasks is a convenience function to query for unfinished Route
+// Advertisement tasks. An exact case for it was that updating some IP Space related objects (IP
+// Spaces, IP Space Uplinks). Updating such an object sometimes results in a separate task for Route
+// Advertisement being spun up (name="ipSpaceUplinkRouteAdvertisementSync"). When such task is
+// running - other operations may fail so it is best to wait for completion of such task before
+// triggering any other jobs.
+func (client *Client) WaitForRouteAdvertisementTasks() error {
+	name := "ipSpaceUplinkRouteAdvertisementSync"
+
+	util.Logger.Printf("[TRACE] WaitForRouteAdvertisementTasks attempting to search for unfinished tasks with name='%s'", name)
+	allTasks, err := client.QueryTaskList(map[string]string{
+		"status": "running,preRunning,queued",
+		"name":   name,
+	})
+	if err != nil {
+		return fmt.Errorf("error retrieving all running '%s' tasks: %s", name, err)
+	}
+
+	util.Logger.Printf("[TRACE] WaitForRouteAdvertisementTasks got %d unifinished tasks with name='%s'", len(allTasks), name)
+	for _, singleQueryTask := range allTasks {
+		task := NewTask(client)
+		task.Task.HREF = singleQueryTask.HREF
+
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return fmt.Errorf("error waiting for task '%s' of type '%s' to finish: %s", singleQueryTask.HREF, name, err)
+		}
+	}
+
+	return nil
+}
