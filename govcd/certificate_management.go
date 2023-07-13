@@ -126,7 +126,7 @@ func (client *Client) AddCertificateToLibrary(certificateConfig *types.Certifica
 // filtering
 func getAllCertificateFromLibrary(client *Client, queryParameters url.Values, additionalHeader map[string]string) ([]*Certificate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func getAllCertificateFromLibrary(client *Client, queryParameters url.Values, ad
 	}
 
 	responses := []*types.CertificateLibraryItem{{}}
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, additionalHeader)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &responses, additionalHeader)
 	if err != nil {
 		return nil, err
 	}
