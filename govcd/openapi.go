@@ -874,27 +874,23 @@ func copyUrlRef(in *url.URL) *url.URL {
 	return newUrlRef
 }
 
-// shouldDoSlowSearch returns true if query isn't working or added needed params if returns false.
-// When the name contains commas, semicolons or asterisks, the encoding is rejected by the API in VCD 10.2 version.
-// For this reason, when one or more commas, semicolons or asterisks are present we run the search brute force,
-// by fetching all and comparing the name. Yet, this is not needed anymore in VCD 10.3 version.
-// Also, url.QueryEscape as well as url.Values.Encode() both encode the space as a + character. So we use
-// search brute force too. Reference to issue:
+// shouldDoSlowSearch returns true and nil url.Values if the filter value contains commas, semicolons or asterisks,
+// as the encoding is rejected by VCD with an error: QueryParseException: Cannot parse the supplied filter, so
+// the caller knows that it needs to run a brute force search and NOT use filtering in any case.
+// Also, url.QueryEscape as well as url.Values.Encode() both encode the space as a + character, so in this case
+// it returns true and nil to specify a brute force search too. Reference to issue:
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
-func shouldDoSlowSearch(filterKey, name string, client *Client) (bool, url.Values, error) {
-	var params = url.Values{}
-	slowSearch := false
-	versionWithNoBug, err := client.VersionEqualOrGreater("10.3", 2)
-	if err != nil {
-		return false, params, err
-	}
-	if (!versionWithNoBug && (strings.Contains(name, ",") || strings.Contains(name, ";"))) ||
-		strings.Contains(name, " ") || strings.Contains(name, "+") || strings.Contains(name, "*") {
-		slowSearch = true
+// When this function returns false, it returns the url.Values that are not encoded, so make sure that the
+// client encodes them before sending them.
+func shouldDoSlowSearch(filterKey, filterValue string) (bool, url.Values) {
+	if (strings.Contains(filterValue, ",") || strings.Contains(filterValue, ";")) ||
+		strings.Contains(filterValue, " ") || strings.Contains(filterValue, "+") || strings.Contains(filterValue, "*") {
+		return true, nil
 	} else {
-		params.Set("filter", fmt.Sprintf(filterKey+"==%s", url.QueryEscape(name)))
+		params := url.Values{}
+		params.Set("filter", fmt.Sprintf(filterKey+"==%s", filterValue))
 		params.Set("filterEncoded", "true")
+		return false, params
 	}
-	return slowSearch, params, err
 }
