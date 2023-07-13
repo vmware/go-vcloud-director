@@ -141,6 +141,8 @@ const (
 	MimeSubscribeToExternalCatalog = "application/vnd.vmware.admin.externalCatalogSubscriptionParams+json"
 	// Mime to identify a media item
 	MimeMediaItem = "application/vnd.vmware.vcloud.media+xml"
+	// Mime to identify a provider VDC
+	MimeProviderVdc = "application/vnd.vmware.admin.vmwprovidervdc+xml"
 	// Mime to identify SAML metadata
 	MimeSamlMetadata = "application/samlmetadata+xml"
 	// Mime to identify organization federation settings (SAML) XML and JSON
@@ -271,6 +273,9 @@ const (
 	QtAdminOrgVdcStorageProfile = "adminOrgVdcStorageProfile" // StorageProfile of VDC as admin
 	QtTask                      = "task"                      // Task
 	QtAdminTask                 = "adminTask"                 // Task as admin
+	QtResourcePool              = "resourcePool"              // Resource Pool
+	QtNetworkPool               = "networkPool"               // Network Pool
+	QtProviderVdcStorageProfile = "providerVdcStorageProfile" // StorageProfile of Provider VDC
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
@@ -406,6 +411,13 @@ const (
 	OpenApiEndpointRdeEntities                        = "entities/"
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
+	OpenApiEndpointVirtualCenters                     = "virtualCenters"
+	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse"    // '%s' is vCenter ID
+	OpenApiEndpointResourcePoolsBrowseAll             = "virtualCenters/%s/resourcePools/browseAll" // '%s' is vCenter ID
+	OpenApiEndpointResourcePoolHardware               = "virtualCenters/%s/resourcePools/%s/hwv"    // first '%s' is vCenter ID. Second one is Resource Pool MoRef
+	OpenApiEndpointNetworkPools                       = "networkPools/"
+	OpenApiEndpointNetworkPoolSummaries               = "networkPools/networkPoolSummaries"
+	OpenApiEndpointStorageProfiles                    = "virtualCenters/%s/storageProfiles" // '%s' is vCenter ID
 	OpenApiEndpointExtensionsUi                       = "extensions/ui/"
 	OpenApiEndpointExtensionsUiPlugin                 = "extensions/ui/%s/plugin"
 	OpenApiEndpointExtensionsUiTenants                = "extensions/ui/%s/tenants"
@@ -414,8 +426,13 @@ const (
 	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 
-	OpenApiEndpointIpSpaces         = "ipSpaces/"
-	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"
+	// IP Spaces
+	OpenApiEndpointIpSpaces               = "ipSpaces/"
+	OpenApiEndpointIpSpaceSummaries       = "ipSpaces/summaries"
+	OpenApiEndpointIpSpaceUplinks         = "ipSpaceUplinks/"
+	OpenApiEndpointIpSpaceUplinksAllocate = "ipSpaces/%s/allocate"     // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceIpAllocations   = "ipSpaces/%s/allocations/" // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceOrgAssignments  = "ipSpaces/orgAssignments/" // '%s' is IP Space ID
 
 	// NSX-T ALB related endpoints
 
@@ -434,6 +451,11 @@ const (
 	OpenApiEndpointAlbVirtualServiceSummaries       = "edgeGateways/%s/loadBalancer/virtualServiceSummaries" // %s contains edge gateway
 	OpenApiEndpointAlbServiceEngineGroupAssignments = "loadBalancer/serviceEngineGroups/assignments/"
 	OpenApiEndpointAlbEdgeGateway                   = "edgeGateways/%s/loadBalancer"
+
+	// OpenApiEndpointServiceAccountGrant is needed for granting a Service Account
+	OpenApiEndpointServiceAccountGrant = "deviceLookup/grant"
+	OpenApiEndpointTokens              = "tokens/"
+	OpenApiEndpointServiceAccounts     = "serviceAccounts/"
 )
 
 // Header keys to run operations in tenant context
@@ -638,6 +660,19 @@ const (
 	IpSpaceShared  = "SHARED_SERVICES"
 	IpSpacePublic  = "PUBLIC"
 	IpSpacePrivate = "PRIVATE"
+)
+
+// IP Space IP Allocation Reservation Types
+const (
+	IpSpaceIpAllocationUsedManual = "USED_MANUAL"
+	IpSpaceIpAllocationUsed       = "USED"
+	IpSpaceIpAllocationUnused     = "UNUSED"
+)
+
+// IP Space IP Allocation Types
+const (
+	IpSpaceIpAllocationTypeFloatingIp = "FLOATING_IP"
+	IpSpaceIpAllocationTypeIpPrefix   = "IP_PREFIX"
 )
 
 // Values used for SAML metadata normalization and validation

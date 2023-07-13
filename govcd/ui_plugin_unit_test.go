@@ -14,6 +14,19 @@ import (
 // Test_getPluginMetadata tests that getPluginMetadata can retrieve correctly the UI plugin metadata information
 // stored inside the ZIP file.
 func Test_getPluginMetadata(t *testing.T) {
+
+	// This object is equivalent to the manifest.json that is inside the ../test-resources/ui_plugin.zip file
+	var testUIPluginMetadata = &types.UIPluginMetadata{
+		Vendor:         "VMware",
+		License:        "BSD-2-Clause",
+		Link:           "http://www.vmware.com",
+		PluginName:     "Test Plugin",
+		Version:        "1.2.3",
+		Description:    "Test Plugin description",
+		ProviderScoped: true,
+		TenantScoped:   true,
+	}
+
 	tests := []struct {
 		name       string
 		pluginPath string
