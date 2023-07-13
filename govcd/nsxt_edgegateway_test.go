@@ -636,7 +636,7 @@ func (vcd *TestVCD) Test_NsxtEdgeSlaacProfile(check *C) {
 	check.Assert(updatedSlaacProfileDhcpv6, DeepEquals, newSlaacProfileDhcpv6)
 
 	// Cleanup
-	updatedSlaacProfile, err = edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: false, Mode: "SLAAC"})
+	updatedSlaacProfile, err = edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: false, Mode: "DISABLED"})
 	check.Assert(err, IsNil)
 	check.Assert(updatedSlaacProfile, NotNil)
 }

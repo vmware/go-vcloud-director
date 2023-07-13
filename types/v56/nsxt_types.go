@@ -1717,7 +1717,7 @@ type VcenterImportableDvpg struct {
 // NsxtEdgeGatewaySlaacProfile provides configuration for NSX-T Edge Gateway IPv6 configuration
 type NsxtEdgeGatewaySlaacProfile struct {
 	Enabled bool `json:"enabled"`
-	// Mode is 'SLAAC' or 'DHCPv6'
+	// Mode is 'SLAAC' ,'DHCPv6', 'DISABLED'
 	Mode string `json:"mode"`
 	// DNSConfig provides additional configuration when Mode is set to 'SLAAC'
 	DNSConfig NsxtEdgeGatewaySlaacProfileDNSConfig `json:"dnsConfig,omitempty"`

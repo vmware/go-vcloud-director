@@ -133,6 +133,15 @@ func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *
 }
 
 func testVirtualServiceConfigHTTPIPv6(check *C, edge *NsxtEdgeGateway, pool *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient) {
+	// Enable SLAAC Profile - this is a property of Edge Gateway - it will be removed with Edge
+	// Gateway itself upon cleanup
+	_, err := edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: true, Mode: "SLAAC"})
+	check.Assert(err, IsNil)
+	defer func() {
+		_, err := edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: false, Mode: "DISABLED"})
+		check.Assert(err, IsNil)
+	}()
+
 	virtualServiceConfig := &types.NsxtAlbVirtualService{
 		Name:    check.TestName(),
 		Enabled: addrOf(true),
