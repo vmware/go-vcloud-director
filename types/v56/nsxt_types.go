@@ -71,6 +71,9 @@ type EdgeGatewayUplinks struct {
 	// Dedicated defines if the external network is dedicated. Dedicating the External Network will enable Route
 	// Advertisement for this Edge Gateway
 	Dedicated bool `json:"dedicated,omitempty"`
+
+	// UsingIpSpace is a boolean flag showing if the uplink uses IP Space
+	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
 }
 
 // ExternalNetworkV2IPRanges is a type alias to reuse the same definitions with appropriate names
