@@ -141,6 +141,8 @@ const (
 	MimeSubscribeToExternalCatalog = "application/vnd.vmware.admin.externalCatalogSubscriptionParams+json"
 	// Mime to identify a media item
 	MimeMediaItem = "application/vnd.vmware.vcloud.media+xml"
+	// Mime to identify a provider VDC
+	MimeProviderVdc = "application/vnd.vmware.admin.vmwprovidervdc+xml"
 	// Mime to identify SAML metadata
 	MimeSamlMetadata = "application/samlmetadata+xml"
 	// Mime to identify organization federation settings (SAML) XML and JSON
@@ -271,6 +273,9 @@ const (
 	QtAdminOrgVdcStorageProfile = "adminOrgVdcStorageProfile" // StorageProfile of VDC as admin
 	QtTask                      = "task"                      // Task
 	QtAdminTask                 = "adminTask"                 // Task as admin
+	QtResourcePool              = "resourcePool"              // Resource Pool
+	QtNetworkPool               = "networkPool"               // Network Pool
+	QtProviderVdcStorageProfile = "providerVdcStorageProfile" // StorageProfile of Provider VDC
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
@@ -409,6 +414,13 @@ const (
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 	OpenApiEndpointRdeEntitiesBehaviorsInvocations    = "entities/%s/behaviors/%s/invocations"
+	OpenApiEndpointVirtualCenters                     = "virtualCenters"
+	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse"    // '%s' is vCenter ID
+	OpenApiEndpointResourcePoolsBrowseAll             = "virtualCenters/%s/resourcePools/browseAll" // '%s' is vCenter ID
+	OpenApiEndpointResourcePoolHardware               = "virtualCenters/%s/resourcePools/%s/hwv"    // first '%s' is vCenter ID. Second one is Resource Pool MoRef
+	OpenApiEndpointNetworkPools                       = "networkPools/"
+	OpenApiEndpointNetworkPoolSummaries               = "networkPools/networkPoolSummaries"
+	OpenApiEndpointStorageProfiles                    = "virtualCenters/%s/storageProfiles" // '%s' is vCenter ID
 
 	OpenApiEndpointExtensionsUi                    = "extensions/ui/"
 	OpenApiEndpointExtensionsUiPlugin              = "extensions/ui/%s/plugin"
@@ -438,6 +450,11 @@ const (
 	OpenApiEndpointAlbVirtualServiceSummaries       = "edgeGateways/%s/loadBalancer/virtualServiceSummaries" // %s contains edge gateway
 	OpenApiEndpointAlbServiceEngineGroupAssignments = "loadBalancer/serviceEngineGroups/assignments/"
 	OpenApiEndpointAlbEdgeGateway                   = "edgeGateways/%s/loadBalancer"
+
+	// OpenApiEndpointServiceAccountGrant is needed for granting a Service Account
+	OpenApiEndpointServiceAccountGrant = "deviceLookup/grant"
+	OpenApiEndpointTokens              = "tokens/"
+	OpenApiEndpointServiceAccounts     = "serviceAccounts/"
 )
 
 // Header keys to run operations in tenant context

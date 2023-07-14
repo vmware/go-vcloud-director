@@ -45,10 +45,10 @@ func (openApiError OpenApiError) ErrorWithStack() string {
 // Role defines access roles in VCD
 type Role struct {
 	ID          string `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	BundleKey   string `json:"bundleKey"`
-	ReadOnly    bool   `json:"readOnly"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	BundleKey   string `json:"bundleKey,omitempty"`
+	ReadOnly    bool   `json:"readOnly,omitempty"`
 }
 
 // NsxtTier0Router defines NSX-T Tier 0 router
@@ -485,6 +485,101 @@ type DefinedEntity struct {
 	State      *string                `json:"state,omitempty"`      // Every entity is created in the "PRE_CREATED" state. Once an entity is ready to be validated against its schema, it will transition in another state - RESOLVED, if the entity is valid according to the schema, or RESOLUTION_ERROR otherwise. If an entity in an "RESOLUTION_ERROR" state is updated, it will transition to the inital "PRE_CREATED" state without performing any validation. If its in the "RESOLVED" state, then it will be validated against the entity type schema and throw an exception if its invalid
 	Owner      *OpenApiReference      `json:"owner,omitempty"`      // The owner of the defined entity
 	Org        *OpenApiReference      `json:"org,omitempty"`        // The organization of the defined entity.
+}
+
+type VSphereVirtualCenter struct {
+	VcId                      string `json:"vcId"`
+	Name                      string `json:"name"`
+	Description               string `json:"description"`
+	Username                  string `json:"username"`
+	Password                  string `json:"password"`
+	Url                       string `json:"url"`
+	IsEnabled                 bool   `json:"isEnabled"`
+	VsphereWebClientServerUrl string `json:"vsphereWebClientServerUrl"`
+	HasProxy                  bool   `json:"hasProxy"`
+	RootFolder                string `json:"rootFolder"`
+	VcNoneNetwork             string `json:"vcNoneNetwork"`
+	TenantVisibleName         string `json:"tenantVisibleName"`
+	IsConnected               bool   `json:"isConnected"`
+	Mode                      string `json:"mode"`
+	ListenerState             string `json:"listenerState"`
+	ClusterHealthStatus       string `json:"clusterHealthStatus"`
+	VcVersion                 string `json:"vcVersion"`
+	BuildNumber               string `json:"buildNumber"`
+	Uuid                      string `json:"uuid"`
+	NsxVManager               struct {
+		Username        string `json:"username"`
+		Password        string `json:"password"`
+		Url             string `json:"url"`
+		SoftwareVersion string `json:"softwareVersion"`
+	} `json:"nsxVManager"`
+	ProxyConfigurationUrn string `json:"proxyConfigurationUrn"`
+}
+
+type ResourcePoolSummary struct {
+	Associations []struct {
+		EntityId      string `json:"entityId"`
+		AssociationId string `json:"associationId"`
+	} `json:"associations"`
+	Values []ResourcePool `json:"values"`
+}
+
+// ResourcePool defines a vSphere Resource Pool
+type ResourcePool struct {
+	Moref             string `json:"moref"`
+	ClusterMoref      string `json:"clusterMoref"`
+	Name              string `json:"name"`
+	VcId              string `json:"vcId"`
+	Eligible          bool   `json:"eligible"`
+	KubernetesEnabled bool   `json:"kubernetesEnabled"`
+	VgpuEnabled       bool   `json:"vgpuEnabled"`
+}
+
+// OpenApiSupportedHardwareVersions is the list of versions supported by a given resource
+type OpenApiSupportedHardwareVersions struct {
+	Versions          []string `json:"versions"`
+	SupportedVersions []struct {
+		IsDefault bool   `json:"isDefault"`
+		Name      string `json:"name"`
+	} `json:"supportedVersions"`
+}
+
+// NetworkPool is the full data retrieved for a provider network pool
+type NetworkPool struct {
+	Status             string             `json:"status"`
+	Id                 string             `json:"id"`
+	Name               string             `json:"name"`
+	Description        string             `json:"description"`
+	PoolType           string             `json:"poolType"`
+	PromiscuousMode    bool               `json:"promiscuousMode"`
+	TotalBackingsCount int                `json:"totalBackingsCount"`
+	UsedBackingsCount  int                `json:"usedBackingsCount"`
+	ManagingOwnerRef   OpenApiReference   `json:"managingOwnerRef"`
+	Backing            NetworkPoolBacking `json:"backing"`
+}
+
+// NetworkPoolBacking is the definition of the objects supporting the network pool
+type NetworkPoolBacking struct {
+	VlanIdRanges     VlanIdRanges       `json:"vlanIdRanges"`
+	VdsRefs          []OpenApiReference `json:"vdsRefs"`
+	PortGroupRefs    []OpenApiReference `json:"portGroupRefs"`
+	TransportZoneRef OpenApiReference   `json:"transportZoneRef"`
+	ProviderRef      OpenApiReference   `json:"providerRef"`
+}
+
+type VlanIdRanges struct {
+	Values []VlanIdRange `json:"values"`
+}
+
+type VlanIdRange struct {
+	StartId int `json:"startId"`
+	EndId   int `json:"endId"`
+}
+
+// OpenApiStorageProfile defines a storage profile before it is assigned to a provider VDC
+type OpenApiStorageProfile struct {
+	Moref string `json:"moref"`
+	Name  string `json:"name"`
 }
 
 // UIPluginMetadata gives meta information about a UI Plugin
