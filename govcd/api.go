@@ -53,6 +53,9 @@ type Client struct {
 	// "User-Agent: <product> / <product-version> <comment>"
 	UserAgent string
 
+	// IgnoredMetadata allows to ignore metadata entries when using the methods defined in metadata_v2.go
+	IgnoredMetadata []IgnoredMetadata
+
 	supportedVersions SupportedVersions // Versions from /api/versions endpoint
 	customHeader      http.Header
 }
