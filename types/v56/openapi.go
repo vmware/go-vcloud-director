@@ -464,6 +464,27 @@ type DefinedInterface struct {
 	IsReadOnly bool   `json:"readonly,omitempty"` // True if the entity type cannot be modified
 }
 
+// Behavior defines a concept similar to a "procedure" that lives inside Defined Interfaces or Defined Entity Types as overrides.
+type Behavior struct {
+	ID          string                 `json:"id,omitempty"`          // The Behavior ID is generated and is an output-only property
+	Description string                 `json:"description,omitempty"` // A description specifying the contract of the Behavior
+	Execution   map[string]interface{} `json:"execution,omitempty"`   // The Behavior execution mechanism. Can be defined both in an Interface and in a Defined Entity Type as an override
+	Ref         string                 `json:"ref,omitempty"`         // The Behavior invocation reference to be used for polymorphic behavior invocations. It is generated and is an output-only property
+	Name        string                 `json:"name,omitempty"`
+}
+
+// BehaviorAccess defines the access control configuration of a Behavior.
+type BehaviorAccess struct {
+	AccessLevelId string `json:"accessLevelId,omitempty"` // The ID of an AccessLevel
+	BehaviorId    string `json:"behaviorId,omitempty"`    // The ID of the Behavior. It can be both a behavior-interface or an overridden behavior-type ID
+}
+
+// BehaviorInvocation is an invocation of a Behavior on a Defined Entity instance. Currently, the Behavior interfaces are key-value maps specified in the Behavior description.
+type BehaviorInvocation struct {
+	Arguments interface{} `json:"arguments,omitempty"`
+	Metadata  interface{} `json:"metadata,omitempty"`
+}
+
 // DefinedEntityType describes what a Defined Entity Type should look like.
 type DefinedEntityType struct {
 	ID               string                 `json:"id,omitempty"`               // The id of the defined entity type in URN format

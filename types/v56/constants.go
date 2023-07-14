@@ -408,10 +408,14 @@ const (
 	OpenApiEndpointEdgeBgpConfigPrefixLists           = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointRdeInterfaces                      = "interfaces/"
+	OpenApiEndpointRdeInterfaceBehaviors              = "interfaces/%s/behaviors/"
 	OpenApiEndpointRdeEntityTypes                     = "entityTypes/"
+	OpenApiEndpointRdeTypeBehaviors                   = "entityTypes/%s/behaviors/"
+	OpenApiEndpointRdeTypeBehaviorAccessControls      = "entityTypes/%s/behaviorAccessControls"
 	OpenApiEndpointRdeEntities                        = "entities/"
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
+	OpenApiEndpointRdeEntitiesBehaviorsInvocations    = "entities/%s/behaviors/%s/invocations"
 	OpenApiEndpointVirtualCenters                     = "virtualCenters"
 	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse"    // '%s' is vCenter ID
 	OpenApiEndpointResourcePoolsBrowseAll             = "virtualCenters/%s/resourcePools/browseAll" // '%s' is vCenter ID
