@@ -1277,11 +1277,10 @@ func (vdc *Vdc) getParentOrg() (organization, error) {
 // The template argument must contain at least:
 // * Name
 // * Source (a reference to the source vApp template)
-// * Deploy = true
 func (vdc *Vdc) CreateVappFromTemplate(template *types.InstantiateVAppTemplateParams) (*VApp, error) {
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
 	if err != nil {
-		return nil, fmt.Errorf("error getting vdc href: %s", err)
+		return nil, fmt.Errorf("error getting VDC href: %s", err)
 	}
 	vdcHref.Path += "/action/instantiateVAppTemplate"
 
@@ -1289,6 +1288,7 @@ func (vdc *Vdc) CreateVappFromTemplate(template *types.InstantiateVAppTemplatePa
 
 	template.Xmlns = types.XMLNamespaceVCloud
 	template.Ovf = types.XMLNamespaceOVF
+	template.Deploy = true
 
 	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPost,
 		types.MimeInstantiateVappTemplateParams, "error instantiating a new vApp from Template: %s", template, vapp.VApp)
@@ -1312,11 +1312,10 @@ func (vdc *Vdc) CreateVappFromTemplate(template *types.InstantiateVAppTemplatePa
 // The sourceVapp argument must contain at least:
 // * Name
 // * Source (a reference to the source vApp)
-// * Deploy = true
 func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
 	if err != nil {
-		return nil, fmt.Errorf("error getting vdc href: %s", err)
+		return nil, fmt.Errorf("error getting VDC href: %s", err)
 	}
 	vdcHref.Path += "/action/cloneVApp"
 
@@ -1324,9 +1323,10 @@ func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 
 	sourceVapp.Xmlns = types.XMLNamespaceVCloud
 	sourceVapp.Ovf = types.XMLNamespaceOVF
+	sourceVapp.Deploy = true
 
 	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPost,
-		types.MimeCloneVapp, "error cloning a  vApp : %s", sourceVapp, vapp.VApp)
+		types.MimeCloneVapp, "error cloning a vApp : %s", sourceVapp, vapp.VApp)
 	if err != nil {
 		return nil, err
 	}
