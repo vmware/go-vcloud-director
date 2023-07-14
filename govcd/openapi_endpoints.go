@@ -61,14 +61,22 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtRouteAdvertisement:             "34.0", // VCD 10.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointLogicalVmGroups:                    "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces:                      "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors:              "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes:                     "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors:                   "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls:      "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities:                        "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes:                   "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesResolve:                 "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesBehaviorsInvocations:    "35.0", // VCD 10.2+
 
 	// IP Spaces
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces:         "37.1", // VCD 10.4.1+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries: "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces:               "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries:       "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks:         "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinksAllocate: "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceIpAllocations:   "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceOrgAssignments:  "37.1", // VCD 10.4.1+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
@@ -94,13 +102,14 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "35.0",
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters:             "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools:              "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolsBrowseAll:     "36.2",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolHardware:       "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools:               "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries:       "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointStorageProfiles:            "33.0",
+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters:         "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools:          "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolsBrowseAll: "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolHardware:   "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools:           "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries:   "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointStorageProfiles:        "33.0",
 
 	// Extensions API endpoints. These are not versioned
 	types.OpenApiEndpointExtensionsUi:                    "35.0", // VCD 10.2+
@@ -110,6 +119,11 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiEndpointExtensionsUiTenantsPublish:      "35.0", // VCD 10.2+
 	types.OpenApiEndpointExtensionsUiTenantsUnpublishAll: "35.0", // VCD 10.2+
 	types.OpenApiEndpointExtensionsUiTenantsUnpublish:    "35.0", // VCD 10.2+
+
+	// Endpoints for managing tokens and service accounts
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens:              "36.1", // VCD 10.3.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts:     "37.0", // VCD 10.4.0+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccountGrant: "37.0", // VCD 10.4.0+
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
@@ -123,6 +137,7 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"33.0", // Basic minimum required version
 		"35.0", // Deprecates field BackingType in favor of BackingTypeValue
 		"36.0", // Adds support new type of BackingTypeValue - IMPORTED_T_LOGICAL_SWITCH (backed by NSX-T segment)
+		"37.1", // Adds support for IP Spaces with new fields - UsingIpSpace, DedicatedOrg
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules: {
 		//"35.0", // Basic minimum required version
@@ -161,6 +176,14 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities: {
 		//"35.0", // Introduced support
 		"37.0", // Added metadata support
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways: {
+		//"35.0", // Introduced support
+		"37.1", // Exposes computed field `UsingIpSpace` in `types.EdgeGatewayUplinks`
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinksAllocate: {
+		//"37.1", // Introduced support
+		"37.2", // Adds 'value' field
 	},
 }
 

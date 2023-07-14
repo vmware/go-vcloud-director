@@ -45,10 +45,10 @@ func (openApiError OpenApiError) ErrorWithStack() string {
 // Role defines access roles in VCD
 type Role struct {
 	ID          string `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	BundleKey   string `json:"bundleKey"`
-	ReadOnly    bool   `json:"readOnly"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	BundleKey   string `json:"bundleKey,omitempty"`
+	ReadOnly    bool   `json:"readOnly,omitempty"`
 }
 
 // NsxtTier0Router defines NSX-T Tier 0 router
@@ -82,10 +82,37 @@ type ExternalNetworkV2 struct {
 	// Description of the network
 	Description string `json:"description"`
 	// Subnets define one or more subnets and IP allocation pools in edge gateway
-	Subnets ExternalNetworkV2Subnets `json:"subnets"`
+	Subnets ExternalNetworkV2Subnets `json:"subnets,omitempty"`
 	// NetworkBackings for this external network. Describes if this external network is backed by
 	// port groups, vCenter standard switch or an NSX-T Tier-0 router.
 	NetworkBackings ExternalNetworkV2Backings `json:"networkBackings"`
+
+	// UsingIpSpace indicates whether the external network is using IP Spaces or not. This field is
+	// applicable only to the external networks backed by NSX-T Tier-0 router.
+	// This field is only available in VCD 10.4.1+
+	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
+
+	// DedicatedEdgeGateway contains reference to the Edge Gateway that this external network is
+	// dedicated to. This is null if this is not a dedicated external network. This field is unset
+	// if external network is using IP Spaces.
+	DedicatedEdgeGateway *OpenApiReference `json:"dedicatedEdgeGateway,omitempty"`
+
+	// DedicatedOrg specifies the Organization that this external network belongs to. This is unset
+	// for the external networks which are available to more than one organization.
+	//
+	// If this external network is dedicated to an Edge Gateway, this field is read-only and will be
+	// set to the Organization of the Edge Gateway.
+	//
+	// If this external network is using IP Spaces, this field can
+	// be used to dedicate this external network to the specified Organization.
+	DedicatedOrg *OpenApiReference `json:"dedicatedOrg,omitempty"`
+
+	// TotalIpCount contains the number of IP addresses defined by the static ip pools. If the
+	// network contains any IPv6 subnets, the total ip count will be null.
+	TotalIpCount *int `json:"totalIpCount,omitempty"`
+
+	// UsedIpCount holds the number of IP address used from the static ip pools.
+	UsedIpCount *int `json:"usedIpCount,omitempty"`
 }
 
 // OpenApiIPRangeValues defines allocated IP pools for a subnet in external network
@@ -435,6 +462,27 @@ type DefinedInterface struct {
 	Version    string `json:"version,omitempty"`  // The interface's version. The version should follow semantic versioning rules
 	Vendor     string `json:"vendor,omitempty"`   // The vendor name
 	IsReadOnly bool   `json:"readonly,omitempty"` // True if the entity type cannot be modified
+}
+
+// Behavior defines a concept similar to a "procedure" that lives inside Defined Interfaces or Defined Entity Types as overrides.
+type Behavior struct {
+	ID          string                 `json:"id,omitempty"`          // The Behavior ID is generated and is an output-only property
+	Description string                 `json:"description,omitempty"` // A description specifying the contract of the Behavior
+	Execution   map[string]interface{} `json:"execution,omitempty"`   // The Behavior execution mechanism. Can be defined both in an Interface and in a Defined Entity Type as an override
+	Ref         string                 `json:"ref,omitempty"`         // The Behavior invocation reference to be used for polymorphic behavior invocations. It is generated and is an output-only property
+	Name        string                 `json:"name,omitempty"`
+}
+
+// BehaviorAccess defines the access control configuration of a Behavior.
+type BehaviorAccess struct {
+	AccessLevelId string `json:"accessLevelId,omitempty"` // The ID of an AccessLevel
+	BehaviorId    string `json:"behaviorId,omitempty"`    // The ID of the Behavior. It can be both a behavior-interface or an overridden behavior-type ID
+}
+
+// BehaviorInvocation is an invocation of a Behavior on a Defined Entity instance. Currently, the Behavior interfaces are key-value maps specified in the Behavior description.
+type BehaviorInvocation struct {
+	Arguments interface{} `json:"arguments,omitempty"`
+	Metadata  interface{} `json:"metadata,omitempty"`
 }
 
 // DefinedEntityType describes what a Defined Entity Type should look like.

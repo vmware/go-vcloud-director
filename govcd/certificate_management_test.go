@@ -165,7 +165,7 @@ func (vcd *TestVCD) Test_GetCertificateFromLibraryByName_ValidatesSymbolsInName(
 
 	// When alias contains commas, semicolons, stars, or plus signs, the encoding may reject by the API when we try to Query it
 	// Also, spaces present their own issues
-	for _, symbol := range []string{";", ",", "+", " ", "*"} {
+	for _, symbol := range []string{";", ",", "+", " ", "*", ":"} {
 
 		alias := fmt.Sprintf("Test%sCertificate%sIn%sLibrary", symbol, symbol, symbol)
 

@@ -200,3 +200,118 @@ type IPPrefixSequence struct {
 	// Specifies the percentage of allocated IP prefix blocks out of total specified IP prefix blocks.
 	AllocatedPrefixPercentage float32 `json:"allocatedPrefixPercentage,omitempty"`
 }
+
+// IpSpaceUplink specifies the IP Space Uplink configuration for Provider Gateway (External network
+// with T0 or T0 VRF backing)
+type IpSpaceUplink struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// ExternalNetworkRef contains information
+	ExternalNetworkRef *OpenApiReference `json:"externalNetworkRef"`
+	IPSpaceRef         *OpenApiReference `json:"ipSpaceRef"`
+	// The type of the IP Space associated with this uplink. Possible values are: PUBLIC, PRIVATE,
+	// SHARED_SERVICES. This property is read-only.
+	IPSpaceType string `json:"ipSpaceType,omitempty"`
+	Status      string `json:"status,omitempty"`
+}
+
+// IpSpaceIpAllocationRequest is an IP Space IP Allocation request object. An IP Space IP allocation
+// request can either request a specific IP address/IP prefix or request a specific number of any
+// free IP Addresses/IP Prefixes within an IP Space. To allocate a specific IP Address or IP Prefix,
+// the value field should be used and the IP Address or Prefix should be specified. Use the quantity
+// field to specify the amount. The value and quantity fields should not be set simultaneously.
+type IpSpaceIpAllocationRequest struct {
+	// The prefix length of an IP Prefix to allocate. This is required if type is IP_PREFIX. This
+	// field is only required if the request is for a specific quantity of IP Prefixes and not
+	// needed if request value is specified.
+	PrefixLength *int `json:"prefixLength,omitempty"`
+	// The number of IP addresses or IP Prefix blocks to allocate. Specifying quantity will allocate
+	// the given number of any free IP addresses or IP Prefixes within the IP Space. To use a
+	// specific IP address or IP Prefix, please use the value field to request a specific value.
+	Quantity *int `json:"quantity,omitempty"`
+	// Type The type of the IP allocation requested. Possible values are:
+	// * FLOATING_IP - For allocation of floating IP addresses from defined IP Space ranges.
+	// * IP_PREFIX - For allocation of IP prefix sequences from defined IP Space prefixes.
+	Type string `json:"type"`
+	// The specific IP address or IP Prefix to allocate. If an IP address or IP Prefix is specified,
+	// the quantity value should not be set.
+	// Note - only available in VCD 10.4.2+
+	Value string `json:"value,omitempty"`
+}
+
+// IpSpaceIpAllocationRequestResult is the result that gets returned in a
+// task.Task.Result.ResultContent.Text field after submitting an IpSpaceIpAllocationRequest
+type IpSpaceIpAllocationRequestResult struct {
+	ID             string `json:"id"`
+	Value          string `json:"value"`
+	SuggestedValue string `json:"suggestedValue"`
+}
+
+// IpSpaceIpAllocation is a structure that is used for managing IP Space IP Allocation after
+// submitting a request using `IpSpaceIpAllocationRequest` and processing the response in
+// IpSpaceIpAllocationRequestResult
+type IpSpaceIpAllocation struct {
+	ID string `json:"id,omitempty"`
+
+	// Description about usage of an IP if the usageState is USED_MANUAL.
+	Description string `json:"description"`
+	// Reference to the organization where the IP is allocated.
+	OrgRef *OpenApiReference `json:"orgRef,omitempty"`
+	// Type contains type of the IP allocation. Possible values are:
+	// * FLOATING_IP - For allocation of floating IP addresses from defined IP Space ranges.
+	// * IP_PREFIX - For allocation of IP prefix sequences from defined IP Space prefixes.
+	Type string `json:"type"`
+	// UsageCategories
+	// The list of service categories where the IP address is being used. Typically this can be one
+	// of: SNAT, DNAT, LOAD_BALANCER, IPSEC_VPN, SSL_VPN or L2_VPN. This property is read-only.
+	UsageCategories []string `json:"usageCategories,omitempty"`
+
+	// Specifies current usage state of an allocated IP. Possible values are:
+	// * UNUSED - the allocated IP is current not being used in the system.
+	// * USED - the allocated IP is currently in use in the system. An allocated IP address or IP Prefix is considered used if it is being used in network services such as NAT rule or in Org VDC network definition.
+	// * USED_MANUAL - the allocated IP is marked for manual usage. Allocation description can be referenced to get information about the manual usage.
+	UsageState string `json:"usageState"`
+
+	// An individual IP Address or an IP Prefix which is allocated.
+	Value string `json:"value"`
+
+	// Reference to the entity using the IP, such as an Edge Gateway Reference if the Floating IP is used for NAT or Org VDC network reference if IP Prefix is used for network definition. This property is read-only.
+	UsedByRef *OpenApiReference `json:"usedByRef"`
+
+	// Date when the IP address or IP prefix is allocated. This property is read-only.
+	AllocationDate string `json:"allocationDate"`
+}
+
+// IpSpaceOrgAssignment is used to override default quotas for specific Orgs
+type IpSpaceOrgAssignment struct {
+	ID string `json:"id,omitempty"`
+	// IPSpaceRef is mandatory
+	IPSpaceRef *OpenApiReference `json:"ipSpaceRef"`
+	// OrgRef is mandatory
+	OrgRef      *OpenApiReference `json:"orgRef"`
+	IPSpaceType string            `json:"ipSpaceType,omitempty"`
+	// DefaultQuotas contains read-only default quotas which are controlled in IP Space itself
+	DefaultQuotas *IpSpaceOrgAssignmentQuotas `json:"defaultQuotas,omitempty"`
+	// CustomQuotas are the quotas that can be overriden for that particular Organization
+	CustomQuotas *IpSpaceOrgAssignmentQuotas `json:"customQuotas"`
+}
+
+type IpSpaceOrgAssignmentQuotas struct {
+	// FloatingIPQuota specifies the default number of IPs from the specified ranges which can be
+	// consumed by each organization using this IP Space. This is typically set for IP Spaces with
+	// type PUBLIC or SHARED_SERVICES. A Quota of -1 means there is no cap to the number of IP
+	// addresses that can be allocated. A Quota of 0 means that the IP addresses cannot be
+	// allocated. If not specified, all PUBLIC or SHARED_SERVICES IP Spaces have a default quota of
+	// 1 for Floating IP addresses and all PRIVATE IP Spaces have a default quota of -1 for Floating
+	// IP addresses.
+	FloatingIPQuota *int `json:"floatingIpQuota"`
+	// IPPrefixQuotas contains a slice of elements that define IP Prefix Quotas
+	IPPrefixQuotas []IpSpaceOrgAssignmentIPPrefixQuotas `json:"ipPrefixQuotas"`
+}
+
+// IpSpaceOrgAssignmentIPPrefixQuotas defines a single IP Prefix quota
+type IpSpaceOrgAssignmentIPPrefixQuotas struct {
+	PrefixLength *int `json:"prefixLength"`
+	Quota        *int `json:"quota"`
+}
