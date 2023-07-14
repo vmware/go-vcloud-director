@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package types
@@ -101,6 +101,8 @@ const (
 	MimeVM = "application/vnd.vmware.vcloud.vm+xml"
 	// Mime for instantiate vApp template params
 	MimeInstantiateVappTemplateParams = "application/vnd.vmware.vcloud.instantiateVAppTemplateParams+xml"
+	// Mime for clone vApp template params
+	MimeCloneVapp = "application/vnd.vmware.vcloud.cloneVAppParams+xml"
 	// Mime for product section
 	MimeProductSection = "application/vnd.vmware.vcloud.productSections+xml"
 	// Mime for metadata
@@ -407,10 +409,14 @@ const (
 	OpenApiEndpointEdgeBgpConfigPrefixLists           = "edgeGateways/%s/routing/bgp/prefixLists/" // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointEdgeBgpConfig                      = "edgeGateways/%s/routing/bgp"              // '%s' is NSX-T Edge Gateway ID
 	OpenApiEndpointRdeInterfaces                      = "interfaces/"
+	OpenApiEndpointRdeInterfaceBehaviors              = "interfaces/%s/behaviors/"
 	OpenApiEndpointRdeEntityTypes                     = "entityTypes/"
+	OpenApiEndpointRdeTypeBehaviors                   = "entityTypes/%s/behaviors/"
+	OpenApiEndpointRdeTypeBehaviorAccessControls      = "entityTypes/%s/behaviorAccessControls"
 	OpenApiEndpointRdeEntities                        = "entities/"
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
+	OpenApiEndpointRdeEntitiesBehaviorsInvocations    = "entities/%s/behaviors/%s/invocations"
 	OpenApiEndpointVirtualCenters                     = "virtualCenters"
 	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse"    // '%s' is vCenter ID
 	OpenApiEndpointResourcePoolsBrowseAll             = "virtualCenters/%s/resourcePools/browseAll" // '%s' is vCenter ID
