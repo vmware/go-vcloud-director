@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package types
@@ -101,6 +101,8 @@ const (
 	MimeVM = "application/vnd.vmware.vcloud.vm+xml"
 	// Mime for instantiate vApp template params
 	MimeInstantiateVappTemplateParams = "application/vnd.vmware.vcloud.instantiateVAppTemplateParams+xml"
+	// Mime for clone vApp template params
+	MimeCloneVapp = "application/vnd.vmware.vcloud.cloneVAppParams+xml"
 	// Mime for product section
 	MimeProductSection = "application/vnd.vmware.vcloud.productSections+xml"
 	// Mime for metadata
@@ -429,8 +431,13 @@ const (
 	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 
-	OpenApiEndpointIpSpaces         = "ipSpaces/"
-	OpenApiEndpointIpSpaceSummaries = "ipSpaces/summaries"
+	// IP Spaces
+	OpenApiEndpointIpSpaces               = "ipSpaces/"
+	OpenApiEndpointIpSpaceSummaries       = "ipSpaces/summaries"
+	OpenApiEndpointIpSpaceUplinks         = "ipSpaceUplinks/"
+	OpenApiEndpointIpSpaceUplinksAllocate = "ipSpaces/%s/allocate"     // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceIpAllocations   = "ipSpaces/%s/allocations/" // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceOrgAssignments  = "ipSpaces/orgAssignments/" // '%s' is IP Space ID
 
 	// NSX-T ALB related endpoints
 
@@ -658,6 +665,19 @@ const (
 	IpSpaceShared  = "SHARED_SERVICES"
 	IpSpacePublic  = "PUBLIC"
 	IpSpacePrivate = "PRIVATE"
+)
+
+// IP Space IP Allocation Reservation Types
+const (
+	IpSpaceIpAllocationUsedManual = "USED_MANUAL"
+	IpSpaceIpAllocationUsed       = "USED"
+	IpSpaceIpAllocationUnused     = "UNUSED"
+)
+
+// IP Space IP Allocation Types
+const (
+	IpSpaceIpAllocationTypeFloatingIp = "FLOATING_IP"
+	IpSpaceIpAllocationTypeIpPrefix   = "IP_PREFIX"
 )
 
 // Values used for SAML metadata normalization and validation

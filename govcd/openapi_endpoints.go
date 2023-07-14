@@ -71,8 +71,12 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesBehaviorsInvocations:    "35.0", // VCD 10.2+
 
 	// IP Spaces
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces:         "37.1", // VCD 10.4.1+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries: "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces:               "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries:       "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks:         "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinksAllocate: "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceIpAllocations:   "37.1", // VCD 10.4.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceOrgAssignments:  "37.1", // VCD 10.4.1+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
@@ -133,6 +137,7 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"33.0", // Basic minimum required version
 		"35.0", // Deprecates field BackingType in favor of BackingTypeValue
 		"36.0", // Adds support new type of BackingTypeValue - IMPORTED_T_LOGICAL_SWITCH (backed by NSX-T segment)
+		"37.1", // Adds support for IP Spaces with new fields - UsingIpSpace, DedicatedOrg
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules: {
 		//"35.0", // Basic minimum required version
@@ -171,7 +176,16 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities: {
 		//"35.0", // Introduced support
 		"37.0", // Added metadata support
-	}}
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways: {
+		//"35.0", // Introduced support
+		"37.1", // Exposes computed field `UsingIpSpace` in `types.EdgeGatewayUplinks`
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinksAllocate: {
+		//"37.1", // Introduced support
+		"37.2", // Adds 'value' field
+	},
+}
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
 // specified OpenAPI endpoint and returns either an error or the Api version to use for calling that endpoint. This Api
