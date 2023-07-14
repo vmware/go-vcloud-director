@@ -219,7 +219,7 @@ func (di *DefinedInterface) AddBehavior(behavior types.Behavior) (*types.Behavio
 	return result, nil
 }
 
-// GetAllBehaviors retrieves all the Behaviors of the receiver Defined Interface. Query parameters can be supplied to modify pagination.
+// GetAllBehaviors retrieves all the Behaviors of the receiver Defined Interface.
 func (di *DefinedInterface) GetAllBehaviors(queryParameters url.Values) ([]*types.Behavior, error) {
 	if di.DefinedInterface.ID == "" {
 		return nil, fmt.Errorf("ID of the receiver Defined Interface is empty")

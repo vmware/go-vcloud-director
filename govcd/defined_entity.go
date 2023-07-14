@@ -205,7 +205,7 @@ func (rdeType *DefinedEntityType) Delete() error {
 	return nil
 }
 
-// GetAllBehaviors retrieves all the Behaviors of the receiver RDE Type. Query parameters can be supplied to modify pagination.
+// GetAllBehaviors retrieves all the Behaviors of the receiver RDE Type.
 func (rdeType *DefinedEntityType) GetAllBehaviors(queryParameters url.Values) ([]*types.Behavior, error) {
 	if rdeType.DefinedEntityType.ID == "" {
 		return nil, fmt.Errorf("ID of the receiver Defined Entity Type is empty")
