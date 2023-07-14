@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package types
@@ -101,6 +101,8 @@ const (
 	MimeVM = "application/vnd.vmware.vcloud.vm+xml"
 	// Mime for instantiate vApp template params
 	MimeInstantiateVappTemplateParams = "application/vnd.vmware.vcloud.instantiateVAppTemplateParams+xml"
+	// Mime for clone vApp template params
+	MimeCloneVapp = "application/vnd.vmware.vcloud.cloneVAppParams+xml"
 	// Mime for product section
 	MimeProductSection = "application/vnd.vmware.vcloud.productSections+xml"
 	// Mime for metadata
