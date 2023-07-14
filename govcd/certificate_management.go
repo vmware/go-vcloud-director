@@ -126,7 +126,7 @@ func (client *Client) AddCertificateToLibrary(certificateConfig *types.Certifica
 // filtering
 func getAllCertificateFromLibrary(client *Client, queryParameters url.Values, additionalHeader map[string]string) ([]*Certificate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func getAllCertificateFromLibrary(client *Client, queryParameters url.Values, ad
 	}
 
 	responses := []*types.CertificateLibraryItem{{}}
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &responses, additionalHeader)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &responses, additionalHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -176,18 +176,15 @@ func (adminOrg *AdminOrg) GetAllCertificatesFromLibrary(queryParameters url.Valu
 }
 
 // getCertificateFromLibraryByName retrieves certificate from certificate library by given name
-// When the alias contains commas, semicolons or asterisks, the encoding is rejected by the API in VCD 10.2 version.
+// When the alias contains commas, semicolons or asterisks, the encoding is rejected by the API in VCD.
 // For this reason, when one or more commas, semicolons or asterisks are present we run the search brute force,
-// by fetching all certificates and comparing the alias. Yet, this not needed anymore in VCD 10.3 version.
+// by fetching all certificates and comparing the alias.
 // Also, url.QueryEscape as well as url.Values.Encode() both encode the space as a + character. So we use
 // search brute force too. Reference to issue:
 // https://github.com/golang/go/issues/4013
 // https://github.com/czos/goamz/pull/11/files
 func getCertificateFromLibraryByName(client *Client, name string, additionalHeader map[string]string) (*Certificate, error) {
-	slowSearch, params, err := shouldDoSlowSearch("alias", name, client)
-	if err != nil {
-		return nil, err
-	}
+	slowSearch, params := shouldDoSlowSearch("alias", name)
 
 	var foundCertificates []*Certificate
 	certificates, err := getAllCertificateFromLibrary(client, params, additionalHeader)
