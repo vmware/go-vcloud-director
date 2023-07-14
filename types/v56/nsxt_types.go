@@ -1732,3 +1732,53 @@ type NsxtEdgeGatewaySlaacProfileDNSConfig struct {
 	DNSServerIpv6Addresses []string `json:"dnsServerIpv6Addresses,omitempty"`
 	DomainNames            []string `json:"domainNames,omitempty"`
 }
+
+// NsxtEdgeGatewayStaticRoute provides configuration structure for NSX-T Edge Gateway static route
+// configuration
+type NsxtEdgeGatewayStaticRoute struct {
+	// ID of this static route. On updates, the ID is required for the object, while for create a
+	// new ID will be generated. This ID is not a VCD URN
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+	// Description
+	Description string `json:"description,omitempty"`
+	// NetworkCidr contains network prefix in CIDR format. Both IPv4 and IPv6 formats are supported
+	NetworkCidr string `json:"networkCidr"`
+	// NextHops contains the list of next hops to use within the static route. List must contain at
+	// least one valid next hop
+	NextHops []NsxtEdgeGatewayStaticRouteNextHops `json:"nextHops"`
+
+	// SystemOwned contains a read-only flag whether this static route is managed by the system
+	SystemOwned *bool `json:"systemOwned,omitempty"`
+	// Version property describes the current version of the entity. To prevent clients from
+	// overwriting each other's changes, update operations must include the version which can be
+	// obtained by issuing a GET operation. If the version number on an update call is missing, the
+	// operation will be rejected. This is only needed on update calls.
+	Version string `json:"version,omitempty"`
+}
+
+// NsxtEdgeGatewayStaticRouteNextHops sets one next hop entry for the list
+type NsxtEdgeGatewayStaticRouteNextHops struct {
+	// AdminDistance for the next hop
+	AdminDistance int `json:"adminDistance"`
+	// IPAddress for next hop gateway IP Address for the static route.
+	IPAddress string `json:"ipAddress"`
+	// Scope holds a reference to an entity where the next hop of a static route is reachable. In
+	// general, the reference should be an org vDC network or segment backed external network, but
+	// scope could also reference a SYSTEM_OWNED entity if the next hop is configured outside of
+	// VCD.
+	Scope *NsxtEdgeGatewayStaticRouteNextHopScope `json:"scope,omitempty"`
+}
+
+// NsxtEdgeGatewayStaticRouteNextHopScope for a single NsxtEdgeGatewayStaticRouteNextHops entry
+type NsxtEdgeGatewayStaticRouteNextHopScope struct {
+	// ID of this scoped entity.
+	ID string `json:"id"`
+	// Name of the scoped entity.
+	Name string `json:"name"`
+	// ScopeType of this entity. This can be an network or a system-owned entity if the static
+	// route is SYSTEM_OWNED. Supported types are:
+	// * NETWORK
+	// * SYSTEM_OWNED
+	ScopeType string `json:"scopeType"`
+}
