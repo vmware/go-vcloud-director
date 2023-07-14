@@ -300,7 +300,7 @@ func (dfwRule *DistributedFirewallRule) Update(rule *types.DistributedFirewallRu
 	}
 
 	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dfwRule.VdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault), dfwRule.Rule.ID)
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dfwRule.VdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault), "/", dfwRule.Rule.ID)
 	if err != nil {
 		return nil, err
 	}

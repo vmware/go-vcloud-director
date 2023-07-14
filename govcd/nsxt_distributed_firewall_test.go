@@ -408,6 +408,24 @@ func testDistributedFirewallRuleSequence(vcd *TestVCD, check *C, randomizedFwRul
 		check.Assert(value, Equals, true)
 	}
 
+	// Perform Update
+	ruleById, err := vdcGroup.GetDistributedFirewallRuleById(allRules.DistributedFirewallRuleContainer.Values[0].ID)
+	check.Assert(err, IsNil)
+
+	updatedRuleName := check.TestName() + "-updated"
+	ruleById.Rule.Name = updatedRuleName
+	updatedRule, err := ruleById.Update(ruleById.Rule)
+	check.Assert(err, IsNil)
+	check.Assert(updatedRule.Rule.Name, Equals, updatedRuleName)
+
+	// Delete
+	err = updatedRule.Delete()
+	check.Assert(err, IsNil)
+
+	notFoundById, err := vdcGroup.GetDistributedFirewallRuleById(updatedRule.Rule.ID)
+	check.Assert(err, NotNil)
+	check.Assert(notFoundById, IsNil)
+
 	// Clean up created firewall rules for next phase
 	err = vdcGroup.DeleteAllDistributedFirewallRules()
 	check.Assert(err, IsNil)
