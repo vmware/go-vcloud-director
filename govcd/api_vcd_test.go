@@ -1670,6 +1670,19 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+	case "slaacProfile":
+		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		_, err = edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: false, Mode: "SLAAC"})
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
 
 	default:
 		// If we reach this point, we are trying to clean up an entity that

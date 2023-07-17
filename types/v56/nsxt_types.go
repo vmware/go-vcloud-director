@@ -203,6 +203,10 @@ type OpenApiOrgVdcNetwork struct {
 
 	// Shared shares network with other VDCs in the organization
 	Shared *bool `json:"shared,omitempty"`
+
+	// EnableDualSubnetNetwork defines whether or not this network will support two subnets (IPv4
+	// and IPv6)
+	EnableDualSubnetNetwork *bool `json:"enableDualSubnetNetwork,omitempty"`
 }
 
 // OrgVdcNetworkSubnetIPRanges is a type alias to reuse the same definitions with appropriate names
@@ -1240,6 +1244,10 @@ type NsxtAlbVirtualService struct {
 	// VirtualIpAddress to be used for exposing this virtual service
 	VirtualIpAddress string `json:"virtualIpAddress"`
 
+	// IPv6VirtualIpAddress defined IPv6 address to be used for this virtual service
+	// This field is only available in VCD 10.4.0 (v37.0+)
+	IPv6VirtualIpAddress string `json:"ipv6VirtualIpAddress,omitempty"`
+
 	// TransparentModeEnabled allows to configure Preserve Client IP on a Virtual Service
 	// This field is only available for VCD 10.4.1+ (v37.1+)
 	// Note. `types.NsxtAlbConfig.TransparentModeEnabled` must be set to `true` for this field to be
@@ -1707,6 +1715,22 @@ type VcenterImportableDvpg struct {
 	} `json:"dvSwitch"`
 	VirtualCenter *OpenApiReference `json:"virtualCenter"`
 	Vlan          string            `json:"vlan"`
+}
+
+// NsxtEdgeGatewaySlaacProfile provides configuration for NSX-T Edge Gateway IPv6 configuration
+type NsxtEdgeGatewaySlaacProfile struct {
+	Enabled bool `json:"enabled"`
+	// Mode is 'SLAAC' ,'DHCPv6', 'DISABLED'
+	Mode string `json:"mode"`
+	// DNSConfig provides additional configuration when Mode is set to 'SLAAC'
+	DNSConfig NsxtEdgeGatewaySlaacProfileDNSConfig `json:"dnsConfig,omitempty"`
+}
+
+// NsxtEdgeGatewaySlaacProfileDNSConfig contains additional NSX-T Edge Gateway IPv6 configuration
+// when it is configured for 'SLAAC' mode
+type NsxtEdgeGatewaySlaacProfileDNSConfig struct {
+	DNSServerIpv6Addresses []string `json:"dnsServerIpv6Addresses,omitempty"`
+	DomainNames            []string `json:"domainNames,omitempty"`
 }
 
 // NsxtEdgeGatewayStaticRoute provides configuration structure for NSX-T Edge Gateway static route

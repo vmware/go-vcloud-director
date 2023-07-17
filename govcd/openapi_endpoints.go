@@ -38,6 +38,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles:                "36.2", // VCD 10.3.2+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQos:             "36.2", // VCD 10.3.2+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDhcpForwarder:   "36.1", // VCD 10.3.1+ (NSX-T only)
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewaySlaacProfile:    "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayStaticRoutes:    "37.0", // VCD 10.4.0+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:               "34.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayUsedIpAddresses: "34.0",
@@ -164,6 +165,17 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway: {
 		//"35.0", // Basic minimum required version
 		"37.0", // Deprecates LicenseType in favor of SupportedFeatureSet. Adds IPv6 service network definition support
+		"37.1", // Adds support for Transparent Mode
+	},
+	//
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Adds IPv6 Virtual Service Support
+		"37.1", // Adds support for Transparent Mode
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceSummaries: {
+		//"35.0", // Basic minimum required version
+		"37.0", // Adds IPv6 Virtual Service Support
 		"37.1", // Adds support for Transparent Mode
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile: {
