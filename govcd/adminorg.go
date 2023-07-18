@@ -35,7 +35,7 @@ func NewAdminOrg(cli *Client) *AdminOrg {
 	}
 }
 
-// CreateCatalog creates a catalog with given name and description under the
+// CreateCatalog creates a catalog with given name and description under
 // the given organization. Returns an AdminCatalog that contains a creation
 // task.
 // API Documentation: https://code.vmware.com/apis/220/vcloud#/doc/doc/operations/POST-CreateCatalog.html
@@ -45,6 +45,16 @@ func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog,
 		return AdminCatalog{}, err
 	}
 	adminCatalog.parent = adminOrg
+
+	err = adminCatalog.Refresh()
+	if err != nil {
+		return AdminCatalog{}, err
+	}
+	// Make sure that the creation task is finished
+	err = adminCatalog.WaitForTasks()
+	if err != nil {
+		return AdminCatalog{}, err
+	}
 	return *adminCatalog, nil
 }
 
