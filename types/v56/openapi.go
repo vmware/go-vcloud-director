@@ -45,10 +45,10 @@ func (openApiError OpenApiError) ErrorWithStack() string {
 // Role defines access roles in VCD
 type Role struct {
 	ID          string `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	BundleKey   string `json:"bundleKey"`
-	ReadOnly    bool   `json:"readOnly"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	BundleKey   string `json:"bundleKey,omitempty"`
+	ReadOnly    bool   `json:"readOnly,omitempty"`
 }
 
 // NsxtTier0Router defines NSX-T Tier 0 router
@@ -82,10 +82,37 @@ type ExternalNetworkV2 struct {
 	// Description of the network
 	Description string `json:"description"`
 	// Subnets define one or more subnets and IP allocation pools in edge gateway
-	Subnets ExternalNetworkV2Subnets `json:"subnets"`
+	Subnets ExternalNetworkV2Subnets `json:"subnets,omitempty"`
 	// NetworkBackings for this external network. Describes if this external network is backed by
 	// port groups, vCenter standard switch or an NSX-T Tier-0 router.
 	NetworkBackings ExternalNetworkV2Backings `json:"networkBackings"`
+
+	// UsingIpSpace indicates whether the external network is using IP Spaces or not. This field is
+	// applicable only to the external networks backed by NSX-T Tier-0 router.
+	// This field is only available in VCD 10.4.1+
+	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
+
+	// DedicatedEdgeGateway contains reference to the Edge Gateway that this external network is
+	// dedicated to. This is null if this is not a dedicated external network. This field is unset
+	// if external network is using IP Spaces.
+	DedicatedEdgeGateway *OpenApiReference `json:"dedicatedEdgeGateway,omitempty"`
+
+	// DedicatedOrg specifies the Organization that this external network belongs to. This is unset
+	// for the external networks which are available to more than one organization.
+	//
+	// If this external network is dedicated to an Edge Gateway, this field is read-only and will be
+	// set to the Organization of the Edge Gateway.
+	//
+	// If this external network is using IP Spaces, this field can
+	// be used to dedicate this external network to the specified Organization.
+	DedicatedOrg *OpenApiReference `json:"dedicatedOrg,omitempty"`
+
+	// TotalIpCount contains the number of IP addresses defined by the static ip pools. If the
+	// network contains any IPv6 subnets, the total ip count will be null.
+	TotalIpCount *int `json:"totalIpCount,omitempty"`
+
+	// UsedIpCount holds the number of IP address used from the static ip pools.
+	UsedIpCount *int `json:"usedIpCount,omitempty"`
 }
 
 // OpenApiIPRangeValues defines allocated IP pools for a subnet in external network
@@ -437,6 +464,27 @@ type DefinedInterface struct {
 	IsReadOnly bool   `json:"readonly,omitempty"` // True if the entity type cannot be modified
 }
 
+// Behavior defines a concept similar to a "procedure" that lives inside Defined Interfaces or Defined Entity Types as overrides.
+type Behavior struct {
+	ID          string                 `json:"id,omitempty"`          // The Behavior ID is generated and is an output-only property
+	Description string                 `json:"description,omitempty"` // A description specifying the contract of the Behavior
+	Execution   map[string]interface{} `json:"execution,omitempty"`   // The Behavior execution mechanism. Can be defined both in an Interface and in a Defined Entity Type as an override
+	Ref         string                 `json:"ref,omitempty"`         // The Behavior invocation reference to be used for polymorphic behavior invocations. It is generated and is an output-only property
+	Name        string                 `json:"name,omitempty"`
+}
+
+// BehaviorAccess defines the access control configuration of a Behavior.
+type BehaviorAccess struct {
+	AccessLevelId string `json:"accessLevelId,omitempty"` // The ID of an AccessLevel
+	BehaviorId    string `json:"behaviorId,omitempty"`    // The ID of the Behavior. It can be both a behavior-interface or an overridden behavior-type ID
+}
+
+// BehaviorInvocation is an invocation of a Behavior on a Defined Entity instance. Currently, the Behavior interfaces are key-value maps specified in the Behavior description.
+type BehaviorInvocation struct {
+	Arguments interface{} `json:"arguments,omitempty"`
+	Metadata  interface{} `json:"metadata,omitempty"`
+}
+
 // DefinedEntityType describes what a Defined Entity Type should look like.
 type DefinedEntityType struct {
 	ID               string                 `json:"id,omitempty"`               // The id of the defined entity type in URN format
@@ -464,4 +512,122 @@ type DefinedEntity struct {
 	State      *string                `json:"state,omitempty"`      // Every entity is created in the "PRE_CREATED" state. Once an entity is ready to be validated against its schema, it will transition in another state - RESOLVED, if the entity is valid according to the schema, or RESOLUTION_ERROR otherwise. If an entity in an "RESOLUTION_ERROR" state is updated, it will transition to the inital "PRE_CREATED" state without performing any validation. If its in the "RESOLVED" state, then it will be validated against the entity type schema and throw an exception if its invalid
 	Owner      *OpenApiReference      `json:"owner,omitempty"`      // The owner of the defined entity
 	Org        *OpenApiReference      `json:"org,omitempty"`        // The organization of the defined entity.
+}
+
+type VSphereVirtualCenter struct {
+	VcId                      string `json:"vcId"`
+	Name                      string `json:"name"`
+	Description               string `json:"description"`
+	Username                  string `json:"username"`
+	Password                  string `json:"password"`
+	Url                       string `json:"url"`
+	IsEnabled                 bool   `json:"isEnabled"`
+	VsphereWebClientServerUrl string `json:"vsphereWebClientServerUrl"`
+	HasProxy                  bool   `json:"hasProxy"`
+	RootFolder                string `json:"rootFolder"`
+	VcNoneNetwork             string `json:"vcNoneNetwork"`
+	TenantVisibleName         string `json:"tenantVisibleName"`
+	IsConnected               bool   `json:"isConnected"`
+	Mode                      string `json:"mode"`
+	ListenerState             string `json:"listenerState"`
+	ClusterHealthStatus       string `json:"clusterHealthStatus"`
+	VcVersion                 string `json:"vcVersion"`
+	BuildNumber               string `json:"buildNumber"`
+	Uuid                      string `json:"uuid"`
+	NsxVManager               struct {
+		Username        string `json:"username"`
+		Password        string `json:"password"`
+		Url             string `json:"url"`
+		SoftwareVersion string `json:"softwareVersion"`
+	} `json:"nsxVManager"`
+	ProxyConfigurationUrn string `json:"proxyConfigurationUrn"`
+}
+
+type ResourcePoolSummary struct {
+	Associations []struct {
+		EntityId      string `json:"entityId"`
+		AssociationId string `json:"associationId"`
+	} `json:"associations"`
+	Values []ResourcePool `json:"values"`
+}
+
+// ResourcePool defines a vSphere Resource Pool
+type ResourcePool struct {
+	Moref             string `json:"moref"`
+	ClusterMoref      string `json:"clusterMoref"`
+	Name              string `json:"name"`
+	VcId              string `json:"vcId"`
+	Eligible          bool   `json:"eligible"`
+	KubernetesEnabled bool   `json:"kubernetesEnabled"`
+	VgpuEnabled       bool   `json:"vgpuEnabled"`
+}
+
+// OpenApiSupportedHardwareVersions is the list of versions supported by a given resource
+type OpenApiSupportedHardwareVersions struct {
+	Versions          []string `json:"versions"`
+	SupportedVersions []struct {
+		IsDefault bool   `json:"isDefault"`
+		Name      string `json:"name"`
+	} `json:"supportedVersions"`
+}
+
+// NetworkPool is the full data retrieved for a provider network pool
+type NetworkPool struct {
+	Status             string             `json:"status"`
+	Id                 string             `json:"id"`
+	Name               string             `json:"name"`
+	Description        string             `json:"description"`
+	PoolType           string             `json:"poolType"`
+	PromiscuousMode    bool               `json:"promiscuousMode"`
+	TotalBackingsCount int                `json:"totalBackingsCount"`
+	UsedBackingsCount  int                `json:"usedBackingsCount"`
+	ManagingOwnerRef   OpenApiReference   `json:"managingOwnerRef"`
+	Backing            NetworkPoolBacking `json:"backing"`
+}
+
+// NetworkPoolBacking is the definition of the objects supporting the network pool
+type NetworkPoolBacking struct {
+	VlanIdRanges     VlanIdRanges       `json:"vlanIdRanges"`
+	VdsRefs          []OpenApiReference `json:"vdsRefs"`
+	PortGroupRefs    []OpenApiReference `json:"portGroupRefs"`
+	TransportZoneRef OpenApiReference   `json:"transportZoneRef"`
+	ProviderRef      OpenApiReference   `json:"providerRef"`
+}
+
+type VlanIdRanges struct {
+	Values []VlanIdRange `json:"values"`
+}
+
+type VlanIdRange struct {
+	StartId int `json:"startId"`
+	EndId   int `json:"endId"`
+}
+
+// OpenApiStorageProfile defines a storage profile before it is assigned to a provider VDC
+type OpenApiStorageProfile struct {
+	Moref string `json:"moref"`
+	Name  string `json:"name"`
+}
+
+// UIPluginMetadata gives meta information about a UI Plugin
+type UIPluginMetadata struct {
+	ID             string `json:"id,omitempty"`
+	Vendor         string `json:"vendor,omitempty"`
+	License        string `json:"license,omitempty"`
+	Link           string `json:"link,omitempty"`
+	PluginName     string `json:"pluginName,omitempty"`
+	Version        string `json:"version,omitempty"`
+	Description    string `json:"description,omitempty"`
+	ProviderScoped bool   `json:"provider_scoped,omitempty"`
+	TenantScoped   bool   `json:"tenant_scoped,omitempty"`
+	Enabled        bool   `json:"enabled,omitempty"`
+	PluginStatus   string `json:"plugin_status,omitempty"`
+}
+
+// UploadSpec gives information about an upload
+type UploadSpec struct {
+	FileName     string `json:"fileName,omitempty"`
+	Size         int64  `json:"size,omitempty"`
+	Checksum     string `json:"checksum,omitempty"`
+	ChecksumAlgo string `json:"checksumAlgo,omitempty"`
 }

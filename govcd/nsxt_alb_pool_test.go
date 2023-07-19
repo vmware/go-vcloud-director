@@ -259,6 +259,13 @@ func setupAlbPoolPrerequisites(check *C, vcd *TestVCD) (*NsxtAlbController, *Nsx
 		albSettingsConfig.SupportedFeatureSet = "PREMIUM"
 	}
 
+	// Enable IPv6 service network definition (VCD 10.4.0+)
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.0") {
+		printVerbose("# Enabling IPv6 service network definition (VCD 10.4.0+)\n")
+		albSettingsConfig.ServiceNetworkDefinition = "192.168.255.125/25"
+		albSettingsConfig.Ipv6ServiceNetworkDefinition = "2001:0db8:85a3:0000:0000:8a2e:0370:7334/120"
+	}
+
 	// Enable Transparent mode on VCD >= 10.4.1
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.1") {
 		printVerbose("# Enabling Transparent mode on Edge Gateway (VCD 10.4.1+)\n")

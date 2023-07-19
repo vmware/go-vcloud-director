@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -1271,4 +1271,74 @@ func (vdc *Vdc) getParentOrg() (organization, error) {
 		}
 	}
 	return nil, fmt.Errorf("no parent found for VDC %s", vdc.Vdc.Name)
+}
+
+// CreateVappFromTemplate instantiates a new vApp from a vApp template
+// The template argument must contain at least:
+// * Name
+// * Source (a reference to the source vApp template)
+func (vdc *Vdc) CreateVappFromTemplate(template *types.InstantiateVAppTemplateParams) (*VApp, error) {
+	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error getting VDC href: %s", err)
+	}
+	vdcHref.Path += "/action/instantiateVAppTemplate"
+
+	vapp := NewVApp(vdc.client)
+
+	template.Xmlns = types.XMLNamespaceVCloud
+	template.Ovf = types.XMLNamespaceOVF
+	template.Deploy = true
+
+	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPost,
+		types.MimeInstantiateVappTemplateParams, "error instantiating a new vApp from Template: %s", template, vapp.VApp)
+	if err != nil {
+		return nil, err
+	}
+
+	task := NewTask(vdc.client)
+	for _, taskItem := range vapp.VApp.Tasks.Task {
+		task.Task = taskItem
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return nil, fmt.Errorf("error performing task: %s", err)
+		}
+	}
+	err = vapp.Refresh()
+	return vapp, err
+}
+
+// CloneVapp makes a copy of a vApp into a new one
+// The sourceVapp argument must contain at least:
+// * Name
+// * Source (a reference to the source vApp)
+func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
+	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error getting VDC href: %s", err)
+	}
+	vdcHref.Path += "/action/cloneVApp"
+
+	vapp := NewVApp(vdc.client)
+
+	sourceVapp.Xmlns = types.XMLNamespaceVCloud
+	sourceVapp.Ovf = types.XMLNamespaceOVF
+	sourceVapp.Deploy = true
+
+	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodPost,
+		types.MimeCloneVapp, "error cloning a vApp : %s", sourceVapp, vapp.VApp)
+	if err != nil {
+		return nil, err
+	}
+
+	task := NewTask(vdc.client)
+	for _, taskItem := range vapp.VApp.Tasks.Task {
+		task.Task = taskItem
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return nil, fmt.Errorf("error performing task: %s", err)
+		}
+	}
+	err = vapp.Refresh()
+	return vapp, err
 }

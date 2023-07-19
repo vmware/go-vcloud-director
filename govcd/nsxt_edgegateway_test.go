@@ -584,3 +584,59 @@ func (vcd *TestVCD) Test_NsxtEdgeDhcpForwarder(check *C) {
 	_, err = edge.UpdateDhcpForwarder(&types.NsxtEdgeGatewayDhcpForwarder{})
 	check.Assert(err, IsNil)
 }
+
+// Test_NsxtEdgeSlaacProfile tests SLAAC profile (NSX-T Edge Gateway DHCPv6) retrieval and update
+func (vcd *TestVCD) Test_NsxtEdgeSlaacProfile(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGatewaySlaacProfile)
+
+	edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vcd.config.VCD.Nsxt.EdgeGateway, "slaacProfile", vcd.config.VCD.Org, check.TestName())
+
+	// Fetch current SLAAC Profile
+	slaacProfile, err := edge.GetSlaacProfile()
+	check.Assert(err, IsNil)
+	check.Assert(slaacProfile, NotNil)
+	check.Assert(slaacProfile.Enabled, Equals, false)
+
+	// Create new SLAAC config in SLAAC mode
+	newSlaacProfile := &types.NsxtEdgeGatewaySlaacProfile{
+		Enabled: true,
+		Mode:    "SLAAC",
+		DNSConfig: types.NsxtEdgeGatewaySlaacProfileDNSConfig{
+			DNSServerIpv6Addresses: []string{"2001:4860:4860::8888", "2001:4860:4860::8844"},
+			DomainNames:            []string{"non-existing.org.tld", "fake.org.tld"},
+		},
+	}
+
+	// Update SLAAC profile
+	updatedSlaacProfile, err := edge.UpdateSlaacProfile(newSlaacProfile)
+	check.Assert(err, IsNil)
+	check.Assert(updatedSlaacProfile, NotNil)
+	check.Assert(updatedSlaacProfile, DeepEquals, newSlaacProfile)
+
+	// Create new SLAAC config in DHCPv6 mode
+	newSlaacProfileDhcpv6 := &types.NsxtEdgeGatewaySlaacProfile{
+		Enabled: true,
+		Mode:    "DHCPv6",
+		DNSConfig: types.NsxtEdgeGatewaySlaacProfileDNSConfig{
+			DNSServerIpv6Addresses: []string{},
+			DomainNames:            []string{},
+		},
+	}
+
+	// Update SLAAC profile
+	updatedSlaacProfileDhcpv6, err := edge.UpdateSlaacProfile(newSlaacProfileDhcpv6)
+	check.Assert(err, IsNil)
+	check.Assert(updatedSlaacProfileDhcpv6, NotNil)
+	check.Assert(updatedSlaacProfileDhcpv6, DeepEquals, newSlaacProfileDhcpv6)
+
+	// Cleanup
+	updatedSlaacProfile, err = edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: false, Mode: "DISABLED"})
+	check.Assert(err, IsNil)
+	check.Assert(updatedSlaacProfile, NotNil)
+}

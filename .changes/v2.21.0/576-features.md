@@ -1,0 +1,5 @@
+* Added AdminOrg methods `GetFederationSettings`, `SetFederationSettings`, `UnsetFederationSettings` to handle organization SAML settings [GH-576]
+* Added AdminOrg methods `GetServiceProviderSamlMetadata` and `RetrieveServiceProviderSamlMetadata` to retrieve service provider metadata for current organization [GH-576]
+* Added method `Client.RetrieveRemoteDocument` to download a document from a URL [GH-576]
+* Added function `ValidateSamlServiceProviderMetadata` to validate service oprovider metadata [GH-576]
+* Added function `GetErrorMessageFromErrorSlice` to return a single string from a slice of errors [GH-576]

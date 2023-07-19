@@ -99,7 +99,7 @@ func HelperMakeFiltersFromNetworks(vdc *Vdc) ([]FilterMatch, error) {
 			return nil, err
 		}
 
-		filter, err = vdc.client.metadataToFilter(net.HREF, filter)
+		filter, err = vdc.client.metadataToFilter(net.HREF, net.Name, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +207,7 @@ func HelperMakeFiltersFromCatalogs(org *AdminOrg) ([]FilterMatch, error) {
 
 		dateInfo = append(dateInfo, dInfo...)
 
-		filter, err = org.client.metadataToFilter(cat.HREF, filter)
+		filter, err = org.client.metadataToFilter(cat.HREF, cat.Name, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -245,7 +245,7 @@ func HelperMakeFiltersFromMedia(vdc *Vdc, catalogName string) ([]FilterMatch, er
 
 		dateInfo = append(dateInfo, dInfo...)
 
-		filter, err = vdc.client.metadataToFilter(item.HREF, filter)
+		filter, err = vdc.client.metadataToFilter(item.HREF, item.Name, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -302,7 +302,7 @@ func HelperMakeFiltersFromCatalogItem(catalog *Catalog) ([]FilterMatch, error) {
 
 		dateInfo = append(dateInfo, dInfo...)
 
-		filter, err = catalog.client.metadataToFilter(item.HREF, filter)
+		filter, err = catalog.client.metadataToFilter(item.HREF, item.Name, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -338,7 +338,7 @@ func HelperMakeFiltersFromVappTemplate(catalog *Catalog) ([]FilterMatch, error) 
 
 		dateInfo = append(dateInfo, dInfo...)
 
-		filter, err = catalog.client.metadataToFilter(item.HREF, filter)
+		filter, err = catalog.client.metadataToFilter(item.HREF, item.Name, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -446,7 +446,7 @@ func HelperMakeFiltersFromOrgVdc(org *Org) ([]FilterMatch, error) {
 			return nil, err
 		}
 
-		filter, err = org.client.metadataToFilter(item.HREF, filter)
+		filter, err = org.client.metadataToFilter(item.HREF, item.Name, filter)
 		if err != nil {
 			return nil, err
 		}
@@ -513,11 +513,12 @@ func guessMetadataType(value string) string {
 // metadataToFilter adds metadata elements to an existing filter
 // href is the address of the entity for which we want to retrieve metadata
 // filter is an existing filter to which we want to add metadata elements
-func (client *Client) metadataToFilter(href string, filter *FilterDef) (*FilterDef, error) {
+// objectName is the name of the entity for which we want to retrieve metadata
+func (client *Client) metadataToFilter(href, objectName string, filter *FilterDef) (*FilterDef, error) {
 	if filter == nil {
 		filter = &FilterDef{}
 	}
-	metadata, err := getMetadata(client, href)
+	metadata, err := getMetadata(client, href, objectName)
 	if err == nil && metadata != nil && len(metadata.MetadataEntry) > 0 {
 		for _, md := range metadata.MetadataEntry {
 			isSystem := false

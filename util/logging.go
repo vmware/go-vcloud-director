@@ -195,6 +195,14 @@ func hideSensitive(in string, onScreen bool) string {
 	re7 := regexp.MustCompile(`(refresh_token)=(\S+)`)
 	out = re7.ReplaceAllString(out, `${1}=*******`)
 
+	// Bearer token inside JSON response
+	re8 := regexp.MustCompile(`("access_token":\s*)"[^"]*`)
+	out = re8.ReplaceAllString(out, `${1}*******`)
+
+	// Token inside JSON response
+	re9 := regexp.MustCompile(`("refresh_token":\s*)"[^"]*`)
+	out = re9.ReplaceAllString(out, `${1}*******`)
+
 	return out
 }
 
@@ -209,6 +217,7 @@ func isBinary(data string, req *http.Request) bool {
 		(req.Method == http.MethodPut || req.Method == http.MethodPost) {
 		return true
 	}
+	uiPlugin := regexp.MustCompile(`manifest\.json|bundle\.js`)
 	for key, value := range req.Header {
 		if reContentRange.MatchString(key) {
 			return true
@@ -222,7 +231,7 @@ func isBinary(data string, req *http.Request) bool {
 			}
 		}
 	}
-	return false
+	return uiPlugin.MatchString(data)
 }
 
 // SanitizedHeader returns a http.Header with sensitive fields masked

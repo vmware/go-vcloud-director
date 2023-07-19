@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -379,6 +379,7 @@ func (vapp *VApp) Reset() (Task, error) {
 		"", "error resetting vApp: %s", nil)
 }
 
+// Suspend suspends a vApp
 func (vapp *VApp) Suspend() (Task, error) {
 
 	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
@@ -387,6 +388,24 @@ func (vapp *VApp) Suspend() (Task, error) {
 	// Return the task
 	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
 		"", "error suspending vApp: %s", nil)
+}
+
+// DiscardSuspendedState takes back a vApp from suspension
+func (vapp *VApp) DiscardSuspendedState() error {
+	// Status 3 means that the vApp is suspended
+	if vapp.VApp.Status != 3 {
+		return nil
+	}
+	apiEndpoint := urlParseRequestURI(vapp.VApp.HREF)
+	apiEndpoint.Path += "/action/discardSuspendedState"
+
+	// Return the task
+	task, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
+		"", "error discarding suspended state for vApp: %s", nil)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
 }
 
 func (vapp *VApp) Shutdown() (Task, error) {
