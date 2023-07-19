@@ -855,7 +855,7 @@ func (vcd *TestVCD) Test_GetCatalogByXSharedCatalogOrgUser(check *C) {
 	// Create an Org Admin user and test that it can find catalog as well
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	orgAdminClient, err := newOrgUserConnection(adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgAdminClient, _, err := newOrgUserConnection(adminOrg, "test-user", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	orgAsOrgUser, err := orgAdminClient.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -975,10 +975,10 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
 
 	err = adminCatalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
-		IsPublishedExternally:    takeBoolPointer(true),
-		IsCachedEnabled:          takeBoolPointer(true),
+		IsPublishedExternally:    addrOf(true),
+		IsCachedEnabled:          addrOf(true),
 		Password:                 "secretOrNot",
-		PreserveIdentityInfoFlag: takeBoolPointer(true),
+		PreserveIdentityInfoFlag: addrOf(true),
 	})
 	check.Assert(err, IsNil)
 	check.Assert(*adminCatalog.AdminCatalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
@@ -1002,10 +1002,10 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
 
 	err = catalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
-		IsPublishedExternally:    takeBoolPointer(true),
-		IsCachedEnabled:          takeBoolPointer(true),
+		IsPublishedExternally:    addrOf(true),
+		IsCachedEnabled:          addrOf(true),
 		Password:                 "secretOrNot",
-		PreserveIdentityInfoFlag: takeBoolPointer(true),
+		PreserveIdentityInfoFlag: addrOf(true),
 	})
 	check.Assert(err, IsNil)
 	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)
@@ -1014,10 +1014,10 @@ func (vcd *TestVCD) Test_PublishToExternalOrganizations(check *C) {
 	check.Assert(catalog.Catalog.PublishExternalCatalogParams.Password, Equals, "******")
 
 	err = catalog.PublishToExternalOrganizations(types.PublishExternalCatalogParams{
-		IsPublishedExternally:    takeBoolPointer(true),
-		IsCachedEnabled:          takeBoolPointer(false),
+		IsPublishedExternally:    addrOf(true),
+		IsCachedEnabled:          addrOf(false),
 		Password:                 "secretOrNot2",
-		PreserveIdentityInfoFlag: takeBoolPointer(false),
+		PreserveIdentityInfoFlag: addrOf(false),
 	})
 	check.Assert(err, IsNil)
 	check.Assert(*catalog.Catalog.PublishExternalCatalogParams.IsPublishedExternally, Equals, true)

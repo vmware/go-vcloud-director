@@ -4,11 +4,12 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	"os"
 	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/vmware/go-vcloud-director/v2/util"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -41,7 +42,7 @@ func (vcd *TestVCD) Test_NsxtDistributedFirewallRules(check *C) {
 	// Prep Org admin user and run firewall tests
 	userName := strings.ToLower(check.TestName())
 	fmt.Printf("# Running Distributed Firewall tests as Org Admin user '%s'\n", userName)
-	orgUserVcdClient, err := newOrgUserConnection(adminOrg, userName, "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgUserVcdClient, _, err := newOrgUserConnection(adminOrg, userName, "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 	orgUserOrgAdmin, err := orgUserVcdClient.GetAdminOrgById(adminOrg.AdminOrg.ID)
 	check.Assert(err, IsNil)
@@ -281,4 +282,151 @@ func dumpDistributedFirewallRulesToScreen(rules []*types.DistributedFirewallRule
 	if err != nil {
 		util.Logger.Printf("Error while dumping Distributed Firewall rules to screen: %s", err)
 	}
+}
+
+// Test_NsxtDistributedFirewallRule tests the capability of managing Firewall Rules one by one using
+// `DistributedFirewallRule` type.
+func (vcd *TestVCD) Test_NsxtDistributedFirewallRule(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(adminOrg, NotNil)
+	check.Assert(err, IsNil)
+
+	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
+	check.Assert(nsxtExternalNetwork, NotNil)
+	check.Assert(err, IsNil)
+
+	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
+	check.Assert(vdc, NotNil)
+	check.Assert(vdcGroup, NotNil)
+
+	defer func() {
+		// Cleanup
+		err = vdcGroup.Delete()
+		check.Assert(err, IsNil)
+		err = vdc.DeleteWait(true, true)
+		check.Assert(err, IsNil)
+	}()
+
+	fmt.Println("# Running Distributed Firewall tests for single Rule")
+	test_NsxtDistributedFirewallRule(vcd, check, vdcGroup.VdcGroup.Id, vcd.client, vdc)
+}
+
+func test_NsxtDistributedFirewallRule(vcd *TestVCD, check *C, vdcGroupId string, vcdClient *VCDClient, vdc *Vdc) {
+	adminOrg, err := vcdClient.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(adminOrg, NotNil)
+	check.Assert(err, IsNil)
+
+	vdcGroup, err := adminOrg.GetVdcGroupById(vdcGroupId)
+	check.Assert(err, IsNil)
+
+	_, err = vdcGroup.ActivateDfw()
+	check.Assert(err, IsNil)
+
+	// Prep firewall rule sample to operate with
+	randomizedFwRuleDefs, ipSet, secGroup := createDistributedFirewallDefinitions(check, vcd, vdcGroup.VdcGroup.Id, vcdClient, vdc)
+	// defer cleanup function in case something goes wrong
+	defer func() {
+		dfw, err := vdcGroup.GetDistributedFirewall()
+		check.Assert(err, IsNil)
+		err = dfw.DeleteAllRules()
+		check.Assert(err, IsNil)
+		_, err = vdcGroup.DisableDefaultPolicy()
+		check.Assert(err, IsNil)
+		err = ipSet.Delete()
+		check.Assert(err, IsNil)
+		err = secGroup.Delete()
+		check.Assert(err, IsNil)
+	}()
+
+	randomizedFwRuleSubSet := randomizedFwRuleDefs[0:5] // taking only first 5 rules to limit time of testing
+
+	// removing default firewall rule which is created by VCD when vdcGroup.ActivateDfw() is executed
+	err = vdcGroup.DeleteAllDistributedFirewallRules()
+	check.Assert(err, IsNil)
+
+	// Adding firewal rules one by one and checking that each of them is
+	testDistributedFirewallRuleSequence(vcd, check, randomizedFwRuleSubSet, vdcGroup, false)
+	testDistributedFirewallRuleSequence(vcd, check, randomizedFwRuleSubSet, vdcGroup, true)
+}
+
+// testDistributedFirewallRuleSequence tests the following:
+// * create firewall rules one one by one
+// * check that the order of firewall rules is the same as requested (or exactly reverse if
+// reverseOrder=true)
+// * check that all IDs of created firewall rules persisted during further updates (means that no
+// firewall rules were recreated during addition of new ones)
+func testDistributedFirewallRuleSequence(vcd *TestVCD, check *C, randomizedFwRuleSubSet []*types.DistributedFirewallRule, vdcGroup *VdcGroup, reverseOrder bool) {
+	createdIdsFound := make(map[string]bool)
+	fmt.Printf("# Creating '%d' rules one by one (reverseOrder: %t)\n", len(randomizedFwRuleSubSet), reverseOrder)
+	previousRuleId := ""
+	for _, rule := range randomizedFwRuleSubSet {
+		if testVerbose {
+			fmt.Printf("%s\t%s\t%s\t%t\t%s\t%t\t%d\t%d\t%d\t%d\n", rule.Name, rule.Direction, rule.IpProtocol,
+				rule.Enabled, rule.Action, rule.Logging, len(rule.SourceFirewallGroups), len(rule.DestinationFirewallGroups), len(rule.ApplicationPortProfiles), len(rule.NetworkContextProfiles))
+		}
+
+		completeDfw, singleCreatedFwRule, err := vdcGroup.CreateDistributedFirewallRule(previousRuleId, rule)
+		check.Assert(err, IsNil)
+		check.Assert(completeDfw, NotNil)
+		check.Assert(singleCreatedFwRule, NotNil)
+		createdIdsFound[singleCreatedFwRule.Rule.ID] = false
+
+		// caching ID to use as previous rule in case
+		if reverseOrder {
+			previousRuleId = singleCreatedFwRule.Rule.ID
+		}
+	}
+	fmt.Printf("# Done creating '%d' rules one by one (reverseOrder: %t)\n", len(randomizedFwRuleSubSet), reverseOrder)
+
+	// Retrieve all firewall rules and check that order matches
+	allRules, err := vdcGroup.GetDistributedFirewall()
+	check.Assert(err, IsNil)
+	check.Assert(len(allRules.DistributedFirewallRuleContainer.Values), Equals, len(randomizedFwRuleSubSet))
+
+	// check that rule order is exactly as expected (either reverse of randomizedFwRuleSubSet or exactly the same based on reverseOrder parameter)
+	if reverseOrder {
+		for ruleIndex, rule := range allRules.DistributedFirewallRuleContainer.Values {
+			reverseRuleIndex := len(randomizedFwRuleSubSet) - ruleIndex - 1
+			check.Assert(rule.Name, Equals, randomizedFwRuleSubSet[reverseRuleIndex].Name)
+			createdIdsFound[rule.ID] = true
+		}
+	} else {
+		for ruleIndex, rule := range allRules.DistributedFirewallRuleContainer.Values {
+			check.Assert(rule.Name, Equals, randomizedFwRuleSubSet[ruleIndex].Name)
+			createdIdsFound[rule.ID] = true
+		}
+	}
+
+	// Check that all created IDs are in the final output (none of the firewall rules were recreated)
+	for _, value := range createdIdsFound {
+		check.Assert(value, Equals, true)
+	}
+
+	// Perform Update
+	ruleById, err := vdcGroup.GetDistributedFirewallRuleById(allRules.DistributedFirewallRuleContainer.Values[0].ID)
+	check.Assert(err, IsNil)
+
+	updatedRuleName := check.TestName() + "-updated"
+	ruleById.Rule.Name = updatedRuleName
+	updatedRule, err := ruleById.Update(ruleById.Rule)
+	check.Assert(err, IsNil)
+	check.Assert(updatedRule.Rule.Name, Equals, updatedRuleName)
+
+	// Delete
+	err = updatedRule.Delete()
+	check.Assert(err, IsNil)
+
+	notFoundById, err := vdcGroup.GetDistributedFirewallRuleById(updatedRule.Rule.ID)
+	check.Assert(err, NotNil)
+	check.Assert(notFoundById, IsNil)
+
+	// Clean up created firewall rules for next phase
+	err = vdcGroup.DeleteAllDistributedFirewallRules()
+	check.Assert(err, IsNil)
 }

@@ -753,19 +753,12 @@ func (client *Client) GetStorageProfileByHref(url string) (*types.VdcStorageProf
 // 3. [NOT FOUND] The name matches, is not unique, but no Provider HREF was given: the search will fail
 // 4. [NOT FOUND] The name does not match any of the storage profiles
 func (vcdClient *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCHref string) (*types.QueryResultProviderVdcStorageProfileRecordType, error) {
-	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":     "providerVdcStorageProfile",
-		"pageSize": "128",
-	})
+
+	results, err := vcdClient.Client.cumulativeQuery(types.QtProviderVdcStorageProfile, map[string]string{
+		"type": types.QtProviderVdcStorageProfile,
+	}, nil)
 	if err != nil {
 		return nil, err
-	}
-
-	// Note: pageSize of 128 (the maximum page size allowed) should be enough to get all storage profiles.
-	// In case this is not true, we trap the error, so that we become aware that this assumption is incorrect.
-	// TODO: convert this query into a cumulativeQuery
-	if results.Results.Total > 128.0 {
-		return nil, fmt.Errorf("[QueryWithNotEncodedParams] FATAL - more than 128 storage profiles found. Refactory needed")
 	}
 
 	var recs []*types.QueryResultProviderVdcStorageProfileRecordType
@@ -812,8 +805,8 @@ func QueryProviderVdcStorageProfileByName(vcdCli *VCDClient, name string) ([]*ty
 
 // QueryNetworkPoolByName finds a network pool by name
 func QueryNetworkPoolByName(vcdCli *VCDClient, name string) ([]*types.QueryResultNetworkPoolRecordType, error) {
-	results, err := vcdCli.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":          "networkPool",
+	results, err := vcdCli.Client.cumulativeQuery(types.QtNetworkPool, nil, map[string]string{
+		"type":          types.QtNetworkPool,
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
 		"filterEncoded": "true",
 	})
@@ -852,9 +845,7 @@ func (vcdClient *VCDClient) QueryProviderVdcs() ([]*types.QueryResultVMWProvider
 
 // QueryNetworkPools gets the list of network pools
 func (vcdClient *VCDClient) QueryNetworkPools() ([]*types.QueryResultNetworkPoolRecordType, error) {
-	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
-		"type": "networkPool",
-	})
+	results, err := vcdClient.Client.cumulativeQuery(types.QtNetworkPool, nil, map[string]string{"type": types.QtNetworkPool})
 	if err != nil {
 		return nil, err
 	}
@@ -870,9 +861,7 @@ func (vcdClient *VCDClient) QueryProviderVdcStorageProfiles() ([]*types.QueryRes
 
 // QueryAllProviderVdcStorageProfiles gets the list of provider VDC storage profiles from ALL provider VDCs
 func (client *Client) QueryAllProviderVdcStorageProfiles() ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
-	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type": "providerVdcStorageProfile",
-	})
+	results, err := client.cumulativeQuery(types.QtProviderVdcStorageProfile, nil, map[string]string{"type": types.QtProviderVdcStorageProfile})
 	if err != nil {
 		return nil, err
 	}
@@ -882,8 +871,8 @@ func (client *Client) QueryAllProviderVdcStorageProfiles() ([]*types.QueryResult
 
 // QueryProviderVdcStorageProfiles gets the list of provider VDC storage profiles for a given Provider VDC
 func (client *Client) QueryProviderVdcStorageProfiles(providerVdcHref string) ([]*types.QueryResultProviderVdcStorageProfileRecordType, error) {
-	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "providerVdcStorageProfile",
+	results, err := client.cumulativeQuery(types.QtProviderVdcStorageProfile, nil, map[string]string{
+		"type":   types.QtProviderVdcStorageProfile,
 		"filter": fmt.Sprintf("providerVdc==%s", providerVdcHref),
 	})
 	if err != nil {
@@ -942,6 +931,20 @@ func (vcdClient *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryR
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          "nsxTManager",
 		"filter":        fmt.Sprintf("name==%s", url.QueryEscape(name)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.NsxtManagerRecord, nil
+}
+
+// QueryNsxtManagerByHref searches for NSX-T managers available in VCD
+func (vcdClient *VCDClient) QueryNsxtManagerByHref(href string) ([]*types.QueryResultNsxtManagerRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          "nsxTManager",
+		"filter":        fmt.Sprintf("href==%s", extractUuid(href)),
 		"filterEncoded": "true",
 	})
 	if err != nil {

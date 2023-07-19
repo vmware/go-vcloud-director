@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
@@ -153,6 +154,9 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 	if rdeTypeToUpdate.Schema == nil || len(rdeTypeToUpdate.Schema) == 0 {
 		rdeTypeToUpdate.Schema = rdeType.DefinedEntityType.Schema
 	}
+	rdeTypeToUpdate.Version = rdeType.DefinedEntityType.Version
+	rdeTypeToUpdate.Nss = rdeType.DefinedEntityType.Nss
+	rdeTypeToUpdate.Vendor = rdeType.DefinedEntityType.Vendor
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -199,6 +203,163 @@ func (rdeType *DefinedEntityType) Delete() error {
 
 	rdeType.DefinedEntityType = &types.DefinedEntityType{}
 	return nil
+}
+
+// GetAllBehaviors retrieves all the Behaviors of the receiver RDE Type.
+func (rdeType *DefinedEntityType) GetAllBehaviors(queryParameters url.Values) ([]*types.Behavior, error) {
+	if rdeType.DefinedEntityType.ID == "" {
+		return nil, fmt.Errorf("ID of the receiver Defined Entity Type is empty")
+	}
+	return getAllBehaviors(rdeType.client, rdeType.DefinedEntityType.ID, types.OpenApiEndpointRdeTypeBehaviors, queryParameters)
+}
+
+// GetBehaviorById retrieves a unique Behavior that belongs to the receiver RDE Type and is determined by the
+// input ID. The ID can be a RDE Interface Behavior ID or a RDE Type overridden Behavior ID.
+func (rdeType *DefinedEntityType) GetBehaviorById(id string) (*types.Behavior, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
+	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), id)
+	if err != nil {
+		return nil, err
+	}
+
+	response := types.Behavior{}
+	err = rdeType.client.OpenApiGetItem(apiVersion, urlRef, nil, &response, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+// GetBehaviorByName retrieves a unique Behavior that belongs to the receiver RDE Type and is named after
+// the input.
+func (rdeType *DefinedEntityType) GetBehaviorByName(name string) (*types.Behavior, error) {
+	behaviors, err := rdeType.GetAllBehaviors(nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not get the Behaviors of the Defined Entity Type with ID '%s': %s", rdeType.DefinedEntityType.ID, err)
+	}
+	for _, b := range behaviors {
+		if b.Name == name {
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("could not find any Behavior with name '%s' in Defined Entity Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
+}
+
+// UpdateBehaviorOverride overrides an Interface Behavior. Only Behavior description and execution can be overridden.
+// It returns the new Behavior, result of the override (with a new ID).
+func (rdeType *DefinedEntityType) UpdateBehaviorOverride(behavior types.Behavior) (*types.Behavior, error) {
+	if rdeType.DefinedEntityType.ID == "" {
+		return nil, fmt.Errorf("ID of the receiver Defined Entity Type is empty")
+	}
+	if behavior.ID == "" {
+		return nil, fmt.Errorf("ID of the Behavior to override is empty")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
+	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), behavior.ID)
+	if err != nil {
+		return nil, err
+	}
+	response := types.Behavior{}
+	err = rdeType.client.OpenApiPutItem(apiVersion, urlRef, nil, behavior, &response, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
+// DeleteBehaviorOverride removes a Behavior specified by its ID from the receiver Defined Entity Type.
+// The ID can be the Interface Behavior ID or the Type Behavior ID (the overridden one).
+func (rdeType *DefinedEntityType) DeleteBehaviorOverride(behaviorId string) error {
+	if rdeType.DefinedEntityType.ID == "" {
+		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
+	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), behaviorId)
+	if err != nil {
+		return err
+	}
+	err = rdeType.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SetBehaviorAccessControls sets the given slice of BehaviorAccess to the receiver Defined Entity Type.
+func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAccess) error {
+	if det.DefinedEntityType.ID == "" {
+		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
+	}
+
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls
+	apiVersion, err := det.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := det.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, det.DefinedEntityType.ID))
+	if err != nil {
+		return err
+	}
+
+	// Wrap it in OpenAPI pages, this endpoint requires it
+	rawMessage, err := json.Marshal(acls)
+	if err != nil {
+		return fmt.Errorf("error setting Access controls in payload: %s", err)
+	}
+	payload := types.OpenApiPages{
+		Values: rawMessage,
+	}
+
+	err = det.client.OpenApiPutItem(apiVersion, urlRef, nil, payload, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetAllBehaviorsAccessControls gets all the Behaviors Access Controls from the receiver DefinedEntityType.
+// Query parameters can be supplied to modify pagination.
+func (det *DefinedEntityType) GetAllBehaviorsAccessControls(queryParameters url.Values) ([]*types.BehaviorAccess, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls
+	apiVersion, err := det.client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := det.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, det.DefinedEntityType.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.BehaviorAccess{{}}
+	err = det.client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponses, nil
 }
 
 // GetAllRdes gets all the RDE instances of the given vendor, nss and version.
@@ -493,5 +654,53 @@ func (rde *DefinedEntity) Delete() error {
 
 	rde.DefinedEntity = &types.DefinedEntity{}
 	rde.Etag = ""
+	return nil
+}
+
+// InvokeBehavior calls a Behavior identified by the given ID with the given execution parameters.
+// Returns the invocation result as a raw string.
+func (rde *DefinedEntity) InvokeBehavior(behaviorId string, invocation types.BehaviorInvocation) (string, error) {
+	client := rde.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesBehaviorsInvocations
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return "", err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rde.DefinedEntity.ID, behaviorId))
+	if err != nil {
+		return "", err
+	}
+
+	task, err := client.OpenApiPostItemAsync(apiVersion, urlRef, nil, invocation)
+	if err != nil {
+		return "", err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return "", err
+	}
+
+	if task.Task.Result == nil {
+		return "", fmt.Errorf("the Task '%s' returned an empty Result content", task.Task.ID)
+	}
+
+	return task.Task.Result.ResultContent.Text, nil
+}
+
+// InvokeBehaviorAndMarshal calls a Behavior identified by the given ID with the given execution parameters.
+// Returns the invocation result marshaled with the input object.
+func (rde *DefinedEntity) InvokeBehaviorAndMarshal(behaviorId string, invocation types.BehaviorInvocation, output interface{}) error {
+	result, err := rde.InvokeBehavior(behaviorId, invocation)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal([]byte(result), &output)
+	if err != nil {
+		return fmt.Errorf("error marshaling the invocation result '%s': %s", result, err)
+	}
+
 	return nil
 }

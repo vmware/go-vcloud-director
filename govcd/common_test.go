@@ -1,4 +1,4 @@
-//go:build api || auth || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || role || nsxv || nsxt || openapi || affinity || search || alb || certificate || vdcGroup || metadata || providervdc || rde || ALL
+//go:build api || auth || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || role || nsxv || nsxt || openapi || affinity || search || alb || certificate || vdcGroup || metadata || providervdc || rde || uiPlugin || vsphere || ALL
 
 /*
  * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -9,7 +9,6 @@ package govcd
 import (
 	"errors"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	"io"
 	"net/http"
 	"net/url"
@@ -17,6 +16,8 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/vmware/go-vcloud-director/v2/util"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
@@ -663,7 +664,7 @@ func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
 		SizeMb:          int64(100),
 		BusNumber:       0,
 		UnitNumber:      0,
-		ThinProvisioned: takeBoolPointer(true),
+		ThinProvisioned: addrOf(true),
 	}
 	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
 		CreateItem: &types.CreateItem{
@@ -672,11 +673,11 @@ func makeEmptyVm(vapp *VApp, name string) (*VM, error) {
 			Description:               "created by makeEmptyVm",
 			GuestCustomizationSection: nil,
 			VmSpecSection: &types.VmSpecSection{
-				Modified:          takeBoolPointer(true),
+				Modified:          addrOf(true),
 				Info:              "Virtual Machine specification",
 				OsType:            "debian10Guest",
-				NumCpus:           takeIntAddress(1),
-				NumCoresPerSocket: takeIntAddress(1),
+				NumCpus:           addrOf(1),
+				NumCoresPerSocket: addrOf(1),
 				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
 				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 512},
 				MediaSection:      nil,
@@ -728,7 +729,7 @@ func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: takeBoolPointer(true),
+			Enabled: addrOf(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,
@@ -746,8 +747,8 @@ func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
 		IsEnabled:             true,
 		IsThinProvision:       true,
 		UsesFastProvisioning:  true,
-		IsElastic:             takeBoolPointer(true),
-		IncludeMemoryOverhead: takeBoolPointer(true),
+		IsElastic:             addrOf(true),
+		IncludeMemoryOverhead: addrOf(true),
 	}
 
 	vdc, err := adminOrg.CreateOrgVdc(vdcConfiguration)

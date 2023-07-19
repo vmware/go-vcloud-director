@@ -119,6 +119,11 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 		}
 		orgName := TestCreateOrg + "_" + od.name
 
+		if vcd.client.Client.APIVCDMaxVersionIs("= 37.2") && !od.enabled {
+			// TODO revisit once bug is fixed in VCD
+			fmt.Println("[INFO] VCD 10.4.2 has a bug that prevents creating a disabled Org - Changing 'enabled' parameter to 'true'")
+			od.enabled = true
+		}
 		fmt.Printf("# org %s (enabled: %v - catalogs: %v [%d %d])\n", orgName, od.enabled, od.canPublishCatalogs, od.storedVmQuota, od.deployedVmQuota)
 		settings.OrgGeneralSettings.CanPublishCatalogs = od.canPublishCatalogs
 		settings.OrgGeneralSettings.DeployedVMQuota = od.deployedVmQuota
@@ -259,18 +264,18 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 		Name:        edgeName,
 		Description: edgeName,
 		Configuration: &types.GatewayConfiguration{
-			HaEnabled:            takeBoolPointer(false),
+			HaEnabled:            addrOf(false),
 			GatewayBackingConfig: "compact",
 			GatewayInterfaces: &types.GatewayInterfaces{
 				GatewayInterface: []*types.GatewayInterface{},
 			},
-			AdvancedNetworkingEnabled:  takeBoolPointer(true),
-			DistributedRoutingEnabled:  takeBoolPointer(false),
-			UseDefaultRouteForDNSRelay: takeBoolPointer(true),
+			AdvancedNetworkingEnabled:  addrOf(true),
+			DistributedRoutingEnabled:  addrOf(false),
+			UseDefaultRouteForDNSRelay: addrOf(true),
 		},
 	}
 
-	edgeGatewayConfig.Configuration.FipsModeEnabled = takeBoolPointer(false)
+	edgeGatewayConfig.Configuration.FipsModeEnabled = addrOf(false)
 
 	// Create subnet participation structure
 	subnetParticipation := make([]*types.SubnetParticipation, len(externalNetwork.Configuration.IPScopes.IPScope))
@@ -609,7 +614,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcStorageProfileByID(check *C) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
-	orgUserVcdClient, err := newOrgUserConnection(adminOrg, "query-org-vdc-storage-profile-by-id", "CHANGE-ME", vcd.config.Provider.Url, true)
+	orgUserVcdClient, _, err := newOrgUserConnection(adminOrg, "query-org-vdc-storage-profile-by-id", "CHANGE-ME", vcd.config.Provider.Url, true)
 	check.Assert(err, IsNil)
 
 	ref, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)

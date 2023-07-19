@@ -343,7 +343,7 @@ func createNewVdc(vcd *TestVCD, check *C, vdcName string) *Vdc {
 			},
 		},
 		VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-			Enabled: takeBoolPointer(true),
+			Enabled: addrOf(true),
 			Units:   "MB",
 			Limit:   1024,
 			Default: true,

@@ -312,7 +312,7 @@ func WithSamlAdfs(useSaml bool, customAdfsRptId string) VCDClientOption {
 }
 
 // WithHttpUserAgent allows to specify HTTP user-agent which can be useful for statistics tracking.
-// By default User-Agent is set to "go-vcloud-director". It can be unset by supplying empty value.
+// By default User-Agent is set to "go-vcloud-director". It can be unset by supplying an empty value.
 func WithHttpUserAgent(userAgent string) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
 		vcdClient.Client.UserAgent = userAgent
@@ -335,6 +335,16 @@ func WithHttpHeader(options map[string]string) VCDClientOption {
 		for k, v := range options {
 			vcdClient.Client.customHeader.Add(k, v)
 		}
+		return nil
+	}
+}
+
+// WithIgnoredMetadata allows specifying metadata entries to be ignored when using metadata_v2 methods.
+// It can be unset by supplying an empty value.
+// See the documentation of the IgnoredMetadata structure for more information.
+func WithIgnoredMetadata(ignoredMetadata []IgnoredMetadata) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.IgnoredMetadata = ignoredMetadata
 		return nil
 	}
 }

@@ -155,7 +155,7 @@ func (vcd *TestVCD) testCatalogAccessControl(adminOrg *AdminOrg, catalog accessC
 	checkEmpty()
 	//globalSettings := types.ControlAccessParams{
 	//	IsSharedToEveryone:  true,
-	//	EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadWrite),
+	//	EveryoneAccessLevel: addrOf(types.ControlAccessReadWrite),
 	//	AccessSettings: nil,
 	//}
 	//err = testAccessControl(catalogName+" catalog global", catalog, globalSettings, globalSettings, true, check)

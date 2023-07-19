@@ -86,7 +86,7 @@ func (vcd *TestVCD) Test_UpdateAlbSettings(check *C) {
 	// Enable Transparent mode (VCD 10.4.1+)
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.1") {
 		printVerbose("Enabling Transparent mode for VCD 10.4.1+\n")
-		albSettingsConfig.TransparentModeEnabled = takeBoolPointer(true)
+		albSettingsConfig.TransparentModeEnabled = addrOf(true)
 		enabledSettingsTransparentMode, err := edge.UpdateAlbSettings(albSettingsConfig)
 		check.Assert(err, IsNil)
 		check.Assert(*enabledSettingsTransparentMode.TransparentModeEnabled, Equals, true)

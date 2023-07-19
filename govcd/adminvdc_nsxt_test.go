@@ -68,7 +68,7 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 				},
 			},
 			VdcStorageProfile: []*types.VdcStorageProfileConfiguration{&types.VdcStorageProfileConfiguration{
-				Enabled: takeBoolPointer(true),
+				Enabled: addrOf(true),
 				Units:   "MB",
 				Limit:   1024,
 				Default: true,

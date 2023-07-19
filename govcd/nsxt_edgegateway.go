@@ -126,6 +126,14 @@ func (vdcGroup *VdcGroup) GetNsxtEdgeGatewayByName(name string) (*NsxtEdgeGatewa
 	return returnSingleNsxtEdgeGateway(name, allEdges)
 }
 
+// GetAllNsxtEdgeGateways allows to retrieve all NSX-T Edge Gateways
+func (vcdClient *VCDClient) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
+	if vcdClient == nil {
+		return nil, fmt.Errorf("vcdClient is empty")
+	}
+	return getAllNsxtEdgeGateways(&vcdClient.Client, queryParameters)
+}
+
 // GetAllNsxtEdgeGateways allows to retrieve all NSX-T edge gateways for Org Admins
 func (adminOrg *AdminOrg) GetAllNsxtEdgeGateways(queryParameters url.Values) ([]*NsxtEdgeGateway, error) {
 	return getAllNsxtEdgeGateways(adminOrg.client, queryParameters)
@@ -199,7 +207,7 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +226,7 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 		client:      egw.client,
 	}
 
-	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
+	err = egw.client.OpenApiPutItem(apiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
 	}
@@ -233,7 +241,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -247,7 +255,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 		return err
 	}
 
-	err = egw.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	err = egw.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Edge Gateway: %s", err)
@@ -595,6 +603,179 @@ func (egw *NsxtEdgeGateway) DeallocateIpCount(deallocateIpCount int) error {
 	return nil
 }
 
+// GetQoS retrieves QoS (rate limiting) configuration for an NSX-T Edge Gateway
+func (egw *NsxtEdgeGateway) GetQoS() (*types.NsxtEdgeGatewayQos, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot get QoS for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQos
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	qos := &types.NsxtEdgeGatewayQos{}
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, qos, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return qos, nil
+}
+
+// UpdateQoS updates QoS (rate limiting) configuration for an NSX-T Edge Gateway
+func (egw *NsxtEdgeGateway) UpdateQoS(qosConfig *types.NsxtEdgeGatewayQos) (*types.NsxtEdgeGatewayQos, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot update QoS for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQos
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	// update QoS with given qosConfig
+	updatedQos := &types.NsxtEdgeGatewayQos{}
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, qosConfig, updatedQos, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedQos, nil
+}
+
+// GetDhcpForwarder gets DHCP forwarder configuration for an NSX-T Edge Gateway
+func (egw *NsxtEdgeGateway) GetDhcpForwarder() (*types.NsxtEdgeGatewayDhcpForwarder, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot get DHCP forwarder for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDhcpForwarder
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	dhcpForwarder := &types.NsxtEdgeGatewayDhcpForwarder{}
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, dhcpForwarder, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return dhcpForwarder, nil
+}
+
+// UpdateDhcpForwarder updates DHCP forwarder configuration for an NSX-T Edge Gateway
+func (egw *NsxtEdgeGateway) UpdateDhcpForwarder(dhcpForwarderConfig *types.NsxtEdgeGatewayDhcpForwarder) (*types.NsxtEdgeGatewayDhcpForwarder, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot update DHCP forwarder for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDhcpForwarder
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	// update DHCP forwarder with given dhcpForwarderConfig
+	updatedDhcpForwarder, err := egw.GetDhcpForwarder()
+	if err != nil {
+		return nil, err
+	}
+	dhcpForwarderConfig.Version = updatedDhcpForwarder.Version
+
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, dhcpForwarderConfig, updatedDhcpForwarder, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedDhcpForwarder, nil
+}
+
+// GetSlaacProfile gets SLAAC (Stateless Address Autoconfiguration) Profile configuration for an
+// NSX-T Edge Gateway.
+// Note. It represents DHCPv6 Edge Gateway configuration in UI
+func (egw *NsxtEdgeGateway) GetSlaacProfile() (*types.NsxtEdgeGatewaySlaacProfile, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot get SLAAC Profile for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewaySlaacProfile
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	slaacProfile := &types.NsxtEdgeGatewaySlaacProfile{}
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, slaacProfile, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return slaacProfile, nil
+}
+
+// UpdateSlaacProfile creates a SLAAC (Stateless Address Autoconfiguration) profile or updates the
+// existing one if it already exists.
+// Note. It represents DHCPv6 Edge Gateway configuration in UI
+func (egw *NsxtEdgeGateway) UpdateSlaacProfile(slaacProfileConfig *types.NsxtEdgeGatewaySlaacProfile) (*types.NsxtEdgeGatewaySlaacProfile, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot update SLAAC Profile for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewaySlaacProfile
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	updatedSlaacProfile := &types.NsxtEdgeGatewaySlaacProfile{}
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, slaacProfileConfig, updatedSlaacProfile, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedSlaacProfile, nil
+}
+
 func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
 	// 1. Flatten all IP ranges in Edge Gateway using Go's native 'netip.Addr' IP container instead
 	// of plain strings because it is more robust (supports IPv4 and IPv6 and also comparison
@@ -692,6 +873,9 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]ne
 // Special behavior:
 // * Passing nil minuend results in nil
 // * Passing nil subtrahend will return minuendSlice
+//
+// NOTE. This function will mutate minuendSlice to save memory and avoid having a copy of all values
+// which can become expensive if there are a lot of items
 func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr {
 	if minuendSlice == nil {
 		return nil
@@ -710,31 +894,38 @@ func ipSliceDifference(minuendSlice, subtrahendSlice []netip.Addr) []netip.Addr 
 		return minuendSlice
 	}
 
-	var difference []netip.Addr
+	resultIpCount := 0 // count of IPs after removing items from subtrahendSlice
 
 	// Loop over minuend IPs
 	for _, minuendIp := range minuendSlice {
 
 		// Check if subtrahend has minuend element listed
 		var foundSubtrahend bool
-
 		for _, subtrahendIp := range subtrahendSlice {
 			if subtrahendIp == minuendIp {
 				// IP found in subtrahend, therefore breaking inner loop early
 				foundSubtrahend = true
 				break
 			}
-
 		}
 
-		// Store the IP in difference when subtrahend does not contain IP of minuend
+		// Store the IP in `minuendSlice` at `resultIpCount` index and increment the index itself
 		if !foundSubtrahend {
-			// Add IP to the resulting difference slice
-			difference = append(difference, minuendIp)
+			// Add IP to the 'resultIpCount' index position
+			minuendSlice[resultIpCount] = minuendIp
+			resultIpCount++
 		}
 	}
 
-	return difference
+	// if all elements are removed - return nil
+	if resultIpCount == 0 {
+		return nil
+	}
+
+	// cut off all values, greater than `resultIpCount`
+	minuendSlice = minuendSlice[:resultIpCount]
+
+	return minuendSlice
 }
 
 // filterIpSlicesBySubnet accepts 'ipRange' and returns a slice of IPs only that fall into given

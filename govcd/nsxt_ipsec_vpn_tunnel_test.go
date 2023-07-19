@@ -58,9 +58,10 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCustomSecurityProfile(check *C) {
 	check.Assert(err, IsNil)
 
 	ipSecDef := &types.NsxtIpSecVpnTunnel{
-		Name:        check.TestName(),
-		Description: check.TestName() + "-description",
-		Enabled:     true,
+		Name:               check.TestName(),
+		Description:        check.TestName() + "-description",
+		Enabled:            true,
+		AuthenticationMode: types.NsxtIpSecVpnAuthenticationModePSK, // Default value even when it is unset
 		LocalEndpoint: types.NsxtIpSecVpnTunnelLocalEndpoint{
 			LocalAddress:  edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
 			LocalNetworks: []string{"10.10.10.0/24"},
@@ -88,7 +89,7 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCustomSecurityProfile(check *C) {
 			EncryptionAlgorithms: []string{"AES_128"},
 			DigestAlgorithms:     []string{"SHA2_256"},
 			DhGroups:             []string{"GROUP14"},
-			SaLifeTime:           takeIntAddress(86400),
+			SaLifeTime:           addrOf(86400),
 		},
 		TunnelConfiguration: types.NsxtIpSecVpnTunnelProfileTunnelConfiguration{
 			PerfectForwardSecrecyEnabled: true,
@@ -96,7 +97,7 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCustomSecurityProfile(check *C) {
 			EncryptionAlgorithms:         []string{"AES_256"},
 			DigestAlgorithms:             []string{"SHA2_256"},
 			DhGroups:                     []string{"GROUP14"},
-			SaLifeTime:                   takeIntAddress(3600),
+			SaLifeTime:                   addrOf(3600),
 		},
 		DpdConfiguration: types.NsxtIpSecVpnTunnelProfileDpdConfiguration{ProbeInterval: 3},
 	}
@@ -233,4 +234,85 @@ func runIpSecVpnTests(check *C, edge *NsxtEdgeGateway, ipSecDef *types.NsxtIpSec
 	for _, vpnConfig := range allVpnConfigs {
 		check.Assert(vpnConfig.IsEqualTo(updatedIpSecVpn.NsxtIpSecVpn), Equals, false)
 	}
+}
+
+func (vcd *TestVCD) Test_NsxtIpSecVpnCertificateAuth(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointFirewallGroups)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	nsxtVdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+
+	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	// Upload Certificates to use in the test
+	aliasForPrivateKey := check.TestName() + "cert-with-private-key"
+	privateKeyPassphrase := "test"
+	certificateWithPrivateKeyConfig := &types.CertificateLibraryItem{
+		Alias:                aliasForPrivateKey,
+		Certificate:          certificate,
+		PrivateKey:           privateKey,
+		PrivateKeyPassphrase: privateKeyPassphrase,
+	}
+
+	certWithKey, err := adminOrg.AddCertificateToLibrary(certificateWithPrivateKeyConfig)
+	check.Assert(err, IsNil)
+	openApiEndpoint, err := getEndpointByVersion(&vcd.client.Client)
+	check.Assert(err, IsNil)
+	check.Assert(openApiEndpoint, NotNil)
+	PrependToCleanupListOpenApi(certWithKey.CertificateLibrary.Alias, check.TestName(),
+		openApiEndpoint+certWithKey.CertificateLibrary.Id)
+
+	// Upload CA Certificate to use in the test
+	aliasForCaCertificate := check.TestName() + "ca-certificate"
+	caCertificateConfig := &types.CertificateLibraryItem{
+		Alias:       aliasForCaCertificate,
+		Certificate: rootCaCertificate,
+	}
+
+	caCert, err := adminOrg.AddCertificateToLibrary(caCertificateConfig)
+	check.Assert(err, IsNil)
+	PrependToCleanupListOpenApi(caCert.CertificateLibrary.Alias, check.TestName(),
+		openApiEndpoint+caCert.CertificateLibrary.Id)
+
+	// Create IPSec VPN configuration with certificate authentication mode
+	ipSecDef := &types.NsxtIpSecVpnTunnel{
+		Name:               check.TestName(),
+		Description:        check.TestName() + "-description",
+		Enabled:            true,
+		AuthenticationMode: types.NsxtIpSecVpnAuthenticationModeCertificate,
+		CertificateRef: &types.OpenApiReference{
+			ID: certWithKey.CertificateLibrary.Id,
+		},
+		CaCertificateRef: &types.OpenApiReference{
+			ID: caCert.CertificateLibrary.Id,
+		},
+
+		LocalEndpoint: types.NsxtIpSecVpnTunnelLocalEndpoint{
+			LocalAddress:  edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+			LocalNetworks: []string{"10.10.10.0/24"},
+		},
+		RemoteEndpoint: types.NsxtIpSecVpnTunnelRemoteEndpoint{
+			RemoteId:       "custom-remote-id",
+			RemoteAddress:  "192.168.140.1",
+			RemoteNetworks: []string{"20.20.20.0/24"},
+		},
+		SecurityType: "DEFAULT",
+		Logging:      true,
+	}
+
+	runIpSecVpnTests(check, edge, ipSecDef)
+
+	// cleanup uploaded certificates
+	err = certWithKey.Delete()
+	check.Assert(err, IsNil)
+	err = caCert.Delete()
+	check.Assert(err, IsNil)
 }

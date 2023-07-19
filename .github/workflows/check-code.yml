@@ -26,3 +26,6 @@ jobs:
 
     - name: verify
       run: make tagverify
+
+    - name: unit
+      run: make testunit
