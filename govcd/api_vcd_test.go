@@ -1,4 +1,4 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -146,6 +146,7 @@ type TestConfig struct {
 		NsxtProviderVdc struct {
 			Name                   string `yaml:"name"`
 			StorageProfile         string `yaml:"storage_profile"`
+			StorageProfile2        string `yaml:"storage_profile_2"`
 			NetworkPool            string `yaml:"network_pool"`
 			PlacementPolicyVmGroup string `yaml:"placementPolicyVmGroup,omitempty"`
 		} `yaml:"nsxt_provider_vdc"`
@@ -178,19 +179,19 @@ type TestConfig struct {
 		VimServer                    string `yaml:"vimServer,omitempty"`
 		LdapServer                   string `yaml:"ldapServer,omitempty"`
 		Nsxt                         struct {
-			Manager             string `yaml:"manager"`
-			Tier0router         string `yaml:"tier0router"`
-			Tier0routerVrf      string `yaml:"tier0routerVrf"`
-			NsxtDvpg            string `yaml:"nsxtDvpg"`
-			GatewayQosProfile   string `yaml:"gatewayQosProfile"`
-			Vdc                 string `yaml:"vdc"`
-			ExternalNetwork     string `yaml:"externalNetwork"`
-			EdgeGateway         string `yaml:"edgeGateway"`
-			NsxtImportSegment   string `yaml:"nsxtImportSegment"`
-			VdcGroup            string `yaml:"vdcGroup"`
-			VdcGroupEdgeGateway string `yaml:"vdcGroupEdgeGateway"`
-			NsxtEdgeCluster     string `yaml:"nsxtEdgeCluster"`
-
+			Manager                   string `yaml:"manager"`
+			Tier0router               string `yaml:"tier0router"`
+			Tier0routerVrf            string `yaml:"tier0routerVrf"`
+			NsxtDvpg                  string `yaml:"nsxtDvpg"`
+			GatewayQosProfile         string `yaml:"gatewayQosProfile"`
+			Vdc                       string `yaml:"vdc"`
+			ExternalNetwork           string `yaml:"externalNetwork"`
+			EdgeGateway               string `yaml:"edgeGateway"`
+			NsxtImportSegment         string `yaml:"nsxtImportSegment"`
+			VdcGroup                  string `yaml:"vdcGroup"`
+			VdcGroupEdgeGateway       string `yaml:"vdcGroupEdgeGateway"`
+			NsxtEdgeCluster           string `yaml:"nsxtEdgeCluster"`
+			RoutedNetwork             string `yaml:"routedNetwork"`
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
@@ -198,6 +199,10 @@ type TestConfig struct {
 			NsxtAlbServiceEngineGroup string `yaml:"nsxtAlbServiceEngineGroup"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
+	Vsphere struct {
+		ResourcePoolForVcd1 string `yaml:"resourcePoolForVcd1,omitempty"`
+		ResourcePoolForVcd2 string `yaml:"resourcePoolForVcd2,omitempty"`
+	} `yaml:"vsphere,omitempty"`
 	Logging struct {
 		Enabled          bool   `yaml:"enabled,omitempty"`
 		LogFileName      string `yaml:"logFileName,omitempty"`
@@ -781,9 +786,13 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		// RDE Framework has a bug in VCD 10.3.0 that causes "not found" errors to return as "400 bad request",
 		// so we need to amend them
-		isBuggyRdeError := strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointRdeInterfaces)
-		if isBuggyRdeError {
+		if strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointRdeInterfaces) {
 			err = amendRdeApiError(&vcd.client.Client, err)
+		}
+		// UI Plugin has a bug in VCD 10.4.x that causes "not found" errors to return a NullPointerException,
+		// so we need to amend them
+		if strings.Contains(entity.OpenApiEndpoint, types.OpenApiEndpointExtensionsUi) {
+			err = amendUIPluginGetByIdError(entity.Name, err)
 		}
 
 		if ContainsNotFound(err) {
@@ -921,6 +930,29 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 		err = org.Delete(true, true)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+	case "provider_vdc":
+		pvdc, err := vcd.client.GetProviderVdcExtendedByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+		err = pvdc.Disable()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		task, err := pvdc.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+		err = task.WaitTaskCompletion()
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
@@ -1613,6 +1645,43 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		} else {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 		}
+		return
+
+	case "nsxtDhcpForwarder":
+		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		dhcpForwarder, err := edge.GetDhcpForwarder()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		if dhcpForwarder.Enabled == false && len(dhcpForwarder.DhcpServers) == 0 {
+			vcd.infoCleanup(notFoundMsg, "dhcpForwarder", entity.Name)
+			return
+		}
+
+		_, err = edge.UpdateDhcpForwarder(&types.NsxtEdgeGatewayDhcpForwarder{})
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
+	case "slaacProfile":
+		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		_, err = edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: false, Mode: "SLAAC"})
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 
 	default:

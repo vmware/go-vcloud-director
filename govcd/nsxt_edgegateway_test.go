@@ -502,3 +502,141 @@ func (vcd *TestVCD) Test_NsxtEdgeQoS(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedEdgeQosConfig, NotNil)
 }
+
+func (vcd *TestVCD) Test_NsxtEdgeDhcpForwarder(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGatewayDhcpForwarder)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	nsxtVdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vcd.config.VCD.Nsxt.EdgeGateway, "nsxtDhcpForwarder", vcd.config.VCD.Org, check.TestName())
+
+	// Fetch current DHCP forwarder config
+	dhcpForwarderConfig, err := edge.GetDhcpForwarder()
+	check.Assert(err, IsNil)
+	check.Assert(dhcpForwarderConfig.Enabled, Equals, false)
+	check.Assert(dhcpForwarderConfig.DhcpServers, DeepEquals, []string(nil))
+
+	// Create new DHCP Forwarder config
+	testDhcpServers := []string{
+		"1.1.1.1",
+		"192.168.2.254",
+		"fe80::abcd",
+	}
+
+	newDhcpForwarderConfig := &types.NsxtEdgeGatewayDhcpForwarder{
+		Enabled:     true,
+		DhcpServers: testDhcpServers,
+	}
+
+	// Update DHCP forwarder config
+	updatedEdgeDhcpForwarderConfig, err := edge.UpdateDhcpForwarder(newDhcpForwarderConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
+
+	// Check that updates were applied
+	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, true)
+	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+
+	// remove the last dhcp server from the list
+	testDhcpServers = testDhcpServers[0:2]
+	newDhcpForwarderConfig.DhcpServers = testDhcpServers
+
+	updatedEdgeDhcpForwarderConfig, err = edge.UpdateDhcpForwarder(newDhcpForwarderConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
+
+	// Check that updates were applied
+	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, true)
+	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+
+	// Add servers to the list
+	testDhcpServers = append(testDhcpServers, "192.254.0.2")
+	newDhcpForwarderConfig.DhcpServers = testDhcpServers
+
+	updatedEdgeDhcpForwarderConfig, err = edge.UpdateDhcpForwarder(newDhcpForwarderConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
+
+	// Check that updates were applied
+	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, true)
+	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+
+	// Disable DHCP forwarder config
+	newDhcpForwarderConfig.Enabled = false
+
+	// Update DHCP forwarder config
+	updatedEdgeDhcpForwarderConfig, err = edge.UpdateDhcpForwarder(newDhcpForwarderConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdgeDhcpForwarderConfig, NotNil)
+
+	// Check that updates were applied
+	check.Assert(updatedEdgeDhcpForwarderConfig.Enabled, Equals, false)
+	check.Assert(updatedEdgeDhcpForwarderConfig.DhcpServers, DeepEquals, testDhcpServers)
+
+	_, err = edge.UpdateDhcpForwarder(&types.NsxtEdgeGatewayDhcpForwarder{})
+	check.Assert(err, IsNil)
+}
+
+// Test_NsxtEdgeSlaacProfile tests SLAAC profile (NSX-T Edge Gateway DHCPv6) retrieval and update
+func (vcd *TestVCD) Test_NsxtEdgeSlaacProfile(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGatewaySlaacProfile)
+
+	edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+	AddToCleanupList(vcd.config.VCD.Nsxt.EdgeGateway, "slaacProfile", vcd.config.VCD.Org, check.TestName())
+
+	// Fetch current SLAAC Profile
+	slaacProfile, err := edge.GetSlaacProfile()
+	check.Assert(err, IsNil)
+	check.Assert(slaacProfile, NotNil)
+	check.Assert(slaacProfile.Enabled, Equals, false)
+
+	// Create new SLAAC config in SLAAC mode
+	newSlaacProfile := &types.NsxtEdgeGatewaySlaacProfile{
+		Enabled: true,
+		Mode:    "SLAAC",
+		DNSConfig: types.NsxtEdgeGatewaySlaacProfileDNSConfig{
+			DNSServerIpv6Addresses: []string{"2001:4860:4860::8888", "2001:4860:4860::8844"},
+			DomainNames:            []string{"non-existing.org.tld", "fake.org.tld"},
+		},
+	}
+
+	// Update SLAAC profile
+	updatedSlaacProfile, err := edge.UpdateSlaacProfile(newSlaacProfile)
+	check.Assert(err, IsNil)
+	check.Assert(updatedSlaacProfile, NotNil)
+	check.Assert(updatedSlaacProfile, DeepEquals, newSlaacProfile)
+
+	// Create new SLAAC config in DHCPv6 mode
+	newSlaacProfileDhcpv6 := &types.NsxtEdgeGatewaySlaacProfile{
+		Enabled: true,
+		Mode:    "DHCPv6",
+		DNSConfig: types.NsxtEdgeGatewaySlaacProfileDNSConfig{
+			DNSServerIpv6Addresses: []string{},
+			DomainNames:            []string{},
+		},
+	}
+
+	// Update SLAAC profile
+	updatedSlaacProfileDhcpv6, err := edge.UpdateSlaacProfile(newSlaacProfileDhcpv6)
+	check.Assert(err, IsNil)
+	check.Assert(updatedSlaacProfileDhcpv6, NotNil)
+	check.Assert(updatedSlaacProfileDhcpv6, DeepEquals, newSlaacProfileDhcpv6)
+
+	// Cleanup
+	updatedSlaacProfile, err = edge.UpdateSlaacProfile(&types.NsxtEdgeGatewaySlaacProfile{Enabled: false, Mode: "DISABLED"})
+	check.Assert(err, IsNil)
+	check.Assert(updatedSlaacProfile, NotNil)
+}

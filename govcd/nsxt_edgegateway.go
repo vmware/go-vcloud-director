@@ -207,7 +207,7 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 		client:      egw.client,
 	}
 
-	err = egw.client.OpenApiPutItem(minimumApiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
+	err = egw.client.OpenApiPutItem(apiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
 	}
@@ -241,7 +241,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways
-	minimumApiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
+	apiVersion, err := egw.client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func (egw *NsxtEdgeGateway) Delete() error {
 		return err
 	}
 
-	err = egw.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	err = egw.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
 
 	if err != nil {
 		return fmt.Errorf("error deleting Edge Gateway: %s", err)
@@ -656,6 +656,124 @@ func (egw *NsxtEdgeGateway) UpdateQoS(qosConfig *types.NsxtEdgeGatewayQos) (*typ
 	}
 
 	return updatedQos, nil
+}
+
+// GetDhcpForwarder gets DHCP forwarder configuration for an NSX-T Edge Gateway
+func (egw *NsxtEdgeGateway) GetDhcpForwarder() (*types.NsxtEdgeGatewayDhcpForwarder, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot get DHCP forwarder for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDhcpForwarder
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	dhcpForwarder := &types.NsxtEdgeGatewayDhcpForwarder{}
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, dhcpForwarder, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return dhcpForwarder, nil
+}
+
+// UpdateDhcpForwarder updates DHCP forwarder configuration for an NSX-T Edge Gateway
+func (egw *NsxtEdgeGateway) UpdateDhcpForwarder(dhcpForwarderConfig *types.NsxtEdgeGatewayDhcpForwarder) (*types.NsxtEdgeGatewayDhcpForwarder, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot update DHCP forwarder for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDhcpForwarder
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	// update DHCP forwarder with given dhcpForwarderConfig
+	updatedDhcpForwarder, err := egw.GetDhcpForwarder()
+	if err != nil {
+		return nil, err
+	}
+	dhcpForwarderConfig.Version = updatedDhcpForwarder.Version
+
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, dhcpForwarderConfig, updatedDhcpForwarder, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedDhcpForwarder, nil
+}
+
+// GetSlaacProfile gets SLAAC (Stateless Address Autoconfiguration) Profile configuration for an
+// NSX-T Edge Gateway.
+// Note. It represents DHCPv6 Edge Gateway configuration in UI
+func (egw *NsxtEdgeGateway) GetSlaacProfile() (*types.NsxtEdgeGatewaySlaacProfile, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot get SLAAC Profile for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewaySlaacProfile
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	slaacProfile := &types.NsxtEdgeGatewaySlaacProfile{}
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, slaacProfile, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return slaacProfile, nil
+}
+
+// UpdateSlaacProfile creates a SLAAC (Stateless Address Autoconfiguration) profile or updates the
+// existing one if it already exists.
+// Note. It represents DHCPv6 Edge Gateway configuration in UI
+func (egw *NsxtEdgeGateway) UpdateSlaacProfile(slaacProfileConfig *types.NsxtEdgeGatewaySlaacProfile) (*types.NsxtEdgeGatewaySlaacProfile, error) {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return nil, fmt.Errorf("cannot update SLAAC Profile for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewaySlaacProfile
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	updatedSlaacProfile := &types.NsxtEdgeGatewaySlaacProfile{}
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, slaacProfileConfig, updatedSlaacProfile, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedSlaacProfile, nil
 }
 
 func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix) ([]netip.Addr, error) {

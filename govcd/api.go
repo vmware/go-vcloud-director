@@ -53,6 +53,9 @@ type Client struct {
 	// "User-Agent: <product> / <product-version> <comment>"
 	UserAgent string
 
+	// IgnoredMetadata allows to ignore metadata entries when using the methods defined in metadata_v2.go
+	IgnoredMetadata []IgnoredMetadata
+
 	supportedVersions SupportedVersions // Versions from /api/versions endpoint
 	customHeader      http.Header
 }
@@ -238,12 +241,12 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 		req.Header.Add("Authorization", "bearer "+client.VCDToken)
 	}
 
-	// Merge in additional headers before logging if any where specified in additionalHeader
+	// Merge in additional headers before logging if anywhere specified in additionalHeader
 	// parameter
 	if len(additionalHeader) > 0 {
 		for headerName, headerValueSlice := range additionalHeader {
 			for _, singleHeaderValue := range headerValueSlice {
-				req.Header.Add(headerName, singleHeaderValue)
+				req.Header.Set(headerName, singleHeaderValue)
 			}
 		}
 	}
@@ -897,4 +900,13 @@ func safeClose(file *os.File) {
 	if err := file.Close(); err != nil {
 		util.Logger.Printf("Error closing file: %s\n", err)
 	}
+}
+
+// isSuccessStatus returns true if the given status code is between 200 and 300
+func isSuccessStatus(statusCode int) bool {
+	if statusCode >= http.StatusOK && // 200
+		statusCode < http.StatusMultipleChoices { // 300
+		return true
+	}
+	return false
 }

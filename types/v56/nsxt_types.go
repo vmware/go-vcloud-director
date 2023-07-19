@@ -71,6 +71,9 @@ type EdgeGatewayUplinks struct {
 	// Dedicated defines if the external network is dedicated. Dedicating the External Network will enable Route
 	// Advertisement for this Edge Gateway
 	Dedicated bool `json:"dedicated,omitempty"`
+
+	// UsingIpSpace is a boolean flag showing if the uplink uses IP Space
+	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
 }
 
 // ExternalNetworkV2IPRanges is a type alias to reuse the same definitions with appropriate names
@@ -200,6 +203,10 @@ type OpenApiOrgVdcNetwork struct {
 
 	// Shared shares network with other VDCs in the organization
 	Shared *bool `json:"shared,omitempty"`
+
+	// EnableDualSubnetNetwork defines whether or not this network will support two subnets (IPv4
+	// and IPv6)
+	EnableDualSubnetNetwork *bool `json:"enableDualSubnetNetwork,omitempty"`
 }
 
 // OrgVdcNetworkSubnetIPRanges is a type alias to reuse the same definitions with appropriate names
@@ -1237,6 +1244,10 @@ type NsxtAlbVirtualService struct {
 	// VirtualIpAddress to be used for exposing this virtual service
 	VirtualIpAddress string `json:"virtualIpAddress"`
 
+	// IPv6VirtualIpAddress defined IPv6 address to be used for this virtual service
+	// This field is only available in VCD 10.4.0 (v37.0+)
+	IPv6VirtualIpAddress string `json:"ipv6VirtualIpAddress,omitempty"`
+
 	// TransparentModeEnabled allows to configure Preserve Client IP on a Virtual Service
 	// This field is only available for VCD 10.4.1+ (v37.1+)
 	// Note. `types.NsxtAlbConfig.TransparentModeEnabled` must be set to `true` for this field to be
@@ -1684,6 +1695,14 @@ type NsxtEdgeGatewayQos struct {
 	IngressProfile *OpenApiReference `json:"ingressProfile"`
 }
 
+// NsxtEdgeGatewayDhcpForwarder provides DHCP forwarding configuration on an Edge Gateway by defining
+// DHCP servers
+type NsxtEdgeGatewayDhcpForwarder struct {
+	Enabled     bool         `json:"enabled"`
+	DhcpServers []string     `json:"dhcpServers"`
+	Version     VersionField `json:"version,omitempty"`
+}
+
 // VcenterImportableDvpg defines a Distributed Port Group that can be imported into VCD
 // from a vCenter Server.
 //
@@ -1696,4 +1715,70 @@ type VcenterImportableDvpg struct {
 	} `json:"dvSwitch"`
 	VirtualCenter *OpenApiReference `json:"virtualCenter"`
 	Vlan          string            `json:"vlan"`
+}
+
+// NsxtEdgeGatewaySlaacProfile provides configuration for NSX-T Edge Gateway IPv6 configuration
+type NsxtEdgeGatewaySlaacProfile struct {
+	Enabled bool `json:"enabled"`
+	// Mode is 'SLAAC' ,'DHCPv6', 'DISABLED'
+	Mode string `json:"mode"`
+	// DNSConfig provides additional configuration when Mode is set to 'SLAAC'
+	DNSConfig NsxtEdgeGatewaySlaacProfileDNSConfig `json:"dnsConfig,omitempty"`
+}
+
+// NsxtEdgeGatewaySlaacProfileDNSConfig contains additional NSX-T Edge Gateway IPv6 configuration
+// when it is configured for 'SLAAC' mode
+type NsxtEdgeGatewaySlaacProfileDNSConfig struct {
+	DNSServerIpv6Addresses []string `json:"dnsServerIpv6Addresses,omitempty"`
+	DomainNames            []string `json:"domainNames,omitempty"`
+}
+
+// NsxtEdgeGatewayStaticRoute provides configuration structure for NSX-T Edge Gateway static route
+// configuration
+type NsxtEdgeGatewayStaticRoute struct {
+	// ID of this static route. On updates, the ID is required for the object, while for create a
+	// new ID will be generated. This ID is not a VCD URN
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name"`
+	// Description
+	Description string `json:"description,omitempty"`
+	// NetworkCidr contains network prefix in CIDR format. Both IPv4 and IPv6 formats are supported
+	NetworkCidr string `json:"networkCidr"`
+	// NextHops contains the list of next hops to use within the static route. List must contain at
+	// least one valid next hop
+	NextHops []NsxtEdgeGatewayStaticRouteNextHops `json:"nextHops"`
+
+	// SystemOwned contains a read-only flag whether this static route is managed by the system
+	SystemOwned *bool `json:"systemOwned,omitempty"`
+	// Version property describes the current version of the entity. To prevent clients from
+	// overwriting each other's changes, update operations must include the version which can be
+	// obtained by issuing a GET operation. If the version number on an update call is missing, the
+	// operation will be rejected. This is only needed on update calls.
+	Version string `json:"version,omitempty"`
+}
+
+// NsxtEdgeGatewayStaticRouteNextHops sets one next hop entry for the list
+type NsxtEdgeGatewayStaticRouteNextHops struct {
+	// AdminDistance for the next hop
+	AdminDistance int `json:"adminDistance"`
+	// IPAddress for next hop gateway IP Address for the static route.
+	IPAddress string `json:"ipAddress"`
+	// Scope holds a reference to an entity where the next hop of a static route is reachable. In
+	// general, the reference should be an org vDC network or segment backed external network, but
+	// scope could also reference a SYSTEM_OWNED entity if the next hop is configured outside of
+	// VCD.
+	Scope *NsxtEdgeGatewayStaticRouteNextHopScope `json:"scope,omitempty"`
+}
+
+// NsxtEdgeGatewayStaticRouteNextHopScope for a single NsxtEdgeGatewayStaticRouteNextHops entry
+type NsxtEdgeGatewayStaticRouteNextHopScope struct {
+	// ID of this scoped entity.
+	ID string `json:"id"`
+	// Name of the scoped entity.
+	Name string `json:"name"`
+	// ScopeType of this entity. This can be an network or a system-owned entity if the static
+	// route is SYSTEM_OWNED. Supported types are:
+	// * NETWORK
+	// * SYSTEM_OWNED
+	ScopeType string `json:"scopeType"`
 }
