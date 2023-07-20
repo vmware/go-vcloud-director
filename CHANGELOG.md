@@ -73,11 +73,11 @@
 ### IMPROVEMENTS
 * `ExternalNetworkV2` now supports IP Spaces on VCD 10.4.1+ with new fields `UsingIpSpace` and
   `DedicatedOrg` ([#579](https://github.com/vmware/go-vcloud-director/pull/579))
-* Add a new function `WithIgnoredMetadata` to configure the `Client` to ignore specific metadata entries
+* Added a new function `WithIgnoredMetadata` to configure the `Client` to ignore specific metadata entries
   in all non-deprecated metadata CRUD methods ([#581](https://github.com/vmware/go-vcloud-director/pull/581))
 * NSX-T ALB Virtual Service supports IPv6 Virtual Service using field`IPv6VirtualIpAddress` in
   `types.NsxtAlbVirtualService` for VCD 10.4.0+ ([#582](https://github.com/vmware/go-vcloud-director/pull/582))
-* Add field `EnableDualSubnetNetwork` to enable Dual-Stack mode for Org VDC networks in
+* Added field `EnableDualSubnetNetwork` to enable Dual-Stack mode for Org VDC networks in
   `types.OpenApiOrgVdcNetwork` ([#582](https://github.com/vmware/go-vcloud-director/pull/582))
 
 ### BUG FIXES
