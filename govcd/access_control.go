@@ -494,7 +494,7 @@ func (cat *Catalog) publish(isPublished bool) error {
 	}
 
 	publishParameters := types.PublishCatalogParams{
-		IsPublished: takeBoolPointer(isPublished),
+		IsPublished: &isPublished,
 	}
 	err = publishCatalog(cat.client, catalogUrl, tenantContext, publishParameters)
 	if err != nil {
@@ -511,7 +511,7 @@ func (cat *Catalog) SetReadOnlyAccessControl(isPublished bool) error {
 	}
 	err := cat.SetAccessControl(&types.ControlAccessParams{
 		IsSharedToEveryone:  false,
-		EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadOnly),
+		EveryoneAccessLevel: addrOf(types.ControlAccessReadOnly),
 	}, true)
 	if err != nil {
 		return fmt.Errorf("error resetting access control record for catalog %s: %s", cat.Catalog.Name, err)
@@ -569,7 +569,7 @@ func (cat *AdminCatalog) publish(isPublished bool) error {
 	}
 
 	publishParameters := types.PublishCatalogParams{
-		IsPublished: takeBoolPointer(isPublished),
+		IsPublished: &isPublished,
 	}
 	err = publishCatalog(cat.client, catalogUrl, tenantContext, publishParameters)
 	if err != nil {
@@ -590,7 +590,7 @@ func (cat *AdminCatalog) SetReadOnlyAccessControl(isPublished bool) error {
 	}
 	err := cat.SetAccessControl(&types.ControlAccessParams{
 		IsSharedToEveryone:  false,
-		EveryoneAccessLevel: takeStringPointer(types.ControlAccessReadOnly),
+		EveryoneAccessLevel: addrOf(types.ControlAccessReadOnly),
 	}, true)
 	if err != nil {
 		return err
