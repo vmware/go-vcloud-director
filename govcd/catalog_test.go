@@ -1458,5 +1458,32 @@ func (vcd *TestVCD) Test_CatalogAccessAsOrgUsersReadOnly(check *C) {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
+}
+
+func (vcd *TestVCD) Test_CatalogCreateCompleteness(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+	catalogName := "TestAdminCatalogCreate"
+	adminCatalog, err := adminOrg.CreateCatalog(catalogName, catalogName)
+	check.Assert(err, IsNil)
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+	metadataLink := adminCatalog.AdminCatalog.Link.ForType(types.MimeMetaData, "add")
+	check.Assert(metadataLink, NotNil)
+	err = adminCatalog.Delete(true, true)
+	check.Assert(err, IsNil)
+
+	catalogName = "TestCatalogCreate"
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	catalog, err := org.CreateCatalog(catalogName, catalogName)
+	check.Assert(err, IsNil)
+	AddToCleanupList(catalogName, "catalog", vcd.config.VCD.Org, check.TestName())
+	metadataLink = nil
+	metadataLink = catalog.Catalog.Link.ForType(types.MimeMetaData, "add")
+	check.Assert(metadataLink, NotNil)
+	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }

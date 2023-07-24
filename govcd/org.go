@@ -143,6 +143,17 @@ func (org *Org) CreateCatalog(name, description string) (Catalog, error) {
 	if err != nil {
 		return Catalog{}, err
 	}
+	catalog.parent = org
+
+	err = catalog.Refresh()
+	if err != nil {
+		return Catalog{}, err
+	}
+	// Make sure that the creation task is finished
+	err = catalog.WaitForTasks()
+	if err != nil {
+		return Catalog{}, err
+	}
 	return *catalog, nil
 }
 
