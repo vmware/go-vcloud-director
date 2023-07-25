@@ -49,6 +49,58 @@ func (vcd *TestVCD) Test_NsxtVdcGroup(check *C) {
 	test_NsxtVdcGroup(check, adminOrg, vcd)
 }
 
+func (vcd *TestVCD) Test_NsxtVdcGroupForceDelete(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	if vcd.config.VCD.Nsxt.Vdc == "" {
+		check.Skip("Missing NSX-T config: No NSX-T VDC specified")
+	}
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVdcGroups)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	// Create VDC Group
+	vdcGroup, err := adminOrg.CreateNsxtVdcGroup(check.TestName(), "", vcd.nsxtVdc.vdcId(), []string{vcd.nsxtVdc.vdcId()})
+	check.Assert(err, IsNil)
+	check.Assert(vdcGroup, NotNil)
+
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroups + vdcGroup.VdcGroup.Id
+	PrependToCleanupListOpenApi(vdcGroup.VdcGroup.Name, check.TestName(), openApiEndpoint)
+
+	// Create an IP Set within a VDC Group to ensure that force deletion of a VDC Group works later
+	// (it would return an error without forcing it)
+	ipSetDefinition := &types.NsxtFirewallGroup{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-Description",
+		Type:        types.FirewallGroupTypeIpSet,
+		OwnerRef:    &types.OpenApiReference{ID: vdcGroup.VdcGroup.Id},
+
+		IpAddresses: []string{
+			"12.12.12.1",
+			"10.10.10.0/24",
+			"11.11.11.1-11.11.11.2",
+			// represents the block of IPv6 addresses from 2001:db8:0:0:0:0:0:0 to 2001:db8:0:ffff:ffff:ffff:ffff:ffff
+			"2001:db8::/48",
+			"2001:db6:0:0:0:0:0:0-2001:db6:0:ffff:ffff:ffff:ffff:ffff",
+		},
+	}
+
+	// Create IP Set and add to cleanup if it was created
+	_, err = vdcGroup.CreateNsxtFirewallGroup(ipSetDefinition)
+	check.Assert(err, IsNil)
+
+	// Force delete VDC Group
+	err = vdcGroup.ForceDelete(true)
+	check.Assert(err, IsNil)
+
+	_, err = adminOrg.GetVdcGroupById(vdcGroup.VdcGroup.Id)
+	check.Assert(ContainsNotFound(err), Equals, true)
+}
+
 func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	description := "vdc group created by test"
 
@@ -224,7 +276,6 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	test_NsxtVdcGroup(check, adminOrg, vcd)
 	test_CreateVdcGroup(check, adminOrg, vcd)
 	test_GetVdcGroupByName_ValidatesSymbolsInName(check, orgAsOrgAdminUser, vcd.nsxtVdc.vdcId())
-
 }
 
 // skipIfNeededRightsMissing checks if needed rights are configured
