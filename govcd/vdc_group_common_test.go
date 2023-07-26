@@ -17,6 +17,9 @@ import (
 func (vcd *TestVCD) Test_NsxtVdcGroupOrgNetworks(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(adminOrg, NotNil)
