@@ -78,15 +78,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroupForceDelete(check *C) {
 		Description: check.TestName() + "-Description",
 		Type:        types.FirewallGroupTypeIpSet,
 		OwnerRef:    &types.OpenApiReference{ID: vdcGroup.VdcGroup.Id},
-
-		IpAddresses: []string{
-			"12.12.12.1",
-			"10.10.10.0/24",
-			"11.11.11.1-11.11.11.2",
-			// represents the block of IPv6 addresses from 2001:db8:0:0:0:0:0:0 to 2001:db8:0:ffff:ffff:ffff:ffff:ffff
-			"2001:db8::/48",
-			"2001:db6:0:0:0:0:0:0-2001:db6:0:ffff:ffff:ffff:ffff:ffff",
-		},
+		IpAddresses: []string{"12.12.12.1"},
 	}
 
 	// Create IP Set and add to cleanup if it was created
