@@ -211,6 +211,12 @@ func isBinary(data string, req *http.Request) bool {
 	reContentRange := regexp.MustCompile(`(?i)content-range`)
 	reMultipart := regexp.MustCompile(`(?i)multipart/form`)
 	reMediaXml := regexp.MustCompile(`(?i)media+xml;`)
+	// Skip data transferred for vApp template or catalog item upload
+	if strings.Contains(req.URL.String(), "/transfer/") &&
+		(strings.HasSuffix(req.URL.String(), ".vmdk") || strings.HasSuffix(req.URL.String(), "/file")) &&
+		(req.Method == http.MethodPut || req.Method == http.MethodPost) {
+		return true
+	}
 	uiPlugin := regexp.MustCompile(`manifest\.json|bundle\.js`)
 	for key, value := range req.Header {
 		if reContentRange.MatchString(key) {
