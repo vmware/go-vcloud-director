@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# This script is used at the start of a new release cycle, to
+# initialize the CHANGELOG
+# Run at the top of the repository, as
+# $ .changes/init.sh VERSION
+# (without the initial 'v')
+
 VERSION=$1
 
 if [ -z "$VERSION" ]
