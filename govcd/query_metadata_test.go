@@ -39,6 +39,7 @@ func (vcd *TestVCD) Test_CheckCumulativeQuery(check *C) {
 		check.Assert(results.Results, NotNil)
 		check.Assert(results.Results.ProviderVdcStorageProfileRecord, NotNil)
 
+		// Removing duplicates from results
 		for _, sp := range results.Results.ProviderVdcStorageProfileRecord {
 			foundStorageProfileMap[sp.Name] = true
 		}
