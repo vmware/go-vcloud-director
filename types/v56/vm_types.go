@@ -65,6 +65,7 @@ type Vm struct {
 	ProductSection *ProductSection `xml:"ProductSection,omitempty"`
 	ComputePolicy  *ComputePolicy  `xml:"ComputePolicy,omitempty"` // accessible only from version API 33.0
 	Media          *Reference      `xml:"Media,omitempty"`         // Reference to the media object to insert in a new VM.
+	BootOptions    *BootOptions    `xml:"BootOptions,omitempty"`   // Accessible only from API version 37.1+
 }
 
 type RuntimeInfoSection struct {
@@ -92,6 +93,17 @@ type VmSpecSection struct {
 	VmToolsVersion    string            `xml:"VmToolsVersion,omitempty"`    // VMware tools version of this VM.
 	VirtualCpuType    string            `xml:"VirtualCpuType,omitempty"`    // The capabilities settings for this VM. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
 	TimeSyncWithHost  *bool             `xml:"TimeSyncWithHost,omitempty"`  // Synchronize the VM's time with the host.
+	Firmware          string            `xml:"Firmware,omitempty"`          // VM's Firmware, can be either BIOS or EFI
+}
+
+// BootOptions allows to specify boot options of a VM
+type BootOptions struct {
+	BootDelay            int    `xml:"BootDelay,omitempty"`
+	BootRetryDelay       int    `xml:"BootRetryDelay,omitempty"`
+	BootRetryEnabled     *bool  `xml:"BootRetryEnabled,omitempty"`
+	EfiSecureBootEnabled *bool  `xml:"EfiSecureBootEnabled,omitempty"`
+	EnterBiosSetup       *bool  `xml:"EnterBIOSSetup,omitempty"`
+	NetworkBootProtocol  string `xml:"NetworkBootProtocol,omitempty"`
 }
 
 // RecomposeVAppParamsForEmptyVm represents a vApp structure which allows to create VM.
