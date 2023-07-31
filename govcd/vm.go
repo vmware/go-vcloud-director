@@ -70,7 +70,7 @@ func (vm *VM) Refresh() error {
 	// elements in slices.
 	vm.VM = &types.Vm{}
 
-	_, err := vm.client.ExecuteRequest(refreshUrl, http.MethodGet, "", "error refreshing VM: %s", nil, vm.VM)
+	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet, "", "error refreshing VM: %s", nil, vm.VM, vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 
 	// The request was successful
 	return err
@@ -1481,6 +1481,11 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 		return Task{}, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
 	}
 
+	// Firmware field is unavailable on >37.1 API Versions
+	if vmSettingsToUpdate.Firmware != "" && vm.client.APIVCDMaxVersionIs("<37.1") {
+		return Task{}, fmt.Errorf("VM Firmware can only be set on VCD 10.4.1+ (API 37.1+)")
+	}
+
 	vmSpecSectionModified := true
 	vmSettingsToUpdate.Modified = &vmSpecSectionModified
 
@@ -1491,14 +1496,18 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 	//    GuestCustomizationSection
 	// Sections not included in the request body will not be updated.
 
-	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
-			Xmlns:         types.XMLNamespaceVCloud,
-			Ovf:           types.XMLNamespaceOVF,
-			Name:          vm.VM.Name,
-			Description:   description,
-			VmSpecSection: vmSettingsToUpdate,
-		})
+	vmPayload := &types.Vm{
+		Xmlns:         types.XMLNamespaceVCloud,
+		Ovf:           types.XMLNamespaceOVF,
+		Name:          vm.VM.Name,
+		Description:   description,
+		VmSpecSection: vmSettingsToUpdate,
+	}
+
+	// Since 37.1 there is a Firmware field in VmSpecSection
+	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/reconfigureVm",
+		http.MethodPost, types.MimeVM, "error updating VM spec section: %s", vmPayload,
+		vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 }
 
 // UpdateComputePolicyV2 updates VM Compute policy with the given compute policies using v2.0.0 OpenAPI endpoint,

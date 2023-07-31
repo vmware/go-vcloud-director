@@ -1030,7 +1030,9 @@ func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, err
 	}
 	params.XmlnsOvf = types.XMLNamespaceOVF
 
-	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeCreateVmParams, "error creating standalone VM: %s", params)
+	return vdc.client.ExecuteTaskRequestWithApiVersion(href, http.MethodPost,
+		types.MimeCreateVmParams, "error creating standalone VM: %s", params,
+		vdc.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 }
 
 // getVmFromTask finds a VM from a running standalone VM creation task

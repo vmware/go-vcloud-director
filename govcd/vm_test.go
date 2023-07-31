@@ -1417,7 +1417,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	vmName := "Test_UpdateVmSpecSection"
+	vmName := check.TestName()
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
@@ -1434,13 +1434,18 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	check.Assert(err, IsNil)
 
 	vmSpecSection := vm.VM.VmSpecSection
-	osType := "sles10_64Guest"
+	osType := "sles11_64Guest"
 	vmSpecSection.OsType = osType
+	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
+		vmSpecSection.Firmware = "bios"
+	}
 	vmSpecSection.NumCpus = addrOf(4)
 	vmSpecSection.NumCoresPerSocket = addrOf(2)
 	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 768}
 
 	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
+	vm.VM.BootOptions.EnterBiosSetup = addrOf(false)
+	_ = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(updatedVm, NotNil)
 
@@ -1934,7 +1939,7 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 				},
 				DiskSection: &types.DiskSection{
 					DiskSettings: []*types.DiskSettings{
-						&types.DiskSettings{
+						{
 							SizeMb:            1024,
 							UnitNumber:        0,
 							BusNumber:         0,
@@ -1953,9 +1958,21 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 				Info:         "Specifies Guest OS Customization Settings",
 				ComputerName: "standalone1",
 			},
+			BootOptions: &types.BootOptions{
+				BootDelay:           0,
+				EnterBiosSetup:      addrOf(true),
+				NetworkBootProtocol: "",
+			},
 		},
 		Xmlns: types.XMLNamespaceVCloud,
 	}
+
+	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
+		params.CreateVm.VmSpecSection.Firmware = "efi"
+		params.BootOptions.EfiSecureBootEnabled = addrOf(true)
+		params.BootOptions.EnterBiosSetup = addrOf(true)
+	}
+
 	vappList := vdc.GetVappList()
 	vappNum := len(vappList)
 	vm, err := vdc.CreateStandaloneVm(&params)

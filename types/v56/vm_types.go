@@ -83,6 +83,7 @@ type VmSpecSection struct {
 	Modified          *bool             `xml:"Modified,attr,omitempty"`
 	Info              string            `xml:"ovf:Info"`
 	OsType            string            `xml:"OsType,omitempty"`            // The type of the OS. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	Firmware          string            `xml:"Firmware,omitempty"`          // Available since API 37.1. VM's Firmware, can be either 'bios' or 'efi'.
 	NumCpus           *int              `xml:"NumCpus,omitempty"`           // Number of CPUs. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
 	NumCoresPerSocket *int              `xml:"NumCoresPerSocket,omitempty"` // Number of cores among which to distribute CPUs in this virtual machine. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
 	CpuResourceMhz    *CpuResourceMhz   `xml:"CpuResourceMhz,omitempty"`    // CPU compute resources. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
@@ -93,17 +94,16 @@ type VmSpecSection struct {
 	VmToolsVersion    string            `xml:"VmToolsVersion,omitempty"`    // VMware tools version of this VM.
 	VirtualCpuType    string            `xml:"VirtualCpuType,omitempty"`    // The capabilities settings for this VM. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
 	TimeSyncWithHost  *bool             `xml:"TimeSyncWithHost,omitempty"`  // Synchronize the VM's time with the host.
-	Firmware          string            `xml:"Firmware,omitempty"`          // VM's Firmware, can be either BIOS or EFI
 }
 
 // BootOptions allows to specify boot options of a VM
 type BootOptions struct {
-	BootDelay            int    `xml:"BootDelay,omitempty"`
-	BootRetryDelay       int    `xml:"BootRetryDelay,omitempty"`
-	BootRetryEnabled     *bool  `xml:"BootRetryEnabled,omitempty"`
-	EfiSecureBootEnabled *bool  `xml:"EfiSecureBootEnabled,omitempty"`
-	EnterBiosSetup       *bool  `xml:"EnterBIOSSetup,omitempty"`
-	NetworkBootProtocol  string `xml:"NetworkBootProtocol,omitempty"`
+	BootDelay            int    `xml:"BootDelay,omitempty"`            // Delay between power-on and boot of the VM
+	BootRetryDelay       int    `xml:"BootRetryDelay,omitempty"`       // Available since API 37.1. Doesn't have an effect if BootRetryEnabled is set to false
+	BootRetryEnabled     *bool  `xml:"BootRetryEnabled,omitempty"`     // Available since API 37.1
+	EfiSecureBootEnabled *bool  `xml:"EfiSecureBootEnabled,omitempty"` // Available since API 37.1
+	EnterBiosSetup       *bool  `xml:"EnterBIOSSetup,omitempty"`       // Set to false on the next boot
+	NetworkBootProtocol  string `xml:"NetworkBootProtocol,omitempty"`  // Available since API 37.1
 }
 
 // RecomposeVAppParamsForEmptyVm represents a vApp structure which allows to create VM.
@@ -141,14 +141,15 @@ type ComputePolicy struct {
 
 // CreateVmParams is used to create a standalone VM without a template
 type CreateVmParams struct {
-	XMLName     xml.Name   `xml:"CreateVmParams"`
-	XmlnsOvf    string     `xml:"xmlns:ovf,attr"`
-	Xmlns       string     `xml:"xmlns,attr,omitempty"`
-	Name        string     `xml:"name,attr,omitempty"`    // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
-	PowerOn     bool       `xml:"powerOn,attr,omitempty"` // True if the VM should be powered-on after creation. Defaults to false.
-	Description string     `xml:"Description,omitempty"`  // Optional description
-	CreateVm    *Vm        `xml:"CreateVm"`               // Read-only information about the VM to create. This information appears in the Task returned by a createVm request.
-	Media       *Reference `xml:"Media,omitempty"`        // Reference to the media object to insert in the new VM.
+	XMLName     xml.Name     `xml:"CreateVmParams"`
+	XmlnsOvf    string       `xml:"xmlns:ovf,attr"`
+	Xmlns       string       `xml:"xmlns,attr,omitempty"`
+	Name        string       `xml:"name,attr,omitempty"`    // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
+	PowerOn     bool         `xml:"powerOn,attr,omitempty"` // True if the VM should be powered-on after creation. Defaults to false.
+	Description string       `xml:"Description,omitempty"`  // Optional description
+	CreateVm    *Vm          `xml:"CreateVm"`               // Read-only information about the VM to create. This information appears in the Task returned by a createVm request.
+	Media       *Reference   `xml:"Media,omitempty"`        // Reference to the media object to insert in the new VM.
+	BootOptions *BootOptions `xml:"BootOptions,omitempty"`  // Used to specify VM's Boot Options on creation
 }
 
 // InstantiateVmTemplateParams is used to create a standalone VM with a template
