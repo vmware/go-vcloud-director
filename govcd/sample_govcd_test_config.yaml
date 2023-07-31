@@ -237,5 +237,5 @@ media:
   mediaName: uploadedMediaName
   # Existing media in NSX-T backed VDC
   nsxtBackedMediaName: nsxtMediaName
-  # A valid UI Plugin to use in tests.
+  # A valid UI Plugin to use in tests
   uiPluginPath: ../test-resources/ui_plugin.zip
