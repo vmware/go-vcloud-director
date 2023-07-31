@@ -467,7 +467,7 @@ func publishCatalog(client *Client, catalogUrl string, tenantContext *TenantCont
 	}
 
 	err := client.ExecuteRequestWithoutResponse(catalogUrl, http.MethodPost,
-		types.PublishCatalog, "error publishing catalog: %s", publishCatalog)
+		types.PublishCatalog, "error setting catalog publishing state: %s", publishCatalog)
 
 	if tenantContext != nil {
 		client.RemoveProvidedCustomHeaders(getTenantContextHeader(tenantContext))
