@@ -227,6 +227,13 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 		return Results{}, fmt.Errorf("[cumulativeQuery] query type %s not supported", queryType)
 	}
 
+	if params == nil {
+		params = make(map[string]string)
+	}
+	if len(notEncodedParams) == 0 {
+		notEncodedParams = map[string]string{"type": queryType}
+	}
+
 	result, err := client.QueryWithNotEncodedParamsWithHeaders(params, notEncodedParams, headers)
 	if err != nil {
 		return Results{}, err

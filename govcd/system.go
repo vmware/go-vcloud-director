@@ -754,9 +754,8 @@ func (client *Client) GetStorageProfileByHref(url string) (*types.VdcStorageProf
 // 4. [NOT FOUND] The name does not match any of the storage profiles
 func (vcdClient *VCDClient) QueryProviderVdcStorageProfileByName(name, providerVDCHref string) (*types.QueryResultProviderVdcStorageProfileRecordType, error) {
 
-	results, err := vcdClient.Client.cumulativeQuery(types.QtProviderVdcStorageProfile, map[string]string{
-		"type": types.QtProviderVdcStorageProfile,
-	}, nil)
+	results, err := vcdClient.Client.cumulativeQuery(types.QtProviderVdcStorageProfile, nil, map[string]string{
+		"type": types.QtProviderVdcStorageProfile})
 	if err != nil {
 		return nil, err
 	}
