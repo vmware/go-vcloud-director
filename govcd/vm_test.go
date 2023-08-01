@@ -740,7 +740,12 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 
 	// Wait until Guest Tools gets to `REBOOT_PENDING` or `GC_COMPLETE` as there is no real way to
 	// check if VM has Guest Tools operating
+	i := 0
 	for {
+		i += 1
+		if i == 1000 {
+			panic("aaaaaaaaa")
+		}
 		err = vm.Refresh()
 		check.Assert(err, IsNil)
 
@@ -752,6 +757,7 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 			break
 		}
 
+		fmt.Println(time.Now())
 		time.Sleep(3 * time.Second)
 	}
 	printVerbose("Shuting down VM:\n")
@@ -1425,12 +1431,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
-	check.Assert(err, IsNil)
-
-	task, err := vm.PowerOff()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
 	vmSpecSection := vm.VM.VmSpecSection
@@ -1505,12 +1506,7 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
-	check.Assert(err, IsNil)
-
-	task, err := vm.PowerOff()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
 	check.Assert(vm.VM.VMCapabilities.MemoryHotAddEnabled, Equals, false)
@@ -2329,7 +2325,7 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 	}
 
 	// PowerOff
-	task, err := vm.PowerOff()
+	task, err := vm.Undeploy()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
