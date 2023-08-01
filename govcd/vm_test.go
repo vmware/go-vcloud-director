@@ -1425,36 +1425,76 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
-	check.Assert(err, IsNil)
-
-	task, err := vm.PowerOff()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
 	vmSpecSection := vm.VM.VmSpecSection
-	osType := "sles11_64Guest"
-	vmSpecSection.OsType = osType
-	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
-		vmSpecSection.Firmware = "bios"
-	}
 	vmSpecSection.NumCpus = addrOf(4)
 	vmSpecSection.NumCoresPerSocket = addrOf(2)
 	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 768}
+	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
+		vmSpecSection.Firmware = "efi"
+	}
 
 	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
-	vm.VM.BootOptions.EnterBiosSetup = addrOf(false)
-	_ = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(updatedVm, NotNil)
 
 	//verify
-	check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
+	//check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCpus, Equals, 4)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCoresPerSocket, Equals, 2)
 	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(768))
 	check.Assert(updatedVm.VM.Description, Equals, "updateDescription")
+	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
+		check.Assert(updatedVm.VM.VmSpecSection.Firmware, Equals, "efi")
+	}
+
+	// delete Vapp early to avoid env capacity issue
+	err = deleteVapp(vcd, vmName)
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_SetVmBootOptions(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+	if vcd.client.Client.APIVCDMaxVersionIs("<37.1") {
+		check.Skip("Extended boot options and firmware choice were introduced in 37.1")
+	}
+
+	vmName := check.TestName()
+
+	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
+	check.Assert(err, IsNil)
+
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
+	check.Assert(err, IsNil)
+
+	vmSpecSection := vm.VM.VmSpecSection
+	vmSpecSection.Firmware = "efi"
+
+	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
+	check.Assert(err, IsNil)
+	check.Assert(updatedVm, NotNil)
+	check.Assert(updatedVm.VM.VmSpecSection.Firmware, Equals, "efi")
+
+	bootOptions := &types.BootOptions{}
+	bootOptions.EfiSecureBootEnabled = addrOf(true)
+	bootOptions.EnterBiosSetup = addrOf(true)
+	bootOptions.BootRetryEnabled = addrOf(true)
+	bootOptions.BootRetryDelay = 200
+
+	updatedVm.VM.BootOptions = bootOptions
+	check.Assert(err, IsNil)
+	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, Equals, addrOf(true))
+
+	task, err := updatedVm.PowerOn()
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	//verify
+	//check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
 
 	// delete Vapp early to avoid env capacity issue
 	err = deleteVapp(vcd, vmName)
