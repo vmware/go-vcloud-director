@@ -419,10 +419,9 @@ func (vcd *TestVCD) Test_AdminOrgCreateCatalog(check *C) {
 	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestCreateCatalog)
 	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
-	task := NewTask(&vcd.client.Client)
-	task.Task = adminCatalog.AdminCatalog.Tasks.Task[0]
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	// Immediately after the catalog creation, the creation task should be already complete
+	check.Assert(ResourceComplete(adminCatalog.AdminCatalog.Tasks), Equals, true)
+
 	adminOrg, err = vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	copyAdminCatalog, err := adminOrg.GetAdminCatalogByName(TestCreateCatalog, false)
@@ -504,10 +503,8 @@ func (vcd *TestVCD) Test_OrgCreateCatalog(check *C) {
 	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
 	check.Assert(catalog.Catalog.Name, Equals, TestCreateCatalog)
 	check.Assert(catalog.Catalog.Description, Equals, TestCreateCatalogDesc)
-	task := NewTask(&vcd.client.Client)
-	task.Task = catalog.Catalog.Tasks.Task[0]
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	// Immediately after the catalog creation, the creation task should be already complete
+	check.Assert(ResourceComplete(catalog.Catalog.Tasks), Equals, true)
 	org, err = vcd.client.GetOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	copyCatalog, err := org.GetCatalogByName(TestCreateCatalog, false)

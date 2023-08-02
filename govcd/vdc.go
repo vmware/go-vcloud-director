@@ -389,6 +389,14 @@ func (vdc *Vdc) GetEdgeGatewayByHref(href string) (*EdgeGateway, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Edge gateways can sometimes come without any configured services which
+	// lead to nil pointer dereference when adding e.g a DNAT rule
+	// https://github.com/vmware/go-vcloud-director/issues/585
+	if edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration == nil {
+		edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration = &types.GatewayFeatures{}
+	}
+
 	return edge, nil
 }
 
