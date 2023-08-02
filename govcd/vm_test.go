@@ -633,8 +633,8 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	_, err = vm.ToggleHardwareVirtualization(true)
 	check.Assert(err, ErrorMatches, ".*hardware virtualization can be changed from powered off state.*")
 
-	// PowerOf
-	task, err = vm.PowerOff()
+	// Undeploy, so the VM goes to POWERED_OFF state instead of PARTIALLY_POWERED_OFF
+	task, err = vm.Undeploy()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -697,14 +697,12 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_ON")
 
-	// Power off again
-	task, err = vm.PowerOff()
+	// Undeploy, so the VM goes to POWERED_OFF state instead of PARTIALLY_POWERED_OFF
+	task, err = vm.Undeploy()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
 	vmStatus, err = vm.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus == "POWERED_OFF" || vmStatus == "PARTIALLY_POWERED_OFF", Equals, true)
@@ -740,12 +738,7 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 
 	// Wait until Guest Tools gets to `REBOOT_PENDING` or `GC_COMPLETE` as there is no real way to
 	// check if VM has Guest Tools operating
-	i := 0
 	for {
-		i += 1
-		if i == 1000 {
-			panic("aaaaaaaaa")
-		}
 		err = vm.Refresh()
 		check.Assert(err, IsNil)
 
@@ -774,10 +767,12 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 	check.Assert(newStatus, Equals, "POWERED_OFF")
 
 	// End of test - power on the VM to leave it running
-	task, err = vm.PowerOn()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	if vmStatus == "POWERED_ON" {
+		task, err = vm.PowerOn()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
 }
 
 func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
@@ -839,9 +834,10 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	// 'GC_PENDING' state.
 	custStatus, err := vm.GetGuestCustomizationStatus()
 	check.Assert(err, IsNil)
+
+	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
 	if custStatus == types.GuestCustStatusPending {
-		vmStatus, err := vm.GetStatus()
-		check.Assert(err, IsNil)
 		// If VM is POWERED OFF - let's power it on before waiting for its status to change
 		if vmStatus == "POWERED_OFF" {
 			task, err := vm.PowerOn()
@@ -894,6 +890,15 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	// commands on guest VMs
 	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
 	check.Assert(err, IsNil)
+
+	// If the VM was powered off before the test, undeploy it.
+	if vmStatus == "POWERED_OFF" {
+		task, err = vm.Undeploy()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+		check.Assert(task.Task.Status, Equals, "success")
+	}
 }
 
 func (vcd *TestVCD) Test_BlockWhileGuestCustomizationStatus(check *C) {
@@ -2324,23 +2329,14 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 		check.Assert(p.Mac, Not(Equals), "")
 	}
 
-	// PowerOff
-	task, err := vm.Undeploy()
-	check.Assert(err, IsNil)
+	// Undeploy so the VM is in POWERED_OFF state
+	task, _ := vm.Undeploy()
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
-
 	ovfenv, err = vm.GetEnvironment()
 	check.Assert(strings.Contains(err.Error(), "OVF environment is only available when VM is powered on"), Equals, true)
 	check.Assert(ovfenv, IsNil)
+	// PowerOff
 
-	// Leave things as they were
-	if vmStatus != "POWERED_OFF" {
-		task, err := vm.PowerOn()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
-	}
 }
