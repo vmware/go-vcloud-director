@@ -750,7 +750,6 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 			break
 		}
 
-		fmt.Println(time.Now())
 		time.Sleep(3 * time.Second)
 	}
 	printVerbose("Shuting down VM:\n")
@@ -765,14 +764,6 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 	check.Assert(err, IsNil)
 	printVerbose("New VM status: %s\n", newStatus)
 	check.Assert(newStatus, Equals, "POWERED_OFF")
-
-	// End of test - power on the VM to leave it running
-	if vmStatus == "POWERED_ON" {
-		task, err = vm.PowerOn()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-	}
 }
 
 func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
@@ -891,14 +882,12 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
 	check.Assert(err, IsNil)
 
-	// If the VM was powered off before the test, undeploy it.
-	if vmStatus == "POWERED_OFF" {
-		task, err = vm.Undeploy()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
-	}
+	// All of the vApp TestSuite tests expect the VM to be in POWERED_OFF state
+	task, err = vm.Undeploy()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
 }
 
 func (vcd *TestVCD) Test_BlockWhileGuestCustomizationStatus(check *C) {
@@ -2329,14 +2318,13 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 		check.Assert(p.Mac, Not(Equals), "")
 	}
 
-	// Undeploy so the VM is in POWERED_OFF state
-	task, _ := vm.Undeploy()
+	// Undeploy so the VM is in POWERED_OFF statPowerOffe
+	task, err := vm.Undeploy()
+	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 	ovfenv, err = vm.GetEnvironment()
 	check.Assert(strings.Contains(err.Error(), "OVF environment is only available when VM is powered on"), Equals, true)
 	check.Assert(ovfenv, IsNil)
-	// PowerOff
-
 }
