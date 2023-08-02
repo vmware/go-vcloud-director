@@ -738,6 +738,8 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 		check.Assert(task.Task.Status, Equals, "success")
 		err = vm.Refresh()
 		check.Assert(err, IsNil)
+		vmStatus, err = vm.GetStatus()
+		check.Assert(err, IsNil)
 		fmt.Println("VM status: ", vmStatus)
 	}
 
@@ -765,7 +767,7 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 		time.Sleep(5 * time.Second)
 		elapsed = time.Since(startTime)
 	}
-	printVerbose("VM Tools Status: %s (%s)\n", gcStatus, elapsed)
+	fmt.Printf("VM Tools Status: %s (%s)\n", gcStatus, elapsed)
 	check.Assert(statusFound, Equals, true)
 
 	printVerbose("Shutting down VM:\n")
