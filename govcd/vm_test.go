@@ -734,25 +734,41 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 		check.Assert(task.Task.Status, Equals, "success")
+		err = vm.Refresh()
+		check.Assert(err, IsNil)
+		vmStatus, err = vm.GetStatus()
+		check.Assert(err, IsNil)
+		fmt.Println("VM status: ", vmStatus)
 	}
 
+	timeout := time.Minute * 5 // Avoiding infinite loops
+	startTime := time.Now()
+	elapsed := time.Since(startTime)
+	gcStatus := ""
+	statusFound := false
 	// Wait until Guest Tools gets to `REBOOT_PENDING` or `GC_COMPLETE` as there is no real way to
 	// check if VM has Guest Tools operating
-	for {
+	for elapsed < timeout {
 		err = vm.Refresh()
 		check.Assert(err, IsNil)
 
 		vmQuery, err := vdc.QueryVM(vapp.VApp.Name, vm.VM.Name)
 		check.Assert(err, IsNil)
 
-		printVerbose("VM Tools Status: %s\n", vmQuery.VM.GcStatus)
+		gcStatus = vmQuery.VM.GcStatus
+		printVerbose("VM Tools Status: %s (%s)\n", vmQuery.VM.GcStatus, elapsed)
 		if vmQuery.VM.GcStatus == "GC_COMPLETE" || vmQuery.VM.GcStatus == "REBOOT_PENDING" {
+			statusFound = true
 			break
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(5 * time.Second)
+		elapsed = time.Since(startTime)
 	}
-	printVerbose("Shuting down VM:\n")
+	fmt.Printf("VM Tools Status: %s (%s)\n", gcStatus, elapsed)
+	check.Assert(statusFound, Equals, true)
+
+	printVerbose("Shutting down VM:\n")
 
 	task, err := vm.Shutdown()
 	check.Assert(err, IsNil)
