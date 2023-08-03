@@ -702,7 +702,7 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus == "POWERED_OFF" || vmStatus == "PARTIALLY_POWERED_OFF", Equals, true)
 
-	err = deleteVapp(vcd, check.TestName())
+	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }
 
@@ -770,7 +770,7 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 	printVerbose("New VM status: %s\n", newStatus)
 	check.Assert(newStatus, Equals, "POWERED_OFF")
 
-	err = deleteVapp(vcd, check.TestName())
+	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }
 
@@ -881,7 +881,7 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
 	check.Assert(err, IsNil)
 
-	err = deleteVapp(vcd, check.TestName())
+	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }
 
@@ -2301,6 +2301,6 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 		check.Assert(p.Mac, Not(Equals), "")
 	}
 
-	err = deleteVapp(vcd, check.TestName())
+	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }

@@ -634,6 +634,33 @@ func deleteVapp(vcd *TestVCD, name string) error {
 	return nil
 }
 
+func deleteNsxtVapp(vcd *TestVCD, name string) error {
+	vapp, err := vcd.nsxtVdc.GetVAppByName(name, true)
+	if err != nil {
+		return fmt.Errorf("error getting vApp: %s", err)
+	}
+	task, _ := vapp.Undeploy()
+	_ = task.WaitTaskCompletion()
+
+	// Detach all Org networks during vApp removal because network removal errors if it happens
+	// very quickly (as the next task) after vApp removal
+	task, _ = vapp.RemoveAllNetworks()
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error removing networks from vApp: %s", err)
+	}
+
+	task, err = vapp.Delete()
+	if err != nil {
+		return fmt.Errorf("error deleting vApp: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting for vApp deletion task: %s", err)
+	}
+	return nil
+}
+
 // makeEmptyVapp creates a given vApp without any VM
 func makeEmptyVapp(vdc *Vdc, name string, description string) (*VApp, error) {
 
