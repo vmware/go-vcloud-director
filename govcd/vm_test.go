@@ -881,13 +881,6 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
 	check.Assert(err, IsNil)
 
-	// All of the vApp TestSuite tests expect the VM to be in POWERED_OFF state
-	task, err = vm.Undeploy()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-
 	err = deleteVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }
@@ -2278,6 +2271,11 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 
 	_, vm := createNsxtVAppAndVm(vcd, check)
 	check.Assert(vm, NotNil)
+
+	task, err := vm.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 
 	// Read ovfenv when VM is started
 	ovfenv, err := vm.GetEnvironment()
