@@ -611,16 +611,8 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 
-	vmName := check.TestName()
-	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
-	check.Assert(err, IsNil)
+	_, vm := createNsxtVAppAndVm(vcd, check)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
-	check.Assert(err, IsNil)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-	// Default nesting status should be false
 	nestingStatus := vm.VM.NestedHypervisorEnabled
 	check.Assert(nestingStatus, Equals, false)
 
@@ -663,7 +655,7 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, false)
 
-	err = deleteVapp(vcd, vmName)
+	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }
 
