@@ -389,7 +389,7 @@ func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
 		if status == types.VAppStatuses[4] {
 			// Prevent affect Test_ChangeMemorySize
 			// because TestVCD.Test_AttachedVMDisk is run before Test_ChangeMemorySize and Test_ChangeMemorySize will fail the test if the VM is powered on,
-			task, err := vm.PowerOff()
+			task, err := vm.Undeploy()
 			if err != nil {
 				return err
 			}
