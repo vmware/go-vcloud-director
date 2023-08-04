@@ -2261,6 +2261,12 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 
 func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 
+	version, err := vcd.client.Client.GetVcdShortVersion()
+	check.Assert(err, IsNil)
+	if version == "10.5.0" {
+		check.Skip("There is a known bug with the OVF environment on 10.5.0")
+	}
+
 	_, vm := createNsxtVAppAndVm(vcd, check)
 	check.Assert(vm, NotNil)
 
