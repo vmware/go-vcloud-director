@@ -459,7 +459,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
 
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
@@ -473,6 +473,12 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
 	check.Assert(orgVdcNetwork[0].Name, Equals, networkName)
 	check.Assert(orgVdcNetwork[0].ConnectedTo, Equals, externalNetwork.ExternalNetwork.Name)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	check.Assert(err, IsNil)
+	task, err = network.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {

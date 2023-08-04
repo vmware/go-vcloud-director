@@ -183,4 +183,12 @@ func (vcd *TestVCD) Test_NsxtIpSet(check *C) {
 	// Remove Edge Gateway
 	err = movedGateway.Delete()
 	check.Assert(err, IsNil)
+
+	// Remove VDC group and VDC
+	err = vdcGroup.Delete()
+	check.Assert(err, IsNil)
+	task, err := vdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }

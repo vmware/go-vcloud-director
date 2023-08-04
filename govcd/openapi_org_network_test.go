@@ -687,6 +687,14 @@ func runOpenApiOrgVdcNetworkWithVdcGroupTest(check *C, vcd *TestVCD, orgVdcNetwo
 	//cleanup
 	err = movedGateway.Delete()
 	check.Assert(err, IsNil)
+
+	// Remove VDC group and VDC
+	err = vdcGroup.Delete()
+	check.Assert(err, IsNil)
+	task, err := vdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func testNsxtDhcpBinding(check *C, vcd *TestVCD, orgNet *OpenApiOrgVdcNetwork) {

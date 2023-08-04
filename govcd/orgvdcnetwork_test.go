@@ -395,6 +395,10 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkIso(check *C) {
 	check.Assert(len(network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange), Not(Equals), 0)
 	check.Assert(network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].StartAddress, Equals, updatedStartAddress)
 	check.Assert(network.OrgVDCNetwork.Configuration.IPScopes.IPScope[0].IPRanges.IPRange[0].EndAddress, Equals, updatedEndAddress)
+	task, err := network.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 
 }
 
@@ -448,7 +452,7 @@ func (vcd *TestVCD) Test_CreateUpdateOrgVdcNetworkDirect(check *C) {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
 
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
