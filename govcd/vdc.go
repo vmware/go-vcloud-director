@@ -389,6 +389,14 @@ func (vdc *Vdc) GetEdgeGatewayByHref(href string) (*EdgeGateway, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Edge gateways can sometimes come without any configured services which
+	// lead to nil pointer dereference when adding e.g a DNAT rule
+	// https://github.com/vmware/go-vcloud-director/issues/585
+	if edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration == nil {
+		edge.EdgeGateway.Configuration.EdgeGatewayServiceConfiguration = &types.GatewayFeatures{}
+	}
+
 	return edge, nil
 }
 
@@ -1343,4 +1351,39 @@ func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 	}
 	err = vapp.Refresh()
 	return vapp, err
+}
+
+// Get the details of a hardware version
+func (vdc *Vdc) GetHardwareVersion(name string) (*types.VirtualHardwareVersion, error) {
+	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error getting VDC href: %s", err)
+	}
+	vdcHref.Path += "/hwv/" + name
+
+	hardwareVersion := &types.VirtualHardwareVersion{}
+
+	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodGet, types.MimeVirtualHardwareVersion, "error getting hardware version: %s", nil, hardwareVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	return hardwareVersion, nil
+}
+
+// Get highest supported hardware version of a VDC
+func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, error) {
+	err := vdc.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get last item (highest version) of SupportedHardwareVersions
+	highestVersion := vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion[len(vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion)-1].Name
+
+	hardwareVersion, err := vdc.GetHardwareVersion(highestVersion)
+	if err != nil {
+		return nil, err
+	}
+	return hardwareVersion, nil
 }

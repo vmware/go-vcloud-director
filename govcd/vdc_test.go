@@ -145,6 +145,23 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 
 }
 
+func (vcd *TestVCD) Test_GetVDCHardwareVersion(check *C) {
+	err := vcd.vdc.Refresh()
+	check.Assert(err, IsNil)
+
+	for _, cap := range vcd.vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion {
+		fmt.Println(cap.Name)
+	}
+}
+
+func (vcd *TestVCD) Test_GetVDCHardwareVersion_2(check *C) {
+	err := vcd.vdc.Refresh()
+	check.Assert(err, IsNil)
+
+	_, err = vcd.vdc.GetHardwareVersion("vmx-18")
+	check.Assert(err, IsNil)
+}
+
 // Tests ComposeVApp with given parameters in the config file.
 // Throws an error if networks, catalog, catalog item, and
 // storage preference are omitted from the config file.
