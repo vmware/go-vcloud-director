@@ -3388,17 +3388,18 @@ type RemoveStorageProfile struct {
 	RemoveStorageProfile []*Reference `json:"removeStorageProfile"`
 }
 
+// VirtualHardwareVersion describes supported hardware by the VMs created on the VDC
 type VirtualHardwareVersion struct {
-	HardDiskAdapter           HardDiskAdapter                     `xml:"HardDiskAdapter"`
-	Link                      Link                                `xml:"Link"`
-	MaxCPUs                   int                                 `xml:"maxCPUs"`
-	MaxCoresPerSocket         int                                 `xml:"maxCoresPerSocket"`
-	MaxMemorySizeMb           int                                 `xml:"maxMemorySizeMb"`
-	MaxNICs                   int                                 `xml:"maxNICs"`
-	Name                      string                              `xml:"name"`
-	SupportedMemorySizeGb     int                                 `xml:"supportedMemorySizeGb"`
-	SupportedCoresPerSocket   int                                 `xml:"supportedCoresPerSocket"`
-	SupportedOperatingSystems []SupportedOperatingSystemsInfoType `xml:"supportedOperatingSystems"`
+	HardDiskAdapter           HardDiskAdapter                    `xml:"HardDiskAdapter"`
+	Link                      Link                               `xml:"Link"`
+	MaxCPUs                   int                                `xml:"maxCPUs"`
+	MaxCoresPerSocket         int                                `xml:"maxCoresPerSocket"`
+	MaxMemorySizeMb           int                                `xml:"maxMemorySizeMb"`
+	MaxNICs                   int                                `xml:"maxNICs"`
+	Name                      string                             `xml:"name"`
+	SupportedMemorySizeGb     []int                              `xml:"supportedMemorySizeGb"`
+	SupportedCoresPerSocket   []int                              `xml:"supportedCoresPerSocket"`
+	SupportedOperatingSystems *SupportedOperatingSystemsInfoType `xml:"supportedOperatingSystems"`
 
 	SupportsHotAdd     *bool `xml:"supportsHotAdd"`
 	SupportsHotPlugPCI *bool `xml:"supportsHotPlugPCI"`
@@ -3409,7 +3410,7 @@ type HardDiskAdapter struct {
 	Id                string `xml:"id,attr"`
 	LegacyId          int    `xml:"legacyId,attr"`
 	Name              string `xml:"name,attr"`
-	MaximumDiskSizeGb int    `xml:"maximumDiskSizeGb"`
+	MaximumDiskSizeGb int    `xml:"maximumDiskSizeGb,attr"`
 
 	BusNumberRanges struct {
 		Begin int `xml:"begin,attr"`
@@ -3428,19 +3429,21 @@ type HardDiskAdapter struct {
 
 type SupportedOperatingSystemsInfoType struct {
 	Link                      *Link
-	OperatingSystemFamilyInfo OperatingSystemFamilyInfoType `xml:"OperatingSystemFamilyInfoType"`
+	OperatingSystemFamilyInfo []*OperatingSystemFamilyInfoType `xml:"OperatingSystemFamilyInfo"`
 }
 
 type OperatingSystemFamilyInfoType struct {
-	Name                    string                    `xml:"Name"`
-	OperatingSystemFamilyId *int                      `xml:"OperatingSystemFamilyId"`
-	OperatingSystems        []OperatingSystemInfoType `xml:"OperatingSystem"`
+	Name                    string                     `xml:"Name"`
+	OperatingSystemFamilyId *int                       `xml:"OperatingSystemFamilyId"`
+	OperatingSystems        []*OperatingSystemInfoType `xml:"OperatingSystem"`
 }
 
 type OperatingSystemInfoType struct {
-	OperatingSystemId            *int   `xml:"OperatingSystemId"`
-	DefaultHardDiskAdapterType   string `xml:"DefaultHardDiskAdapterType"`
-	SupportedHardDiskAdapter     string `xml:"SupportedHardDiskAdapter"`
+	OperatingSystemId          *int   `xml:"OperatingSystemId,omitempty"`
+	DefaultHardDiskAdapterType string `xml:"DefaultHardDiskAdapterType"`
+	SupportedHardDiskAdapter   []struct {
+		Ref string `xml:"ref,attr"`
+	} `xml:"SupportedHardDiskAdapter,omitempty"`
 	MinimumHardDiskSizeGigabytes *int   `xml:"MinimumHardDiskSizeGigabytes"`
 	MinimumMemoryMegabytes       *int   `xml:"MinimumMemoryMegabytes"`
 	Name                         string `xml:"Name"`
@@ -3460,17 +3463,17 @@ type OperatingSystemInfoType struct {
 	CimVersion                   *int   `xml:"CimVersion"`
 	SupportedForCreate           *bool  `xml:"SupportedForCreate"`
 
-	RecommendedNIC struct {
+	RecommendedNIC []struct {
 		Name string `xml:"name,attr"`
-		Id   int    `xml:"id,attr"`
+		Id   *int   `xml:"id,attr,omitempty"`
 	} `xml:"RecommendedNIC"`
 
-	SupportedNICType struct {
+	SupportedNICType []struct {
 		Name string `xml:"name,attr"`
-		Id   int    `xml:"id,attr"`
+		Id   *int   `xml:"id,attr,omitempty"`
 	} `xml:"SupportedNICType"`
 
-	RecommendedFirmware string `xml:"RecommendedFirmware"`
-	SupportedFirmware   string `xml:"SupportedFirmware"`
-	SupportsTPM         *bool  `xml:"SupportsTPM"`
+	RecommendedFirmware string   `xml:"RecommendedFirmware"`
+	SupportedFirmware   []string `xml:"SupportedFirmware"`
+	SupportsTPM         *bool    `xml:"SupportsTPM"`
 }

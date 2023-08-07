@@ -1350,3 +1350,20 @@ func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 	err = vapp.Refresh()
 	return vapp, err
 }
+
+func (vdc *Vdc) GetHardwareVersion(name string) (*types.VirtualHardwareVersion, error) {
+	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error getting VDC href: %s", err)
+	}
+	vdcHref.Path += "/hwv/" + name
+
+	hardwareVersion := &types.VirtualHardwareVersion{}
+
+	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodGet, types.MimeVirtualHardwareVersion, "error getting hardware version: %s", nil, hardwareVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	return hardwareVersion, nil
+}
