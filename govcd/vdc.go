@@ -1351,6 +1351,7 @@ func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 	return vapp, err
 }
 
+// Get the details of a hardware version
 func (vdc *Vdc) GetHardwareVersion(name string) (*types.VirtualHardwareVersion, error) {
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
 	if err != nil {
@@ -1365,5 +1366,22 @@ func (vdc *Vdc) GetHardwareVersion(name string) (*types.VirtualHardwareVersion, 
 		return nil, err
 	}
 
+	return hardwareVersion, nil
+}
+
+// Get highest supported hardware version of a VDC
+func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, error) {
+	err := vdc.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get last item (highest version) of SupportedHardwareVersions
+	highestVersion := vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion[len(vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion)-1].Name
+
+	hardwareVersion, err := vdc.GetHardwareVersion(highestVersion)
+	if err != nil {
+		return nil, err
+	}
 	return hardwareVersion, nil
 }
