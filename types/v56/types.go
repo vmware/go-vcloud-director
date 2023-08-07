@@ -3387,3 +3387,90 @@ type EnableStorageProfile struct {
 type RemoveStorageProfile struct {
 	RemoveStorageProfile []*Reference `json:"removeStorageProfile"`
 }
+
+type VirtualHardwareVersion struct {
+	HardDiskAdapter           HardDiskAdapter                     `xml:"HardDiskAdapter"`
+	Link                      Link                                `xml:"Link"`
+	MaxCPUs                   int                                 `xml:"maxCPUs"`
+	MaxCoresPerSocket         int                                 `xml:"maxCoresPerSocket"`
+	MaxMemorySizeMb           int                                 `xml:"maxMemorySizeMb"`
+	MaxNICs                   int                                 `xml:"maxNICs"`
+	Name                      string                              `xml:"name"`
+	SupportedMemorySizeGb     int                                 `xml:"supportedMemorySizeGb"`
+	SupportedCoresPerSocket   int                                 `xml:"supportedCoresPerSocket"`
+	SupportedOperatingSystems []SupportedOperatingSystemsInfoType `xml:"supportedOperatingSystems"`
+
+	SupportsHotAdd     *bool `xml:"supportsHotAdd"`
+	SupportsHotPlugPCI *bool `xml:"supportsHotPlugPCI"`
+	SupportsNestedHV   *bool `xml:"supportsNestedHV"`
+}
+
+type HardDiskAdapter struct {
+	Id                string `xml:"id,attr"`
+	LegacyId          int    `xml:"legacyId,attr"`
+	Name              string `xml:"name,attr"`
+	MaximumDiskSizeGb int    `xml:"maximumDiskSizeGb"`
+
+	BusNumberRanges struct {
+		Begin int `xml:"begin,attr"`
+		End   int `xml:"end,attr"`
+	} `xml:"BusNumberRanges>Range"`
+	UnitNumberRanges struct {
+		Begin int `xml:"begin,attr"`
+		End   int `xml:"end,attr"`
+	} `xml:"UnitNumberRanges>Range"`
+
+	ReservedBusUnitNumber struct {
+		BusNumber  int `xml:"busNumber,attr"`
+		UnitNumber int `xml:"unitNumber,attr"`
+	} `xml:"ReservedBusUnitNumber"`
+}
+
+type SupportedOperatingSystemsInfoType struct {
+	Link                      *Link
+	OperatingSystemFamilyInfo OperatingSystemFamilyInfoType `xml:"OperatingSystemFamilyInfoType"`
+}
+
+type OperatingSystemFamilyInfoType struct {
+	Name                    string                    `xml:"Name"`
+	OperatingSystemFamilyId *int                      `xml:"OperatingSystemFamilyId"`
+	OperatingSystems        []OperatingSystemInfoType `xml:"OperatingSystem"`
+}
+
+type OperatingSystemInfoType struct {
+	OperatingSystemId            *int   `xml:"OperatingSystemId"`
+	DefaultHardDiskAdapterType   string `xml:"DefaultHardDiskAdapterType"`
+	SupportedHardDiskAdapter     string `xml:"SupportedHardDiskAdapter"`
+	MinimumHardDiskSizeGigabytes *int   `xml:"MinimumHardDiskSizeGigabytes"`
+	MinimumMemoryMegabytes       *int   `xml:"MinimumMemoryMegabytes"`
+	Name                         string `xml:"Name"`
+	InternalName                 string `xml:"InternalName"`
+	Supported                    *bool  `xml:"Supported"`
+	SupportLevel                 string `xml:"SupportLevel"`
+	X64                          *bool  `xml:"x64"`
+	MaximumCpuCount              *int   `xml:"MaximumCpuCount"`
+	MaximumCoresPerSocket        *int   `xml:"MaximumCoresPerSocket"`
+	MaximumSocketCount           *int   `xml:"MaximumSocketCount"`
+	MinimumHardwareVersion       *int   `xml:"MinimumHardwareVersion"`
+	PersonalizationEnabled       *bool  `xml:"PersonalizationEnabled"`
+	PersonalizationAuto          *bool  `xml:"PersonalizationAuto"`
+	SysprepPackagingSupported    *bool  `xml:"SysprepPackagingSupported"`
+	SupportsMemHotAdd            *bool  `xml:"SupportsMemHotAdd"`
+	CimOsId                      *int   `xml:"cimOsId"`
+	CimVersion                   *int   `xml:"CimVersion"`
+	SupportedForCreate           *bool  `xml:"SupportedForCreate"`
+
+	RecommendedNIC struct {
+		Name string `xml:"name,attr"`
+		Id   int    `xml:"id,attr"`
+	} `xml:"RecommendedNIC"`
+
+	SupportedNICType struct {
+		Name string `xml:"name,attr"`
+		Id   int    `xml:"id,attr"`
+	} `xml:"SupportedNICType"`
+
+	RecommendedFirmware string `xml:"RecommendedFirmware"`
+	SupportedFirmware   string `xml:"SupportedFirmware"`
+	SupportsTPM         *bool  `xml:"SupportsTPM"`
+}
