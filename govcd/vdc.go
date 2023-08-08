@@ -1355,6 +1355,16 @@ func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 
 // Get the details of a hardware version
 func (vdc *Vdc) GetHardwareVersion(name string) (*types.VirtualHardwareVersion, error) {
+	found := false
+	for _, hwVersion := range vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion {
+		if hwVersion.Name == name {
+			found = true
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("hardware version %s not found or not supported", name)
+	}
+
 	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
 	if err != nil {
 		return nil, fmt.Errorf("error getting VDC href: %s", err)
@@ -1386,4 +1396,17 @@ func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, erro
 		return nil, err
 	}
 	return hardwareVersion, nil
+}
+
+// FindOsFromId attempts to find a OS by ID by the given hardware version
+func FindOsFromId(hardwareVersion *types.VirtualHardwareVersion, osId string) (*types.OperatingSystemInfoType, error) {
+	for _, osFamily := range hardwareVersion.SupportedOperatingSystems.OperatingSystemFamilyInfo {
+		for _, os := range osFamily.OperatingSystems {
+			if osId == os.InternalName {
+				return os, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no OS found with ID: %s", osId)
 }

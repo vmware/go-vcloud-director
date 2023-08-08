@@ -145,21 +145,24 @@ func (vcd *TestVCD) Test_NewVdc(check *C) {
 
 }
 
+// Test_GetVDCHardwareVersion tests hardware version fetching functionality
 func (vcd *TestVCD) Test_GetVDCHardwareVersion(check *C) {
 	err := vcd.vdc.Refresh()
 	check.Assert(err, IsNil)
 
-	for _, cap := range vcd.vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion {
-		fmt.Println(cap.Name)
-	}
-}
-
-func (vcd *TestVCD) Test_GetVDCHardwareVersion_2(check *C) {
-	err := vcd.vdc.Refresh()
+	// vmx-18 is the latest version supported by 10.3.0, the oldest version we support.
+	hwVersion, err := vcd.vdc.GetHardwareVersion("vmx-18")
 	check.Assert(err, IsNil)
+	check.Assert(hwVersion, NotNil)
 
-	_, err = vcd.vdc.GetHardwareVersion("vmx-18")
+	check.Assert(hwVersion.Name, Equals, "vmx-18")
+
+	os, err := FindOsFromId(hwVersion, "sles10_64Guest")
 	check.Assert(err, IsNil)
+	check.Assert(os, NotNil)
+
+	check.Assert(os.InternalName, Equals, "sles10_64Guest")
+	check.Assert(os.Name, Equals, "SUSE Linux Enterprise 10 (64-bit)")
 }
 
 // Tests ComposeVApp with given parameters in the config file.

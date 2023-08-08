@@ -3390,7 +3390,7 @@ type RemoveStorageProfile struct {
 
 // VirtualHardwareVersion describes supported hardware by the VMs created on the VDC
 type VirtualHardwareVersion struct {
-	HardDiskAdapter           HardDiskAdapter                    `xml:"HardDiskAdapter"`
+	HardDiskAdapter           []*HardDiskAdapter                 `xml:"HardDiskAdapter"`
 	Link                      Link                               `xml:"Link"`
 	MaxCPUs                   int                                `xml:"maxCPUs"`
 	MaxCoresPerSocket         int                                `xml:"maxCoresPerSocket"`
@@ -3406,6 +3406,7 @@ type VirtualHardwareVersion struct {
 	SupportsNestedHV   *bool `xml:"supportsNestedHV"`
 }
 
+// HardDiskAdapter describes a hard disk controller type
 type HardDiskAdapter struct {
 	Id                string `xml:"id,attr"`
 	LegacyId          int    `xml:"legacyId,attr"`
@@ -3427,17 +3428,20 @@ type HardDiskAdapter struct {
 	} `xml:"ReservedBusUnitNumber"`
 }
 
+// SupportedOperatingSystemsInfoType describes what operating system families a hardware version supports
 type SupportedOperatingSystemsInfoType struct {
 	Link                      *Link
 	OperatingSystemFamilyInfo []*OperatingSystemFamilyInfoType `xml:"OperatingSystemFamilyInfo"`
 }
 
+// OperatingSystemFamilyInfoType describes operating systems of a given OS family
 type OperatingSystemFamilyInfoType struct {
 	Name                    string                     `xml:"Name"`
 	OperatingSystemFamilyId *int                       `xml:"OperatingSystemFamilyId"`
 	OperatingSystems        []*OperatingSystemInfoType `xml:"OperatingSystem"`
 }
 
+// OperatingSystemInfoType describes a operating system
 type OperatingSystemInfoType struct {
 	OperatingSystemId          *int   `xml:"OperatingSystemId,omitempty"`
 	DefaultHardDiskAdapterType string `xml:"DefaultHardDiskAdapterType"`
