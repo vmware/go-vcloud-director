@@ -98,11 +98,11 @@ type VmSpecSection struct {
 
 // BootOptions allows to specify boot options of a VM
 type BootOptions struct {
-	BootDelay            int    `xml:"BootDelay,omitempty"`            // Delay between power-on and boot of the VM
-	BootRetryDelay       int    `xml:"BootRetryDelay,omitempty"`       // Available since API 37.1. Doesn't have an effect if BootRetryEnabled is set to false
-	BootRetryEnabled     *bool  `xml:"BootRetryEnabled,omitempty"`     // Available since API 37.1
-	EfiSecureBootEnabled *bool  `xml:"EfiSecureBootEnabled,omitempty"` // Available since API 37.1
+	BootDelay            *int   `xml:"BootDelay,omitempty"`            // Delay between power-on and boot of the VM
 	EnterBiosSetup       *bool  `xml:"EnterBIOSSetup,omitempty"`       // Set to false on the next boot
+	BootRetryEnabled     *bool  `xml:"BootRetryEnabled,omitempty"`     // Available since API 37.1
+	BootRetryDelay       *int   `xml:"BootRetryDelay,omitempty"`       // Available since API 37.1. Doesn't have an effect if BootRetryEnabled is set to false
+	EfiSecureBootEnabled *bool  `xml:"EfiSecureBootEnabled,omitempty"` // Available since API 37.1
 	NetworkBootProtocol  string `xml:"NetworkBootProtocol,omitempty"`  // Available since API 37.1
 }
 

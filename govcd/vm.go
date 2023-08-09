@@ -1352,42 +1352,13 @@ func (vm *VM) UpdateInternalDisks(disksSettingToUpdate *types.VmSpecSection) (*t
 		return nil, fmt.Errorf("cannot update internal disks - VM HREF is unset")
 	}
 
-	task, err := vm.UpdateInternalDisksAsync(disksSettingToUpdate)
+	description := vm.VM.Description
+	vm, err := vm.UpdateVmSpecSection(disksSettingToUpdate, description)
 	if err != nil {
 		return nil, err
 	}
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("error waiting for task completion after internal disks update for VM %s: %s", vm.VM.Name, err)
-	}
-	err = vm.Refresh()
-	if err != nil {
-		return nil, fmt.Errorf("error refreshing VM %s: %s", vm.VM.Name, err)
-	}
+
 	return vm.VM.VmSpecSection, nil
-}
-
-// UpdateInternalDisksAsync applies disks configuration for the VM.
-// types.VmSpecSection has to have all internal disk state. Disks which don't match provided ones in types.VmSpecSection
-// will be deleted. Matched internal disk will be updated. New internal disk description found
-// in types.VmSpecSection will be created.
-// Returns Task and error.
-func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection) (Task, error) {
-	if vm.VM.HREF == "" {
-		return Task{}, fmt.Errorf("cannot update disks, VM HREF is unset")
-	}
-
-	vmSpecSectionModified := true
-	disksSettingToUpdate.Modified = &vmSpecSectionModified
-
-	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM disks: %s", &types.VMDiskChange{
-			Xmlns:         types.XMLNamespaceVCloud,
-			Ovf:           types.XMLNamespaceOVF,
-			Name:          vm.VM.Name,
-			Description:   vm.VM.Description,
-			VmSpecSection: disksSettingToUpdate,
-		})
 }
 
 // AddEmptyVm adds an empty VM (without template) to vApp and returns the new created VM or an error.
@@ -1902,13 +1873,57 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error)
 	//    GuestCustomizationSection
 	// Sections not included in the request body will not be updated.
 	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
-		types.MimeVM, "error updating VM spec section: %s", &types.Vm{
+		types.MimeVM, "error updating VM storage profile: %s", &types.Vm{
 			Xmlns:          types.XMLNamespaceVCloud,
 			Ovf:            types.XMLNamespaceOVF,
 			Name:           vm.VM.Name,
 			Description:    vm.VM.Description,
 			StorageProfile: &types.Reference{HREF: storageProfileHref},
 		})
+}
+
+func (vm *VM) UpdateBootOptions(bootOptions *types.BootOptions) (*VM, error) {
+	if vm.client.APIVCDMaxVersionIs("<37.1") {
+		if bootOptions.BootRetryEnabled != nil || bootOptions.BootRetryDelay != nil ||
+			bootOptions.EfiSecureBootEnabled != nil || bootOptions.NetworkBootProtocol != "" {
+			return nil, fmt.Errorf("error: Boot retry, EFI Secure Boot and Boot Network Protocol options were introduced in VCD 10.4.1")
+		}
+	}
+
+	task, err := vm.UpdateBootOptionsAsync(bootOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vm.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	return vm, nil
+}
+
+func (vm *VM) UpdateBootOptionsAsync(bootOptions *types.BootOptions) (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("cannot update VM boot options, VM HREF is unset")
+	}
+	if bootOptions == nil {
+		return Task{}, fmt.Errorf("cannot update VM boot options, none given")
+	}
+
+	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
+		types.MimeVM, "error updating VM boot options: %s", &types.Vm{
+			Xmlns:       types.XMLNamespaceVCloud,
+			Ovf:         types.XMLNamespaceOVF,
+			Name:        vm.VM.Name,
+			Description: vm.VM.Description,
+			BootOptions: bootOptions,
+		}, vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 }
 
 // DeleteAsync starts a standalone VM deletion, returning a task

@@ -1456,23 +1456,33 @@ func (vcd *TestVCD) Test_SetVmBootOptions(check *C) {
 	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
+	hardwareVersion, err := vdc.GetHardwareVersion(vm.VM.VmSpecSection.HardwareVersion.Value)
+	check.Assert(err, IsNil)
+	check.Assert(hardwareVersion, NotNil)
+	fmt.Println(hardwareVersion)
+
+	// time.Sleep(2 * time.Minute)
+	// fmt.Println("sleeping")
+
 	vmSpecSection := vm.VM.VmSpecSection
 	vmSpecSection.Firmware = "efi"
 
 	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
 	check.Assert(err, IsNil)
-	check.Assert(updatedVm, NotNil)
 	check.Assert(updatedVm.VM.VmSpecSection.Firmware, Equals, "efi")
+	check.Assert(updatedVm, NotNil)
 
 	bootOptions := &types.BootOptions{}
 	bootOptions.EfiSecureBootEnabled = addrOf(true)
 	bootOptions.EnterBiosSetup = addrOf(true)
 	bootOptions.BootRetryEnabled = addrOf(true)
-	bootOptions.BootRetryDelay = 200
+	bootOptions.BootRetryDelay = addrOf(200)
 
-	updatedVm.VM.BootOptions = bootOptions
+	updatedVm, err = vm.UpdateBootOptions(bootOptions)
 	check.Assert(err, IsNil)
-	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, Equals, addrOf(true))
+	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
+	check.Assert(updatedVm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(true))
+	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
 
 	task, err := updatedVm.PowerOn()
 	check.Assert(err, IsNil)
@@ -1981,9 +1991,8 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 				ComputerName: "standalone1",
 			},
 			BootOptions: &types.BootOptions{
-				BootDelay:           0,
-				EnterBiosSetup:      addrOf(true),
-				NetworkBootProtocol: "",
+				BootDelay:      addrOf(0),
+				EnterBiosSetup: addrOf(true),
 			},
 		},
 		Xmlns: types.XMLNamespaceVCloud,
@@ -1993,6 +2002,7 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 		params.CreateVm.VmSpecSection.Firmware = "efi"
 		params.BootOptions.EfiSecureBootEnabled = addrOf(true)
 		params.BootOptions.EnterBiosSetup = addrOf(true)
+		params.BootOptions.NetworkBootProtocol = ""
 	}
 
 	vappList := vdc.GetVappList()
