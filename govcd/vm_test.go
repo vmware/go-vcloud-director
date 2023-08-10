@@ -945,37 +945,83 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 	guestCustomizationPropertyTester(vcd, check, vm)
 }
 
-// Test create internal disk For VM
-func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
+// Test create/update/remove of Internal Disk
+func (vcd *TestVCD) Test_InternalDisk(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-
-	vmName := "Test_AddInternalDisk"
-
+	vmName := check.TestName()
 	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
+	check.Assert(err, IsNil)
+
+	// verify VM description still available - test for bugfix #418
+	description := check.TestName() + "_Description"
+	vm, err = vm.UpdateVmSpecSection(vm.VM.VmSpecSection, description)
 	check.Assert(err, IsNil)
 
 	//verify
 	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, IsNil)
+	check.Assert(disk, NotNil)
 
 	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
 	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
-	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
-	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(disk.ThinProvisioned, DeepEquals, diskSettings.ThinProvisioned)
+	// In 37.1, if IOPS is set to 0, it is returned as nil instead of 0, so we don't check it
+	// check.Assert(disk.Iops, DeepEquals, diskSettings.Iops)
 	check.Assert(disk.SizeMb, Equals, diskSettings.SizeMb)
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 
+	// increase new disk size
+	vmSpecSection := vm.VM.VmSpecSection
+	changeDiskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
+	for _, diskSettings := range changeDiskSettings {
+		if diskSettings.DiskId == diskId {
+			diskSettings.SizeMb = 2048
+		}
+	}
+
+	vmSpecSection.DiskSection.DiskSettings = changeDiskSettings
+
+	vmSpecSection, err = vm.UpdateInternalDisks(vmSpecSection)
+	check.Assert(err, IsNil)
+	check.Assert(vmSpecSection, NotNil)
+
+	disk, err = vm.GetInternalDiskById(diskId, true)
+	check.Assert(err, IsNil)
+	check.Assert(disk, NotNil)
+
+	//verify
+	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
+	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
+	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
+	// In 37.1, if IOPS is set to 0, it is returned as nil instead of 0, so we don't check it
+	// check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(disk.SizeMb, Equals, int64(2048))
+	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
+	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
+	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+
+	// verify VM description still available - test for bugfix #418
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.Description, Equals, description)
+
+	// attach independent disk
+	independentDisk, err := attachIndependentDisk(vcd, check, vm)
+	check.Assert(err, IsNil)
+
 	//cleanup
 	err = vm.DeleteInternalDisk(diskId)
 	check.Assert(err, IsNil)
+	detachIndependentDisk(vcd, check, independentDisk)
 
 	// disable fast provisioning if needed
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
@@ -988,9 +1034,6 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 // createInternalDisk Finds available VM and creates internal Disk in it.
 // returns VM, storage profile, disk settings, disk id and error.
 func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (*VM, types.Reference, *types.DiskSettings, string, string, error) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vApp wasn't properly created")
-	}
 	if vcd.config.VCD.StorageProfile.SP1 == "" {
 		check.Skip("No Storage Profile given for VDC tests")
 	}
@@ -1010,7 +1053,7 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
@@ -1066,129 +1109,9 @@ func updateVdcFastProvisioning(vcd *TestVCD, check *C, enable string) string {
 	return vdcFastProvisioningValue
 }
 
-// Test delete internal disk For VM
-func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
-
-	vmName := "Test_DeleteInternalDisk"
-
-	vm, _, _, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 2)
-	check.Assert(err, IsNil)
-
-	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-
-	err = vm.DeleteInternalDisk(diskId)
-	check.Assert(err, IsNil)
-
-	disk, err := vm.GetInternalDiskById(diskId, true)
-	check.Assert(err, Equals, ErrorEntityNotFound)
-	check.Assert(disk, IsNil)
-
-	// enable fast provisioning if needed
-	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
-
-	// delete Vapp early to avoid env capacity issue
-	err = deleteVapp(vcd, vmName)
-	check.Assert(err, IsNil)
-}
-
-// Test update internal disk for VM which has independent disk
-func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
-	vmName := "Test_UpdateInternalDisk"
-	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
-	check.Assert(err, IsNil)
-
-	// verify VM description still available - test for bugfix #418
-	description := "Test_UpdateInternalDisk_Description"
-	vm, err = vm.UpdateVmSpecSection(vm.VM.VmSpecSection, description)
-	check.Assert(err, IsNil)
-
-	//verify
-	disk, err := vm.GetInternalDiskById(diskId, true)
-	check.Assert(err, IsNil)
-	check.Assert(disk, NotNil)
-
-	// increase new disk size
-	vmSpecSection := vm.VM.VmSpecSection
-	changeDiskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
-	for _, diskSettings := range changeDiskSettings {
-		if diskSettings.DiskId == diskId {
-			diskSettings.SizeMb = 2048
-		}
-	}
-
-	vmSpecSection.DiskSection.DiskSettings = changeDiskSettings
-
-	vmSpecSection, err = vm.UpdateInternalDisks(vmSpecSection)
-	check.Assert(err, IsNil)
-	check.Assert(vmSpecSection, NotNil)
-
-	disk, err = vm.GetInternalDiskById(diskId, true)
-	check.Assert(err, IsNil)
-	check.Assert(disk, NotNil)
-
-	//verify
-	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
-	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
-	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
-	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
-	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
-	check.Assert(disk.SizeMb, Equals, int64(2048))
-	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
-	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
-	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
-
-	// verify VM description still available - test for bugfix #418
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-	check.Assert(vm.VM.Description, Equals, description)
-
-	// attach independent disk
-	independentDisk, err := attachIndependentDisk(vcd, check)
-	check.Assert(err, IsNil)
-
-	//cleanup
-	err = vm.DeleteInternalDisk(diskId)
-	check.Assert(err, IsNil)
-	detachIndependentDisk(vcd, check, independentDisk)
-
-	// disable fast provisioning if needed
-	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
-
-	// delete Vapp early to avoid env capacity issue
-	err = deleteVapp(vcd, vmName)
-	check.Assert(err, IsNil)
-}
-
-func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
-	// Find VM
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Ensure vApp and VM are suitable for this test
+func attachIndependentDisk(vcd *TestVCD, check *C, vm *VM) (*Disk, error) {
 	// Disk attach and detach operations are not working if VM is suspended
-	err := vcd.ensureVappIsSuitableForVMTest(vapp)
-	check.Assert(err, IsNil)
-	err = vcd.ensureVMIsSuitableForVMTest(vm)
+	err := vcd.ensureVMIsSuitableForVMTest(vm)
 	check.Assert(err, IsNil)
 
 	// Create disk
