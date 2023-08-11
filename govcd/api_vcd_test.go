@@ -1099,6 +1099,11 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 
+		_, err = adminCatalog.GetMediaByName(entity.Name, true)
+		if ContainsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name, err)
+			return
+		}
 		err = adminCatalog.RemoveMediaIfExists(entity.Name)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -2018,4 +2023,10 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 	}
 
 	return vcdClient, newUser, nil
+}
+
+func (vcd *TestVCD) skipIfNotSysAdmin(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip(fmt.Sprintf("Skipping %s: requires system administrator privileges", check.TestName()))
+	}
 }
