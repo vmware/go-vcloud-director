@@ -13,6 +13,7 @@ import (
 func (vcd *TestVCD) Test_NsxtApplicationPortProfileProvider(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointAppPortProfiles)
+	vcd.skipIfNotSysAdmin(check)
 
 	appPortProfileConfig := getAppProfileProvider(vcd, check)
 	testAppPortProfile(appPortProfileConfig, types.ApplicationPortProfileScopeProvider, vcd, check)

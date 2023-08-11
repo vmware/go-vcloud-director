@@ -250,7 +250,7 @@ func (vcd *TestVCD) Test_NsxtNatPriorityAndFirewallMatch(check *C) {
 		ExternalAddresses:        edgeGatewayPrimaryIp,
 		InternalAddresses:        "11.11.11.2",
 		SnatDestinationAddresses: "",
-		Logging:                  true,
+		Logging:                  vcd.client.Client.IsSysAdmin,
 		DnatExternalPort:         "",
 		Priority:                 addrOf(100),
 		FirewallMatch:            types.NsxtNatRuleFirewallMatchExternalAddress,

@@ -765,7 +765,7 @@ func (vcd *TestVCD) TestGetVappTemplateByHref(check *C) {
 // One should be able to find shared catalogs from different Organizations
 func (vcd *TestVCD) Test_GetCatalogByNameSharedCatalog(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
-
+	vcd.skipIfNotSysAdmin(check)
 	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
 
 	// Try to find the catalog inside Org which owns it - newOrg1
@@ -785,6 +785,7 @@ func (vcd *TestVCD) Test_GetCatalogByNameSharedCatalog(check *C) {
 // One should be able to find shared catalogs from different Organizations
 func (vcd *TestVCD) Test_GetCatalogByIdSharedCatalog(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	vcd.skipIfNotSysAdmin(check)
 
 	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
 
@@ -805,7 +806,7 @@ func (vcd *TestVCD) Test_GetCatalogByIdSharedCatalog(check *C) {
 // in other Orgs. It does so by creating another Org with shared Catalog named just like the one in testing catalog
 func (vcd *TestVCD) Test_GetCatalogByNamePrefersLocal(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
-
+	vcd.skipIfNotSysAdmin(check)
 	// Create a catalog  in new org with exactly the same name as in vcd.Org
 	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, vcd.config.VCD.Catalog.Name)
 
@@ -830,6 +831,7 @@ func (vcd *TestVCD) Test_GetCatalogByNamePrefersLocal(check *C) {
 // * Org admin user must not be able to retrieve unshared catalog from another Org
 func (vcd *TestVCD) Test_GetCatalogByXSharedCatalogOrgUser(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	vcd.skipIfNotSysAdmin(check)
 	newOrg1, vdc, sharedCatalog := createSharedCatalogInNewOrg(vcd, check, check.TestName())
 
 	// Create one more additional catalog which is not shared

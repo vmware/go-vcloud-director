@@ -17,6 +17,7 @@ import (
 func (vcd *TestVCD) Test_NsxtVdcGroupOrgNetworks(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+	vcd.skipIfNotSysAdmin(check)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(adminOrg, NotNil)
@@ -27,8 +28,8 @@ func (vcd *TestVCD) Test_NsxtVdcGroupOrgNetworks(check *C) {
 	check.Assert(err, IsNil)
 
 	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
-	check.Assert(nsxtExternalNetwork, NotNil)
 	check.Assert(err, IsNil)
+	check.Assert(nsxtExternalNetwork, NotNil)
 
 	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
 	check.Assert(vdc, NotNil)

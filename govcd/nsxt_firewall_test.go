@@ -58,7 +58,10 @@ func (vcd *TestVCD) Test_NsxtFirewall(check *C) {
 		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].IpProtocol, Equals, randomizedFwRuleDefs[index].IpProtocol)
 		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].Enabled, Equals, randomizedFwRuleDefs[index].Enabled)
 		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].Action, Equals, randomizedFwRuleDefs[index].Action)
-		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].Logging, Equals, randomizedFwRuleDefs[index].Logging)
+		if vcd.client.Client.IsSysAdmin {
+			// Only system administrator can handle logging
+			check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].Logging, Equals, randomizedFwRuleDefs[index].Logging)
+		}
 
 		for fwGroupIndex := range fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].SourceFirewallGroups {
 			check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].SourceFirewallGroups[fwGroupIndex].ID, Equals, randomizedFwRuleDefs[index].SourceFirewallGroups[fwGroupIndex].ID)

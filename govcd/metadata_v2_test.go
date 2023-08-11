@@ -38,12 +38,13 @@ func (vcd *TestVCD) TestVmMetadata(check *C) {
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
-	testMetadataCRUDActions(vm, check, nil)
+	vcd.testMetadataCRUDActions(vm, check, nil)
 	vcd.testMetadataIgnore(vm, "vApp", vm.VM.Name, check)
 }
 
 func (vcd *TestVCD) TestAdminVdcMetadata(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.Nsxt.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")
 	}
@@ -56,7 +57,7 @@ func (vcd *TestVCD) TestAdminVdcMetadata(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
 
-	testMetadataCRUDActions(adminVdc, check, func(testCase metadataTest) {
+	vcd.testMetadataCRUDActions(adminVdc, check, func(testCase metadataTest) {
 		testVdcMetadata(vcd, check, testCase)
 	})
 	vcd.testMetadataIgnore(adminVdc, "vdc", adminVdc.AdminVdc.Name, check)
@@ -79,12 +80,13 @@ func testVdcMetadata(vcd *TestVCD, check *C, testCase metadataTest) {
 
 func (vcd *TestVCD) TestProviderVdcMetadata(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	vcd.skipIfNotSysAdmin(check)
 	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	if err != nil {
 		check.Skip(fmt.Sprintf("%s: Provider VDC %s not found. Test can't proceed", check.TestName(), vcd.config.VCD.NsxtProviderVdc.Name))
 		return
 	}
-	testMetadataCRUDActions(providerVdc, check, nil)
+	vcd.testMetadataCRUDActions(providerVdc, check, nil)
 	vcd.testMetadataIgnore(providerVdc, "providervdc", providerVdc.ProviderVdc.Name, check)
 }
 
@@ -93,7 +95,7 @@ func (vcd *TestVCD) TestVAppMetadata(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
-	testMetadataCRUDActions(vcd.vapp, check, nil)
+	vcd.testMetadataCRUDActions(vcd.vapp, check, nil)
 	vcd.testMetadataIgnore(vcd.vapp, "vApp", vcd.vapp.VApp.Name, check)
 }
 
@@ -107,7 +109,7 @@ func (vcd *TestVCD) TestVAppTemplateMetadata(check *C) {
 	check.Assert(vAppTemplate, NotNil)
 	check.Assert(vAppTemplate.VAppTemplate.Name, Equals, vcd.config.VCD.Catalog.NsxtCatalogItem)
 
-	testMetadataCRUDActions(vAppTemplate, check, nil)
+	vcd.testMetadataCRUDActions(vAppTemplate, check, nil)
 	vcd.testMetadataIgnore(vAppTemplate, "vAppTemplate", vAppTemplate.VAppTemplate.Name, check)
 }
 
@@ -153,7 +155,7 @@ func (vcd *TestVCD) TestMediaRecordMetadata(check *C) {
 	check.Assert(mediaRecord, NotNil)
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, check.TestName())
 
-	testMetadataCRUDActions(mediaRecord, check, nil)
+	vcd.testMetadataCRUDActions(mediaRecord, check, nil)
 	vcd.testMetadataIgnore(mediaRecord, "media", mediaRecord.MediaRecord.Name, check)
 }
 
@@ -174,7 +176,7 @@ func (vcd *TestVCD) TestMediaMetadata(check *C) {
 	media, err := catalog.GetMediaByName(vcd.config.Media.Media, false)
 	check.Assert(err, IsNil)
 
-	testMetadataCRUDActions(media, check, nil)
+	vcd.testMetadataCRUDActions(media, check, nil)
 	vcd.testMetadataIgnore(media, "media", media.Media.Name, check)
 }
 
@@ -190,7 +192,7 @@ func (vcd *TestVCD) TestAdminCatalogMetadata(check *C) {
 	check.Assert(adminCatalog, NotNil)
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, vcd.config.VCD.Catalog.NsxtBackedCatalogName)
 
-	testMetadataCRUDActions(adminCatalog, check, func(testCase metadataTest) {
+	vcd.testMetadataCRUDActions(adminCatalog, check, func(testCase metadataTest) {
 		testCatalogMetadata(vcd, check, testCase)
 	})
 	vcd.testMetadataIgnore(adminCatalog, "catalog", adminCatalog.AdminCatalog.Name, check)
@@ -218,7 +220,7 @@ func (vcd *TestVCD) TestAdminOrgMetadata(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	testMetadataCRUDActions(adminOrg, check, func(testCase metadataTest) {
+	vcd.testMetadataCRUDActions(adminOrg, check, func(testCase metadataTest) {
 		testOrgMetadata(vcd, check, testCase)
 	})
 	vcd.testMetadataIgnore(adminOrg, "org", adminOrg.AdminOrg.Name, check)
@@ -257,7 +259,7 @@ func (vcd *TestVCD) TestDiskMetadata(check *C) {
 	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
 	check.Assert(err, IsNil)
 
-	testMetadataCRUDActions(disk, check, nil)
+	vcd.testMetadataCRUDActions(disk, check, nil)
 	vcd.testMetadataIgnore(disk, "disk", disk.Disk.Name, check)
 }
 
@@ -268,7 +270,7 @@ func (vcd *TestVCD) TestOrgVDCNetworkMetadata(check *C) {
 		check.Skip(fmt.Sprintf("network %s not found. Test can't proceed", vcd.config.VCD.Network.Net1))
 		return
 	}
-	testMetadataCRUDActions(net, check, nil)
+	vcd.testMetadataCRUDActions(net, check, nil)
 	vcd.testMetadataIgnore(net, "network", net.OrgVDCNetwork.Name, check)
 }
 
@@ -286,7 +288,7 @@ func (vcd *TestVCD) TestCatalogItemMetadata(check *C) {
 		return
 	}
 
-	testMetadataCRUDActions(catalogItem, check, nil)
+	vcd.testMetadataCRUDActions(catalogItem, check, nil)
 	vcd.testMetadataIgnore(catalogItem, "catalogItem", catalogItem.CatalogItem.Name, check)
 }
 
@@ -442,7 +444,7 @@ type metadataTest struct {
 // The function parameter extraReadStep performs an extra read step that can be passed as a function. Useful to perform a test
 // on "admin+not admin" resource combinations, where the "not admin" only has a GetMetadata function.
 // For example, AdminOrg and Org, where Org only has GetMetadata.
-func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadStep func(testCase metadataTest)) {
+func (vcd *TestVCD) testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadStep func(testCase metadataTest)) {
 	// Check how much metadata exists
 	metadata, err := resource.GetMetadata()
 	check.Assert(err, IsNil)
@@ -539,6 +541,10 @@ func testMetadataCRUDActions(resource metadataCompatible, check *C, extraReadSte
 	}
 
 	for _, testCase := range testCases {
+
+		if !vcd.client.Client.IsSysAdmin && testCase.IsSystem {
+			continue
+		}
 
 		err = resource.AddMetadataEntryWithVisibility(testCase.Key, testCase.Value, testCase.Type, testCase.Visibility, testCase.IsSystem)
 		if testCase.ExpectErrorOnFirstAdd {
