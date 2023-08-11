@@ -542,6 +542,8 @@ func (vcd *TestVCD) testMetadataCRUDActions(resource metadataCompatible, check *
 
 	for _, testCase := range testCases {
 
+		// The SYSTEM domain can only be set by a system administrator.
+		// If this test runs as org user, we skip the cases containing 'IsSystem' constraints
 		if !vcd.client.Client.IsSysAdmin && testCase.IsSystem {
 			continue
 		}
