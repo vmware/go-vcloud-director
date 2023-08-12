@@ -1101,7 +1101,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		_, err = adminCatalog.GetMediaByName(entity.Name, true)
 		if ContainsNotFound(err) {
-			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name, err)
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
 		err = adminCatalog.RemoveMediaIfExists(entity.Name)
