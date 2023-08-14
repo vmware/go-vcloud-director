@@ -47,8 +47,8 @@ func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 // Test attach disk to VM and detach disk from VM
 func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	// Find VM
-	if vcd.vapp != nil && vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
+	if skipVappCreation {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 
 	vapp := vcd.findFirstVapp()
@@ -130,98 +130,8 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 
 }
 
-// Test attach disk to VM
-func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
-
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	if vcd.skipVappTests {
-		check.Skip("skipping test because vApp wasn't properly created")
-	}
-
-	// Find VM
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Discard vApp suspension
-	// Disk attach and detach operations are not working if vApp is suspended
-	err := vcd.ensureVappIsSuitableForVMTest(vapp)
-	check.Assert(err, IsNil)
-	err = vcd.ensureVMIsSuitableForVMTest(vm)
-	check.Assert(err, IsNil)
-
-	// Create disk
-	diskCreateParamsDisk := &types.Disk{
-		Name:        TestVMAttachDisk,
-		SizeMb:      1,
-		Description: TestVMAttachDisk,
-	}
-
-	diskCreateParams := &types.DiskCreateParams{
-		Disk: diskCreateParamsDisk,
-	}
-
-	task, err := vcd.vdc.CreateDisk(diskCreateParams)
-	check.Assert(err, IsNil)
-
-	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
-	diskHREF := task.Task.Owner.HREF
-
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
-
-	// Wait for disk creation complete
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	// Verify created disk
-	check.Assert(diskHREF, Not(Equals), "")
-	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
-	check.Assert(err, IsNil)
-	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
-	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
-
-	// Attach disk
-	attachDiskTask, err := vm.AttachDisk(&types.DiskAttachOrDetachParams{
-		Disk: &types.Reference{
-			HREF: disk.Disk.HREF,
-		},
-	})
-	check.Assert(err, IsNil)
-
-	err = attachDiskTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	// Get attached VM
-	vmRef, err := disk.AttachedVM()
-	check.Assert(err, IsNil)
-	check.Assert(vmRef, NotNil)
-	check.Assert(vmRef.Name, Equals, vm.VM.Name)
-
-	// Cleanup: Detach disk
-	detachDiskTask, err := vm.attachOrDetachDisk(&types.DiskAttachOrDetachParams{
-		Disk: &types.Reference{
-			HREF: disk.Disk.HREF,
-		},
-	}, types.RelDiskDetach)
-	check.Assert(err, IsNil)
-
-	err = detachDiskTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-}
-
-// Test detach disk from VM
-func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
+// Test attach/detach disk from VM
+func (vcd *TestVCD) Test_VMAttachAndDetachDisk(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("skipping test because vApp wasn't properly created")
 	}
@@ -314,7 +224,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-	itemName := "TestHandleInsertOrEjectMedia"
+	itemName := check.TestName()
 
 	// Find VApp
 	if vcd.vapp != nil && vcd.vapp.VApp == nil {
@@ -366,144 +276,8 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 
 	//verify
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
-}
 
-// Test Insert or Eject Media for VM
-func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-
-	// Skipping this test due to a bug in vCD. VM refresh status returns old state, though eject task is finished.
-	if vcd.client.Client.APIVCDMaxVersionIs(">= 32.0, <= 33.0") {
-		check.Skip("Skipping test because this vCD version has a bug")
-	}
-
-	itemName := "TestInsertOrEjectMedia"
-
-	// Find VApp
-	if vcd.vapp != nil && vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
-	}
-
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Upload Media
-	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_InsertOrEjectMedia")
-
-	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	media, err := catalog.GetMediaByName(itemName, false)
-	check.Assert(err, IsNil)
-	check.Assert(media, NotNil)
-
-	// Insert Media
-	insertMediaTask, err := vm.insertOrEjectMedia(&types.MediaInsertOrEjectParams{
-		Media: &types.Reference{
-			HREF: media.Media.HREF,
-			Name: media.Media.Name,
-			ID:   media.Media.ID,
-			Type: media.Media.Type,
-		},
-	}, types.RelMediaInsertMedia)
-	check.Assert(err, IsNil)
-
-	err = insertMediaTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-
-	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, true)
-
-	// Insert Media
-	ejectMediaTask, err := vm.insertOrEjectMedia(&types.MediaInsertOrEjectParams{
-		Media: &types.Reference{
-			HREF: media.Media.HREF,
-		},
-	}, types.RelMediaEjectMedia)
-	check.Assert(err, IsNil)
-
-	err = ejectMediaTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
-}
-
-// Test Insert or Eject Media for VM
-func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-
-	itemName := "TestAnswerVmQuestion"
-
-	// Find VApp
-	if vcd.vapp != nil && vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
-	}
-
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Upload Media
-	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AnswerVmQuestion")
-
-	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	media, err := catalog.GetMediaByName(itemName, false)
-	check.Assert(err, IsNil)
-	check.Assert(media, NotNil)
-
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-
-	insertMediaTask, err := vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	insertMediaTask, err = vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	err = insertMediaTask.WaitTaskCompletion()
