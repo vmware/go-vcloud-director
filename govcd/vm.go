@@ -1361,6 +1361,25 @@ func (vm *VM) UpdateInternalDisks(disksSettingToUpdate *types.VmSpecSection) (*t
 	return vm.VM.VmSpecSection, nil
 }
 
+// Deprecated, use UpdateVmSpecSectionAsync instead
+func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection) (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("cannot update disks, VM HREF is unset")
+	}
+
+	vmSpecSectionModified := true
+	disksSettingToUpdate.Modified = &vmSpecSectionModified
+
+	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
+		types.MimeVM, "error updating VM disks: %s", &types.VMDiskChange{
+			Xmlns:         types.XMLNamespaceVCloud,
+			Ovf:           types.XMLNamespaceOVF,
+			Name:          vm.VM.Name,
+			Description:   vm.VM.Description,
+			VmSpecSection: disksSettingToUpdate,
+		})
+}
+
 // AddEmptyVm adds an empty VM (without template) to vApp and returns the new created VM or an error.
 func (vapp *VApp) AddEmptyVm(reComposeVAppParams *types.RecomposeVAppParamsForEmptyVm) (*VM, error) {
 	apiVersion, err := vapp.client.MaxSupportedVersion()
