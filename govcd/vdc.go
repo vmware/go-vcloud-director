@@ -1038,6 +1038,7 @@ func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, err
 	}
 	params.XmlnsOvf = types.XMLNamespaceOVF
 
+	// 37.1 Introduced new parameters to VM configuration
 	return vdc.client.ExecuteTaskRequestWithApiVersion(href, http.MethodPost,
 		types.MimeCreateVmParams, "error creating standalone VM: %s", params,
 		vdc.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
@@ -1388,8 +1389,9 @@ func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, erro
 		return nil, err
 	}
 
+	hardwareVersions := vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion
 	// Get last item (highest version) of SupportedHardwareVersions
-	highestVersion := vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion[len(vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion)-1].Name
+	highestVersion := hardwareVersions[len(hardwareVersions)-1].Name
 
 	hardwareVersion, err := vdc.GetHardwareVersion(highestVersion)
 	if err != nil {

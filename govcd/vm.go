@@ -70,6 +70,7 @@ func (vm *VM) Refresh() error {
 	// elements in slices.
 	vm.VM = &types.Vm{}
 
+	// 37.1 Introduced BootOptions and Firmware parameters of a VM
 	_, err := vm.client.ExecuteRequestWithApiVersion(refreshUrl, http.MethodGet, "", "error refreshing VM: %s", nil, vm.VM, vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 
 	// The request was successful
@@ -1901,6 +1902,7 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error)
 		})
 }
 
+// UpdateBootOptions updates the Boot Options of a VM and returns the updated instance of the VM
 func (vm *VM) UpdateBootOptions(bootOptions *types.BootOptions) (*VM, error) {
 	if vm.client.APIVCDMaxVersionIs("<37.1") {
 		if bootOptions.BootRetryEnabled != nil || bootOptions.BootRetryDelay != nil ||
@@ -1927,6 +1929,7 @@ func (vm *VM) UpdateBootOptions(bootOptions *types.BootOptions) (*VM, error) {
 	return vm, nil
 }
 
+// UpdateBootOptionsAsync updates the boot options of a VM
 func (vm *VM) UpdateBootOptionsAsync(bootOptions *types.BootOptions) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update VM boot options, VM HREF is unset")
