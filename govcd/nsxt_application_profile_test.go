@@ -84,7 +84,7 @@ func getAppProfileTenant(vcd *TestVCD, check *C) *types.NsxtAppPortProfile {
 		ApplicationPorts: []types.NsxtAppPortProfilePort{
 			types.NsxtAppPortProfilePort{
 				Protocol:         "ICMPv4",
-				DestinationPorts: []string{},
+				DestinationPorts: []string{"any"},
 			},
 		},
 		OrgRef: &types.OpenApiReference{ID: org.Org.ID, Name: org.Org.Name},
