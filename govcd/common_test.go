@@ -389,7 +389,7 @@ func (vcd *TestVCD) ensureVMIsSuitableForVMTest(vm *VM) error {
 		if status == types.VAppStatuses[4] {
 			// Prevent affect Test_ChangeMemorySize
 			// because TestVCD.Test_AttachedVMDisk is run before Test_ChangeMemorySize and Test_ChangeMemorySize will fail the test if the VM is powered on,
-			task, err := vm.PowerOff()
+			task, err := vm.Undeploy()
 			if err != nil {
 				return err
 			}
@@ -609,6 +609,33 @@ func deleteLbAppRuleIfExists(edge EdgeGateway, name string) error {
 // moved from vm_test.go
 func deleteVapp(vcd *TestVCD, name string) error {
 	vapp, err := vcd.vdc.GetVAppByName(name, true)
+	if err != nil {
+		return fmt.Errorf("error getting vApp: %s", err)
+	}
+	task, _ := vapp.Undeploy()
+	_ = task.WaitTaskCompletion()
+
+	// Detach all Org networks during vApp removal because network removal errors if it happens
+	// very quickly (as the next task) after vApp removal
+	task, _ = vapp.RemoveAllNetworks()
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error removing networks from vApp: %s", err)
+	}
+
+	task, err = vapp.Delete()
+	if err != nil {
+		return fmt.Errorf("error deleting vApp: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting for vApp deletion task: %s", err)
+	}
+	return nil
+}
+
+func deleteNsxtVapp(vcd *TestVCD, name string) error {
+	vapp, err := vcd.nsxtVdc.GetVAppByName(name, true)
 	if err != nil {
 		return fmt.Errorf("error getting vApp: %s", err)
 	}

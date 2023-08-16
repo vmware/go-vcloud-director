@@ -610,17 +610,11 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-	vapp := vcd.findFirstVapp()
-	existingVm, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-	// Default nesting status should be false
-	nestingStatus := existingVm.NestedHypervisorEnabled
-	check.Assert(nestingStatus, Equals, false)
 
-	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
-	check.Assert(err, IsNil)
+	_, vm := createNsxtVAppAndVm(vcd, check)
+
+	nestingStatus := vm.VM.NestedHypervisorEnabled
+	check.Assert(nestingStatus, Equals, false)
 
 	// PowerOn
 	task, err := vm.PowerOn()
@@ -633,8 +627,8 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	_, err = vm.ToggleHardwareVirtualization(true)
 	check.Assert(err, ErrorMatches, ".*hardware virtualization can be changed from powered off state.*")
 
-	// PowerOf
-	task, err = vm.PowerOff()
+	// Undeploy, so the VM goes to POWERED_OFF state instead of PARTIALLY_POWERED_OFF
+	task, err = vm.Undeploy()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -660,19 +654,13 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(vm.VM.NestedHypervisorEnabled, Equals, false)
+
+	err = deleteNsxtVapp(vcd, check.TestName())
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	vapp := vcd.findFirstVapp()
-	existingVm, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
-	check.Assert(err, IsNil)
+	_, vm := createNsxtVAppAndVm(vcd, check)
 
 	// Ensure VM is not powered on
 	vmStatus, err := vm.GetStatus()
@@ -697,30 +685,21 @@ func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus, Equals, "POWERED_ON")
 
-	// Power off again
 	task, err = vm.PowerOff()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
 	vmStatus, err = vm.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vmStatus == "POWERED_OFF" || vmStatus == "PARTIALLY_POWERED_OFF", Equals, true)
+
+	err = deleteNsxtVapp(vcd, check.TestName())
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_VmShutdown(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	vapp := vcd.findFirstVapp()
-	existingVm, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
-	check.Assert(err, IsNil)
+	vapp, vm := createNsxtVAppAndVm(vcd, check)
 
 	vdc, err := vm.GetParentVdc()
 	check.Assert(err, IsNil)
@@ -783,10 +762,7 @@ func (vcd *TestVCD) Test_VmShutdown(check *C) {
 	printVerbose("New VM status: %s\n", newStatus)
 	check.Assert(newStatus, Equals, "POWERED_OFF")
 
-	// End of test - power on the VM to leave it running
-	task, err = vm.PowerOn()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }
 
@@ -828,19 +804,10 @@ func (vcd *TestVCD) Test_GetNetworkConnectionSection(check *C) {
 // This test relies on longer timeouts in BlockWhileGuestCustomizationStatus because VMs take a lengthy time
 // to boot up and report customization done.
 func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vApp wasn't properly created")
-	}
 
 	fmt.Printf("Running: %s\n", check.TestName())
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
 
-	vm, err := vcd.client.Client.GetVMByHref(vmType.HREF)
-	check.Assert(err, IsNil)
+	_, vm := createNsxtVAppAndVm(vcd, check)
 
 	// It may be that prebuilt VM was not booted before in the test vApp and it would still have
 	// a guest customization status 'GC_PENDING'. This is because initially VM has this flag set
@@ -849,9 +816,10 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	// 'GC_PENDING' state.
 	custStatus, err := vm.GetGuestCustomizationStatus()
 	check.Assert(err, IsNil)
+
+	vmStatus, err := vm.GetStatus()
+	check.Assert(err, IsNil)
 	if custStatus == types.GuestCustStatusPending {
-		vmStatus, err := vm.GetStatus()
-		check.Assert(err, IsNil)
 		// If VM is POWERED OFF - let's power it on before waiting for its status to change
 		if vmStatus == "POWERED_OFF" {
 			task, err := vm.PowerOn()
@@ -903,6 +871,9 @@ func (vcd *TestVCD) Test_PowerOnAndForceCustomization(check *C) {
 	// to see that the customization really worked as there is no API in vCD to execute remote
 	// commands on guest VMs
 	err = vm.BlockWhileGuestCustomizationStatus(types.GuestCustStatusPending, 300)
+	check.Assert(err, IsNil)
+
+	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }
 
@@ -1441,12 +1412,7 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
-	check.Assert(err, IsNil)
-
-	task, err := vm.PowerOff()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
 	vmSpecSection := vm.VM.VmSpecSection
@@ -1521,12 +1487,7 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
-	check.Assert(err, IsNil)
-
-	task, err := vm.PowerOff()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
 	check.Assert(vm.VM.VMCapabilities.MemoryHotAddEnabled, Equals, false)
@@ -2299,26 +2260,20 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 }
 
 func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	vapp := vcd.findFirstVapp()
-	existingVm, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-	vm, err := vcd.client.Client.GetVMByHref(existingVm.HREF)
-	check.Assert(err, IsNil)
 
-	vmStatus, err := vm.GetStatus()
+	version, err := vcd.client.Client.GetVcdShortVersion()
 	check.Assert(err, IsNil)
-	if vmStatus != "POWERED_ON" {
-		task, err := vm.PowerOn()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
+	if version == "10.5.0" {
+		check.Skip("There is a known bug with the OVF environment on 10.5.0")
 	}
+
+	_, vm := createNsxtVAppAndVm(vcd, check)
+	check.Assert(vm, NotNil)
+
+	task, err := vm.PowerOn()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 
 	// Read ovfenv when VM is started
 	ovfenv, err := vm.GetEnvironment()
@@ -2344,23 +2299,6 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 		check.Assert(p.Mac, Not(Equals), "")
 	}
 
-	// PowerOff
-	task, err := vm.PowerOff()
+	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-
-	ovfenv, err = vm.GetEnvironment()
-	check.Assert(strings.Contains(err.Error(), "OVF environment is only available when VM is powered on"), Equals, true)
-	check.Assert(ovfenv, IsNil)
-
-	// Leave things as they were
-	if vmStatus != "POWERED_OFF" {
-		task, err := vm.PowerOn()
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-		check.Assert(task.Task.Status, Equals, "success")
-	}
 }
