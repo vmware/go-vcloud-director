@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
 
@@ -447,13 +448,47 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	}, types.RelMediaEjectMedia)
 	check.Assert(err, IsNil)
 
+	fmt.Println("first task")
+	spew.Dump(ejectMediaTask.Task)
 	err = ejectMediaTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+
+	fmt.Println("refreshed task")
+	_ = ejectMediaTask.Refresh()
+	spew.Dump(ejectMediaTask.Task)
 
 	//verify
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+	fmt.Println("initial attempt")
+	spew.Dump(vm.VM)
+
+	// Expecting outcome to be 'false'
+	// check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+	firstIsMediaNotEjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
+	fmt.Println("firstMediaInjected ", firstIsMediaNotEjected)
+	if firstIsMediaNotEjected {
+
+		check.Errorf("FAIL: first attempt of media still reported: %t", firstIsMediaNotEjected)
+
+		fmt.Println("error detected, refreshing VM")
+		for a := 0; a < 30; a++ {
+			fmt.Printf("attempt %d\n", a)
+			err = vm.Refresh()
+			if err != nil {
+				fmt.Printf("error refreshing VM: %s\n", err)
+			}
+			spew.Dump(vm.VM)
+			loopisMediaNotEjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
+			if loopisMediaNotEjected == false {
+				fmt.Printf("media error recovered at %d refresh attempt\n", a)
+				check.FailNow()
+			}
+			time.Sleep(1 * time.Second)
+		}
+		check.Fatal("error was not recovered after all attempts - ejection FAILED")
+	}
+
 }
 
 // Test Insert or Eject Media for VM
