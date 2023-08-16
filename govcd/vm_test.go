@@ -1139,27 +1139,26 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func (vcd *TestVCD) Test_SetVmBootOptions(check *C) {
+func (vcd *TestVCD) Test_VmBootOptions(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 	if vcd.client.Client.APIVCDMaxVersionIs("<37.1") {
 		check.Skip("Extended boot options and firmware choice were introduced in 37.1")
 	}
 
 	vmName := check.TestName()
-
-	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
+	_, vm := createNsxtVAppAndVmWithEfiSupport(vcd, check)
 	check.Assert(err, IsNil)
 
 	hardwareVersion, err := vdc.GetHardwareVersion(vm.VM.VmSpecSection.HardwareVersion.Value)
 	check.Assert(err, IsNil)
 	check.Assert(hardwareVersion, NotNil)
 	fmt.Println(hardwareVersion)
-
-	// time.Sleep(2 * time.Minute)
-	// fmt.Println("sleeping")
 
 	vmSpecSection := vm.VM.VmSpecSection
 	vmSpecSection.Firmware = "efi"
@@ -1179,7 +1178,6 @@ func (vcd *TestVCD) Test_SetVmBootOptions(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
 	check.Assert(updatedVm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(true))
-	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
 
 	task, err := updatedVm.PowerOn()
 	check.Assert(err, IsNil)
@@ -1187,11 +1185,21 @@ func (vcd *TestVCD) Test_SetVmBootOptions(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	//verify
-	//check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
+	task, err = updatedVm.PowerOff()
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	err = updatedVm.Refresh()
+	check.Assert(err, IsNil)
+
+	// assert that EfiSecureBoot is persistent and EnterBiosSetup is set to false after a successful power cycle
+	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
+	check.Assert(updatedVm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(false))
 
 	// delete Vapp early to avoid env capacity issue
-	err = deleteVapp(vcd, vmName)
+	err = deleteNsxtVapp(vcd, vmName)
 	check.Assert(err, IsNil)
 }
 
@@ -1961,6 +1969,64 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 	check.Assert(cat, NotNil)
 	// Populate Catalog Item
 	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.NsxtCatalogItem, false)
+	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	check.Assert(vapptemplate.VAppTemplate.Children.VM[0].HREF, NotNil)
+
+	vapp, err := vcd.nsxtVdc.CreateRawVApp(check.TestName(), check.TestName())
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	AddToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
+
+	// Once the operation is successful, we won't trigger a failure
+	// until after the vApp deletion
+	check.Check(vapp.VApp.Name, Equals, check.TestName())
+	check.Check(vapp.VApp.Description, Equals, check.TestName())
+
+	// Construct VM
+	vmDef := &types.ReComposeVAppParams{
+		Ovf:              types.XMLNamespaceOVF,
+		Xsi:              types.XMLNamespaceXSI,
+		Xmlns:            types.XMLNamespaceVCloud,
+		AllEULAsAccepted: true,
+		// Deploy:           false,
+		Name: vapp.VApp.Name,
+		// PowerOn: false, // Not touching power state at this phase
+		SourcedItem: &types.SourcedCompositionItemParam{
+			Source: &types.Reference{
+				HREF: vapptemplate.VAppTemplate.Children.VM[0].HREF,
+				Name: check.TestName() + "-vm-tmpl",
+			},
+			VMGeneralParams: &types.VMGeneralParams{
+				Description: "test-vm-description",
+			},
+			InstantiationParams: &types.InstantiationParams{
+				NetworkConnectionSection: &types.NetworkConnectionSection{},
+			},
+		},
+	}
+	vm, err := vapp.AddRawVM(vmDef)
+	check.Assert(err, IsNil)
+	check.Assert(vm, NotNil)
+	check.Assert(vm.VM.Name, Equals, vmDef.SourcedItem.Source.Name)
+
+	// Refresh vApp to have latest state
+	err = vapp.Refresh()
+	check.Assert(err, IsNil)
+
+	return vapp, vm
+}
+
+func createNsxtVAppAndVmWithEfiSupport(vcd *TestVCD, check *C) (*VApp, *VM) {
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+	// Populate Catalog Item
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItemWithEfiSupport, false)
 	check.Assert(err, IsNil)
 	check.Assert(catitem, NotNil)
 	// Get VAppTemplate
