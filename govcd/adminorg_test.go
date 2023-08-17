@@ -117,17 +117,17 @@ func (vcd *TestVCD) TestAdminOrg_SetLease(check *C) {
 		},
 	}
 
-	for _, info := range leaseData {
-
+	for infoIndex, info := range leaseData {
+		// info := info
 		fmt.Printf("update lease params %v\n", info)
 		// Change the lease parameters for both vapp and vApp template
-		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.StorageLeaseSeconds = &info.vappStorageLease
-		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeploymentLeaseSeconds = &info.deploymentLeaseSeconds
-		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.PowerOffOnRuntimeLeaseExpiration = &info.powerOffOnRuntimeLeaseExpiration
-		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeleteOnStorageLeaseExpiration = &info.vappDeleteOnStorageLeaseExpiration
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.StorageLeaseSeconds = &leaseData[infoIndex].vappStorageLease
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeploymentLeaseSeconds = &leaseData[infoIndex].deploymentLeaseSeconds
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.PowerOffOnRuntimeLeaseExpiration = &leaseData[infoIndex].powerOffOnRuntimeLeaseExpiration
+		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.DeleteOnStorageLeaseExpiration = &leaseData[infoIndex].vappDeleteOnStorageLeaseExpiration
 
-		adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds = &info.vappTemplateStorageLease
-		adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration = &info.vappTemplateDeleteOnStorageLeaseExpiration
+		adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.StorageLeaseSeconds = &leaseData[infoIndex].vappTemplateStorageLease
+		adminOrg.AdminOrg.OrgSettings.OrgVAppTemplateSettings.DeleteOnStorageLeaseExpiration = &leaseData[infoIndex].vappTemplateDeleteOnStorageLeaseExpiration
 
 		task, err := adminOrg.Update()
 		check.Assert(err, IsNil)

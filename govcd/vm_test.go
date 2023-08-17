@@ -1426,6 +1426,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
+	// #nosec G101 -- Not a credential
 	vmName := "Test_UpdateVmSpecSection"
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
