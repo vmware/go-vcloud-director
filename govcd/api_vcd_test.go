@@ -227,6 +227,7 @@ type TestConfig struct {
 		NsxtMedia        string `yaml:"nsxtBackedMediaName,omitempty"`
 		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
 		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
+		UiPluginPath     string `yaml:"uiPluginPath,omitempty"`
 	} `yaml:"media"`
 }
 
