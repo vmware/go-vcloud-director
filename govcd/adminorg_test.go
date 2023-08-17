@@ -118,7 +118,6 @@ func (vcd *TestVCD) TestAdminOrg_SetLease(check *C) {
 	}
 
 	for infoIndex, info := range leaseData {
-		// info := info
 		fmt.Printf("update lease params %v\n", info)
 		// Change the lease parameters for both vapp and vApp template
 		adminOrg.AdminOrg.OrgSettings.OrgVAppLeaseSettings.StorageLeaseSeconds = &leaseData[infoIndex].vappStorageLease
