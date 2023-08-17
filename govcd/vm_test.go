@@ -450,10 +450,32 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	err = ejectMediaTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	//verify
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+
+	// Expecting outcome to be 'false', but VCD sometimes lags to report that media is ejected in VM
+	// state (even after ejection task is finished).
+	// In such cases, do additional VM refresh and try to see if the structure has no media anymore
+	mediaInjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
+	retryCount := 5
+	if mediaInjected {
+		// Run a few more attempts every second to see if the VM finally shows no media being
+		// present in VirtualHardwareItem structure
+		for a := 0; a < retryCount; a++ {
+			fmt.Printf("attempt %d\n", a)
+			err = vm.Refresh()
+			if err != nil {
+				fmt.Printf("error refreshing VM: %s\n", err)
+			}
+			retryIsMediaInjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
+			if !retryIsMediaInjected {
+				fmt.Printf("media error recovered at %d refresh attempt\n", a)
+				check.SucceedNow()
+			}
+			time.Sleep(time.Second)
+		}
+		check.Errorf("error was not recovered after %d attempts - ejection FAILED", retryCount)
+	}
 }
 
 // Test Insert or Eject Media for VM
@@ -1404,6 +1426,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
+	// #nosec G101 -- Not a credential
 	vmName := "Test_UpdateVmSpecSection"
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
