@@ -32,6 +32,7 @@ func (vcd *TestVCD) Test_GetAllNetworkContextProfiles(check *C) {
 }
 
 func (vcd *TestVCD) Test_GetNetworkContextProfilesByNameScopeAndContext(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointNetworkContextProfiles)
 

@@ -709,6 +709,11 @@ func (vcd *TestVCD) Test_GetDiskByHref(check *C) {
 	invalidDiskHREF := strings.ReplaceAll(diskHREF, uuid, "1abcbdb3-1111-1111-a1c2-85d261e22fcf")
 	disk, err = vcd.vdc.GetDiskByHref(invalidDiskHREF)
 	check.Assert(err, NotNil)
-	check.Assert(IsNotFound(err), Equals, true)
+	if vcd.client.Client.IsSysAdmin {
+		check.Assert(IsNotFound(err), Equals, true)
+	} else {
+		// The errors returned for non-existing disk are different for system administrator and org user
+		check.Assert(strings.Contains(err.Error(), "API Error: 403:"), Equals, true)
+	}
 	check.Assert(disk, IsNil)
 }

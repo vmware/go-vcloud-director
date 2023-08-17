@@ -125,7 +125,7 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 
 	// VMs are prependend to clean up list to make sure they are removed before routed network
 	standaloneVm := createStandaloneVm(check, vcd, nsxtVdc, routedNet)
-	PrependToCleanupList(standaloneVm.VM.ID, "standaloneVm", "", standaloneVm.VM.Name)
+	PrependToCleanupList(standaloneVm.VM.ID, "standaloneVm", "", check.TestName())
 
 	secGroupDefinition := &types.NsxtFirewallGroup{
 		Name:           check.TestName(),

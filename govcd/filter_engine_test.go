@@ -311,6 +311,7 @@ func (vcd *TestVCD) Test_SearchMediaItem(check *C) {
 }
 
 func (vcd *TestVCD) Test_SearchOrgVdc(check *C) {
+	vcd.skipIfNotSysAdmin(check) // this test creates another VDC
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("no VDC provided. Skipping test")
 	}

@@ -711,6 +711,9 @@ func (vcd *TestVCD) Test_QueryStorageProfiles(check *C) {
 	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 
+	if adminVdc.AdminVdc.ProviderVdcReference == nil {
+		check.Skip(fmt.Sprintf("test %s requires system administrator privileges", check.TestName()))
+	}
 	// Gets the Provider VDC from the AdminVdc structure
 	providerVdcName := adminVdc.AdminVdc.ProviderVdcReference.Name
 	check.Assert(providerVdcName, Not(Equals), "")
@@ -785,7 +788,7 @@ func (vcd *TestVCD) Test_QueryStorageProfiles(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
-
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ProviderVdc.Name == "" {
 		check.Skip("No provider VDC found in configuration")
 	}

@@ -16,6 +16,7 @@ import (
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
+	vcd.skipIfNotSysAdmin(check) // this test uses GetNsxtEdgeClusterByName, which requires system administrator privileges
 
 	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
 		Name:        check.TestName(),
@@ -57,6 +58,7 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
 	skipNoNsxtConfiguration(vcd, check)
+	vcd.skipIfNotSysAdmin(check) // this test uses GetNsxtEdgeClusterByName, which requires system administrator privileges
 
 	egw, err := vcd.org.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -507,7 +509,7 @@ func nsxtDhcpConfigNetworkMode(check *C, vcd *TestVCD, vdc *Vdc, orgNetId string
 
 	printVerbose("## Testing DHCP in NETWORK mode\n")
 
-	// DHCP in NETWORK mode requires Edge Cluster to be set for VDC and cleaned up afterwards
+	// DHCP in NETWORK mode requires Edge Cluster to be set for VDC and cleaned up afterward
 	edgeCluster, err := vdc.GetNsxtEdgeClusterByName(vcd.config.VCD.Nsxt.NsxtEdgeCluster)
 	check.Assert(err, IsNil)
 	vdcNetworkProfile := &types.VdcNetworkProfile{
