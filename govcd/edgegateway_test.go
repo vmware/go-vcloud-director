@@ -285,6 +285,7 @@ func (vcd *TestVCD) TestEdgeGateway_GetNetworks(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddSNATRule(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ExternalIp == "" || vcd.config.VCD.InternalIp == "" {
 		check.Skip("Skipping test because no valid ip given")
 	}
@@ -356,6 +357,7 @@ func (vcd *TestVCD) Test_AddSNATRule(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddDNATRule(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ExternalIp == "" || vcd.config.VCD.InternalIp == "" {
 		check.Skip("Skipping test because no valid ip given")
 	}
@@ -436,6 +438,7 @@ func (vcd *TestVCD) Test_AddDNATRule(check *C) {
 }
 
 func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ExternalIp == "" || vcd.config.VCD.InternalIp == "" {
 		check.Skip("Skipping test because no valid ip given")
 	}
@@ -551,6 +554,7 @@ func (vcd *TestVCD) Test_UpdateNATRule(check *C) {
 // 4. Compare the XML text and structs before configuration and after configuration - they should be
 // identical except <version></version> tag which is versioning the configuration
 func (vcd *TestVCD) TestEdgeGateway_UpdateLBGeneralParams(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
@@ -624,6 +628,7 @@ func (vcd *TestVCD) TestEdgeGateway_UpdateFwGeneralParams(check *C) {
 }
 
 func (vcd *TestVCD) TestEdgeGateway_GetVdcNetworks(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}
@@ -745,6 +750,7 @@ func (vcd *TestVCD) TestListEdgeGateway(check *C) {
 }
 
 func (vcd *TestVCD) Test_UpdateEdgeGateway(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.EdgeGateway == "" {
 		check.Skip("Skipping test because no edge gateway given")
 	}

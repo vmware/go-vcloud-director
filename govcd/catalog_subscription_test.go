@@ -40,7 +40,7 @@ type subscriptionTestData struct {
 // $ go test -tags catalog -check.f Test_SubscribedCatalog -vcd-verbose -check.vv -timeout 0
 // When running this way, you will see the tasks originated by the catalogs and the ones started by the catalog items
 func (vcd *TestVCD) Test_SubscribedCatalog(check *C) {
-
+	vcd.skipIfNotSysAdmin(check)
 	fromOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	toOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org + "-1")

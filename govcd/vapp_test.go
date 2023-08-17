@@ -1274,14 +1274,16 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetworkWithMinimumValues(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.VCD.Network.Net1 == "" {
-		check.Skip("Skipping test because no network was given")
+		check.Skip("Skipping test because no first network was given")
 	}
-
+	if vcd.config.VCD.Network.Net2 == "" {
+		check.Skip("Skipping test because no second network was given")
+	}
 	vapp, err := deployVappForTest(vcd, "Test_AddAndRemoveOrgVappNetworkWithMinimumValues")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net2, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
@@ -1293,7 +1295,7 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetworkWithMinimumValues(check *C) {
 
 	networkFound := types.VAppNetworkConfiguration{}
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
-		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net2 {
 			networkFound = networkConfig
 		}
 	}
@@ -1309,17 +1311,17 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetworkWithMinimumValues(check *C) {
 
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, false)
 
-	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net2)
 
 	err = vapp.Refresh()
 	check.Assert(err, IsNil)
-	vappNetworkConfig, err = vapp.RemoveNetwork(vcd.config.VCD.Network.Net1)
+	vappNetworkConfig, err = vapp.RemoveNetwork(vcd.config.VCD.Network.Net2)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 
 	isExist := false
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
-		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net2 {
 			isExist = true
 		}
 	}
@@ -1336,14 +1338,17 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.VCD.Network.Net1 == "" {
-		check.Skip("Skipping test because no network was given")
+		check.Skip("Skipping test because no first network was given")
+	}
+	if vcd.config.VCD.Network.Net2 == "" {
+		check.Skip("Skipping test because no second network was given")
 	}
 
 	vapp, err := deployVappForTest(vcd, "Test_AddAndRemoveOrgVappNetwork")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net2, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
@@ -1359,7 +1364,7 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
 
 	networkFound := types.VAppNetworkConfiguration{}
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
-		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net2 {
 			networkFound = networkConfig
 		}
 	}
@@ -1372,17 +1377,18 @@ func (vcd *TestVCD) Test_AddAndRemoveOrgVappNetwork(check *C) {
 
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
 
-	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net2)
 
-	err = vcd.vapp.Refresh()
+	err = vapp.Refresh()
 	check.Assert(err, IsNil)
-	vappNetworkConfig, err = vapp.RemoveNetwork(vcd.config.VCD.Network.Net1)
+	check.Assert(len(vapp.VApp.NetworkConfigSection.NetworkConfig), Equals, 2)
+	vappNetworkConfig, err = vapp.RemoveNetwork(vcd.config.VCD.Network.Net2)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 
 	isExist := false
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
-		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net2 {
 			isExist = true
 		}
 	}
@@ -1399,14 +1405,17 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.config.VCD.Network.Net1 == "" {
-		check.Skip("Skipping test because no network was given")
+		check.Skip("Skipping test because no first network was given")
+	}
+	if vcd.config.VCD.Network.Net2 == "" {
+		check.Skip("Skipping test because no second network was given")
 	}
 
 	vapp, err := deployVappForTest(vcd, "Test_UpdateOrgVappNetwork")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
-	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net1, false)
+	orgVdcNetwork, err := vcd.vdc.GetOrgVdcNetworkByName(vcd.config.VCD.Network.Net2, false)
 	check.Assert(err, IsNil)
 	check.Assert(orgVdcNetwork, NotNil)
 
@@ -1422,7 +1431,7 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 
 	networkFound := types.VAppNetworkConfiguration{}
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
-		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net2 {
 			networkFound = networkConfig
 		}
 	}
@@ -1435,7 +1444,7 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, retainIpMacEnabled)
 
-	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net2)
 
 	uuid, err := GetUuidFromHref(networkFound.Link.HREF, false)
 	check.Assert(err, IsNil)
@@ -1453,7 +1462,7 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 	check.Assert(vappNetworkConfig, NotNil)
 
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
-		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net2 {
 			networkFound = networkConfig
 		}
 	}
@@ -1469,17 +1478,18 @@ func (vcd *TestVCD) Test_UpdateOrgVappNetwork(check *C) {
 	check.Assert(networkFound.Configuration.Features, Equals, emptyFirewallFeatures)
 	check.Assert(*networkFound.Configuration.RetainNetInfoAcrossDeployments, Equals, updateRetainIpMacEnabled)
 
-	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net1)
+	check.Assert(networkFound.Configuration.ParentNetwork.Name, Equals, vcd.config.VCD.Network.Net2)
 
-	err = vcd.vapp.Refresh()
+	err = vapp.Refresh()
 	check.Assert(err, IsNil)
-	vappNetworkConfig, err = vapp.RemoveNetwork(vcd.config.VCD.Network.Net1)
+	check.Assert(len(vapp.VApp.NetworkConfigSection.NetworkConfig), Equals, 2)
+	vappNetworkConfig, err = vapp.RemoveNetwork(vcd.config.VCD.Network.Net2)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworkConfig, NotNil)
 
 	isExist := false
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
-		if networkConfig.NetworkName == vcd.config.VCD.Network.Net1 {
+		if networkConfig.NetworkName == vcd.config.VCD.Network.Net2 {
 			isExist = true
 		}
 	}
@@ -1566,6 +1576,7 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 
 // Test_AddNewVMWithComputeCapacity creates a new VM in vApp with VM using compute capacity
 func (vcd *TestVCD) Test_AddNewVMWithComputeCapacity(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}

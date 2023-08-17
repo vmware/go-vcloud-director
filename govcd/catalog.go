@@ -1205,3 +1205,18 @@ func (client *Client) GetCatalogByName(parentOrg, catalogName string) (*Catalog,
 	}
 	return nil, fmt.Errorf("no catalog '%s' found in Org %s%s", catalogName, parentOrg, parents)
 }
+
+// WaitForTasks waits for the catalog's tasks to complete
+func (cat *Catalog) WaitForTasks() error {
+	if ResourceInProgress(cat.Catalog.Tasks) {
+		err := WaitResource(func() (*types.TasksInProgress, error) {
+			err := cat.Refresh()
+			if err != nil {
+				return nil, err
+			}
+			return cat.Catalog.Tasks, nil
+		})
+		return err
+	}
+	return nil
+}

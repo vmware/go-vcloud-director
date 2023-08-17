@@ -419,10 +419,9 @@ func (vcd *TestVCD) Test_AdminOrgCreateCatalog(check *C) {
 	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
 	check.Assert(adminCatalog.AdminCatalog.Name, Equals, TestCreateCatalog)
 	check.Assert(adminCatalog.AdminCatalog.Description, Equals, TestCreateCatalogDesc)
-	task := NewTask(&vcd.client.Client)
-	task.Task = adminCatalog.AdminCatalog.Tasks.Task[0]
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	// Immediately after the catalog creation, the creation task should be already complete
+	check.Assert(ResourceComplete(adminCatalog.AdminCatalog.Tasks), Equals, true)
+
 	adminOrg, err = vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	copyAdminCatalog, err := adminOrg.GetAdminCatalogByName(TestCreateCatalog, false)
@@ -504,10 +503,8 @@ func (vcd *TestVCD) Test_OrgCreateCatalog(check *C) {
 	AddToCleanupList(TestCreateCatalog, "catalog", vcd.org.Org.Name, "Test_CreateCatalog")
 	check.Assert(catalog.Catalog.Name, Equals, TestCreateCatalog)
 	check.Assert(catalog.Catalog.Description, Equals, TestCreateCatalogDesc)
-	task := NewTask(&vcd.client.Client)
-	task.Task = catalog.Catalog.Tasks.Task[0]
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
+	// Immediately after the catalog creation, the creation task should be already complete
+	check.Assert(ResourceComplete(catalog.Catalog.Tasks), Equals, true)
 	org, err = vcd.client.GetOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	copyCatalog, err := org.GetCatalogByName(TestCreateCatalog, false)
@@ -714,6 +711,9 @@ func (vcd *TestVCD) Test_QueryStorageProfiles(check *C) {
 	adminVdc, err := adminOrg.GetAdminVDCByName(vcd.config.VCD.Vdc, false)
 	check.Assert(err, IsNil)
 
+	if adminVdc.AdminVdc.ProviderVdcReference == nil {
+		check.Skip(fmt.Sprintf("test %s requires system administrator privileges", check.TestName()))
+	}
 	// Gets the Provider VDC from the AdminVdc structure
 	providerVdcName := adminVdc.AdminVdc.ProviderVdcReference.Name
 	check.Assert(providerVdcName, Not(Equals), "")
@@ -788,7 +788,7 @@ func (vcd *TestVCD) Test_QueryStorageProfiles(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddRemoveVdcStorageProfiles(check *C) {
-
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ProviderVdc.Name == "" {
 		check.Skip("No provider VDC found in configuration")
 	}

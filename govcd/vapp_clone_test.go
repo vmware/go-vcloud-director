@@ -29,7 +29,12 @@ func (vcd *TestVCD) TestVappfromTemplateAndClone(check *C) {
 
 	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
 	check.Assert(err, IsNil)
-	vappTemplateName := "three-vms"
+	vappTemplateName := vcd.config.VCD.Catalog.CatalogItemWithMultiVms
+	if vappTemplateName == "" {
+		check.Skip(fmt.Sprintf("vApp template missing in configuration - Make sure there is such template in catalog %s -"+
+			" Using test_resources/vapp_with_3_vms.ova",
+			vcd.config.VCD.Catalog.NsxtBackedCatalogName))
+	}
 	vappTemplate, err := catalog.GetVAppTemplateByName(vappTemplateName)
 	if err != nil {
 		if ContainsNotFound(err) {
