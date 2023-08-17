@@ -969,6 +969,12 @@ func (vcd *TestVCD) Test_UpdateVdc(check *C) {
 	check.Assert(*updatedVdc.AdminVdc.UsesFastProvisioning, Equals, false)
 	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedCpu-guaranteed) < 0.001, Equals, true)
 	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedMemory-guaranteed) < 0.001, Equals, true)
+	vdc, err := adminOrg.GetVDCByName(updatedVdc.AdminVdc.Name, true)
+	check.Assert(err, IsNil)
+	task, err := vdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 // Tests org function GetAdminVdcByName with the vdc specified
@@ -1260,6 +1266,19 @@ func (vcd *TestVCD) TestQueryOrgVdcList(check *C) {
 	// Main Org 'vcd.config.VCD.Org' is expected to have at least (expectedVdcCountInSystem). Might be more if there are
 	// more VDCs created manually
 	validateQueryOrgVdcResults(vcd, check, fmt.Sprintf("Should have %d VDCs or more", expectedVdcCountInSystem), vcd.config.VCD.Org, nil, &expectedVdcCountInSystem)
+
+	task, err := vdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	org1, err := vcd.client.GetAdminOrgByName(newOrgName1)
+	check.Assert(err, IsNil)
+	err = org1.Delete(true, true)
+	check.Assert(err, IsNil)
+	org2, err := vcd.client.GetAdminOrgByName(newOrgName2)
+	check.Assert(err, IsNil)
+	err = org2.Delete(true, true)
+	check.Assert(err, IsNil)
 }
 
 func validateQueryOrgVdcResults(vcd *TestVCD, check *C, name, orgName string, expectedVdcCount, expectedVdcCountOrMore *int) {

@@ -123,7 +123,7 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	vapp, vappVm := createVappVmAndAttachNetwork(check, vcd, nsxtVdc, routedNet)
 	PrependToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
 
-	// VMs are prependend to cleanup list to make sure they are removed before routed network
+	// VMs are prependend to clean up list to make sure they are removed before routed network
 	standaloneVm := createStandaloneVm(check, vcd, nsxtVdc, routedNet)
 	PrependToCleanupList(standaloneVm.VM.ID, "standaloneVm", "", check.TestName())
 
@@ -170,9 +170,9 @@ func (vcd *TestVCD) Test_NsxtSecurityGroupGetAssociatedVms(check *C) {
 	check.Assert(err, IsNil)
 	err = standaloneVm.Delete()
 	check.Assert(err, IsNil)
-	err = routedNet.Delete()
-	check.Assert(err, IsNil)
 	err = createdSecGroup.Delete()
+	check.Assert(err, IsNil)
+	err = routedNet.Delete()
 	check.Assert(err, IsNil)
 }
 

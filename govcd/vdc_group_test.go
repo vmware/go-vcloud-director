@@ -29,7 +29,13 @@ func (vcd *TestVCD) Test_CreateVdcGroup(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
-	test_CreateVdcGroup(check, adminOrg, vcd)
+	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
+	err = vdcGroup.Delete()
+	check.Assert(err, IsNil)
+	task, err := vdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 // tests creation of NSX-T VDCs group
@@ -46,7 +52,10 @@ func (vcd *TestVCD) Test_NsxtVdcGroup(check *C) {
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
-	test_NsxtVdcGroup(check, adminOrg, vcd)
+	vdcGroup := test_NsxtVdcGroup(check, adminOrg, vcd)
+
+	err = vdcGroup.Delete()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_NsxtVdcGroupForceDelete(check *C) {
@@ -93,7 +102,7 @@ func (vcd *TestVCD) Test_NsxtVdcGroupForceDelete(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
-func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
+func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) *VdcGroup {
 	description := "vdc group created by test"
 
 	_, err := adminOrg.CreateNsxtVdcGroup(check.TestName(), description, vcd.nsxtVdc.vdcId(), []string{vcd.vdc.vdcId()})
@@ -191,7 +200,7 @@ func test_NsxtVdcGroup(check *C, adminOrg *AdminOrg, vcd *TestVCD) {
 	check.Assert(err, IsNil)
 	check.Assert(disabledVdcGroup, NotNil)
 	check.Assert(disabledVdcGroup.VdcGroup.DfwEnabled, Equals, false)
-
+	return vdcGroup
 }
 
 func (vcd *TestVCD) Test_GetVdcGroupByName_ValidatesSymbolsInName(check *C) {
@@ -265,9 +274,19 @@ func (vcd *TestVCD) Test_NsxtVdcGroupWithOrgAdmin(check *C) {
 	check.Assert(orgAsOrgAdminUser, NotNil)
 
 	//run tests ad org Admin with needed rights
-	test_NsxtVdcGroup(check, adminOrg, vcd)
-	test_CreateVdcGroup(check, adminOrg, vcd)
+	vdcGroup1 := test_NsxtVdcGroup(check, adminOrg, vcd)
+	vdc, vdcGroup := test_CreateVdcGroup(check, adminOrg, vcd)
 	test_GetVdcGroupByName_ValidatesSymbolsInName(check, orgAsOrgAdminUser, vcd.nsxtVdc.vdcId())
+
+	// Remove VDC group and VDC
+	err = vdcGroup1.Delete()
+	check.Assert(err, IsNil)
+	err = vdcGroup.Delete()
+	check.Assert(err, IsNil)
+	task, err := vdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 // skipIfNeededRightsMissing checks if needed rights are configured
