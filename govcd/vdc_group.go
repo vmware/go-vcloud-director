@@ -168,6 +168,11 @@ func (adminOrg *AdminOrg) GetAllVdcGroupCandidates(queryParameters url.Values) (
 
 // Delete deletes VDC group
 func (vdcGroup *VdcGroup) Delete() error {
+	return vdcGroup.ForceDelete(false)
+}
+
+// ForceDelete deletes VDC group with force parameter if enabled
+func (vdcGroup *VdcGroup) ForceDelete(force bool) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroups
 	minimumApiVersion, err := vdcGroup.client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
@@ -183,10 +188,14 @@ func (vdcGroup *VdcGroup) Delete() error {
 		return err
 	}
 
-	err = vdcGroup.client.OpenApiDeleteItem(minimumApiVersion, urlRef, nil, nil)
+	params := copyOrNewUrlValues(nil)
+	if force {
+		params.Add("force", "true")
+	}
 
+	err = vdcGroup.client.OpenApiDeleteItem(minimumApiVersion, urlRef, params, nil)
 	if err != nil {
-		return fmt.Errorf("error deleting VDC group: %s", err)
+		return fmt.Errorf("error deleting VDC group (force %t): %s", force, err)
 	}
 
 	return nil
