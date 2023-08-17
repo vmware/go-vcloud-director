@@ -41,6 +41,7 @@ const (
 	envLogSkipHttpReq = "GOVCD_LOG_SKIP_HTTP_REQ"
 
 	// Name of the environment variable that enables logging of HTTP responses
+	// #nosec G101 -- Not a credential
 	envLogSkipHttpResp = "GOVCD_LOG_SKIP_HTTP_RESP"
 
 	// Name of the environment variable with a custom list of of responses to skip from logging
