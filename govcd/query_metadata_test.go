@@ -12,6 +12,7 @@ import (
 )
 
 func (vcd *TestVCD) Test_CheckCumulativeQuery(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	pvdcs, err := vcd.client.QueryProviderVdcs()
 	check.Assert(err, IsNil)
 	var storageProfileMap = make(map[string]bool)
