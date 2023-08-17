@@ -456,9 +456,9 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	// Expecting outcome to be 'false', but VCD sometimes lags to report that media is ejected in VM
 	// state (even after ejection task is finished).
 	// In such cases, do additional VM refresh and try to see if the structure has no media anymore
-	firstIsMediaNotEjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
+	mediaInjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
 	retryCount := 5
-	if firstIsMediaNotEjected {
+	if mediaInjected {
 		// Run a few more attempts every second to see if the VM finally shows no media being
 		// present in VirtualHardwareItem structure
 		for a := 0; a < retryCount; a++ {
@@ -467,12 +467,12 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 			if err != nil {
 				fmt.Printf("error refreshing VM: %s\n", err)
 			}
-			loopisMediaNotEjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
-			if loopisMediaNotEjected == false {
+			retryIsMediaInjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
+			if !retryIsMediaInjected {
 				fmt.Printf("media error recovered at %d refresh attempt\n", a)
 				check.SucceedNow()
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(time.Second)
 		}
 		check.Errorf("error was not recovered after %d attempts - ejection FAILED", retryCount)
 	}
