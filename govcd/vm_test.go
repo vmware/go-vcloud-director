@@ -1654,7 +1654,7 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 	description := "created by " + check.TestName()
-	params := types.CreateVmParams{
+	params := &types.CreateVmParams{
 		Name:        "testStandaloneVm",
 		PowerOn:     false,
 		Description: description,
@@ -1665,7 +1665,7 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 			VmSpecSection: &types.VmSpecSection{
 				Modified:          addrOf(true),
 				Info:              "Virtual Machine specification",
-				OsType:            "debian10Guest",
+				OsType:            "sles11_64Guest",
 				NumCpus:           addrOf(1),
 				NumCoresPerSocket: addrOf(1),
 				CpuResourceMhz: &types.CpuResourceMhz{
@@ -1705,18 +1705,24 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 
 	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
 		params.CreateVm.VmSpecSection.Firmware = "efi"
-		params.BootOptions.EfiSecureBootEnabled = addrOf(true)
-		params.BootOptions.EnterBiosSetup = addrOf(true)
-		params.BootOptions.NetworkBootProtocol = ""
+		params.CreateVm.BootOptions.EfiSecureBootEnabled = addrOf(true)
+		params.CreateVm.BootOptions.BootRetryEnabled = addrOf(true)
+		params.CreateVm.BootOptions.BootRetryDelay = addrOf(20)
 	}
 
 	vappList := vdc.GetVappList()
 	vappNum := len(vappList)
-	vm, err := vdc.CreateStandaloneVm(&params)
+	vm, err := vdc.CreateStandaloneVm(params)
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
 	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
 	check.Assert(vm.VM.Description, Equals, description)
+	check.Assert(vm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(true))
+	check.Assert(vm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
+	check.Assert(vm.VM.BootOptions.BootRetryEnabled, DeepEquals, addrOf(true))
+	check.Assert(vm.VM.BootOptions.BootRetryDelay, DeepEquals, addrOf(20))
 
 	_ = vdc.Refresh()
 	vappList = vdc.GetVappList()
