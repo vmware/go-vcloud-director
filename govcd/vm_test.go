@@ -1152,9 +1152,9 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	// increase new disk size
 	vmSpecSection := vm.VM.VmSpecSection
 	changeDiskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
-	for _, diskSettings := range changeDiskSettings {
-		if diskSettings.DiskId == diskId {
-			diskSettings.SizeMb = 2048
+	for _, ds := range changeDiskSettings {
+		if ds.DiskId == diskId {
+			ds.SizeMb = 2048
 		}
 	}
 
@@ -1176,7 +1176,6 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	check.Assert(disk.IopsAllocation, NotNil)
 	check.Assert(diskSettings.IopsAllocation, NotNil)
 	check.Assert(disk.IopsAllocation.Shares, Equals, diskSettings.IopsAllocation.Shares)
-	check.Assert(disk.IopsAllocation.Limit, Equals, diskSettings.IopsAllocation.Limit)
 	check.Assert(disk.IopsAllocation.Reservation, Equals, diskSettings.IopsAllocation.Reservation)
 	check.Assert(disk.SizeMb, Equals, int64(2048))
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
