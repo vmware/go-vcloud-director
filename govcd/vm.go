@@ -1261,8 +1261,8 @@ func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings, vmName, vm
 		return fmt.Errorf("[VM %s Id %s] disk settings size MB has to be 0 or higher", vmName, vmId)
 	}
 
-	if diskData.Iops != nil && *diskData.Iops < int64(0) {
-		return fmt.Errorf("[VM %s Id %s] disk settings iops has to be 0 or higher", vmName, vmId)
+	if diskData.IopsAllocation != nil && diskData.IopsAllocation.Reservation < int64(0) {
+		return fmt.Errorf("[VM %s Id %s] disk settings iops reservation has to be 0 or higher", vmName, vmId)
 	}
 
 	if diskData.ThinProvisioned == nil {

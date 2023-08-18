@@ -989,7 +989,9 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
-	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(disk.IopsAllocation, NotNil)
+	check.Assert(diskSettings.IopsAllocation, NotNil)
+	check.Assert(disk.IopsAllocation.Reservation, Equals, diskSettings.IopsAllocation.Reservation)
 	check.Assert(disk.SizeMb, Equals, diskSettings.SizeMb)
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
@@ -1038,7 +1040,6 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	isThinProvisioned := true
-	iops := int64(0)
 	diskSettings := &types.DiskSettings{
 		SizeMb:            1024,
 		UnitNumber:        0,
@@ -1047,7 +1048,12 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 		ThinProvisioned:   &isThinProvisioned,
 		StorageProfile:    &storageProfile,
 		OverrideVmDefault: true,
-		Iops:              &iops,
+		IopsAllocation: &types.IopsResource{
+			Limit:       0,
+			Reservation: 0,
+			SharesLevel: "NORMAL",
+			Shares:      1000,
+		},
 	}
 
 	diskId, err := vm.AddInternalDisk(diskSettings)
@@ -1167,7 +1173,11 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
-	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(disk.IopsAllocation, NotNil)
+	check.Assert(diskSettings.IopsAllocation, NotNil)
+	check.Assert(disk.IopsAllocation.Shares, Equals, diskSettings.IopsAllocation.Shares)
+	check.Assert(disk.IopsAllocation.Limit, Equals, diskSettings.IopsAllocation.Limit)
+	check.Assert(disk.IopsAllocation.Reservation, Equals, diskSettings.IopsAllocation.Reservation)
 	check.Assert(disk.SizeMb, Equals, int64(2048))
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
