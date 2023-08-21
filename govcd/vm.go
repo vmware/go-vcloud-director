@@ -1778,8 +1778,9 @@ func addEmptyVmAsyncV10(vapp *VApp, reComposeVAppParams *types.RecomposeVAppPara
 	reComposeVAppParams.XmlnsOvf = types.XMLNamespaceOVF
 
 	// Return the task
-	return vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost,
-		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams)
+	return vapp.client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s", reComposeVAppParams,
+		vapp.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 }
 
 // addEmptyVmV10 adds an empty VM (without template) to vApp and returns the new created VM or an error.
