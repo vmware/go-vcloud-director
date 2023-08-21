@@ -126,6 +126,7 @@ type CreateItem struct {
 	StorageProfile            *Reference                 `xml:"StorageProfile,omitempty"`
 	ComputePolicy             *ComputePolicy             `xml:"ComputePolicy,omitempty"` // accessible only from version API 33.0
 	BootImage                 *Media                     `xml:"Media,omitempty"`         // boot image as vApp template. Href, Id and name needed.
+	BootOptions               *BootOptions               `xml:"BootOptions,omitempty"`
 }
 
 // ComputePolicy represents structure to manage VM compute polices, part of RecomposeVAppParams structure.
