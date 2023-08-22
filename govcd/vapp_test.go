@@ -1518,25 +1518,27 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	}
 
 	// Populate Catalog
-	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
+	uploadedItem := false
 	itemName := vcd.config.VCD.Catalog.CatalogItemWithMultiVms
 	if itemName == "" {
-		check.Log("Using `OvaMultiVmPath` for test. Will upload to use it.")
+		check.Logf("Using `OvaMultiVmPath` '%s' for test. Will upload to use it.", vcd.config.OVA.OvaMultiVmPath)
 		itemName = check.TestName()
 		uploadTask, err := catalog.UploadOvf(vcd.config.OVA.OvaMultiVmPath, itemName, "upload from test", 1024)
 		check.Assert(err, IsNil)
 		err = uploadTask.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 
-		AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+		uploadedItem = true
+		AddToCleanupList(itemName, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.NsxtBackedCatalogName, check.TestName())
 	} else {
-		check.Log("Using `CatalogItemWithMultiVms` for test")
+		check.Logf("Using pre-loaded `CatalogItemWithMultiVms` '%s' for test", itemName)
 	}
 
-	vmInTemplateRecord, err := vcd.vdc.QueryVappSynchronizedVmTemplate(vcd.config.VCD.Catalog.Name, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
+	vmInTemplateRecord, err := vcd.nsxtVdc.QueryVappSynchronizedVmTemplate(vcd.config.VCD.Catalog.NsxtBackedCatalogName, itemName, vcd.config.VCD.Catalog.VmNameInMultiVmItem)
 	check.Assert(err, IsNil)
 
 	// Get VAppTemplate
@@ -1566,12 +1568,14 @@ func (vcd *TestVCD) Test_AddNewVMFromMultiVmTemplate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
 
-	// Remove catalog item so far other tests don't fail
-	catalogItem, err := catalog.GetCatalogItemByName(itemName, true)
-	check.Assert(err, IsNil)
+	// Remove uploaded catalog item
+	if uploadedItem {
+		catalogItem, err := catalog.GetCatalogItemByName(itemName, true)
+		check.Assert(err, IsNil)
 
-	err = catalogItem.Delete()
-	check.Assert(err, IsNil)
+		err = catalogItem.Delete()
+		check.Assert(err, IsNil)
+	}
 }
 
 // Test_AddNewVMWithComputeCapacity creates a new VM in vApp with VM using compute capacity
