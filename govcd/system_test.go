@@ -156,7 +156,7 @@ func (vcd *TestVCD) Test_CreateOrg(check *C) {
 }
 
 func (vcd *TestVCD) Test_CreateDeleteEdgeGateway(check *C) {
-
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ExternalNetwork == "" {
 		check.Skip("No external network provided")
 	}
@@ -380,6 +380,7 @@ func (vcd *TestVCD) Test_FindBadlyNamedStorageProfile(check *C) {
 
 // Test getting network pool by href and vdc client
 func (vcd *TestVCD) Test_GetNetworkPoolByHREF(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
 		check.Skip("Skipping test because network pool is not configured")
 	}
@@ -459,7 +460,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	}
 	check.Assert(task.Task.HREF, Not(Equals), "")
 
-	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, "Test_CreateOrgVdcNetworkDirect")
+	AddToCleanupList(networkName, "network", vcd.org.Org.Name+"|"+vcd.vdc.Vdc.Name, check.TestName())
 
 	// err = task.WaitTaskCompletion()
 	err = task.WaitInspectTaskCompletion(LogTask, 10)
@@ -473,9 +474,16 @@ func (vcd *TestVCD) Test_QueryOrgVdcNetworkByNameWithSpace(check *C) {
 	check.Assert(len(orgVdcNetwork), Not(Equals), 0)
 	check.Assert(orgVdcNetwork[0].Name, Equals, networkName)
 	check.Assert(orgVdcNetwork[0].ConnectedTo, Equals, externalNetwork.ExternalNetwork.Name)
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(networkName, true)
+	check.Assert(err, IsNil)
+	task, err = network.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	providerVdcName := vcd.config.VCD.ProviderVdc.Name
 	networkPoolName := vcd.config.VCD.ProviderVdc.NetworkPool
 	storageProfileName := vcd.config.VCD.ProviderVdc.StorageProfile
@@ -548,6 +556,7 @@ func (vcd *TestVCD) Test_QueryProviderVdcEntities(check *C) {
 }
 
 func (vcd *TestVCD) Test_QueryProviderVdcByName(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ProviderVdc.Name == "" {
 		check.Skip("Skipping Provider VDC query: no provider VDC was given")
 	}
@@ -643,6 +652,7 @@ func (vcd *TestVCD) Test_QueryOrgVdcStorageProfileByID(check *C) {
 }
 
 func (vcd *TestVCD) Test_QueryNetworkPoolByName(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.ProviderVdc.NetworkPool == "" {
 		check.Skip("Skipping Provider VDC network pool query: no provider VDC network pool was given")
 	}

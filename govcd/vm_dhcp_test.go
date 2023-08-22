@@ -45,7 +45,7 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	network := makeOrgVdcNetworkWithDhcp(vcd, check, edgeGateway)
 
 	// Attach Org network to vApp
-	_, err = vapp.AddOrgNetwork(&VappNetworkSettings{}, network, false)
+	_, err = vapp.AddOrgNetwork(&VappNetworkSettings{}, network.OrgVDCNetwork, false)
 	check.Assert(err, IsNil)
 
 	// Get network config and update it to use DHCP
@@ -53,12 +53,12 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(netCfg, NotNil)
 
-	netCfg.NetworkConnection[0].Network = network.Name
+	netCfg.NetworkConnection[0].Network = network.OrgVDCNetwork.Name
 	netCfg.NetworkConnection[0].IPAddressAllocationMode = types.IPAllocationModeDHCP
 	netCfg.NetworkConnection[0].IsConnected = true
 
 	secondNic := &types.NetworkConnection{
-		Network:                 network.Name,
+		Network:                 network.OrgVDCNetwork.Name,
 		IPAddressAllocationMode: types.IPAllocationModeDHCP,
 		NetworkConnectionIndex:  1,
 		IsConnected:             true,
@@ -163,12 +163,16 @@ func (vcd *TestVCD) Test_VMGetDhcpAddress(check *C) {
 	// Cleanup vApp
 	err = deleteVapp(vcd, vapp.VApp.Name)
 	check.Assert(err, IsNil)
+	task, err = network.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 // makeOrgVdcNetworkWithDhcp is a helper that creates a routed Org network and a DHCP pool with
 // single IP address to be assigned. Org vDC network and IP address assigned to DHCP pool are
 // returned
-func makeOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway) *types.OrgVDCNetwork {
+func makeOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway) *OrgVDCNetwork {
 	var networkConfig = types.OrgVDCNetwork{
 		Xmlns:       types.XMLNamespaceVCloud,
 		Name:        TestCreateOrgVdcNetworkDhcp,
@@ -225,5 +229,5 @@ func makeOrgVdcNetworkWithDhcp(vcd *TestVCD, check *C, edgeGateway *EdgeGateway)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	return network.OrgVDCNetwork
+	return network
 }

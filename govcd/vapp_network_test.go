@@ -314,13 +314,14 @@ func createRoutedNetwork(vcd *TestVCD, check *C, networkName string) {
 }
 
 func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
-	createRoutedNetwork(vcd, check, "Test_UpdateNetworkStaticRoutes")
-	vapp, networkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, "Test_UpdateNetworkStaticRoutes", "Test_UpdateNetworkStaticRoutes")
+	testName := check.TestName()
+	createRoutedNetwork(vcd, check, testName)
+	vapp, vappNetworkName, vappNetworkConfig, err := vcd.prepareVappWithVappNetwork(check, testName, testName)
 	check.Assert(err, IsNil)
 
 	networkFound := types.VAppNetworkConfiguration{}
 	for _, networkConfig := range vappNetworkConfig.NetworkConfig {
-		if networkConfig.NetworkName == networkName {
+		if networkConfig.NetworkName == vappNetworkName {
 			networkFound = networkConfig
 		}
 	}
@@ -332,7 +333,7 @@ func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
 		&types.NetworkConnection{
 			IsConnected:             true,
 			IPAddressAllocationMode: types.IPAllocationModePool,
-			Network:                 "Test_UpdateNetworkStaticRoutes",
+			Network:                 vappNetworkName,
 			NetworkConnectionIndex:  0,
 		})
 
@@ -374,4 +375,10 @@ func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 	check.Assert(task.Task.Status, Equals, "success")
+	network, err := vcd.vdc.GetOrgVdcNetworkByName(testName, true)
+	check.Assert(err, IsNil)
+	task, err = network.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }

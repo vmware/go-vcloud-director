@@ -104,6 +104,7 @@ func getBackingIdByNameAndType(check *C, backingName string, backingType string,
 }
 
 func (vcd *TestVCD) Test_CreateExternalNetworkV2Nsxv(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks
 	skipOpenApiEndpointTest(vcd, check, endpoint)
 

@@ -273,6 +273,12 @@ func (vcd *TestVCD) Test_UpdateVdcFlex(check *C) {
 	check.Assert(math.Abs(*updatedVdc.AdminVdc.ResourceGuaranteedMemory-guaranteed) < 0.001, Equals, true)
 	check.Assert(*updatedVdc.AdminVdc.IsElastic, Equals, true)
 	check.Assert(*updatedVdc.AdminVdc.IncludeMemoryOverhead, Equals, false)
+	vdc, err = adminOrg.GetVDCByName(updatedVdc.AdminVdc.Name, true)
+	check.Assert(err, IsNil)
+	task, err := vdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 // Tests VDC storage profile update
@@ -285,6 +291,9 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(err, IsNil)
 
 	adminVdc, err := adminOrg.GetAdminVDCByName(vdcConfiguration.Name, true)
+	check.Assert(err, IsNil)
+	check.Assert(adminVdc, NotNil)
+	vdc, err := adminOrg.GetVDCByName(vdcConfiguration.Name, true)
 	check.Assert(err, IsNil)
 	check.Assert(adminVdc, NotNil)
 
@@ -318,4 +327,8 @@ func (vcd *TestVCD) Test_VdcUpdateStorageProfile(check *C) {
 	check.Assert(updatedStorageProfile.Limit, Equals, int64(9081))
 	check.Assert(updatedStorageProfile.Default, Equals, true)
 	check.Assert(updatedStorageProfile.Units, Equals, "MB")
+	task, err := vdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }

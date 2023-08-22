@@ -1272,6 +1272,7 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	vapp, err := deployVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
@@ -1467,7 +1468,7 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 }
 
 func (vcd *TestVCD) Test_VMUpdateComputePolicies(check *C) {
-
+	vcd.skipIfNotSysAdmin(check)
 	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
 	check.Assert(providerVdc, NotNil)

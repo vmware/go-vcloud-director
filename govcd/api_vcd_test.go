@@ -77,19 +77,20 @@ const (
 	TestVdcFindDiskByHREF         = "TestVdcFindDiskByHREF"
 	TestFindDiskByHREF            = "TestFindDiskByHREF"
 	TestDisk                      = "TestDisk"
-	TestVMAttachOrDetachDisk      = "TestVMAttachOrDetachDisk"
-	TestVMAttachDisk              = "TestVMAttachDisk"
-	TestVMDetachDisk              = "TestVMDetachDisk"
-	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
-	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
-	TestLbServiceMonitor          = "TestLbServiceMonitor"
-	TestLbServerPool              = "TestLbServerPool"
-	TestLbAppProfile              = "TestLbAppProfile"
-	TestLbAppRule                 = "TestLbAppRule"
-	TestLbVirtualServer           = "TestLbVirtualServer"
-	TestLb                        = "TestLb"
-	TestNsxvSnatRule              = "TestNsxvSnatRule"
-	TestNsxvDnatRule              = "TestNsxvDnatRule"
+	// #nosec G101 -- Not a credential
+	TestVMAttachOrDetachDisk  = "TestVMAttachOrDetachDisk"
+	TestVMAttachDisk          = "TestVMAttachDisk"
+	TestVMDetachDisk          = "TestVMDetachDisk"
+	TestCreateExternalNetwork = "TestCreateExternalNetwork"
+	TestDeleteExternalNetwork = "TestDeleteExternalNetwork"
+	TestLbServiceMonitor      = "TestLbServiceMonitor"
+	TestLbServerPool          = "TestLbServerPool"
+	TestLbAppProfile          = "TestLbAppProfile"
+	TestLbAppRule             = "TestLbAppRule"
+	TestLbVirtualServer       = "TestLbVirtualServer"
+	TestLb                    = "TestLb"
+	TestNsxvSnatRule          = "TestNsxvSnatRule"
+	TestNsxvDnatRule          = "TestNsxvDnatRule"
 )
 
 const (
@@ -227,6 +228,7 @@ type TestConfig struct {
 		NsxtMedia        string `yaml:"nsxtBackedMediaName,omitempty"`
 		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
 		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
+		UiPluginPath     string `yaml:"uiPluginPath,omitempty"`
 	} `yaml:"media"`
 }
 
@@ -1100,6 +1102,11 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 
+		_, err = adminCatalog.GetMediaByName(entity.Name, true)
+		if ContainsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
 		err = adminCatalog.RemoveMediaIfExists(entity.Name)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -2019,4 +2026,10 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 	}
 
 	return vcdClient, newUser, nil
+}
+
+func (vcd *TestVCD) skipIfNotSysAdmin(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip(fmt.Sprintf("Skipping %s: requires system administrator privileges", check.TestName()))
+	}
 }

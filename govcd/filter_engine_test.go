@@ -311,6 +311,7 @@ func (vcd *TestVCD) Test_SearchMediaItem(check *C) {
 }
 
 func (vcd *TestVCD) Test_SearchOrgVdc(check *C) {
+	vcd.skipIfNotSysAdmin(check) // this test creates another VDC
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("no VDC provided. Skipping test")
 	}
@@ -346,4 +347,8 @@ func (vcd *TestVCD) Test_SearchOrgVdc(check *C) {
 			printVerbose("( I) %2d %-10s %-20s %s\n\n", i, item.GetType(), item.GetParentName(), item.GetName())
 		}
 	}
+	task, err := anotherVdc.Delete(true, true)
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }

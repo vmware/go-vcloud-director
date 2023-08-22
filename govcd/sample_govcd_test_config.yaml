@@ -86,7 +86,7 @@ vcd:
       # NSX-T tier-0 VRF router used for external network tests
       tier0routerVrf: tier-0-router-vrf
       # Gateway QoS Profile used for NSX-T Edge Gateway Rate Limiting (defined in NSX-T Manager)
-      gatewayQosProfile: Gateway QoS Profile 1 
+      gatewayQosProfile: Gateway QoS Profile 1
       # Existing External Network with correct configuration
       externalNetwork: tier0-backed-external-network
       # Existing NSX-T based VDC
@@ -99,13 +99,13 @@ vcd:
       nsxtImportSegment: vcd-org-vdc-imported-network-backing
       # Existing NSX-T Edge Cluster name
       nsxtEdgeCluster: existing-nsxt-edge-cluster
-      # AVI Controller URL 
+      # AVI Controller URL
       nsxtAlbControllerUrl: https://unknown-hostname.com
       # AVI Controller username
       nsxtAlbControllerUser: admin
       # AVI Controller password
       nsxtAlbControllerPassword: CHANGE-ME
-      # AVI Controller importable Cloud name 
+      # AVI Controller importable Cloud name
       nsxtAlbImportableCloud: NSXT AVI Cloud
       # Service Engine Group name within (Should be configured in Active Standby mode)
       nsxtAlbServiceEngineGroup: active-standby-service-engine-group
@@ -237,3 +237,5 @@ media:
   mediaName: uploadedMediaName
   # Existing media in NSX-T backed VDC
   nsxtBackedMediaName: nsxtMediaName
+  # A valid UI Plugin to use in tests
+  uiPluginPath: ../test-resources/ui_plugin.zip
