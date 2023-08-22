@@ -141,6 +141,7 @@ func testPoolWithCertNoPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string, 
 		CommonNameCheckEnabled: addrOf(true),
 		DomainNames:            []string{"one", "two", "three"},
 		DefaultPort:            addrOf(1211),
+		SslEnabled:             addrOf(true),
 	}
 
 	testAlbPoolConfig(check, vcd, "CertificateWithNoPrivateKey", poolConfigWithCert, nil, client)
@@ -174,6 +175,7 @@ func testPoolWithCertAndPrivateKey(check *C, vcd *TestVCD, edgeGatewayId string,
 		Algorithm:         "FASTEST_RESPONSE",
 		CaCertificateRefs: []types.OpenApiReference{types.OpenApiReference{ID: createdCertificate.CertificateLibrary.Id}},
 		DefaultPort:       addrOf(1211),
+		SslEnabled:        addrOf(true),
 	}
 
 	testAlbPoolConfig(check, vcd, "CertificateWithPrivateKey", poolConfigWithCertAndKey, nil, client)

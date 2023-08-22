@@ -744,9 +744,10 @@ func (vcd *TestVCD) Test_InternalDisk(check *C) {
 	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
 	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
-	check.Assert(disk.ThinProvisioned, DeepEquals, diskSettings.ThinProvisioned)
-	// In 37.1, if IOPS is set to 0, it is returned as nil instead of 0, so we don't check it
-	// check.Assert(disk.Iops, DeepEquals, diskSettings.Iops)
+	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
+	check.Assert(disk.IopsAllocation, NotNil)
+	check.Assert(diskSettings.IopsAllocation, NotNil)
+	check.Assert(disk.IopsAllocation.Reservation, Equals, diskSettings.IopsAllocation.Reservation)
 	check.Assert(disk.SizeMb, Equals, diskSettings.SizeMb)
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
@@ -833,7 +834,6 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	isThinProvisioned := true
-	iops := int64(0)
 	diskSettings := &types.DiskSettings{
 		SizeMb:            1024,
 		UnitNumber:        0,
@@ -842,7 +842,12 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 		ThinProvisioned:   &isThinProvisioned,
 		StorageProfile:    &storageProfile,
 		OverrideVmDefault: true,
-		Iops:              &iops,
+		IopsAllocation: &types.IopsResource{
+			Limit:       0,
+			Reservation: 0,
+			SharesLevel: "NORMAL",
+			Shares:      1000,
+		},
 	}
 
 	diskId, err := vm.AddInternalDisk(diskSettings)
