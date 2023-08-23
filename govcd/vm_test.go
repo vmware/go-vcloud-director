@@ -2034,6 +2034,10 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 }
 
 func createNsxtVAppAndVmWithEfiSupport(vcd *TestVCD, check *C) (*VApp, *VM) {
+	if vcd.config.VCD.Catalog.CatalogItemWithEfiSupport == "" {
+		check.Skip("EFI supporting OVA not provided in the config")
+	}
+
 	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
 	check.Assert(err, IsNil)
 	check.Assert(cat, NotNil)
