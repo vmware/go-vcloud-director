@@ -72,6 +72,11 @@ type EdgeGatewayUplinks struct {
 	// Advertisement for this Edge Gateway
 	Dedicated bool `json:"dedicated,omitempty"`
 
+	// BackingType of uplink. This can be:
+	// * NSXT_TIER0 - The default and mandatory External Network backed by NSX-T ier0 Gateway
+	// * IMPORTED_T_LOGICAL_SWITCH - External Network uplinks (External Networks backed by NSX-T Segment)
+	BackingType *string `json:backingType,omitempty`
+
 	// UsingIpSpace is a boolean flag showing if the uplink uses IP Space
 	UsingIpSpace *bool `json:"usingIpSpace,omitempty"`
 }
