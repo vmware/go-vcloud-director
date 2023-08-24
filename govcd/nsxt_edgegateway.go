@@ -280,6 +280,25 @@ func (egw *NsxtEdgeGateway) MoveToVdcOrVdcGroup(vdcOrVdcGroupId string) (*NsxtEd
 	return egw.Update(edgeGatewayConfig)
 }
 
+// ReorderUplinks will ensure that uplink at slice index 0 is the one backed by NSX-T Tier0 External network.
+// NSX-T Edge Gateway can have many uplinks of different types (they are differentiated by 'backingType' field):
+// * MANDATORY - exactly 1 uplink to Tier0 Gateway (External network backed by NSX-T T0 Gateway) [backingType==NSXT_TIER0]
+// * OPTIONAL - one or more External Network Uplinks (backed by NSX-T Segment backed External networks) [backingType==IMPORTED_T_LOGICAL_SWITCH]
+// It is expected that the Tier0 gateway uplink is at index 0, but we have seen where VCD API shuffles response values therefore it
+// is important to ensure that uplink with backingType==NSXT_TIER0 the element 0 in types.EdgeGatewayUplinks
+func (egw *NsxtEdgeGateway) ReorderUplinks() error {
+	if egw == nil || egw.EdgeGateway == nil {
+		return fmt.Errorf("edge gateway cannot be nil ")
+	}
+
+	if len(egw.EdgeGateway.EdgeGatewayUplinks) == 0 {
+		return fmt.Errorf("no uplinks present in Edge Gateway")
+	}
+
+	egw.EdgeGateway.EdgeGatewayUplinks = reorderEdgeGatewayUplinks(egw.EdgeGateway.EdgeGatewayUplinks)
+	return nil
+}
+
 // getNsxtEdgeGatewayById is a private parent for wrapped functions:
 // func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
 // func (org *Org) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
@@ -970,4 +989,29 @@ func flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses []*types.GatewayUsed
 	}
 
 	return usedIpSlice, nil
+}
+
+func reorderEdgeGatewayUplinks(edgeGatewayUplinks []types.EdgeGatewayUplinks) []types.EdgeGatewayUplinks {
+	// If only 1 uplink is present - there is nothing to reorder, because only mandatory NSXT_TIER0 uplink is present
+	if len(edgeGatewayUplinks) == 1 {
+		return edgeGatewayUplinks
+	}
+
+	// Element 0 is External Network backed by Tier 0 gateway - nothing to do
+	if edgeGatewayUplinks[0].BackingType != nil && *edgeGatewayUplinks[0].BackingType == "NSXT_TIER0" {
+		return edgeGatewayUplinks
+	}
+
+	for index := range edgeGatewayUplinks {
+		if edgeGatewayUplinks[index].BackingType != nil && *edgeGatewayUplinks[index].BackingType == "NSXT_TIER0" {
+			// Swap two elements
+			t0BackedUplink := edgeGatewayUplinks[index]
+			edgeGatewayUplinks[index] = edgeGatewayUplinks[0]
+			edgeGatewayUplinks[0] = t0BackedUplink
+
+			return edgeGatewayUplinks
+		}
+	}
+
+	return edgeGatewayUplinks
 }
