@@ -757,3 +757,83 @@ func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
 		check.Assert(contains(knownVdcName, foundVdcNames), Equals, true)
 	}
 }
+
+// Test retrieval of all Orgs
+func (vcd *TestVCD) Test_QueryAllOrgs(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_QueryOrgByName: Org Name not given")
+		return
+	}
+
+	orgs, err := vcd.client.Client.QueryAllOrgs()
+	check.Assert(err, IsNil)
+	check.Assert(orgs, NotNil)
+
+	if vcd.config.VCD.Org != "" {
+		foundOrg := false
+		for _, org := range orgs {
+			if org.Name == vcd.config.VCD.Org {
+				foundOrg = true
+			}
+		}
+		check.Assert(foundOrg, Equals, true)
+	}
+}
+
+// Tests Org retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_QueryOrgByName(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_QueryOrgByName: Org Name not given")
+		return
+	}
+
+	org, err := vcd.client.Client.QueryOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	orgFound := false
+	if vcd.config.VCD.Org == org.Name {
+		orgFound = true
+	}
+
+	if testVerbose {
+		fmt.Printf("Org %s\n", org.Name)
+		fmt.Printf("\t href    %s\n", org.HREF)
+		fmt.Printf("\t enabled %v\n", org.IsEnabled)
+		fmt.Println("")
+	}
+
+	check.Assert(orgFound, Equals, true)
+}
+
+// Tests Org retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_QueryOrgById(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_QueryOrgByName: Org Name not given")
+		return
+	}
+
+	namedOrg, err := vcd.client.Client.QueryOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	orgFound := false
+	if vcd.config.VCD.Org == namedOrg.Name {
+
+		idOrg, err := vcd.client.Client.QueryOrgByID(namedOrg.ID)
+		check.Assert(err, IsNil)
+
+		if idOrg.ID == namedOrg.ID {
+			orgFound = true
+		}
+
+		if testVerbose {
+			fmt.Printf("Org %s\n", namedOrg.Name)
+			fmt.Printf("\t Org ID (by Name): %s\n", namedOrg.ID)
+			fmt.Printf("\t Org ID (by ID): %s\n", idOrg.ID)
+			fmt.Println("")
+		}
+	}
+	check.Assert(orgFound, Equals, true)
+}
