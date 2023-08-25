@@ -766,7 +766,7 @@ func (vcd *TestVCD) Test_QueryAllOrgs(check *C) {
 		return
 	}
 
-	orgs, err := vcd.client.Client.QueryAllOrgs()
+	orgs, err := vcd.client.QueryAllOrgs()
 	check.Assert(err, IsNil)
 	check.Assert(orgs, NotNil)
 
@@ -789,7 +789,7 @@ func (vcd *TestVCD) Test_QueryOrgByName(check *C) {
 		return
 	}
 
-	org, err := vcd.client.Client.QueryOrgByName(vcd.config.VCD.Org)
+	org, err := vcd.client.QueryOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
 	orgFound := false
@@ -815,13 +815,13 @@ func (vcd *TestVCD) Test_QueryOrgById(check *C) {
 		return
 	}
 
-	namedOrg, err := vcd.client.Client.QueryOrgByName(vcd.config.VCD.Org)
+	namedOrg, err := vcd.client.QueryOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
 	orgFound := false
 	if vcd.config.VCD.Org == namedOrg.Name {
 
-		idOrg, err := vcd.client.Client.QueryOrgByID(namedOrg.ID)
+		idOrg, err := vcd.client.QueryOrgByID(namedOrg.ID)
 		check.Assert(err, IsNil)
 
 		if idOrg.ID == namedOrg.ID {

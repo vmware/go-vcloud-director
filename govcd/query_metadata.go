@@ -215,6 +215,7 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 		types.QtResourcePool,
 		types.QtNetworkPool,
 		types.QtProviderVdcStorageProfile,
+		types.QtOrg,
 	}
 	// Make sure the query type is supported
 	// We need to check early, as queries that would return less than 25 items (default page size) would succeed,

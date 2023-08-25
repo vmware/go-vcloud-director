@@ -382,12 +382,10 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 }
 
 // QueryAllOrgs returns all Org VDCs using query endpoint
-func (client *Client) QueryAllOrgs() ([]*types.QueryResultOrgRecordType, error) {
-	filter := map[string]string{
-		//		"type": "organisation",
-	}
+func (vcdclient *VCDClient) QueryAllOrgs() ([]*types.QueryResultOrgRecordType, error) {
+	filter := map[string]string{}
 
-	return client.queryOrgList(filter)
+	return vcdclient.Client.queryOrgList(filter)
 }
 
 // queryOrgList performs an `orgVdc` or `adminOrgVdc` (for System user) and optionally applies filterFields
@@ -423,21 +421,21 @@ func (client *Client) queryOrgList(filterFields map[string]string) ([]*types.Que
 
 	results, err := client.cumulativeQuery(queryType, nil, filter)
 	if err != nil {
-		return nil, fmt.Errorf("error querying Org VDCs %s", err)
+		return nil, fmt.Errorf("error querying Orgs %s", err)
 	}
 
 	return results.Results.OrgRecord, nil
 }
 
 // QueryOrgByName retrieves an Org
-func (client *Client) QueryOrgByName(name string) (*types.QueryResultOrgRecordType, error) {
-	return client.queryOrgByName(name)
+func (vcdclient *VCDClient) QueryOrgByName(name string) (*types.QueryResultOrgRecordType, error) {
+	return vcdclient.Client.queryOrgByName(name)
 }
 
 // queryOrgByName returns a single QueryResultOrgRecordType
 func (client *Client) queryOrgByName(orgName string) (*types.QueryResultOrgRecordType, error) {
 	filterMap := map[string]string{
-		"filter": "name==" + orgName,
+		"name": orgName,
 	}
 	allOrgs, err := client.queryOrgList(filterMap)
 	if err != nil {
@@ -456,8 +454,8 @@ func (client *Client) queryOrgByName(orgName string) (*types.QueryResultOrgRecor
 }
 
 // QueryOrgByID retrieves an Org
-func (client *Client) QueryOrgByID(id string) (*types.QueryResultOrgRecordType, error) {
-	return client.queryOrgByID(id)
+func (vcdclient *VCDClient) QueryOrgByID(id string) (*types.QueryResultOrgRecordType, error) {
+	return vcdclient.Client.queryOrgByID(id)
 }
 
 // queryOrgByID returns a single QueryResultOrgRecordType
