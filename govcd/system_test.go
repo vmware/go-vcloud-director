@@ -757,3 +757,63 @@ func (vcd *TestVCD) TestQueryAllVdcs(check *C) {
 		check.Assert(contains(knownVdcName, foundVdcNames), Equals, true)
 	}
 }
+
+// Tests Org retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_QueryOrgByName(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	if vcd.config.VCD.Org.Name == "" {
+		check.Skip("Test_QueryOrgByName: Org Name not given")
+		return
+	}
+
+	Orgs, err := vcd.client.QueryOrgByName(vcd.config.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(len(Orgs) > 0, Equals, true)
+
+	orgFound := false
+	for _, org := range Orgs {
+		if vcd.config.VCD.Org.Name == org.Name {
+			orgFound = true
+		}
+
+		if testVerbose {
+			org
+			fmt.Printf("Org %s\n", org.Name)
+			fmt.Printf("\t href    %s\n", org.HREF)
+			fmt.Printf("\t status  %s\n", org.Status)
+			fmt.Printf("\t enabled %v\n", org.IsEnabled)
+			fmt.Println("")
+		}
+	}
+	check.Assert(orgFound, Equals, true)
+}
+
+// Tests Org retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_QueryOrgById(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	if vcd.config.VCD.Org.Id == "" {
+		check.Skip("Test_QueryOrgById: Org Id not given")
+		return
+	}
+
+	Orgs, err := vcd.client.QueryOrgById(vcd.config.Org.Id)
+	check.Assert(err, IsNil)
+	check.Assert(len(Orgs) > 0, Equals, true)
+
+	orgFound := false
+	for _, org := range Orgs {
+		if vcd.config.VCD.Org.Name == org.Name {
+			orgFound = true
+		}
+
+		if testVerbose {
+			org
+			fmt.Printf("Org %s\n", org.Name)
+			fmt.Printf("\t href    %s\n", org.HREF)
+			fmt.Printf("\t status  %s\n", org.Status)
+			fmt.Printf("\t enabled %v\n", org.IsEnabled)
+			fmt.Println("")
+		}
+	}
+	check.Assert(orgFound, Equals, true)
+}
