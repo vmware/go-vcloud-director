@@ -258,6 +258,7 @@ const (
 	QtVappTemplate              = "vAppTemplate"              // vApp template
 	QtAdminVappTemplate         = "adminVAppTemplate"         // vApp template as admin
 	QtEdgeGateway               = "edgeGateway"               // edge gateway
+	QtOrg                       = "organization"              // Organization
 	QtOrgVdcNetwork             = "orgVdcNetwork"             // Org VDC network
 	QtCatalog                   = "catalog"                   // catalog
 	QtAdminCatalog              = "adminCatalog"              // catalog as admin
@@ -283,6 +284,7 @@ const (
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
 var AdminQueryTypes = map[string]string{
 	QtEdgeGateway:   QtEdgeGateway,   // EdgeGateway query type is the same for admin and regular users
+	QtOrg:           QtOrg,           // Organisation query is admin per default
 	QtOrgVdcNetwork: QtOrgVdcNetwork, // Org VDC Network query type is the same for admin and regular users
 	QtVappTemplate:  QtAdminVappTemplate,
 	QtCatalog:       QtAdminCatalog,

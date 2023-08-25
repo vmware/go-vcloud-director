@@ -2369,6 +2369,7 @@ type QueryResultRecordsType struct {
 	VmGroupsRecord                  []*QueryResultVmGroupsRecordType                  `xml:"VmGroupsRecord"`                  // A record representing a VM Group
 	TaskRecord                      []*QueryResultTaskRecordType                      `xml:"TaskRecord"`                      // A record representing a Task
 	AdminTaskRecord                 []*QueryResultTaskRecordType                      `xml:"AdminTaskRecord"`                 // A record representing an Admin Task
+	OrgRecord                       []*QueryResultOrgRecordType                       `xml:"OrgRecord"`                       // A record representing an Organisation
 }
 
 // QueryResultVmGroupsRecordType represent a VM Groups record
@@ -3355,6 +3356,27 @@ type QueryResultTaskRecordType struct {
 	ServiceNamespace string    `xml:"serviceNamespace,attr,omitempty"` //	Service name space
 	Link             *Link     `xml:"Link,omitempty"`
 	Metadata         *Metadata `xml:"Metadata,omitempty"`
+}
+
+// QueryResultOrgVdcRecordType represents an Organisation record
+type QueryResultOrgRecordType struct {
+	HREF               string    `xml:"href,attr,omitempty"`
+	Type               string    `xml:"type,attr,omitempty"`
+	ID                 string    `xml:"id,attr,omitempty"`
+	Name               string    `xml:"name,attr"`
+	DisplayName        string    `xml:"displayName,attr,omitempty"`
+	IsEnabled          bool      `xml:"IsEnabled,attr,omitempty"`
+	IsReadOnly         bool      `xml:"isReadOnly,attr,omitempty"`
+	CanPublishCatalogs bool      `xml:"canPublishCatalogs,attr,omitempty"`
+	DeployedVMQuota    *int      `xml:"deployedVMQuota,attr,omitempty"`
+	StoredVMQuota      *int      `xml:"storedVMQuota,attr,omitempty"`
+	NumberOfCatalogs   *int      `xml:"numberOfCatalogs,attr,omitempty"`
+	NumberOfVdcs       *int      `xml:"numberOfVdcs,attr,omitempty"`
+	NumberOfVApps      *int      `xml:"numberOfVApps,attr,omitempty"`
+	NumberOfGroups     *int      `xml:"numberOfGroups,attr,omitempty"`
+	NumberOfDisks      *int      `xml:"numberOfDisks,attr,omitempty"`
+	Link               *LinkList `xml:"Link,omitempty"`
+	Metadata           *Metadata `xml:"Metadata,omitempty"`
 }
 
 // ProviderVdcCreation contains the data needed to create a provider VDC.
