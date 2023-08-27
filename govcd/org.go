@@ -383,9 +383,7 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 
 // QueryAllOrgs returns all Org VDCs using query endpoint
 func (vcdclient *VCDClient) QueryAllOrgs() ([]*types.QueryResultOrgRecordType, error) {
-	filter := map[string]string{}
-
-	return vcdclient.Client.queryOrgList(filter)
+	return vcdclient.Client.queryOrgList(nil)
 }
 
 // queryOrgList performs an `orgVdc` or `adminOrgVdc` (for System user) and optionally applies filterFields

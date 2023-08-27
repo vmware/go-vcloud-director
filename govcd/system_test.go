@@ -815,23 +815,23 @@ func (vcd *TestVCD) Test_QueryOrgById(check *C) {
 		return
 	}
 
-	namedOrg, err := vcd.client.QueryOrgByName(vcd.config.VCD.Org)
+	namedOrg, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 
 	orgFound := false
-	if vcd.config.VCD.Org == namedOrg.Name {
+	if vcd.config.VCD.Org == namedOrg.Org.Name {
 
-		idOrg, err := vcd.client.QueryOrgByID(namedOrg.ID)
+		idOrg, err := vcd.client.QueryOrgByID(namedOrg.Org.ID)
 		check.Assert(err, IsNil)
 
-		if idOrg.ID == namedOrg.ID {
+		if idOrg.HREF == namedOrg.Org.HREF {
 			orgFound = true
 		}
 
 		if testVerbose {
-			fmt.Printf("Org %s\n", namedOrg.Name)
-			fmt.Printf("\t Org ID (by Name): %s\n", namedOrg.ID)
-			fmt.Printf("\t Org ID (by ID): %s\n", idOrg.ID)
+			fmt.Printf("Org %s\n", namedOrg.Org.Name)
+			fmt.Printf("\t Org HREF (by Name): %s\n", namedOrg.Org.HREF)
+			fmt.Printf("\t Org HREF (by ID): %s\n", idOrg.HREF)
 			fmt.Println("")
 		}
 	}

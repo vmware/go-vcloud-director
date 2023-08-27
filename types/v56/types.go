@@ -3365,7 +3365,7 @@ type QueryResultOrgRecordType struct {
 	ID                 string    `xml:"id,attr,omitempty"`
 	Name               string    `xml:"name,attr"`
 	DisplayName        string    `xml:"displayName,attr,omitempty"`
-	IsEnabled          bool      `xml:"IsEnabled,attr,omitempty"`
+	IsEnabled          bool      `xml:"isEnabled,attr,omitempty"`
 	IsReadOnly         bool      `xml:"isReadOnly,attr,omitempty"`
 	CanPublishCatalogs bool      `xml:"canPublishCatalogs,attr,omitempty"`
 	DeployedVMQuota    *int      `xml:"deployedVMQuota,attr,omitempty"`
