@@ -114,7 +114,7 @@ type OpenAPIEdgeGatewaySubnetValue struct {
 	// UsedIPCount specifies used IP count
 	UsedIPCount int `json:"usedIpCount,omitempty"`
 
-	// PrimaryIP of the Edge Gateway. Can only be one per Edge (from all subnets)
+	// PrimaryIP of the Edge Gateway. Can only be one in all subnets
 	PrimaryIP string `json:"primaryIp,omitempty"`
 
 	// AutoAllocateIPRanges provides a way to automatically allocate

@@ -197,6 +197,12 @@ func (egw *NsxtEdgeGateway) Refresh() error {
 		return fmt.Errorf("error refreshing NSX-T Edge Gateway: %s", err)
 	}
 	egw.EdgeGateway = refreshedEdge.EdgeGateway
+
+	err = egw.ReorderUplinks()
+	if err != nil {
+		return fmt.Errorf("error reordering Edge Gateway Uplinks after refresh operation: %s", err)
+	}
+
 	return nil
 }
 
@@ -229,6 +235,11 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 	err = egw.client.OpenApiPutItem(apiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
+	}
+
+	err = egw.ReorderUplinks()
+	if err != nil {
+		return nil, fmt.Errorf("error reordering Edge Gateway Uplinks after update operation: %s", err)
 	}
 
 	return returnEgw, nil
@@ -284,8 +295,10 @@ func (egw *NsxtEdgeGateway) MoveToVdcOrVdcGroup(vdcOrVdcGroupId string) (*NsxtEd
 // NSX-T Edge Gateway can have many uplinks of different types (they are differentiated by 'backingType' field):
 // * MANDATORY - exactly 1 uplink to Tier0 Gateway (External network backed by NSX-T T0 Gateway) [backingType==NSXT_TIER0]
 // * OPTIONAL - one or more External Network Uplinks (backed by NSX-T Segment backed External networks) [backingType==IMPORTED_T_LOGICAL_SWITCH]
-// It is expected that the Tier0 gateway uplink is at index 0, but we have seen where VCD API shuffles response values therefore it
-// is important to ensure that uplink with backingType==NSXT_TIER0 the element 0 in types.EdgeGatewayUplinks
+// It is expected that the Tier0 gateway uplink is always at index 0, but we have seen where VCD API
+// shuffles response values therefore it is important to ensure that uplink with
+// backingType==NSXT_TIER0 the element 0 in types.EdgeGatewayUplinks to avoid breaking functionality
+// in upstream code.
 func (egw *NsxtEdgeGateway) ReorderUplinks() error {
 	if egw == nil || egw.EdgeGateway == nil {
 		return fmt.Errorf("edge gateway cannot be nil ")
@@ -332,6 +345,11 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 	if egw.EdgeGateway.GatewayBacking.GatewayType != "NSXT_BACKED" {
 		return nil, fmt.Errorf("%s: this is not NSX-T Edge Gateway (%s)",
 			ErrorEntityNotFound, egw.EdgeGateway.GatewayBacking.GatewayType)
+	}
+
+	err = egw.ReorderUplinks()
+	if err != nil {
+		return nil, fmt.Errorf("error reordering Edge Gateway Uplink after API retrieval")
 	}
 
 	return egw, nil
@@ -383,6 +401,15 @@ func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*Nsxt
 	}
 
 	onlyNsxtEdges := filterOnlyNsxtEdges(wrappedResponses)
+
+	// Reorder uplink in all Edge Gateways
+	for edgeIndex := range onlyNsxtEdges {
+		err := onlyNsxtEdges[edgeIndex].ReorderUplinks()
+		if err != nil {
+			return nil, fmt.Errorf("error reordering NSX-T Edge Gateway Uplinks for gateway '%s' ('%s'): %s",
+				onlyNsxtEdges[edgeIndex].EdgeGateway.Name, onlyNsxtEdges[edgeIndex].EdgeGateway.ID, err)
+		}
+	}
 
 	return onlyNsxtEdges, nil
 }
@@ -505,6 +532,35 @@ func (egw *NsxtEdgeGateway) GetAllocatedIpCount(refresh bool) (int, error) {
 	allocatedIpCount := 0
 
 	for _, uplink := range egw.EdgeGateway.EdgeGatewayUplinks {
+		for _, subnet := range uplink.Subnets.Values {
+			if subnet.TotalIPCount != nil {
+				allocatedIpCount += *subnet.TotalIPCount
+			}
+		}
+	}
+
+	return allocatedIpCount, nil
+}
+
+func (egw *NsxtEdgeGateway) GetAllocatedIpCountByUplinkType(refresh bool, uplinkType string) (int, error) {
+	if uplinkType != "NSXT_TIER0" && uplinkType != "IMPORTED_T_LOGICAL_SWITCH" {
+		return 0, fmt.Errorf("invalid 'uplinkType', expected 'NSXT_TIER0' or 'IMPORTED_T_LOGICAL_SWITCH', got: %s", uplinkType)
+	}
+
+	if refresh {
+		err := egw.Refresh()
+		if err != nil {
+			return 0, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+		}
+	}
+
+	allocatedIpCount := 0
+
+	for _, uplink := range egw.EdgeGateway.EdgeGatewayUplinks {
+		// counting IPs only for specific uplink type
+		if uplink.BackingType != nil && *uplink.BackingType != uplinkType {
+			continue
+		}
 		for _, subnet := range uplink.Subnets.Values {
 			if subnet.TotalIPCount != nil {
 				allocatedIpCount += *subnet.TotalIPCount
