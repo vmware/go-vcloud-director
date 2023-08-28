@@ -731,7 +731,6 @@ func (vcd *TestVCD) Test_InternalDisk(check *C) {
 	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
 	check.Assert(err, IsNil)
 
-	// verify VM description still available - test for bugfix #418
 	description := check.TestName() + "_Description"
 	vm, err = vm.UpdateVmSpecSection(vm.VM.VmSpecSection, description)
 	check.Assert(err, IsNil)
@@ -783,7 +782,7 @@ func (vcd *TestVCD) Test_InternalDisk(check *C) {
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 
-	// verify VM description still available - test for bugfix #418
+	// verify that VM description is still available - test for bugfix #418
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	check.Assert(vm.VM.Description, Equals, description)

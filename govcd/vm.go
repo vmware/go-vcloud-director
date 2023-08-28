@@ -1362,7 +1362,13 @@ func (vm *VM) UpdateInternalDisks(disksSettingToUpdate *types.VmSpecSection) (*t
 	return vm.VM.VmSpecSection, nil
 }
 
-// Deprecated, use UpdateInternalDisks or UpdateVmSpecSectionAsync instead
+// UpdateInternalDisksAsync applies disks configuration for the VM.
+// types.VmSpecSection has to have all internal disk state. Disks which don't
+// match provided ones in types.VmSpecSection will be deleted.
+// Matched internal disk will be updated. New internal disk description found in types.VmSpecSection will be created.
+// Returns Task and error.
+//
+// Deprecated: use UpdateInternalDisks or UpdateVmSpecSectionAsync instead
 func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update disks, VM HREF is unset")
@@ -1472,7 +1478,7 @@ func (vm *VM) UpdateVmSpecSectionAsync(vmSettingsToUpdate *types.VmSpecSection, 
 		return Task{}, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
 	}
 
-	// Firmware field is unavailable on >37.1 API Versions
+	// Firmware field is unavailable on <37.1 API Versions
 	if vmSettingsToUpdate.Firmware != "" && vm.client.APIVCDMaxVersionIs("<37.1") {
 		return Task{}, fmt.Errorf("VM Firmware can only be set on VCD 10.4.1+ (API 37.1+)")
 	}

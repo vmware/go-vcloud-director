@@ -1356,6 +1356,10 @@ func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 
 // Get the details of a hardware version
 func (vdc *Vdc) GetHardwareVersion(name string) (*types.VirtualHardwareVersion, error) {
+	if vdc.Vdc.Capabilities == nil {
+		return nil, fmt.Errorf("VDC doesn't have any virtual hardware version support information stored")
+	}
+
 	found := false
 	for _, hwVersion := range vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion {
 		if hwVersion.Name == name {
@@ -1389,6 +1393,10 @@ func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, erro
 		return nil, err
 	}
 
+	if vdc.Vdc.Capabilities == nil {
+		return nil, fmt.Errorf("VDC doesn't have any virtual hardware version support information stored")
+	}
+
 	hardwareVersions := vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion
 	// Get last item (highest version) of SupportedHardwareVersions
 	highestVersion := hardwareVersions[len(hardwareVersions)-1].Name
@@ -1400,7 +1408,7 @@ func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, erro
 	return hardwareVersion, nil
 }
 
-// FindOsFromId attempts to find a OS by ID by the given hardware version
+// FindOsFromId attempts to find a OS by ID using the given hardware version
 func (vdc *Vdc) FindOsFromId(hardwareVersion *types.VirtualHardwareVersion, osId string) (*types.OperatingSystemInfoType, error) {
 	for _, osFamily := range hardwareVersion.SupportedOperatingSystems.OperatingSystemFamilyInfo {
 		for _, os := range osFamily.OperatingSystems {

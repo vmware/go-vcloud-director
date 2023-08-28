@@ -1,1 +1,1 @@
-* Deprecated `UpdateInternalDisksAsync` as it is the same as `UpdateVmSpecSectionAsync` [GH-607]
+* Deprecated `UpdateInternalDisksAsync` in favor of `UpdateVmSpecSectionAsync` [GH-607]
