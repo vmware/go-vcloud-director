@@ -142,15 +142,14 @@ type ComputePolicy struct {
 
 // CreateVmParams is used to create a standalone VM without a template
 type CreateVmParams struct {
-	XMLName     xml.Name     `xml:"CreateVmParams"`
-	XmlnsOvf    string       `xml:"xmlns:ovf,attr"`
-	Xmlns       string       `xml:"xmlns,attr,omitempty"`
-	Name        string       `xml:"name,attr,omitempty"`    // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
-	PowerOn     bool         `xml:"powerOn,attr,omitempty"` // True if the VM should be powered-on after creation. Defaults to false.
-	Description string       `xml:"Description,omitempty"`  // Optional description
-	CreateVm    *Vm          `xml:"CreateVm"`               // Read-only information about the VM to create. This information appears in the Task returned by a createVm request.
-	Media       *Reference   `xml:"Media,omitempty"`        // Reference to the media object to insert in the new VM.
-	BootOptions *BootOptions `xml:"BootOptions,omitempty"`  // Used to specify VM's Boot Options on creation
+	XMLName     xml.Name   `xml:"CreateVmParams"`
+	XmlnsOvf    string     `xml:"xmlns:ovf,attr"`
+	Xmlns       string     `xml:"xmlns,attr,omitempty"`
+	Name        string     `xml:"name,attr,omitempty"`    // Typically used to name or identify the subject of the request. For example, the name of the object being created or modified.
+	PowerOn     bool       `xml:"powerOn,attr,omitempty"` // True if the VM should be powered-on after creation. Defaults to false.
+	Description string     `xml:"Description,omitempty"`  // Optional description
+	CreateVm    *Vm        `xml:"CreateVm"`               // Read-only information about the VM to create. This information appears in the Task returned by a createVm request.
+	Media       *Reference `xml:"Media,omitempty"`        // Reference to the media object to insert in the new VM.
 }
 
 // InstantiateVmTemplateParams is used to create a standalone VM with a template

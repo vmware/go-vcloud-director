@@ -1362,7 +1362,7 @@ func (vm *VM) UpdateInternalDisks(disksSettingToUpdate *types.VmSpecSection) (*t
 	return vm.VM.VmSpecSection, nil
 }
 
-// Deprecated, use UpdateVmSpecSectionAsync instead
+// Deprecated, use UpdateInternalDisks or UpdateVmSpecSectionAsync instead
 func (vm *VM) UpdateInternalDisksAsync(disksSettingToUpdate *types.VmSpecSection) (Task, error) {
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update disks, VM HREF is unset")

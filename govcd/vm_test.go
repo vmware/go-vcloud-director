@@ -1163,7 +1163,6 @@ func (vcd *TestVCD) Test_VmBootOptions(check *C) {
 	hardwareVersion, err := vdc.GetHardwareVersion(vm.VM.VmSpecSection.HardwareVersion.Value)
 	check.Assert(err, IsNil)
 	check.Assert(hardwareVersion, NotNil)
-	fmt.Println(hardwareVersion)
 
 	vmSpecSection := vm.VM.VmSpecSection
 	vmSpecSection.Firmware = "efi"

@@ -1401,7 +1401,7 @@ func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, erro
 }
 
 // FindOsFromId attempts to find a OS by ID by the given hardware version
-func FindOsFromId(hardwareVersion *types.VirtualHardwareVersion, osId string) (*types.OperatingSystemInfoType, error) {
+func (vdc *Vdc) FindOsFromId(hardwareVersion *types.VirtualHardwareVersion, osId string) (*types.OperatingSystemInfoType, error) {
 	for _, osFamily := range hardwareVersion.SupportedOperatingSystems.OperatingSystemFamilyInfo {
 		for _, os := range osFamily.OperatingSystems {
 			if osId == os.InternalName {

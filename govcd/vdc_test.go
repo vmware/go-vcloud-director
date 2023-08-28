@@ -157,7 +157,7 @@ func (vcd *TestVCD) Test_GetVDCHardwareVersion(check *C) {
 
 	check.Assert(hwVersion.Name, Equals, "vmx-18")
 
-	os, err := FindOsFromId(hwVersion, "sles10_64Guest")
+	os, err := vcd.vdc.FindOsFromId(hwVersion, "sles10_64Guest")
 	check.Assert(err, IsNil)
 	check.Assert(os, NotNil)
 
