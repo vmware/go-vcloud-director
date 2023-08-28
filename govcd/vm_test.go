@@ -777,8 +777,7 @@ func (vcd *TestVCD) Test_InternalDisk(check *C) {
 	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
-	// In 37.1, if IOPS is set to 0, it is returned as nil instead of 0, so we don't check it
-	// check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(*&disk.IopsAllocation.Reservation, Equals, *&diskSettings.IopsAllocation.Reservation)
 	check.Assert(disk.SizeMb, Equals, int64(2048))
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
