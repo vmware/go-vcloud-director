@@ -643,3 +643,201 @@ func (vcd *TestVCD) Test_NsxtEdgeSlaacProfile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedSlaacProfile, NotNil)
 }
+
+// Test_NsxtEdgeCreateWithT0AndExternalNetworks checks that IP Allocation counts and External
+// Network attachment works well with NSX-T T0 Gateway backed external network
+func (vcd *TestVCD) Test_NsxtEdgeCreateWithT0AndExternalNetworks(check *C) {
+	test_NsxtEdgeCreateWithExternalNetworks(vcd, check, vcd.config.VCD.Nsxt.Tier0router, types.ExternalNetworkBackingTypeNsxtTier0Router)
+}
+
+// Test_NsxtEdgeCreateWithT0VrfAndExternalNetworks checks that IP Allocation counts and External
+// Network attachment works well with NSX-T T0 VRF Gateway backed external network
+func (vcd *TestVCD) Test_NsxtEdgeCreateWithT0VrfAndExternalNetworks(check *C) {
+	test_NsxtEdgeCreateWithExternalNetworks(vcd, check, vcd.config.VCD.Nsxt.Tier0routerVrf, types.ExternalNetworkBackingTypeNsxtVrfTier0Router)
+}
+
+func test_NsxtEdgeCreateWithExternalNetworks(vcd *TestVCD, check *C, backingRouter, backingRouterType string) {
+	if vcd.client.Client.APIVCDMaxVersionIs("< 37.1") {
+		check.Skip("Segment Backed External Network uplinks are supported in VCD 10.4.1+")
+	}
+
+	if vcd.config.VCD.Nsxt.NsxtImportSegment == "" || vcd.config.VCD.Nsxt.NsxtImportSegment2 == "" {
+		check.Skip("NSX-T Imported Segments are not configured")
+	}
+
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+	vcd.skipIfNotSysAdmin(check)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	if ContainsNotFound(err) {
+		check.Skip(fmt.Sprintf("No NSX-T VDC (%s) found - skipping test", vcd.config.VCD.Nsxt.Vdc))
+	}
+	check.Assert(err, IsNil)
+	check.Assert(nsxtVdc, NotNil)
+
+	// Setup 2 NSX-T Segment backed External Networks and 1 T0 or T0 VRF backed networks
+	nsxtManager, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
+	check.Assert(err, IsNil)
+	nsxtManagerId, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", extractUuid(nsxtManager[0].HREF))
+	check.Assert(err, IsNil)
+
+	//	T0 backed external network
+	backingExtNet := getBackingIdByNameAndType(check, backingRouter, backingRouterType, vcd, nsxtManagerId)
+	nsxtExternalNetworkCfg := t0vrfBackedExternalNetworkConfig(vcd, check.TestName()+"-t0", "89.1.1", backingRouterType, backingExtNet, nsxtManagerId)
+	nsxtExternalNetwork, err := CreateExternalNetworkV2(vcd.client, nsxtExternalNetworkCfg)
+	check.Assert(err, IsNil)
+	check.Assert(nsxtExternalNetwork, NotNil)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks + nsxtExternalNetwork.ExternalNetwork.ID
+	AddToCleanupListOpenApi(nsxtExternalNetwork.ExternalNetwork.Name, check.TestName(), openApiEndpoint)
+
+	// First NSX-T Segment backed network
+	backingId1 := getBackingIdByNameAndType(check, vcd.config.VCD.Nsxt.NsxtImportSegment, types.ExternalNetworkBackingTypeNsxtSegment, vcd, nsxtManagerId)
+	segmentBackedNet1Cfg := t0vrfBackedExternalNetworkConfig(vcd, check.TestName()+"-1", "1.1.1", types.ExternalNetworkBackingTypeNsxtSegment, backingId1, nsxtManagerId)
+	segmentBackedNet1, err := CreateExternalNetworkV2(vcd.client, segmentBackedNet1Cfg)
+	check.Assert(err, IsNil)
+	check.Assert(segmentBackedNet1, NotNil)
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks + segmentBackedNet1.ExternalNetwork.ID
+	AddToCleanupListOpenApi(segmentBackedNet1.ExternalNetwork.Name, check.TestName(), openApiEndpoint)
+
+	// Second NSX-T Segment backed network
+	backingId2 := getBackingIdByNameAndType(check, vcd.config.VCD.Nsxt.NsxtImportSegment2, types.ExternalNetworkBackingTypeNsxtSegment, vcd, nsxtManagerId)
+	segmentBackedNet2Cfg := t0vrfBackedExternalNetworkConfig(vcd, check.TestName()+"-2", "4.4.4", types.ExternalNetworkBackingTypeNsxtSegment, backingId2, nsxtManagerId)
+	segmentBackedNet2, err := CreateExternalNetworkV2(vcd.client, segmentBackedNet2Cfg)
+	check.Assert(err, IsNil)
+	check.Assert(segmentBackedNet2, NotNil)
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks + segmentBackedNet2.ExternalNetwork.ID
+	AddToCleanupListOpenApi(segmentBackedNet1.ExternalNetwork.Name, check.TestName(), openApiEndpoint)
+	// Setup 2 NSX-T Segment backed External Networks and 1 T0 or T0 VRF backed networks
+
+	egwDefinition := &types.OpenAPIEdgeGateway{
+		Name:        "nsx-t-edge",
+		Description: "nsx-t-edge-description",
+		OrgVdc: &types.OpenApiReference{
+			ID: nsxtVdc.Vdc.ID,
+		},
+		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{
+			{
+				UplinkID: nsxtExternalNetwork.ExternalNetwork.ID,
+				Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
+					Gateway:      "5.1.1.1",
+					PrefixLength: 24,
+					Enabled:      true,
+				}}},
+				Connected: true,
+				Dedicated: false,
+			},
+			{
+				UplinkID: segmentBackedNet1.ExternalNetwork.ID,
+				Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
+					Gateway:              "1.1.1.1",
+					PrefixLength:         24,
+					Enabled:              true,
+					AutoAllocateIPRanges: true,
+					PrimaryIP:            "1.1.1.5",
+					TotalIPCount:         addrOf(4),
+				}}},
+				Connected: true,
+				Dedicated: false,
+			},
+			{
+				UplinkID: segmentBackedNet2.ExternalNetwork.ID,
+				Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
+					Gateway:              "4.4.4.1",
+					PrefixLength:         24,
+					Enabled:              true,
+					AutoAllocateIPRanges: true,
+					TotalIPCount:         addrOf(7),
+				}}},
+				Connected: true,
+				Dedicated: false,
+			},
+		},
+	}
+
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
+	PrependToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
+	// check.Assert(*createdEdge.EdgeGateway.EdgeGatewayUplinks[0].BackingType, Equals, types.ExternalNetworkBackingTypeNsxtTier0Router)
+
+	// Retrieve edge gateway
+	retrievedEdge, err := adminOrg.GetNsxtEdgeGatewayById(createdEdge.EdgeGateway.ID)
+	check.Assert(err, IsNil)
+	check.Assert(retrievedEdge, NotNil)
+	// check.Assert(*retrievedEdge.EdgeGateway.EdgeGatewayUplinks[0].BackingType, Equals, types.ExternalNetworkBackingTypeNsxtTier0Router)
+
+	// Check IP allocation in NSX-T Segment backed networks
+	totalAllocatedIpCountSegmentBacked, err := retrievedEdge.GetAllocatedIpCountByUplinkType(false, types.ExternalNetworkBackingTypeNsxtSegment)
+	check.Assert(err, IsNil)
+	check.Assert(totalAllocatedIpCountSegmentBacked, Equals, (4 + 7))
+
+	// Check IP allocation in NSX-T T0 backed networks
+	totalAllocatedIpCountT0backed, err := retrievedEdge.GetAllocatedIpCountByUplinkType(false, backingRouterType)
+	check.Assert(err, IsNil)
+	check.Assert(totalAllocatedIpCountT0backed, Equals, 1)
+
+	// Check IP allocation for all subnets
+	totalAllocatedIpCount, err := retrievedEdge.GetAllocatedIpCount(false)
+	check.Assert(err, IsNil)
+	check.Assert(totalAllocatedIpCount, Equals, (1 + 4 + 7))
+
+	createdEdge.EdgeGateway.Name = check.TestName() + "-renamed-edge"
+	updatedEdge, err := createdEdge.Update(createdEdge.EdgeGateway)
+	check.Assert(err, IsNil)
+	check.Assert(updatedEdge.EdgeGateway.Name, Equals, createdEdge.EdgeGateway.Name)
+
+	// Check IP allocation in NSX-T Segment backed networks
+	totalAllocatedIpCountSegmentBacked, err = updatedEdge.GetAllocatedIpCountByUplinkType(false, types.ExternalNetworkBackingTypeNsxtSegment)
+	check.Assert(err, IsNil)
+	check.Assert(totalAllocatedIpCountSegmentBacked, Equals, (4 + 7))
+
+	// Check IP allocation in NSX-T T0 backed networks
+	totalAllocatedIpCountT0backed, err = updatedEdge.GetAllocatedIpCountByUplinkType(false, backingRouterType)
+	check.Assert(err, IsNil)
+	check.Assert(totalAllocatedIpCountT0backed, Equals, 1)
+
+	// Check IP allocation for all subnets
+	totalAllocatedIpCount, err = updatedEdge.GetAllocatedIpCount(false)
+	check.Assert(err, IsNil)
+	check.Assert(totalAllocatedIpCount, Equals, (1 + 4 + 7))
+
+	// Cleanup
+	err = updatedEdge.Delete()
+	check.Assert(err, IsNil)
+}
+
+func t0vrfBackedExternalNetworkConfig(vcd *TestVCD, name, ipPrefix string, backingType, backingId, NetworkProviderId string) *types.ExternalNetworkV2 {
+	net := &types.ExternalNetworkV2{
+		Name: name,
+		Subnets: types.ExternalNetworkV2Subnets{Values: []types.ExternalNetworkV2Subnet{
+			{
+				Gateway:      ipPrefix + ".1",
+				PrefixLength: 24,
+				IPRanges: types.ExternalNetworkV2IPRanges{Values: []types.ExternalNetworkV2IPRange{
+					{
+						StartAddress: ipPrefix + ".3",
+						EndAddress:   ipPrefix + ".50",
+					},
+				}},
+				Enabled: true,
+			},
+		}},
+		NetworkBackings: types.ExternalNetworkV2Backings{Values: []types.ExternalNetworkV2Backing{
+			{
+				BackingID: backingId,
+				NetworkProvider: types.NetworkProvider{
+					ID: NetworkProviderId,
+				},
+				BackingTypeValue: backingType,
+			},
+		}},
+	}
+
+	return net
+}
