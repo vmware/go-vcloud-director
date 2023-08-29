@@ -810,6 +810,16 @@ func test_NsxtEdgeCreateWithExternalNetworks(vcd *TestVCD, check *C, backingRout
 	// Cleanup
 	err = updatedEdge.Delete()
 	check.Assert(err, IsNil)
+
+	err = segmentBackedNet2.Delete()
+	check.Assert(err, IsNil)
+
+	err = segmentBackedNet1.Delete()
+	check.Assert(err, IsNil)
+
+	err = nsxtExternalNetwork.Delete()
+	check.Assert(err, IsNil)
+
 }
 
 func t0vrfBackedExternalNetworkConfig(vcd *TestVCD, name, ipPrefix string, backingType, backingId, NetworkProviderId string) *types.ExternalNetworkV2 {
