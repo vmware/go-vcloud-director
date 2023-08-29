@@ -1356,7 +1356,7 @@ func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 
 // Get the details of a hardware version
 func (vdc *Vdc) GetHardwareVersion(name string) (*types.VirtualHardwareVersion, error) {
-	if vdc.Vdc.Capabilities == nil {
+	if len(vdc.Vdc.Capabilities) == 0 {
 		return nil, fmt.Errorf("VDC doesn't have any virtual hardware version support information stored")
 	}
 
@@ -1393,7 +1393,7 @@ func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, erro
 		return nil, err
 	}
 
-	if vdc.Vdc.Capabilities == nil {
+	if len(vdc.Vdc.Capabilities) == 0 {
 		return nil, fmt.Errorf("VDC doesn't have any virtual hardware version support information stored")
 	}
 
