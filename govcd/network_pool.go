@@ -16,7 +16,7 @@ type NetworkPool struct {
 }
 
 // GetOpenApiUrl retrieves the full URL of a network pool
-func (np NetworkPool) GetOpenApiUrl() (string, error) {
+func (np *NetworkPool) GetOpenApiUrl() (string, error) {
 	response, err := url.JoinPath(np.vcdClient.sessionHREF.String(), "admin", "extension", "networkPool", np.NetworkPool.Id)
 	if err != nil {
 		return "", err
@@ -101,4 +101,129 @@ func (vcdClient *VCDClient) GetNetworkPoolByName(name string) (*NetworkPool, err
 	}
 
 	return vcdClient.GetNetworkPoolById(filteredNetworkPools[0].Id)
+}
+
+// CreateNetworkPool creates a new network pool using the given configuration
+// It can create any type of network pool
+func (vcdClient *VCDClient) CreateNetworkPool(config *types.NetworkPool) (*NetworkPool, error) {
+	client := vcdClient.Client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &NetworkPool{
+		NetworkPool: &types.NetworkPool{},
+		vcdClient:   vcdClient,
+	}
+
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, config, result.NetworkPool, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// Delete removes a network pool
+func (np *NetworkPool) Delete() error {
+	if np == nil || np.NetworkPool == nil || np.NetworkPool.Id == "" {
+		return fmt.Errorf("network pool must have ID")
+	}
+	if np.vcdClient == nil || np.vcdClient.Client.APIVersion == "" {
+		return fmt.Errorf("network pool '%s': no client found", np.NetworkPool.Name)
+	}
+
+	client := np.vcdClient.Client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools
+	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, np.NetworkPool.Id)
+	if err != nil {
+		return err
+	}
+
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	if err != nil {
+		return fmt.Errorf("error deleting network pool '%s': %s", np.NetworkPool.Name, err)
+	}
+
+	return nil
+}
+
+// CreateNetworkPoolGeneve creates a network pool of GENEVE type
+// The function retrieves the given NSX-T manager and corresponding transport zone
+// If the trasport zone name is empty, the first available will be used
+func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerName, transportZoneName string) (*NetworkPool, error) {
+	managers, err := vcdClient.QueryNsxtManagerByName(managerName)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(managers) == 0 {
+		return nil, fmt.Errorf("no manager '%s' found", managerName)
+	}
+	if len(managers) > 1 {
+		return nil, fmt.Errorf("more than one manager '%s' found", managerName)
+	}
+
+	manager := managers[0]
+
+	managerId := "urn:vcloud:nsxtmanager:" + extractUuid(managers[0].HREF)
+	transportZones, err := vcdClient.GetAllNsxtTransportZones(managerId, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving transport xones for manager '%s': %s", manager.Name, err)
+	}
+	var transportZone *types.TransportZone
+	for _, tz := range transportZones {
+		if (transportZoneName == "" && !tz.AlreadyImported) || tz.Name == transportZoneName {
+			transportZone = tz
+			break
+		}
+	}
+
+	if transportZone == nil {
+		if transportZoneName == "" {
+			return nil, fmt.Errorf("no unimported transport zone was found")
+		}
+		return nil, fmt.Errorf("transport zone '%s' not found", transportZoneName)
+	}
+
+	if transportZone.AlreadyImported {
+		return nil, fmt.Errorf("transport zone '%s' is already imported", transportZone.Name)
+	}
+
+	var config = &types.NetworkPool{
+		Name:        name,
+		Description: description,
+		PoolType:    "GENEVE",
+		ManagingOwnerRef: types.OpenApiReference{
+			Name: managers[0].Name,
+			ID:   managerId,
+		},
+		Backing: types.NetworkPoolBacking{
+			TransportZoneRef: types.OpenApiReference{
+				ID:   transportZone.Id,
+				Name: transportZone.Name,
+			},
+			ProviderRef: types.OpenApiReference{
+				Name: manager.Name,
+				ID:   managerId,
+			},
+		},
+	}
+	return vcdClient.CreateNetworkPool(config)
 }
