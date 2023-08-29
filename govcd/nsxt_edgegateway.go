@@ -293,7 +293,7 @@ func (egw *NsxtEdgeGateway) MoveToVdcOrVdcGroup(vdcOrVdcGroupId string) (*NsxtEd
 
 // reorderUplinks will ensure that uplink at slice index 0 is the one backed by NSX-T Tier0 External network.
 // NSX-T Edge Gateway can have many uplinks of different types (they are differentiated by 'backingType' field):
-// * MANDATORY - exactly 1 uplink to Tier0 Gateway (External network backed by NSX-T T0 Gateway) [backingType==NSXT_TIER0]
+// * MANDATORY - exactly 1 uplink to Tier0 Gateway (External network backed by NSX-T T0 Gateway or NSX-T T0 Gateway VRF) [backingType==NSXT_TIER0 or NSXT_VRF_TIER0]
 // * OPTIONAL - one or more External Network Uplinks (backed by NSX-T Segment backed External networks) [backingType==IMPORTED_T_LOGICAL_SWITCH]
 // It is expected that the Tier0 gateway uplink is always at index 0, but we have seen where VCD API
 // shuffles response values therefore it is important to ensure that uplink with
@@ -1050,19 +1050,19 @@ func flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses []*types.GatewayUsed
 }
 
 func reorderEdgeGatewayUplinks(edgeGatewayUplinks []types.EdgeGatewayUplinks) []types.EdgeGatewayUplinks {
-	// If only 1 uplink is present - there is nothing to reorder, because only mandatory NSXT_TIER0 uplink is present
+	// If only 1 uplink is present - there is nothing to reorder, because only mandatory uplink is present
 	if len(edgeGatewayUplinks) == 1 {
 		return edgeGatewayUplinks
 	}
 
-	// Element 0 is External Network backed by Tier 0 gateway - nothing to do
-	if edgeGatewayUplinks[0].BackingType != nil && *edgeGatewayUplinks[0].BackingType == "NSXT_TIER0" {
+	// Element 0 is External Network backed by Tier 0 Gateway or T0 Gateway VRF - nothing to do
+	if edgeGatewayUplinks[0].BackingType != nil && (*edgeGatewayUplinks[0].BackingType == "NSXT_TIER0" || *edgeGatewayUplinks[0].BackingType == "NSXT_VRF_TIER0") {
 		return edgeGatewayUplinks
 	}
 
 	for uplinkIndex := range edgeGatewayUplinks {
-		if edgeGatewayUplinks[uplinkIndex].BackingType != nil && *edgeGatewayUplinks[uplinkIndex].BackingType == "NSXT_TIER0" {
-			// Swap elements so that 'NSXT_TIER0' is at position 0
+		if edgeGatewayUplinks[uplinkIndex].BackingType != nil && (*edgeGatewayUplinks[uplinkIndex].BackingType == "NSXT_TIER0" || *edgeGatewayUplinks[uplinkIndex].BackingType == "NSXT_VRF_TIER0") {
+			// Swap elements so that 'NSXT_TIER0' or 'NSXT_VRF_TIER0' is at position 0
 			t0BackedUplink := edgeGatewayUplinks[uplinkIndex]
 			edgeGatewayUplinks[uplinkIndex] = edgeGatewayUplinks[0]
 			edgeGatewayUplinks[0] = t0BackedUplink

@@ -1716,6 +1716,23 @@ func Test_reorderEdgeGatewayUplinks(t *testing.T) {
 				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "1"},
 			}},
 		},
+		{
+			name: "ReverseOneT0ManySegmentUplinksVRF",
+			args: args{edgeGatewayUplinks: []types.EdgeGatewayUplinks{
+				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "1"},
+				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "2"},
+				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "3"},
+				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "4"},
+				{BackingType: addrOf("NSXT_VRF_TIER0"), UplinkID: "5"},
+			}},
+			want: args{edgeGatewayUplinks: []types.EdgeGatewayUplinks{
+				{BackingType: addrOf("NSXT_VRF_TIER0"), UplinkID: "5"},
+				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "2"},
+				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "3"},
+				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "4"},
+				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "1"},
+			}},
+		},
 		// Commented on purpose
 		// {
 		// 	name: "FailingTest",
