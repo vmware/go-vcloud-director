@@ -1058,11 +1058,11 @@ func reorderEdgeGatewayUplinks(edgeGatewayUplinks []types.EdgeGatewayUplinks) []
 		return edgeGatewayUplinks
 	}
 
-	for index := range edgeGatewayUplinks {
-		if edgeGatewayUplinks[index].BackingType != nil && *edgeGatewayUplinks[index].BackingType == "NSXT_TIER0" {
-			// Swap two elements
-			t0BackedUplink := edgeGatewayUplinks[index]
-			edgeGatewayUplinks[index] = edgeGatewayUplinks[0]
+	for uplinkIndex := range edgeGatewayUplinks {
+		if edgeGatewayUplinks[uplinkIndex].BackingType != nil && *edgeGatewayUplinks[uplinkIndex].BackingType == "NSXT_TIER0" {
+			// Swap elements so that 'NSXT_TIER0' is at position 0
+			t0BackedUplink := edgeGatewayUplinks[uplinkIndex]
+			edgeGatewayUplinks[uplinkIndex] = edgeGatewayUplinks[0]
 			edgeGatewayUplinks[0] = t0BackedUplink
 
 			return edgeGatewayUplinks

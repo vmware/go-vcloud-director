@@ -73,7 +73,7 @@ type EdgeGatewayUplinks struct {
 	Dedicated bool `json:"dedicated,omitempty"`
 
 	// BackingType of uplink. This can be:
-	// * NSXT_TIER0 - The default and mandatory External Network backed by NSX-T ier0 Gateway
+	// * NSXT_TIER0 - The default and mandatory External Network backed by NSX-T Tier0 Gateway
 	// * IMPORTED_T_LOGICAL_SWITCH - External Network uplinks (External Networks backed by NSX-T Segment)
 	BackingType *string `json:"backingType,omitempty"`
 
@@ -114,7 +114,7 @@ type OpenAPIEdgeGatewaySubnetValue struct {
 	// UsedIPCount specifies used IP count
 	UsedIPCount int `json:"usedIpCount,omitempty"`
 
-	// PrimaryIP of the Edge Gateway. Can only be one in all subnets
+	// PrimaryIP of the Edge Gateway. Can only be one in all subnets of a single uplink
 	PrimaryIP string `json:"primaryIp,omitempty"`
 
 	// AutoAllocateIPRanges provides a way to automatically allocate
