@@ -297,7 +297,7 @@ func (egw *NsxtEdgeGateway) MoveToVdcOrVdcGroup(vdcOrVdcGroupId string) (*NsxtEd
 // * OPTIONAL - one or more External Network Uplinks (backed by NSX-T Segment backed External networks) [backingType==IMPORTED_T_LOGICAL_SWITCH]
 // It is expected that the Tier0 gateway uplink is always at index 0, but we have seen where VCD API
 // shuffles response values therefore it is important to ensure that uplink with
-// backingType==NSXT_TIER0 the element 0 in types.EdgeGatewayUplinks to avoid breaking functionality
+// backingType==NSXT_TIER0 or backingType==NSXT_VRF_TIER0 the element 0 in types.EdgeGatewayUplinks to avoid breaking functionality
 // in upstream code.
 func (egw *NsxtEdgeGateway) reorderUplinks() error {
 	if egw == nil || egw.EdgeGateway == nil {
