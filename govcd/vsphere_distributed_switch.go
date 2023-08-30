@@ -30,7 +30,7 @@ func (vcdClient *VCDClient) GetAllVcenterDistributedSwitches(vCenterId string, q
 	}
 
 	var typeResponses []*types.VcenterDistributedSwitch
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &typeResponses, nil)
 	if err != nil {
 		return nil, err
 	}
