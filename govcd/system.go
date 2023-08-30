@@ -428,8 +428,9 @@ func getOrgHREFById(vcdClient *VCDClient, orgId string) (string, error) {
 // E.g. filter could look like: name==vC1
 func QueryVirtualCenters(vcdClient *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "virtualCenter",
-		"filter": filter,
+		"type":         "virtualCenter",
+		"filter":       filter,
+		"filterEncode": "true",
 	})
 	if err != nil {
 		return nil, err
