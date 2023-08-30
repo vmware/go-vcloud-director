@@ -103,7 +103,7 @@ func (vcdClient *VCDClient) GetNetworkPoolByName(name string) (*NetworkPool, err
 	return vcdClient.GetNetworkPoolById(filteredNetworkPools[0].Id)
 }
 
-// CreateNetworkPool creates a new network pool using the given configuration
+// CreateNetworkPool creates a network pool using the given configuration
 // It can create any type of network pool
 func (vcdClient *VCDClient) CreateNetworkPool(config *types.NetworkPool) (*NetworkPool, error) {
 	client := vcdClient.Client
@@ -165,7 +165,7 @@ func (np *NetworkPool) Delete() error {
 }
 
 // CreateNetworkPoolGeneve creates a network pool of GENEVE type
-// The function retrieves the given NSX-T manager and corresponding transport zone
+// The function retrieves the given NSX-T manager and corresponding transport zone names
 // If the trasport zone name is empty, the first available will be used
 func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerName, transportZoneName string) (*NetworkPool, error) {
 	managers, err := vcdClient.QueryNsxtManagerByName(managerName)
@@ -179,7 +179,6 @@ func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerNa
 	if len(managers) > 1 {
 		return nil, fmt.Errorf("more than one manager '%s' found", managerName)
 	}
-
 	manager := managers[0]
 
 	managerId := "urn:vcloud:nsxtmanager:" + extractUuid(managers[0].HREF)
@@ -189,6 +188,8 @@ func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerNa
 	}
 	var transportZone *types.TransportZone
 	for _, tz := range transportZones {
+		// if the transport zone name was empty, we take the first available
+		// otherwise, we take the wanted transport zone
 		if (transportZoneName == "" && !tz.AlreadyImported) || tz.Name == transportZoneName {
 			transportZone = tz
 			break
@@ -206,24 +207,76 @@ func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerNa
 		return nil, fmt.Errorf("transport zone '%s' is already imported", transportZone.Name)
 	}
 
+	// Note: in this type of network pool, the managing owner is the NSX-T manager
+	managingOwner := types.OpenApiReference{
+		Name: manager.Name,
+		ID:   managerId,
+	}
 	var config = &types.NetworkPool{
-		Name:        name,
-		Description: description,
-		PoolType:    "GENEVE",
-		ManagingOwnerRef: types.OpenApiReference{
-			Name: managers[0].Name,
-			ID:   managerId,
-		},
+		Name:             name,
+		Description:      description,
+		PoolType:         types.NetworkPoolGeneveType,
+		ManagingOwnerRef: managingOwner,
 		Backing: types.NetworkPoolBacking{
 			TransportZoneRef: types.OpenApiReference{
 				ID:   transportZone.Id,
 				Name: transportZone.Name,
 			},
-			ProviderRef: types.OpenApiReference{
-				Name: manager.Name,
-				ID:   managerId,
-			},
+			ProviderRef: managingOwner,
 		},
 	}
 	return vcdClient.CreateNetworkPool(config)
+}
+
+// CreateNetworkPoolPortGroup creates a network pool of POTRGROUP_BACKED type
+// The function retrieves the given vCenter and corresponding port group names
+// If the port group name is empty, the first available will be used
+func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCenterName, portgroupName string) (*NetworkPool, error) {
+	vCenter, err := vcdClient.GetVCenterByName(vCenterName)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving vCenter '%s': %s", vCenterName, err)
+	}
+	var params = make(url.Values)
+	params.Set("virtualCenter.id", vCenter.VSphereVCenter.VcId)
+	portgroups, err := vcdClient.GetAllVcenterImportableDvpgs(params)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving portgroups for vCenter '%s': %s", vCenterName, err)
+	}
+	var portgroup *VcenterImportableDvpg
+	for _, pg := range portgroups {
+		// If the port group name was empty, we take the first available
+		// otherwise, we take the wanted one
+		if portgroupName == "" || portgroupName == pg.VcenterImportableDvpg.BackingRef.Name {
+			portgroup = pg
+			break
+		}
+	}
+	if portgroup == nil {
+		if portgroupName == "" {
+			return nil, fmt.Errorf("no available portgroups found in vCenter '%s'", vCenterName)
+		}
+		return nil, fmt.Errorf("portgroup '%s' not found in vCenter '%s", portgroupName, vCenterName)
+	}
+
+	// Note: in this type of network pool, the managing owner is the vCenter
+	managingOwner := types.OpenApiReference{
+		Name: vCenter.VSphereVCenter.Name,
+		ID:   vCenter.VSphereVCenter.VcId,
+	}
+	config := types.NetworkPool{
+		Name:             name,
+		Description:      description,
+		PoolType:         types.NetworkPoolPortGroupType,
+		ManagingOwnerRef: managingOwner,
+		Backing: types.NetworkPoolBacking{
+			PortGroupRefs: []types.OpenApiReference{
+				{
+					ID:   portgroup.VcenterImportableDvpg.BackingRef.ID,
+					Name: portgroup.VcenterImportableDvpg.BackingRef.Name,
+				},
+			},
+			ProviderRef: managingOwner,
+		},
+	}
+	return vcdClient.CreateNetworkPool(&config)
 }

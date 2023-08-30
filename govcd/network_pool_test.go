@@ -7,6 +7,7 @@ import (
 	"github.com/kr/pretty"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+	"net/url"
 )
 
 func (vcd *TestVCD) Test_GetNetworkPools(check *C) {
@@ -49,7 +50,7 @@ func (vcd *TestVCD) Test_GetNetworkPools(check *C) {
 	}
 }
 
-func (vcd *TestVCD) Test_CreateNetworkPool(check *C) {
+func (vcd *TestVCD) Test_CreateNetworkPoolGeneve(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip("this test requires system administrator privileges")
 	}
@@ -70,53 +71,118 @@ func (vcd *TestVCD) Test_CreateNetworkPool(check *C) {
 	if len(transportZones) == 0 {
 		check.Skip("no available transport zones found")
 	}
-	var transportZone *types.TransportZone
+	//var transportZone *types.TransportZone
+	var importableTransportZones []*types.TransportZone
+
 	for _, tz := range transportZones {
 		if !tz.AlreadyImported {
-			transportZone = tz
-			break
+			//transportZone = tz
+			//break
+			importableTransportZones = append(importableTransportZones, tz)
 		}
 	}
-	if transportZone == nil {
+	if len(importableTransportZones) == 0 {
 		check.Skip("no unimported transport zone found")
 	}
-	check.Assert(transportZone.AlreadyImported, Equals, false)
+	//check.Assert(transportZone.AlreadyImported, Equals, false)
 
-	config := types.NetworkPool{
-		Name:        networkPoolName,
-		Description: "test network pool",
-		PoolType:    "GENEVE",
-		ManagingOwnerRef: types.OpenApiReference{
-			Name: manager.Name,
-			ID:   managerId,
-		},
-		Backing: types.NetworkPoolBacking{
-			TransportZoneRef: types.OpenApiReference{
-				Name: transportZone.Name,
-				ID:   transportZone.Id,
-			},
-			ProviderRef: types.OpenApiReference{
+	for _, transportZone := range importableTransportZones {
+		config := types.NetworkPool{
+			Name:        networkPoolName,
+			Description: "test network pool",
+			PoolType:    types.NetworkPoolGeneveType,
+			ManagingOwnerRef: types.OpenApiReference{
 				Name: manager.Name,
 				ID:   managerId,
 			},
-		},
-	}
-	runTestCreateNetworkPool("geneve-full-config",
-		func() (*NetworkPool, error) {
+			Backing: types.NetworkPoolBacking{
+				TransportZoneRef: types.OpenApiReference{
+					Name: transportZone.Name,
+					ID:   transportZone.Id,
+				},
+				ProviderRef: types.OpenApiReference{
+					Name: manager.Name,
+					ID:   managerId,
+				},
+			},
+		}
+		runTestCreateNetworkPool("geneve-full-config-("+transportZone.Name+")", func() (*NetworkPool, error) {
 			return vcd.client.CreateNetworkPool(&config)
-		}, check,
-	)
-	runTestCreateNetworkPool("geneve-names", func() (*NetworkPool, error) {
-		return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool", manager.Name, transportZone.Name)
-	}, check,
-	)
+		}, func() {
+			tzs, err := vcd.client.GetAllNsxtTransportZones(managerId, nil)
+			check.Assert(err, IsNil)
+			for _, tz := range tzs {
+				if tz.Name == transportZone.Name {
+					check.Assert(tz.AlreadyImported, Equals, true)
+				}
+			}
+		},
+			check)
+		runTestCreateNetworkPool("geneve-names-("+transportZone.Name+")", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool", manager.Name, transportZone.Name)
+		}, nil, check)
+	}
 	runTestCreateNetworkPool("geneve-names-no-tz-name", func() (*NetworkPool, error) {
 		return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool", manager.Name, "")
-	}, check,
-	)
+	}, nil, check)
 }
 
-func runTestCreateNetworkPool(label string, creationFunc func() (*NetworkPool, error), check *C) {
+func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip("this test requires system administrator privileges")
+	}
+	if vcd.config.VCD.VimServer == "" {
+		check.Skip("no vCenter found in configuration")
+	}
+
+	vCenter, err := vcd.client.GetVCenterByName(vcd.config.VCD.VimServer)
+	check.Assert(err, IsNil)
+
+	networkPoolName := check.TestName()
+
+	var params = make(url.Values)
+	params.Set("virtualCenter.id", vCenter.VSphereVCenter.VcId)
+	portgroups, err := vcd.client.GetAllVcenterImportableDvpgs(params)
+	check.Assert(err, IsNil)
+	check.Assert(len(portgroups) > 0, Equals, true)
+
+	for _, pg := range portgroups {
+
+		config := types.NetworkPool{
+			Name:        networkPoolName,
+			Description: "test network pool",
+			PoolType:    types.NetworkPoolPortGroupType,
+			ManagingOwnerRef: types.OpenApiReference{
+				Name: vCenter.VSphereVCenter.Name,
+				ID:   vCenter.VSphereVCenter.VcId,
+			},
+			Backing: types.NetworkPoolBacking{
+				PortGroupRefs: []types.OpenApiReference{
+					{
+						ID:   pg.VcenterImportableDvpg.BackingRef.ID,
+						Name: pg.VcenterImportableDvpg.BackingRef.Name,
+					},
+				},
+				ProviderRef: types.OpenApiReference{
+					Name: vCenter.VSphereVCenter.Name,
+					ID:   vCenter.VSphereVCenter.VcId,
+				},
+			},
+		}
+
+		runTestCreateNetworkPool("portgroup-full-config-("+pg.VcenterImportableDvpg.BackingRef.Name+")", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPool(&config)
+		}, nil, check)
+		runTestCreateNetworkPool("portgroup-names-("+pg.VcenterImportableDvpg.BackingRef.Name+")", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool", vCenter.VSphereVCenter.Name, pg.VcenterImportableDvpg.BackingRef.Name)
+		}, nil, check)
+	}
+	runTestCreateNetworkPool("portgroup-names-no-pg-name", func() (*NetworkPool, error) {
+		return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool", vCenter.VSphereVCenter.Name, "")
+	}, nil, check)
+}
+
+func runTestCreateNetworkPool(label string, creationFunc func() (*NetworkPool, error), postCreation func(), check *C) {
 	fmt.Printf("[test create network pool] %s\n", label)
 
 	networkPool, err := creationFunc()
@@ -127,6 +193,9 @@ func runTestCreateNetworkPool(label string, creationFunc func() (*NetworkPool, e
 		}
 	}()
 	check.Assert(networkPool, NotNil)
+	if postCreation != nil {
+		postCreation()
+	}
 	err = networkPool.Delete()
 	check.Assert(err, IsNil)
 	networkPool = nil
