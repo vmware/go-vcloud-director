@@ -304,6 +304,9 @@ func (egw *NsxtEdgeGateway) MoveToVdcOrVdcGroup(vdcOrVdcGroupId string) (*NsxtEd
 // shuffles response values therefore it is important to ensure that uplink with
 // backingType==NSXT_TIER0 or backingType==NSXT_VRF_TIER0 the element 0 in types.EdgeGatewayUplinks to avoid breaking functionality
 // in upstream code.
+//
+// Note. This function wil be a noop in 10.4.0, because `backingType` was not present. However, this
+// poses no risks because the can be only 1 uplink up to 10.4.1, when `backingType` was introduced.
 func (egw *NsxtEdgeGateway) reorderUplinks() error {
 	if egw == nil || egw.EdgeGateway == nil {
 		return fmt.Errorf("edge gateway cannot be nil ")
