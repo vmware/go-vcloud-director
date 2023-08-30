@@ -71,25 +71,21 @@ func (vcd *TestVCD) Test_CreateNetworkPoolGeneve(check *C) {
 	if len(transportZones) == 0 {
 		check.Skip("no available transport zones found")
 	}
-	//var transportZone *types.TransportZone
 	var importableTransportZones []*types.TransportZone
 
 	for _, tz := range transportZones {
 		if !tz.AlreadyImported {
-			//transportZone = tz
-			//break
 			importableTransportZones = append(importableTransportZones, tz)
 		}
 	}
 	if len(importableTransportZones) == 0 {
 		check.Skip("no unimported transport zone found")
 	}
-	//check.Assert(transportZone.AlreadyImported, Equals, false)
 
 	for _, transportZone := range importableTransportZones {
 		config := types.NetworkPool{
 			Name:        networkPoolName,
-			Description: "test network pool",
+			Description: "test network pool geneve",
 			PoolType:    types.NetworkPoolGeneveType,
 			ManagingOwnerRef: types.OpenApiReference{
 				Name: manager.Name,
@@ -119,11 +115,12 @@ func (vcd *TestVCD) Test_CreateNetworkPoolGeneve(check *C) {
 		},
 			check)
 		runTestCreateNetworkPool("geneve-names-("+transportZone.Name+")", func() (*NetworkPool, error) {
-			return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool", manager.Name, transportZone.Name)
+			return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool geneve", manager.Name, transportZone.Name)
 		}, nil, check)
 	}
+	// When no transport zone name is provided, the first one available will be used
 	runTestCreateNetworkPool("geneve-names-no-tz-name", func() (*NetworkPool, error) {
-		return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool", manager.Name, "")
+		return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool geneve", manager.Name, "")
 	}, nil, check)
 }
 
@@ -150,7 +147,7 @@ func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
 
 		config := types.NetworkPool{
 			Name:        networkPoolName,
-			Description: "test network pool",
+			Description: "test network pool port group",
 			PoolType:    types.NetworkPoolPortGroupType,
 			ManagingOwnerRef: types.OpenApiReference{
 				Name: vCenter.VSphereVCenter.Name,
@@ -170,15 +167,78 @@ func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
 			},
 		}
 
-		runTestCreateNetworkPool("portgroup-full-config-("+pg.VcenterImportableDvpg.BackingRef.Name+")", func() (*NetworkPool, error) {
+		runTestCreateNetworkPool("port-group-full-config-("+pg.VcenterImportableDvpg.BackingRef.Name+")", func() (*NetworkPool, error) {
 			return vcd.client.CreateNetworkPool(&config)
 		}, nil, check)
-		runTestCreateNetworkPool("portgroup-names-("+pg.VcenterImportableDvpg.BackingRef.Name+")", func() (*NetworkPool, error) {
-			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool", vCenter.VSphereVCenter.Name, pg.VcenterImportableDvpg.BackingRef.Name)
+		runTestCreateNetworkPool("port-group-names-("+pg.VcenterImportableDvpg.BackingRef.Name+")", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, pg.VcenterImportableDvpg.BackingRef.Name)
 		}, nil, check)
 	}
-	runTestCreateNetworkPool("portgroup-names-no-pg-name", func() (*NetworkPool, error) {
-		return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool", vCenter.VSphereVCenter.Name, "")
+	// When no port group name is provided, the first one available will be used
+	runTestCreateNetworkPool("port-group-names-no-pg-name", func() (*NetworkPool, error) {
+		return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, "")
+	}, nil, check)
+}
+
+func (vcd *TestVCD) Test_CreateNetworkPoolVlan(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip("this test requires system administrator privileges")
+	}
+	if vcd.config.VCD.VimServer == "" {
+		check.Skip("no vCenter found in configuration")
+	}
+
+	vCenter, err := vcd.client.GetVCenterByName(vcd.config.VCD.VimServer)
+	check.Assert(err, IsNil)
+
+	networkPoolName := check.TestName()
+
+	switches, err := vcd.client.GetAllVcenterDistributedSwitches(vCenter.VSphereVCenter.VcId, nil)
+	check.Assert(err, IsNil)
+	if len(switches) == 0 {
+		check.Skip("no available distributed found in vCenter")
+	}
+	ranges := []types.VlanIdRange{
+		{StartId: 1, EndId: 100},
+		{StartId: 201, EndId: 300},
+	}
+	for _, sw := range switches {
+		config := types.NetworkPool{
+			Name:        networkPoolName,
+			Description: "test network pool VLAN",
+			PoolType:    types.NetworkPoolVlanType,
+			ManagingOwnerRef: types.OpenApiReference{
+				Name: vCenter.VSphereVCenter.Name,
+				ID:   vCenter.VSphereVCenter.VcId,
+			},
+			Backing: types.NetworkPoolBacking{
+				VlanIdRanges: types.VlanIdRanges{
+					Values: ranges,
+				},
+				VdsRefs: []types.OpenApiReference{
+					{
+						Name: sw.BackingRef.Name,
+						ID:   sw.BackingRef.ID,
+					},
+				},
+				ProviderRef: types.OpenApiReference{
+					Name: vCenter.VSphereVCenter.Name,
+					ID:   vCenter.VSphereVCenter.VcId,
+				},
+			},
+		}
+
+		runTestCreateNetworkPool("vlan-full-config-("+sw.BackingRef.Name+")", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPool(&config)
+		}, nil, check)
+
+		runTestCreateNetworkPool("vlan-names-("+sw.BackingRef.Name+")", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN ", vCenter.VSphereVCenter.Name, sw.BackingRef.Name, ranges)
+		}, nil, check)
+	}
+	// When no switch name is provided, the first one available will be used
+	runTestCreateNetworkPool("vlan-names-no-sw-name", func() (*NetworkPool, error) {
+		return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN", vCenter.VSphereVCenter.Name, "", ranges)
 	}, nil, check)
 }
 
@@ -196,6 +256,20 @@ func runTestCreateNetworkPool(label string, creationFunc func() (*NetworkPool, e
 	if postCreation != nil {
 		postCreation()
 	}
+
+	updatedName := networkPool.NetworkPool.Name + "-update"
+	updatedDescription := networkPool.NetworkPool.Description + "-update"
+	networkPool.NetworkPool.Name = updatedName
+	networkPool.NetworkPool.Description = updatedDescription
+	err = networkPool.Update()
+	check.Assert(err, IsNil)
+	retrievedNetworkPool, err := networkPool.vcdClient.GetNetworkPoolById(networkPool.NetworkPool.Id)
+	check.Assert(err, IsNil)
+	check.Assert(retrievedNetworkPool, NotNil)
+	check.Assert(retrievedNetworkPool.NetworkPool.Id, Equals, networkPool.NetworkPool.Id)
+	check.Assert(retrievedNetworkPool.NetworkPool.Name, Equals, updatedName)
+	check.Assert(retrievedNetworkPool.NetworkPool.Description, Equals, updatedDescription)
+
 	err = networkPool.Delete()
 	check.Assert(err, IsNil)
 	networkPool = nil

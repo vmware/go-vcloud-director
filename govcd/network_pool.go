@@ -131,6 +131,39 @@ func (vcdClient *VCDClient) CreateNetworkPool(config *types.NetworkPool) (*Netwo
 	return result, nil
 }
 
+// Update will change all changeable network pool items
+func (np *NetworkPool) Update() error {
+	if np == nil || np.NetworkPool == nil || np.NetworkPool.Id == "" {
+		return fmt.Errorf("network pool must have ID")
+	}
+	if np.vcdClient == nil || np.vcdClient.Client.APIVersion == "" {
+		return fmt.Errorf("network pool '%s': no client found", np.NetworkPool.Name)
+	}
+
+	client := np.vcdClient.Client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools
+	apiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, np.NetworkPool.Id)
+	if err != nil {
+		return err
+	}
+
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, np.NetworkPool, np.NetworkPool, nil)
+	if err != nil {
+		return err
+	}
+
+	if err != nil {
+		return fmt.Errorf("error updating network pool '%s': %s", np.NetworkPool.Name, err)
+	}
+
+	return nil
+}
+
 // Delete removes a network pool
 func (np *NetworkPool) Delete() error {
 	if np == nil || np.NetworkPool == nil || np.NetworkPool.Id == "" {
@@ -228,7 +261,7 @@ func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerNa
 	return vcdClient.CreateNetworkPool(config)
 }
 
-// CreateNetworkPoolPortGroup creates a network pool of POTRGROUP_BACKED type
+// CreateNetworkPoolPortGroup creates a network pool of PORTGROUP_BACKED type
 // The function retrieves the given vCenter and corresponding port group names
 // If the port group name is empty, the first available will be used
 func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCenterName, portgroupName string) (*NetworkPool, error) {
@@ -253,9 +286,9 @@ func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCente
 	}
 	if portgroup == nil {
 		if portgroupName == "" {
-			return nil, fmt.Errorf("no available portgroups found in vCenter '%s'", vCenterName)
+			return nil, fmt.Errorf("no available port groups found in vCenter '%s'", vCenterName)
 		}
-		return nil, fmt.Errorf("portgroup '%s' not found in vCenter '%s", portgroupName, vCenterName)
+		return nil, fmt.Errorf("port group '%s' not found in vCenter '%s", portgroupName, vCenterName)
 	}
 
 	// Note: in this type of network pool, the managing owner is the vCenter
@@ -273,6 +306,63 @@ func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCente
 				{
 					ID:   portgroup.VcenterImportableDvpg.BackingRef.ID,
 					Name: portgroup.VcenterImportableDvpg.BackingRef.Name,
+				},
+			},
+			ProviderRef: managingOwner,
+		},
+	}
+	return vcdClient.CreateNetworkPool(&config)
+}
+
+// CreateNetworkPoolVlan creates a network pool of VLAN type
+// The function retrieves the given vCenter and corresponding distributed switch names
+// If the distributed switch name is empty, the first available will be used
+func (vcdClient *VCDClient) CreateNetworkPoolVlan(name, description, vCenterName, dsName string, ranges []types.VlanIdRange) (*NetworkPool, error) {
+	vCenter, err := vcdClient.GetVCenterByName(vCenterName)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving vCenter '%s': %s", vCenterName, err)
+	}
+	var params = make(url.Values)
+	params.Set("virtualCenter.id", vCenter.VSphereVCenter.VcId)
+
+	dswitches, err := vcdClient.GetAllVcenterDistributedSwitches(vCenter.VSphereVCenter.VcId, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving distributed switches for vCenter '%s': %s", vCenterName, err)
+	}
+	var dswitch *types.VcenterDistributedSwitch
+	for _, dsw := range dswitches {
+		// If the distributed switch name was empty, we take the first available
+		// otherwise, we take the wanted one
+		if dsName == "" || dsName == dsw.BackingRef.Name {
+			dswitch = dsw
+			break
+		}
+	}
+	if dswitch == nil {
+		if dsName == "" {
+			return nil, fmt.Errorf("no available distributed switches found in vCenter '%s'", vCenterName)
+		}
+		return nil, fmt.Errorf("distributed switch '%s' not found in vCenter '%s", dsName, vCenterName)
+	}
+
+	// Note: in this type of network pool, the managing owner is the vCenter
+	managingOwner := types.OpenApiReference{
+		Name: vCenter.VSphereVCenter.Name,
+		ID:   vCenter.VSphereVCenter.VcId,
+	}
+	config := types.NetworkPool{
+		Name:             name,
+		Description:      description,
+		PoolType:         types.NetworkPoolVlanType,
+		ManagingOwnerRef: managingOwner,
+		Backing: types.NetworkPoolBacking{
+			VlanIdRanges: types.VlanIdRanges{
+				Values: ranges,
+			},
+			VdsRefs: []types.OpenApiReference{
+				{
+					Name: dswitch.BackingRef.Name,
+					ID:   dswitch.BackingRef.ID,
 				},
 			},
 			ProviderRef: managingOwner,

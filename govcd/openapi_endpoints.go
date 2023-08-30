@@ -126,7 +126,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTokens:                   "36.1", // VCD 10.3.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccounts:          "37.0", // VCD 10.4.0+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccountGrant:      "37.0", // VCD 10.4.0+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTransportZones: "33.0", // VCD 10.2
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTransportZones: "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVCenterDistributedSwitch: "33.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
