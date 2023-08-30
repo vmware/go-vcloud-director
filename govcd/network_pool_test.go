@@ -104,7 +104,7 @@ func (vcd *TestVCD) Test_CreateNetworkPoolGeneve(check *C) {
 		}
 		runTestCreateNetworkPool("geneve-full-config-("+transportZone.Name+")", func() (*NetworkPool, error) {
 			return vcd.client.CreateNetworkPool(&config)
-		}, func() {
+		}, func(_ *NetworkPool) {
 			tzs, err := vcd.client.GetAllNsxtTransportZones(managerId, nil)
 			check.Assert(err, IsNil)
 			for _, tz := range tzs {
@@ -198,9 +198,34 @@ func (vcd *TestVCD) Test_CreateNetworkPoolVlan(check *C) {
 	if len(switches) == 0 {
 		check.Skip("no available distributed found in vCenter")
 	}
+	// range ID for network pools
 	ranges := []types.VlanIdRange{
 		{StartId: 1, EndId: 100},
 		{StartId: 201, EndId: 300},
+	}
+	// updateWithRanges updates the network pool
+	updateWithRanges := func(pool *NetworkPool) {
+		check.Assert(len(pool.NetworkPool.Backing.VlanIdRanges.Values), Equals, 2)
+		pool.NetworkPool.Backing.VlanIdRanges.Values = []types.VlanIdRange{{StartId: 1001, EndId: 2000}}
+
+		updatedName := pool.NetworkPool.Name + "-changed"
+		updatedDescription := pool.NetworkPool.Description + " - changed"
+		pool.NetworkPool.Name = updatedName
+		pool.NetworkPool.Description = updatedDescription
+		err = pool.Update()
+		check.Assert(err, IsNil)
+		retrievedNetworkPool, err := pool.vcdClient.GetNetworkPoolById(pool.NetworkPool.Id)
+		check.Assert(err, IsNil)
+		check.Assert(retrievedNetworkPool, NotNil)
+		check.Assert(retrievedNetworkPool.NetworkPool.Id, Equals, pool.NetworkPool.Id)
+		check.Assert(retrievedNetworkPool.NetworkPool.Name, Equals, updatedName)
+		check.Assert(retrievedNetworkPool.NetworkPool.Description, Equals, updatedDescription)
+
+		err = pool.Update()
+		check.Assert(err, IsNil)
+		newPool, err := vcd.client.GetNetworkPoolById(pool.NetworkPool.Id)
+		check.Assert(err, IsNil)
+		check.Assert(len(newPool.NetworkPool.Backing.VlanIdRanges.Values), Equals, 1)
 	}
 	for _, sw := range switches {
 		config := types.NetworkPool{
@@ -228,21 +253,29 @@ func (vcd *TestVCD) Test_CreateNetworkPoolVlan(check *C) {
 			},
 		}
 
-		runTestCreateNetworkPool("vlan-full-config-("+sw.BackingRef.Name+")", func() (*NetworkPool, error) {
-			return vcd.client.CreateNetworkPool(&config)
-		}, nil, check)
+		runTestCreateNetworkPool("vlan-full-config-("+sw.BackingRef.Name+")",
+			func() (*NetworkPool, error) {
+				return vcd.client.CreateNetworkPool(&config)
+			},
+			updateWithRanges,
+			check)
 
-		runTestCreateNetworkPool("vlan-names-("+sw.BackingRef.Name+")", func() (*NetworkPool, error) {
-			return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN ", vCenter.VSphereVCenter.Name, sw.BackingRef.Name, ranges)
-		}, nil, check)
+		runTestCreateNetworkPool("vlan-names-("+sw.BackingRef.Name+")",
+			func() (*NetworkPool, error) {
+				return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN", vCenter.VSphereVCenter.Name, sw.BackingRef.Name, ranges)
+			},
+			updateWithRanges,
+			check)
 	}
 	// When no switch name is provided, the first one available will be used
 	runTestCreateNetworkPool("vlan-names-no-sw-name", func() (*NetworkPool, error) {
 		return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN", vCenter.VSphereVCenter.Name, "", ranges)
-	}, nil, check)
+	},
+		updateWithRanges,
+		check)
 }
 
-func runTestCreateNetworkPool(label string, creationFunc func() (*NetworkPool, error), postCreation func(), check *C) {
+func runTestCreateNetworkPool(label string, creationFunc func() (*NetworkPool, error), postCreation func(pool *NetworkPool), check *C) {
 	fmt.Printf("[test create network pool] %s\n", label)
 
 	networkPool, err := creationFunc()
@@ -253,22 +286,29 @@ func runTestCreateNetworkPool(label string, creationFunc func() (*NetworkPool, e
 		}
 	}()
 	check.Assert(networkPool, NotNil)
+	networkPoolName := networkPool.NetworkPool.Name
 	if postCreation != nil {
-		postCreation()
+		postCreation(networkPool)
+		// Refresh the network pool
+		networkPool, err = networkPool.vcdClient.GetNetworkPoolById(networkPool.NetworkPool.Id)
+		check.Assert(err, IsNil)
 	}
 
-	updatedName := networkPool.NetworkPool.Name + "-update"
-	updatedDescription := networkPool.NetworkPool.Description + "-update"
-	networkPool.NetworkPool.Name = updatedName
-	networkPool.NetworkPool.Description = updatedDescription
-	err = networkPool.Update()
-	check.Assert(err, IsNil)
-	retrievedNetworkPool, err := networkPool.vcdClient.GetNetworkPoolById(networkPool.NetworkPool.Id)
-	check.Assert(err, IsNil)
-	check.Assert(retrievedNetworkPool, NotNil)
-	check.Assert(retrievedNetworkPool.NetworkPool.Id, Equals, networkPool.NetworkPool.Id)
-	check.Assert(retrievedNetworkPool.NetworkPool.Name, Equals, updatedName)
-	check.Assert(retrievedNetworkPool.NetworkPool.Description, Equals, updatedDescription)
+	// if no update was run through the postCreation
+	if networkPool.NetworkPool.Name == networkPoolName {
+		updatedName := networkPool.NetworkPool.Name + "-update"
+		updatedDescription := networkPool.NetworkPool.Description + " - update"
+		networkPool.NetworkPool.Name = updatedName
+		networkPool.NetworkPool.Description = updatedDescription
+		err = networkPool.Update()
+		check.Assert(err, IsNil)
+		retrievedNetworkPool, err := networkPool.vcdClient.GetNetworkPoolById(networkPool.NetworkPool.Id)
+		check.Assert(err, IsNil)
+		check.Assert(retrievedNetworkPool, NotNil)
+		check.Assert(retrievedNetworkPool.NetworkPool.Id, Equals, networkPool.NetworkPool.Id)
+		check.Assert(retrievedNetworkPool.NetworkPool.Name, Equals, updatedName)
+		check.Assert(retrievedNetworkPool.NetworkPool.Description, Equals, updatedDescription)
+	}
 
 	err = networkPool.Delete()
 	check.Assert(err, IsNil)
