@@ -433,6 +433,7 @@ const (
 	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 	OpenApiEndpointImportableTransportZones           = "nsxTResources/importableTransportZones"
+	OpenApiEndpointVCenterDistributedSwitch           = "virtualCenters/resources/dvSwitches"
 
 	// IP Spaces
 	OpenApiEndpointIpSpaces               = "ipSpaces/"

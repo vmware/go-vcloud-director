@@ -642,3 +642,8 @@ type TransportZone struct {
 	Type            string `json:"type,omitempty"`
 	AlreadyImported bool   `json:"alreadyImported"`
 }
+
+type VcenterDistributedSwitch struct {
+	BackingRef    OpenApiReference `json:"backingRef"`
+	VirtualCenter OpenApiReference `json:"virtualCenter"`
+}
