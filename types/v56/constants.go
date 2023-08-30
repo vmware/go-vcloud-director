@@ -689,3 +689,10 @@ const (
 	SamlNamespaceDs     = "http://www.w3.org/2000/09/xmldsig#"
 	SamlNamespaceHoksso = "urn:oasis:names:tc:SAML:2.0:profiles:holder-of-key:SSO:browser"
 )
+
+// Values used to identify the type of network pool
+const (
+	NetworkPoolVlanType      = "VLAN"
+	NetworkPoolGeneveType    = "GENEVE"
+	NetworkPoolPortGroupType = "PORTGROUP_BACKED"
+)
