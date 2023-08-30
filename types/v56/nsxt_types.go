@@ -72,11 +72,13 @@ type EdgeGatewayUplinks struct {
 	// Advertisement for this Edge Gateway
 	Dedicated bool `json:"dedicated,omitempty"`
 
-	// BackingType of uplink. Exactly one of these 2 is a must:
+	// BackingType of uplink. Exactly one of these will be present:
 	// * types.ExternalNetworkBackingTypeNsxtTier0Router (NSXT_TIER0)
 	// * types.ExternalNetworkBackingTypeNsxtVrfTier0Router (NSXT_VRF_TIER0)
 	// Additional External network uplinks
 	// * types.ExternalNetworkBackingTypeNsxtSegment (IMPORTED_T_LOGICAL_SWITCH) - External Network uplinks (External Networks backed by NSX-T Segment)
+	//
+	// Note. VCD 10.4.1+. Not mandatory to set it - can be used as a read only value
 	BackingType *string `json:"backingType,omitempty"`
 
 	// UsingIpSpace is a boolean flag showing if the uplink uses IP Space

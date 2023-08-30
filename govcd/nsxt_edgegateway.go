@@ -547,7 +547,36 @@ func (egw *NsxtEdgeGateway) GetAllocatedIpCount(refresh bool) (int, error) {
 	return allocatedIpCount, nil
 }
 
+// GetPrimaryNetworkAllocatedIpCount returns total count of allocated IPs for first NSX-T Edge
+// Gateway uplink
+func (egw *NsxtEdgeGateway) GetPrimaryNetworkAllocatedIpCount(refresh bool) (int, error) {
+	if refresh {
+		err := egw.Refresh()
+		if err != nil {
+			return 0, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+		}
+	}
+
+	allocatedIpCount := 0
+
+	for _, subnet := range egw.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values {
+		if subnet.TotalIPCount != nil {
+			allocatedIpCount += *subnet.TotalIPCount
+		}
+	}
+
+	return allocatedIpCount, nil
+}
+
+// GetAllocatedIpCountByUplinkType will return a sum of allocated IPs for particular `uplinkType`
+// `uplinkType` can be one of 'NSXT_TIER0', 'NSXT_VRF_TIER0', 'IMPORTED_T_LOGICAL_SWITCH'
+//
+// Note. This function is based on BackingType field and requires at least VCD 10.4.1
 func (egw *NsxtEdgeGateway) GetAllocatedIpCountByUplinkType(refresh bool, uplinkType string) (int, error) {
+	if egw.client.APIVCDMaxVersionIs("< 37.1") {
+		return 0, fmt.Errorf("this function requires at least VCD 10.4.1 to work")
+	}
+
 	if uplinkType != "NSXT_TIER0" &&
 		uplinkType != "IMPORTED_T_LOGICAL_SWITCH" &&
 		uplinkType != "NSXT_VRF_TIER0" {

@@ -764,13 +764,11 @@ func test_NsxtEdgeCreateWithExternalNetworks(vcd *TestVCD, check *C, backingRout
 	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
 	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
 	PrependToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
-	// check.Assert(*createdEdge.EdgeGateway.EdgeGatewayUplinks[0].BackingType, Equals, types.ExternalNetworkBackingTypeNsxtTier0Router)
 
 	// Retrieve edge gateway
 	retrievedEdge, err := adminOrg.GetNsxtEdgeGatewayById(createdEdge.EdgeGateway.ID)
 	check.Assert(err, IsNil)
 	check.Assert(retrievedEdge, NotNil)
-	// check.Assert(*retrievedEdge.EdgeGateway.EdgeGatewayUplinks[0].BackingType, Equals, types.ExternalNetworkBackingTypeNsxtTier0Router)
 
 	// Check IP allocation in NSX-T Segment backed networks
 	totalAllocatedIpCountSegmentBacked, err := retrievedEdge.GetAllocatedIpCountByUplinkType(false, types.ExternalNetworkBackingTypeNsxtSegment)
@@ -781,6 +779,10 @@ func test_NsxtEdgeCreateWithExternalNetworks(vcd *TestVCD, check *C, backingRout
 	totalAllocatedIpCountT0backed, err := retrievedEdge.GetAllocatedIpCountByUplinkType(false, backingRouterType)
 	check.Assert(err, IsNil)
 	check.Assert(totalAllocatedIpCountT0backed, Equals, 1)
+
+	totalAllocatedIpCountForPrimaryUplink, err := retrievedEdge.GetPrimaryNetworkAllocatedIpCount(false)
+	check.Assert(err, IsNil)
+	check.Assert(totalAllocatedIpCountForPrimaryUplink, Equals, 1)
 
 	// Check IP allocation for all subnets
 	totalAllocatedIpCount, err := retrievedEdge.GetAllocatedIpCount(false)
