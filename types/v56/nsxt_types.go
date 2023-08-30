@@ -72,7 +72,7 @@ type EdgeGatewayUplinks struct {
 	// Advertisement for this Edge Gateway
 	Dedicated bool `json:"dedicated,omitempty"`
 
-	// BackingType of uplink. One of these 2 is a must:
+	// BackingType of uplink. Exactly one of these 2 is a must:
 	// * types.ExternalNetworkBackingTypeNsxtTier0Router (NSXT_TIER0)
 	// * types.ExternalNetworkBackingTypeNsxtVrfTier0Router (NSXT_VRF_TIER0)
 	// Additional External network uplinks

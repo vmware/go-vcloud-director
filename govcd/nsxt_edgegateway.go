@@ -183,6 +183,11 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPI
 		return nil, fmt.Errorf("error creating Edge Gateway: %s", err)
 	}
 
+	err = returnEgw.reorderUplinks()
+	if err != nil {
+		return nil, fmt.Errorf("error reordering Edge Gateway Uplinks after update operation: %s", err)
+	}
+
 	return returnEgw, nil
 }
 
