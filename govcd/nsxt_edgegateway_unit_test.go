@@ -1733,7 +1733,7 @@ func Test_reorderEdgeGatewayUplinks(t *testing.T) {
 				{BackingType: addrOf("IMPORTED_T_LOGICAL_SWITCH"), UplinkID: "1"},
 			}},
 		},
-		// Commented on purpose
+		// A failing test example - commented on purpose
 		// {
 		// 	name: "FailingTest",
 		// 	args: args{edgeGatewayUplinks: []types.EdgeGatewayUplinks{
