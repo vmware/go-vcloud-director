@@ -747,6 +747,28 @@ func (vcd *TestVCD) getAdminOrgAndVdcFromCleanupEntity(entity CleanupEntity) (or
 	return org, vdc, nil
 }
 
+func (vcd *TestVCD) removeLeftoverEntitiesByTestName(check *C, testName string) {
+	// Gets the persistent cleanup list from file, if exists.
+	cleanupList, err := readCleanupList()
+	if err != nil {
+		check.Logf("failed to read cleanup list: %s", err)
+	}
+	if len(cleanupList) > 0 && err == nil {
+		fmt.Printf("*** Attempting to cleanup entities, created by this test '%s' in file '%s'\n",
+			testName, makePersistentCleanupFileName())
+
+		for i, cleanupEntity := range cleanupList {
+
+			// Ignoring entities, that are not created in the test with a given name
+			if cleanupEntity.CreatedBy != testName {
+				continue
+			}
+			fmt.Printf("# %d ", i+1)
+			vcd.removeLeftoverEntities(cleanupEntity)
+		}
+	}
+}
+
 // Removes leftover entities that may still exist after failed tests
 // or the ones that were explicitly created for several tests and
 // were relying on this procedure to clean up at the end.

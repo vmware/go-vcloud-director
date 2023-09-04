@@ -17,6 +17,13 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	skipNoNsxtAlbConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointAlbEdgeGateway)
 
+	failedAlbCleanup := true
+	defer func() {
+		if failedAlbCleanup {
+			vcd.removeLeftoverEntitiesByTestName(check, check.TestName())
+		}
+	}()
+
 	// Setup prerequisite components
 	controller, cloud, seGroup, edge, seGroupAssignment, albPool := setupAlbVirtualServicePrerequisites(check, vcd)
 
@@ -78,6 +85,8 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	// cleanup Org user
 	err = orgUser.Delete(true)
 	check.Assert(err, IsNil)
+
+	failedAlbCleanup = false
 }
 
 func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient) {
@@ -497,6 +506,8 @@ func testAlbVirtualServiceConfig(check *C, vcd *TestVCD, name string, setupConfi
 		check.Assert(updatedPool.NsxtAlbVirtualService.Name, NotNil)
 		check.Assert(updatedPool.NsxtAlbVirtualService.GatewayRef.ID, NotNil)
 	}
+
+	check.Errorf("Testing failure")
 
 	err = createdVirtualService.Delete()
 	check.Assert(err, IsNil)
