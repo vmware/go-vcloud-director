@@ -1950,11 +1950,17 @@ func (vm *VM) UpdateBootOptionsAsync(bootOptions *types.BootOptions) (Task, erro
 		return Task{}, fmt.Errorf("cannot update VM boot options, none given")
 	}
 
-	bootOptions.Xmlns = types.XMLNamespaceVCloud
-
-	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/bootOptions", http.MethodPost,
-		types.MimeBootOptionsXml, "error updating VM boot options: %s", bootOptions,
-		vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
+	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/reconfigureVm", http.MethodPost,
+		types.MimeVM, "error updating VM boot options: %s", &types.Vm{
+			Xmlns:       types.XMLNamespaceVCloud,
+			Ovf:         types.XMLNamespaceOVF,
+			Name:        vm.VM.Name,
+			Description: vm.VM.Description,
+			// We need to add VmSpecSection in the Request Body or settings will
+			// be set to default sizing policy set in the VDC
+			VmSpecSection: vm.VM.VmSpecSection,
+			BootOptions:   bootOptions,
+		}, vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 }
 
 // DeleteAsync starts a standalone VM deletion, returning a task
