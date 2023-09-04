@@ -1950,6 +1950,8 @@ func (vm *VM) UpdateBootOptionsAsync(bootOptions *types.BootOptions) (Task, erro
 		return Task{}, fmt.Errorf("cannot update VM boot options, none given")
 	}
 
+	bootOptions.Xmlns = types.XMLNamespaceVCloud
+
 	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/bootOptions", http.MethodPost,
 		types.MimeBootOptionsXml, "error updating VM boot options: %s", bootOptions,
 		vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))

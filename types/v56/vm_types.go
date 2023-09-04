@@ -98,6 +98,8 @@ type VmSpecSection struct {
 
 // BootOptions allows to specify boot options of a VM
 type BootOptions struct {
+	Xmlns string `xml:"xmlns,attr,omitempty"`
+
 	BootDelay            *int   `xml:"BootDelay,omitempty"`            // Delay between power-on and boot of the VM
 	EnterBiosSetup       *bool  `xml:"EnterBIOSSetup,omitempty"`       // Set to false on the next boot
 	BootRetryEnabled     *bool  `xml:"BootRetryEnabled,omitempty"`     // Available since API 37.1
