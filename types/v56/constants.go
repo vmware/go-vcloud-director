@@ -152,6 +152,8 @@ const (
 	MimeFederationSettingsJson = "application/vnd.vmware.admin.organizationFederationSettings+json"
 	// Mime to handle virtual hardware versions
 	MimeVirtualHardwareVersion = "application/vnd.vmware.vcloud.virtualHardwareVersion+xml"
+	// Mime to handle VM Boot options
+	MimeBootOptionsXml = "application/vnd.vmware.vcloud.bootOptionsSection+xml"
 )
 
 const (
