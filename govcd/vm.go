@@ -1956,9 +1956,10 @@ func (vm *VM) UpdateBootOptionsAsync(bootOptions *types.BootOptions) (Task, erro
 			Ovf:         types.XMLNamespaceOVF,
 			Name:        vm.VM.Name,
 			Description: vm.VM.Description,
-			// We need to add VmSpecSection in the Request Body or settings will
-			// be set to default sizing policy set in the VDC
-			VmSpecSection: vm.VM.VmSpecSection,
+			// We need to add ComputePolicy in the Request Body or settings will
+			// be set to default sizing policy set in the VDC if the VM is Not
+			// compliant with the current sizing policy
+			ComputePolicy: vm.VM.ComputePolicy,
 			BootOptions:   bootOptions,
 		}, vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 }
