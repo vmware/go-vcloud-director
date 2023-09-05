@@ -97,6 +97,8 @@ vcd:
       edgeGateway: nsxt-gw-name
       # Existing NSX-T segment to test NSX-T Imported Org Vdc network
       nsxtImportSegment: vcd-org-vdc-imported-network-backing
+      # Existing NSX-T segment to test Edge Gateway Uplinks
+      nsxtImportSegment2: vcd-org-vdc-imported-network-backing2
       # Existing NSX-T Edge Cluster name
       nsxtEdgeCluster: existing-nsxt-edge-cluster
       # AVI Controller URL
