@@ -4,6 +4,7 @@ package govcd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
@@ -16,13 +17,6 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	}
 	skipNoNsxtAlbConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointAlbEdgeGateway)
-
-	failedAlbCleanup := true
-	defer func() {
-		if failedAlbCleanup {
-			vcd.removeLeftoverEntitiesByTestName(check, check.TestName())
-		}
-	}()
 
 	// Setup prerequisite components
 	controller, cloud, seGroup, edge, seGroupAssignment, albPool := setupAlbVirtualServicePrerequisites(check, vcd)
@@ -75,7 +69,7 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 		err = poolWithMemberGroup.Delete()
 		check.Assert(err, IsNil)
 
-		err = ipSet.Delete()
+		err = retryOnError(ipSet.Delete, 5, 1*time.Second)
 		check.Assert(err, IsNil)
 	}
 
@@ -85,8 +79,6 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	// cleanup Org user
 	err = orgUser.Delete(true)
 	check.Assert(err, IsNil)
-
-	failedAlbCleanup = false
 }
 
 func testMinimalVirtualServiceConfigHTTP(check *C, edge *NsxtEdgeGateway, pool *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient) {
@@ -507,8 +499,6 @@ func testAlbVirtualServiceConfig(check *C, vcd *TestVCD, name string, setupConfi
 		check.Assert(updatedPool.NsxtAlbVirtualService.GatewayRef.ID, NotNil)
 	}
 
-	check.Errorf("Testing failure")
-
 	err = createdVirtualService.Delete()
 	check.Assert(err, IsNil)
 	fmt.Printf("Done.\n")
@@ -580,4 +570,22 @@ func tearDownAlbVirtualServicePrerequisites(check *C, albPool *NsxtAlbPool, assi
 	check.Assert(err, IsNil)
 	err = controller.Delete()
 	check.Assert(err, IsNil)
+}
+
+// retryOnError is a function that will attempt to execute function multiple times (until
+// maxRetries) and waiting given retryInterval between tries. It will return original deletion error
+// for troubleshooting.
+func retryOnError(operation func() error, maxRetries int, retryInterval time.Duration) error {
+	var err error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err = operation()
+		if err == nil {
+			return nil
+		}
+
+		fmt.Printf("Retrying after %v (Attempt %d/%d)\n", retryInterval, attempt+1, maxRetries)
+		time.Sleep(retryInterval)
+	}
+
+	return fmt.Errorf("exceeded maximum retries, original error: %s", err)
 }
