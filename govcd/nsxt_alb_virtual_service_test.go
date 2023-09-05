@@ -571,21 +571,3 @@ func tearDownAlbVirtualServicePrerequisites(check *C, albPool *NsxtAlbPool, assi
 	err = controller.Delete()
 	check.Assert(err, IsNil)
 }
-
-// retryOnError is a function that will attempt to execute function multiple times (until
-// maxRetries) and waiting given retryInterval between tries. It will return original deletion error
-// for troubleshooting.
-func retryOnError(operation func() error, maxRetries int, retryInterval time.Duration) error {
-	var err error
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		err = operation()
-		if err == nil {
-			return nil
-		}
-
-		fmt.Printf("Retrying after %v (Attempt %d/%d)\n", retryInterval, attempt+1, maxRetries)
-		time.Sleep(retryInterval)
-	}
-
-	return fmt.Errorf("exceeded maximum retries, original error: %s", err)
-}
