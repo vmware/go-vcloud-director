@@ -32,8 +32,12 @@ func (vcdClient *VCDClient) GetAllNsxtTransportZones(nsxtManagerId string, query
 	}
 
 	queryParams := copyOrNewUrlValues(queryParameters)
-	queryParams = queryParameterFilterAnd("networkProviderId=="+nsxtManagerId, queryParams)
-
+	filterField := "_context"
+	if client.APIClientVersionIs(">=38.0") {
+		// field "networkProviderId" does not exist prior to API 38.0, where field "_context" is deprecated
+		filterField = "networkProviderId"
+	}
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("%s==%s", filterField, nsxtManagerId), queryParams)
 	var typeResponses []*types.TransportZone
 	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParams, &typeResponses, nil)
 	if err != nil {
