@@ -1916,13 +1916,6 @@ func (vm *VM) UpdateStorageProfileAsync(storageProfileHref string) (Task, error)
 
 // UpdateBootOptions updates the Boot Options of a VM and returns the updated instance of the VM
 func (vm *VM) UpdateBootOptions(bootOptions *types.BootOptions) (*VM, error) {
-	if vm.client.APIVCDMaxVersionIs("<37.1") {
-		if bootOptions.BootRetryEnabled != nil || bootOptions.BootRetryDelay != nil ||
-			bootOptions.EfiSecureBootEnabled != nil || bootOptions.NetworkBootProtocol != "" {
-			return nil, fmt.Errorf("error: Boot retry, EFI Secure Boot and Boot Network Protocol options were introduced in VCD 10.4.1")
-		}
-	}
-
 	task, err := vm.UpdateBootOptionsAsync(bootOptions)
 	if err != nil {
 		return nil, err
@@ -1946,6 +1939,14 @@ func (vm *VM) UpdateBootOptionsAsync(bootOptions *types.BootOptions) (Task, erro
 	if vm.VM.HREF == "" {
 		return Task{}, fmt.Errorf("cannot update VM boot options, VM HREF is unset")
 	}
+
+	if vm.client.APIVCDMaxVersionIs("<37.1") {
+		if bootOptions.BootRetryEnabled != nil || bootOptions.BootRetryDelay != nil ||
+			bootOptions.EfiSecureBootEnabled != nil || bootOptions.NetworkBootProtocol != "" {
+			return Task{}, fmt.Errorf("error: Boot retry, EFI Secure Boot and Boot Network Protocol options were introduced in VCD 10.4.1")
+		}
+	}
+
 	if bootOptions == nil {
 		return Task{}, fmt.Errorf("cannot update VM boot options, none given")
 	}
