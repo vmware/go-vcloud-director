@@ -556,6 +556,9 @@ func testRdeTypeAccessControls(check *C, rdeType *DefinedEntityType, behavior *t
 	err = rdeType.SetBehaviorAccessControls([]*types.BehaviorAccess{})
 	check.Assert(err, IsNil)
 
+	err = rdeType.SetBehaviorAccessControls(nil)
+	check.Assert(err, IsNil)
+
 	allAccCtrl, err = rdeType.GetAllBehaviorsAccessControls(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allAccCtrl), Equals, 0)
