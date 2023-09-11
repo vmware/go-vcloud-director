@@ -3,6 +3,8 @@
 package govcd
 
 import (
+	"net/netip"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -40,16 +42,19 @@ func (vcd *TestVCD) Test_CreateL2VpnTunnel(check *C) {
 	network, err := nsxtVdc.GetOrgVdcNetworkByName(vcd.config.VCD.Nsxt.RoutedNetwork, false)
 	check.Assert(err, IsNil)
 
+	localEndpointIp, err := edge.GetUnusedExternalIPAddresses(1, netip.Prefix{}, true)
+	check.Assert(err, IsNil)
+
 	vpnTunnel := &types.NsxtL2VpnTunnel{
 		Name:                    check.TestName(),
 		Description:             check.TestName(),
 		SessionMode:             "SERVER",
 		Enabled:                 true,
-		LocalEndpointIp:         "10.10.50.2",
+		LocalEndpointIp:         localEndpointIp[0].String(),
 		RemoteEndpointIp:        "1.1.1.1",
 		TunnelInterface:         "",
 		ConnectorInitiationMode: "ON_DEMAND",
-		PreSharedKey:            "abc",
+		PreSharedKey:            check.TestName(),
 		StretchedNetworks: []types.EdgeL2VpnStretchedNetwork{
 			{
 				NetworkRef: types.OpenApiReference{
