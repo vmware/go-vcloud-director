@@ -384,6 +384,7 @@ const (
 	OpenApiEndpointEdgeGatewayStaticRoutes            = "edgeGateways/%s/routing/staticRoutes/"
 	OpenApiEndpointEdgeGatewayUsedIpAddresses         = "edgeGateways/%s/usedIpAddresses"
 	OpenApiEndpointNsxtFirewallRules                  = "edgeGateways/%s/firewall/rules"
+	OpenApiEndpointEdgeGatewayL2VpnTunnel             = "edgeGateways/%s/l2vpn/tunnels"
 	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
 	OpenApiEndpointOrgVdcNetworks                     = "orgVdcNetworks/"
 	OpenApiEndpointOrgVdcNetworksDhcp                 = "orgVdcNetworks/%s/dhcp"

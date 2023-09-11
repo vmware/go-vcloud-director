@@ -849,7 +849,7 @@ type NsxtIpSecVpnTunnelProfileDpdConfiguration struct {
 	ProbeInterval int `json:"probeInterval"`
 }
 
-// NsxtL2VpnTunnel defines a
+// NsxtL2VpnTunnel defines the L2 VPN Tunnel configuration
 type NsxtL2VpnTunnel struct {
 	// ID of the tunnel
 	ID string `json:"id"`
@@ -899,6 +899,9 @@ type NsxtL2VpnTunnel struct {
 
 	// Whether logging for the tunnel is enabled or not.
 	Logging bool `json:"logging"`
+
+	// Version of the entity, needs to be provided on tunnel update calls, can be retrieved by getting the tunnel.
+	Version int `json:"version"`
 }
 
 // NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
