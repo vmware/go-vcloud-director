@@ -1996,6 +1996,7 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 	// After a successful creation, the entity is added to the cleanup list.
 	AddToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
 
+	// Check that vApp is powered-off
 	vappStatus, err := vapp.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vappStatus, Equals, "RESOLVED")
