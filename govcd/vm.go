@@ -1940,7 +1940,33 @@ func (vm *VM) UpdateBootOptionsAsync(bootOptions *types.BootOptions) (Task, erro
 		return Task{}, fmt.Errorf("cannot update VM boot options, VM HREF is unset")
 	}
 
+	if bootOptions.BootRetryDelay == addrOf(0) {
+		bootOptions.BootRetryDelay = nil
+	}
+	if bootOptions.BootRetryEnabled == addrOf(true) {
+		bootOptions.BootRetryEnabled = nil
+	}
+	if bootOptions.BootDelay == addrOf(0) {
+		bootOptions.BootDelay = nil
+	}
+	if bootOptions.EnterBiosSetup == addrOf(false) {
+		bootOptions.BootDelay = nil
+	}
+	if bootOptions.BootDelay == addrOf(0) {
+		bootOptions.BootDelay = nil
+	}
+
 	if vm.client.APIVCDMaxVersionIs("<37.1") {
+		if bootOptions.BootRetryEnabled == addrOf(false) {
+			bootOptions.BootRetryEnabled = nil
+		}
+		if bootOptions.EfiSecureBootEnabled == addrOf(false) {
+			bootOptions.EfiSecureBootEnabled = nil
+		}
+		if bootOptions.BootRetryDelay == addrOf(0) {
+			bootOptions.BootRetryDelay = nil
+		}
+
 		if bootOptions.BootRetryEnabled != nil || bootOptions.BootRetryDelay != nil ||
 			bootOptions.EfiSecureBootEnabled != nil || bootOptions.NetworkBootProtocol != "" {
 			return Task{}, fmt.Errorf("error: Boot retry, EFI Secure Boot and Boot Network Protocol options were introduced in VCD 10.4.1")

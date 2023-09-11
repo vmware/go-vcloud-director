@@ -1706,7 +1706,8 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 		Xmlns: types.XMLNamespaceVCloud,
 	}
 
-	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
+	supportsExtendedBootOptions := vcd.client.Client.APIVCDMaxVersionIs(">=37.1")
+	if supportsExtendedBootOptions {
 		params.CreateVm.VmSpecSection.Firmware = "efi"
 		params.CreateVm.BootOptions.EfiSecureBootEnabled = addrOf(true)
 		params.CreateVm.BootOptions.BootRetryEnabled = addrOf(true)
@@ -1721,11 +1722,15 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
 	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+
 	check.Assert(vm.VM.Description, Equals, description)
 	check.Assert(vm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(true))
-	check.Assert(vm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
-	check.Assert(vm.VM.BootOptions.BootRetryEnabled, DeepEquals, addrOf(true))
-	check.Assert(vm.VM.BootOptions.BootRetryDelay, DeepEquals, addrOf(20))
+	check.Assert(vm.VM.BootOptions.BootDelay, DeepEquals, addrOf(0))
+	if supportsExtendedBootOptions {
+		check.Assert(vm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
+		check.Assert(vm.VM.BootOptions.BootRetryEnabled, DeepEquals, addrOf(true))
+		check.Assert(vm.VM.BootOptions.BootRetryDelay, DeepEquals, addrOf(20))
+	}
 
 	_ = vdc.Refresh()
 	vappList = vdc.GetVappList()
