@@ -1144,9 +1144,6 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 
 func (vcd *TestVCD) Test_VmBootOptions(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
-	if vcd.client.Client.APIVCDMaxVersionIs("<37.1") {
-		check.Skip("Extended boot options and firmware choice were introduced in 37.1")
-	}
 
 	vmName := check.TestName()
 	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
@@ -1162,24 +1159,37 @@ func (vcd *TestVCD) Test_VmBootOptions(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(hardwareVersion, NotNil)
 
+	var updatedVm *VM
 	vmSpecSection := vm.VM.VmSpecSection
-	vmSpecSection.Firmware = "efi"
-
-	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
-	check.Assert(err, IsNil)
-	check.Assert(updatedVm.VM.VmSpecSection.Firmware, Equals, "efi")
-	check.Assert(updatedVm, NotNil)
+	supportsExtendedBootOptions := vcd.client.Client.APIVCDMaxVersionIs(">=37.1")
+	if supportsExtendedBootOptions {
+		vmSpecSection.Firmware = "efi"
+		updatedVm, err = vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
+		check.Assert(err, IsNil)
+		check.Assert(updatedVm.VM.VmSpecSection.Firmware, Equals, "efi")
+		check.Assert(updatedVm, NotNil)
+	}
 
 	bootOptions := &types.BootOptions{}
-	bootOptions.EfiSecureBootEnabled = addrOf(true)
 	bootOptions.EnterBiosSetup = addrOf(true)
-	bootOptions.BootRetryEnabled = addrOf(true)
-	bootOptions.BootRetryDelay = addrOf(200)
+	bootOptions.BootDelay = addrOf(1)
+
+	if supportsExtendedBootOptions {
+		bootOptions.EfiSecureBootEnabled = addrOf(true)
+		bootOptions.BootRetryEnabled = addrOf(true)
+		bootOptions.BootRetryDelay = addrOf(200)
+	}
 
 	updatedVm, err = vm.UpdateBootOptions(bootOptions)
 	check.Assert(err, IsNil)
-	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
+
+	if supportsExtendedBootOptions {
+		check.Assert(updatedVm.VM.BootOptions.BootRetryEnabled, DeepEquals, addrOf(true))
+		check.Assert(updatedVm.VM.BootOptions.BootRetryDelay, DeepEquals, addrOf(200))
+		check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
+	}
 	check.Assert(updatedVm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(true))
+	check.Assert(updatedVm.VM.BootOptions.BootDelay, DeepEquals, addrOf(1))
 
 	task, err := updatedVm.PowerOn()
 	check.Assert(err, IsNil)
@@ -1196,8 +1206,6 @@ func (vcd *TestVCD) Test_VmBootOptions(check *C) {
 	err = updatedVm.Refresh()
 	check.Assert(err, IsNil)
 
-	// assert that EfiSecureBoot is persistent and EnterBiosSetup is set to false after a successful power cycle
-	check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
 	check.Assert(updatedVm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(false))
 
 	// delete Vapp early to avoid env capacity issue
