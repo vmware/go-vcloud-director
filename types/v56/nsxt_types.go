@@ -876,7 +876,7 @@ type NsxtL2VpnTunnel struct {
 	// for SERVER session modes. If provided, the underlying IPSec tunnel will
 	// use the specified tunnel interface. If not provided, Cloud Director will
 	// attempt to automatically allocate a tunnel interface.
-	TunnelInterface string `json:"tunnelInterface"`
+	TunnelInterface string `json:"tunnelInterface,omitempty"`
 
 	// This is the mode used by the local endpoint to establish an IKE Connection with the remote site. The default is INITIATOR.
 	// * INITIATOR - Local endpoint initiates tunnel setup and will also respond to incoming tunnel setup requests from the peer gateway.
@@ -895,13 +895,19 @@ type NsxtL2VpnTunnel struct {
 	PreSharedKey string `json:"preSharedKey"`
 
 	// The list of OrgVDC Network entity references which are currently attached to this L2VPN tunnel.
-	StretchedNetworks []Reference `json:"stretchedNetworks"`
+	StretchedNetworks []EdgeL2VpnStretchedNetwork `json:"stretchedNetworks"`
 
 	// Whether logging for the tunnel is enabled or not.
 	Logging bool `json:"logging"`
 
 	// Version of the entity, needs to be provided on tunnel update calls, can be retrieved by getting the tunnel.
 	Version VersionField `json:"version"`
+}
+
+// EdgeL2VpnStretchedNetwork specifies the Org vDC network that is stretched through the given L2 VPN Tunnel.
+type EdgeL2VpnStretchedNetwork struct {
+	NetworkRef OpenApiReference `json:"networkRef"`
+	TunnelID   int              `json:"tunnelId"`
 }
 
 // NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
