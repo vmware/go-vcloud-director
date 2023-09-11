@@ -901,7 +901,7 @@ type NsxtL2VpnTunnel struct {
 	Logging bool `json:"logging"`
 
 	// Version of the entity, needs to be provided on tunnel update calls, can be retrieved by getting the tunnel.
-	Version int `json:"version"`
+	Version VersionField `json:"version"`
 }
 
 // NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
