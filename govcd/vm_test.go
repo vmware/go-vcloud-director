@@ -1128,7 +1128,6 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	check.Assert(updatedVm, NotNil)
 
 	//verify
-	//check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCpus, Equals, 4)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCoresPerSocket, Equals, 2)
 	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(768))
