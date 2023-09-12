@@ -124,3 +124,24 @@ func (egw *NsxtEdgeGateway) GetL2VpnTunnelById(id string) (*NsxtL2VpnTunnel, err
 		client:          egw.client,
 	}, nil
 }
+
+func (l2Vpn *NsxtL2VpnTunnel) Delete() error {
+	client := l2Vpn.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayL2VpnTunnel
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, l2Vpn.edgeGatewayId), l2Vpn.NsxtL2VpnTunnel.ID)
+	if err != nil {
+		return err
+	}
+
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

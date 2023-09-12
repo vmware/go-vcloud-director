@@ -3,8 +3,6 @@
 package govcd
 
 import (
-	"net/netip"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -42,7 +40,8 @@ func (vcd *TestVCD) Test_CreateL2VpnTunnel(check *C) {
 	network, err := nsxtVdc.GetOrgVdcNetworkByName(vcd.config.VCD.Nsxt.RoutedNetwork, false)
 	check.Assert(err, IsNil)
 
-	localEndpointIp, err := edge.GetUnusedExternalIPAddresses(1, netip.Prefix{}, true)
+	// Get the auto-allocated IP of the Edge Gateway
+	localEndpointIp, err := edge.GetUsedIpAddresses(nil)
 	check.Assert(err, IsNil)
 
 	vpnTunnel := &types.NsxtL2VpnTunnel{
@@ -50,7 +49,7 @@ func (vcd *TestVCD) Test_CreateL2VpnTunnel(check *C) {
 		Description:             check.TestName(),
 		SessionMode:             "SERVER",
 		Enabled:                 true,
-		LocalEndpointIp:         localEndpointIp[0].String(),
+		LocalEndpointIp:         localEndpointIp[0].IPAddress,
 		RemoteEndpointIp:        "1.1.1.1",
 		TunnelInterface:         "",
 		ConnectorInitiationMode: "ON_DEMAND",
@@ -69,4 +68,16 @@ func (vcd *TestVCD) Test_CreateL2VpnTunnel(check *C) {
 	tunnel, err := edge.CreateL2VpnTunnel(vpnTunnel)
 	check.Assert(err, IsNil)
 	check.Assert(tunnel, NotNil)
+
+	check.Assert(tunnel.NsxtL2VpnTunnel.Name, Equals, check.TestName())
+	check.Assert(tunnel.NsxtL2VpnTunnel.Description, Equals, check.TestName())
+	check.Assert(tunnel.NsxtL2VpnTunnel.SessionMode, Equals, "SERVER")
+	check.Assert(tunnel.NsxtL2VpnTunnel.Enabled, Equals, true)
+	check.Assert(tunnel.NsxtL2VpnTunnel.LocalEndpointIp, Equals, localEndpointIp[0].IPAddress)
+	check.Assert(tunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "1.1.1.1")
+	check.Assert(tunnel.NsxtL2VpnTunnel.ConnectorInitiationMode, Equals, "ON_DEMAND")
+	check.Assert(tunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
+
+	err = tunnel.Delete()
+	check.Assert(err, IsNil)
 }
