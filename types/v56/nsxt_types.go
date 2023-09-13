@@ -910,6 +910,28 @@ type EdgeL2VpnStretchedNetwork struct {
 	TunnelID   int              `json:"tunnelId"`
 }
 
+// EdgeL2VpnTunnelStatistics specifies the statistics for the given L2 VPN Tunnel.
+type EdgeL2VpnTunnelStatistics struct {
+	BumBytesIn          int    `json:"bumBytesIn"`
+	BumBytesOut         int    `json:"bumBytesOut"`
+	BumPacketsIn        int    `json:"bumPacketsIn"`
+	BumPacketsOut       int    `json:"bumPacketsOut"`
+	BytesIn             int    `json:"bytesIn"`
+	BytesOut            int    `json:"bytesOut"`
+	PacketsIn           int    `json:"packetsIn"`
+	PacketsOut          int    `json:"packetsOut"`
+	PacketsReceiveError int    `json:"packetsReceiveError"`
+	PacketsSentError    int    `json:"packetsSentError"`
+	SegmentPath         string `json:"segmentPath"`
+}
+
+// EdgeL2VpnTunnelStatus includes the L2 VPN tunnel status such as whether
+// the tunnel is up or down and the IKE Session status
+type EdgeL2VpnTunnelStatus struct {
+	FailureReason string `json:"failureReason"`
+	RuntimeStatus string `json:"runtimeStatus"`
+}
+
 // NsxtAlbController helps to integrate VMware Cloud Director with NSX-T Advanced Load Balancer deployment.
 // Controller instances are registered with VMware Cloud Director instance. Controller instances serve as a central
 // control plane for the load-balancing services provided by NSX-T Advanced Load Balancer.
