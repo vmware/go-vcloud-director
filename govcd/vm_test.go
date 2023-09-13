@@ -450,10 +450,32 @@ func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
 	err = ejectMediaTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	//verify
 	err = vm.Refresh()
 	check.Assert(err, IsNil)
-	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
+
+	// Expecting outcome to be 'false', but VCD sometimes lags to report that media is ejected in VM
+	// state (even after ejection task is finished).
+	// In such cases, do additional VM refresh and try to see if the structure has no media anymore
+	mediaInjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
+	retryCount := 5
+	if mediaInjected {
+		// Run a few more attempts every second to see if the VM finally shows no media being
+		// present in VirtualHardwareItem structure
+		for a := 0; a < retryCount; a++ {
+			fmt.Printf("attempt %d\n", a)
+			err = vm.Refresh()
+			if err != nil {
+				fmt.Printf("error refreshing VM: %s\n", err)
+			}
+			retryIsMediaInjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
+			if !retryIsMediaInjected {
+				fmt.Printf("media error recovered at %d refresh attempt\n", a)
+				check.SucceedNow()
+			}
+			time.Sleep(time.Second)
+		}
+		check.Errorf("error was not recovered after %d attempts - ejection FAILED", retryCount)
+	}
 }
 
 // Test Insert or Eject Media for VM
@@ -967,7 +989,9 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
-	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(disk.IopsAllocation, NotNil)
+	check.Assert(diskSettings.IopsAllocation, NotNil)
+	check.Assert(disk.IopsAllocation.Reservation, Equals, diskSettings.IopsAllocation.Reservation)
 	check.Assert(disk.SizeMb, Equals, diskSettings.SizeMb)
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
@@ -1016,7 +1040,6 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 	isThinProvisioned := true
-	iops := int64(0)
 	diskSettings := &types.DiskSettings{
 		SizeMb:            1024,
 		UnitNumber:        0,
@@ -1025,7 +1048,12 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 		ThinProvisioned:   &isThinProvisioned,
 		StorageProfile:    &storageProfile,
 		OverrideVmDefault: true,
-		Iops:              &iops,
+		IopsAllocation: &types.IopsResource{
+			Limit:       0,
+			Reservation: 0,
+			SharesLevel: "NORMAL",
+			Shares:      1000,
+		},
 	}
 
 	diskId, err := vm.AddInternalDisk(diskSettings)
@@ -1124,9 +1152,9 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	// increase new disk size
 	vmSpecSection := vm.VM.VmSpecSection
 	changeDiskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
-	for _, diskSettings := range changeDiskSettings {
-		if diskSettings.DiskId == diskId {
-			diskSettings.SizeMb = 2048
+	for _, ds := range changeDiskSettings {
+		if ds.DiskId == diskId {
+			ds.SizeMb = 2048
 		}
 	}
 
@@ -1145,7 +1173,10 @@ func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
 	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
-	check.Assert(*disk.Iops, Equals, *diskSettings.Iops)
+	check.Assert(disk.IopsAllocation, NotNil)
+	check.Assert(diskSettings.IopsAllocation, NotNil)
+	check.Assert(disk.IopsAllocation.Shares, Equals, diskSettings.IopsAllocation.Shares)
+	check.Assert(disk.IopsAllocation.Reservation, Equals, diskSettings.IopsAllocation.Reservation)
 	check.Assert(disk.SizeMb, Equals, int64(2048))
 	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
@@ -1404,6 +1435,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
+	// #nosec G101 -- Not a credential
 	vmName := "Test_UpdateVmSpecSection"
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
@@ -1507,6 +1539,7 @@ func (vcd *TestVCD) Test_UpdateVmCpuAndMemoryHotAdd(check *C) {
 }
 
 func (vcd *TestVCD) Test_AddNewEmptyVMWithVmComputePolicyAndUpdate(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	vapp, err := deployVappForTest(vcd, "Test_AddNewEmptyVMWithVmComputePolicy")
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
@@ -1702,7 +1735,7 @@ func (vcd *TestVCD) Test_VMUpdateStorageProfile(check *C) {
 }
 
 func (vcd *TestVCD) Test_VMUpdateComputePolicies(check *C) {
-
+	vcd.skipIfNotSysAdmin(check)
 	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
 	check.Assert(providerVdc, NotNil)

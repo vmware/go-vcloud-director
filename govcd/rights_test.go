@@ -96,8 +96,10 @@ func (vcd *TestVCD) Test_Rights(check *C) {
 		"VCD Extension: Register, Unregister, Refresh, Associate or Disassociate",
 		"UI Plugins: Define, Upload, Modify, Delete, Associate or Disassociate",
 	}
-	for _, name := range rigthNamesWithCommas {
-		searchRight(adminOrg.client, name, "", check)
+	if vcd.client.Client.IsSysAdmin {
+		for _, name := range rigthNamesWithCommas {
+			searchRight(adminOrg.client, name, "", check)
+		}
 	}
 
 	rightsCategories, err := adminOrg.client.GetAllRightsCategories(nil)

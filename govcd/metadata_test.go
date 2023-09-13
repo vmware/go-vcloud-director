@@ -18,6 +18,7 @@ import (
 // TODO: All tests here are deprecated in favor of those present in "metadata_v2_test". Remove this file once go-vcloud-director v3.0 is released.
 
 func (vcd *TestVCD) Test_AddAndDeleteMetadataForVdc(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")
 	}
@@ -203,7 +204,7 @@ func (vcd *TestVCD) Test_AddAndDeleteMetadataOnMediaRecord(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AddMetadataOnMediaRecord")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
@@ -272,9 +273,12 @@ func (vcd *TestVCD) Test_MetadataOnAdminCatalogCRUD(check *C) {
 		check.Assert(foundEntry.Key, Equals, "key")
 		check.Assert(foundEntry.TypedValue.Value, Equals, "value")
 	})
+	err = catalog.Delete(true, true)
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_MetadataEntryForVdcCRUD(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.config.VCD.Vdc == "" {
 		check.Skip("skipping test because VDC name is empty")
 	}
@@ -364,7 +368,7 @@ func (vcd *TestVCD) Test_MetadataEntryOnMediaRecordCRUD(check *C) {
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
 
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AddMetadataOnMediaRecord")
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
 	err = vcd.org.Refresh()
 	check.Assert(err, IsNil)
@@ -375,6 +379,10 @@ func (vcd *TestVCD) Test_MetadataEntryOnMediaRecordCRUD(check *C) {
 	check.Assert(mediaRecord.MediaRecord.Name, Equals, itemName)
 
 	testMetadataCRUDActionsDeprecated(mediaRecord, check, nil)
+	task, err := mediaRecord.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_MetadataOnAdminOrgCRUD(check *C) {
@@ -466,6 +474,7 @@ func (vcd *TestVCD) Test_MetadataOnCatalogItemCRUD(check *C) {
 
 func (vcd *TestVCD) Test_MetadataOnProviderVdcCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	vcd.skipIfNotSysAdmin(check)
 	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	if err != nil {
 		check.Skip(fmt.Sprintf("%s: Provider VDC %s not found. Test can't proceed", check.TestName(), vcd.config.VCD.NsxtProviderVdc.Name))
@@ -488,6 +497,7 @@ func (vcd *TestVCD) Test_MetadataOnOpenApiOrgVdcNetworkCRUD(check *C) {
 
 func (vcd *TestVCD) Test_MetadataByHrefCRUD(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
+	vcd.skipIfNotSysAdmin(check)
 	storageProfileRef, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	if err != nil {
 		check.Skip(fmt.Sprintf("%s: Storage Profile %s not found. Test can't proceed", check.TestName(), vcd.config.VCD.StorageProfile.SP1))

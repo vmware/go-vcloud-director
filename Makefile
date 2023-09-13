@@ -1,13 +1,17 @@
 TEST?=./...
 GOFMT_FILES?=$$(find . -name '*.go')
 maindir=$(PWD)
+timeout=0
+ifdef VCD_TIMEOUT
+timeout="$(VCD_TIMEOUT)m"
+endif
 
 default: fmtcheck vet static security build
 
 # test runs the test suite and vets the code
 test: testunit tagverify
 	@echo "==> Running Functional Tests"
-	cd govcd && go test -tags "functional" -timeout=720m -check.vv
+	cd govcd && go test -tags "functional" -timeout=$(timeout) -check.vv
 
 # tagverify checks that each tag can run independently
 tagverify: fmtcheck
@@ -26,31 +30,31 @@ testrace:
 
 # This will include tests guarded by build tag concurrent with race detector
 testconcurrent:
-	cd govcd && go test -race -tags "api concurrent" -timeout 15m -check.vv -check.f "Test.*Concurrent"
+	cd govcd && go test -race -tags "api concurrent" -timeout $(timeout) -check.vv -check.f "Test.*Concurrent"
 
 # tests only catalog related features
 testcatalog:
-	cd govcd && go test -tags "catalog" -timeout 15m -check.vv
+	cd govcd && go test -tags "catalog" -timeout $(timeout) -check.vv
 
 # tests only vapp and vm features
 testvapp:
-	cd govcd && go test -tags "vapp vm" -timeout 25m -check.vv
+	cd govcd && go test -tags "vapp vm" -timeout $(timeout)  -check.vv
 
 # tests only edge gateway features
 testgateway:
-	cd govcd && go test -tags "gateway" -timeout 15m -check.vv
+	cd govcd && go test -tags "gateway" -timeout $(timeout)  -check.vv
 
 # tests only networking features
 testnetwork:
-	cd govcd && go test -tags "network" -timeout 15m -check.vv
+	cd govcd && go test -tags "network" -timeout $(timeout)  -check.vv
 
 # tests only load balancer features
 testlb:
-	cd govcd && go test -tags "lb" -timeout 15m -check.vv
+	cd govcd && go test -tags "lb" -timeout $(timeout)  -check.vv
 
 # tests only NSXV related features
 testnsxv:
-	cd govcd && go test -tags "nsxv" -timeout 15m -check.vv
+	cd govcd && go test -tags "nsxv" -timeout $(timeout)  -check.vv
 
 # vet runs the Go source code static analysis tool `vet` to find
 # any common errors.

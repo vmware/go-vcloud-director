@@ -1261,8 +1261,8 @@ func (vm *VM) validateInternalDiskInput(diskData *types.DiskSettings, vmName, vm
 		return fmt.Errorf("[VM %s Id %s] disk settings size MB has to be 0 or higher", vmName, vmId)
 	}
 
-	if diskData.Iops != nil && *diskData.Iops < int64(0) {
-		return fmt.Errorf("[VM %s Id %s] disk settings iops has to be 0 or higher", vmName, vmId)
+	if diskData.IopsAllocation != nil && diskData.IopsAllocation.Reservation < int64(0) {
+		return fmt.Errorf("[VM %s Id %s] disk settings iops reservation has to be 0 or higher", vmName, vmId)
 	}
 
 	if diskData.ThinProvisioned == nil {
@@ -1656,7 +1656,10 @@ func (client *Client) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryRes
 
 // QueryVmList returns a list of all VMs in a given Org
 func (org *Org) QueryVmList(filter types.VmQueryFilter) ([]*types.QueryResultVMRecordType, error) {
-	return queryVmList(filter, org.client, "org", org.Org.HREF)
+	if org.client.IsSysAdmin {
+		return queryVmList(filter, org.client, "org", org.Org.HREF)
+	}
+	return queryVmList(filter, org.client, "", "")
 }
 
 // QueryVmList returns a list of all VMs in a given VDC
@@ -1676,12 +1679,14 @@ func queryVmList(filter types.VmQueryFilter, client *Client, filterParent, filte
 	if filter.String() != "" {
 		filterText = filter.String()
 	}
-	if filterText == "" {
-		filterText = fmt.Sprintf("%s==%s", filterParent, filterParentHref)
-	} else {
-		filterText = fmt.Sprintf("%s;%s==%s", filterText, filterParent, filterParentHref)
+	if filterParent != "" {
+		if filterText == "" {
+			filterText = fmt.Sprintf("%s==%s", filterParent, filterParentHref)
+		} else {
+			filterText = fmt.Sprintf("%s;%s==%s", filterText, filterParent, filterParentHref)
+		}
+		params["filter"] = filterText
 	}
-	params["filter"] = filterText
 	vmResult, err := client.cumulativeQuery(queryType, nil, params)
 	if err != nil {
 		return nil, fmt.Errorf("error getting VM list : %s", err)

@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
@@ -77,19 +78,20 @@ const (
 	TestVdcFindDiskByHREF         = "TestVdcFindDiskByHREF"
 	TestFindDiskByHREF            = "TestFindDiskByHREF"
 	TestDisk                      = "TestDisk"
-	TestVMAttachOrDetachDisk      = "TestVMAttachOrDetachDisk"
-	TestVMAttachDisk              = "TestVMAttachDisk"
-	TestVMDetachDisk              = "TestVMDetachDisk"
-	TestCreateExternalNetwork     = "TestCreateExternalNetwork"
-	TestDeleteExternalNetwork     = "TestDeleteExternalNetwork"
-	TestLbServiceMonitor          = "TestLbServiceMonitor"
-	TestLbServerPool              = "TestLbServerPool"
-	TestLbAppProfile              = "TestLbAppProfile"
-	TestLbAppRule                 = "TestLbAppRule"
-	TestLbVirtualServer           = "TestLbVirtualServer"
-	TestLb                        = "TestLb"
-	TestNsxvSnatRule              = "TestNsxvSnatRule"
-	TestNsxvDnatRule              = "TestNsxvDnatRule"
+	// #nosec G101 -- Not a credential
+	TestVMAttachOrDetachDisk  = "TestVMAttachOrDetachDisk"
+	TestVMAttachDisk          = "TestVMAttachDisk"
+	TestVMDetachDisk          = "TestVMDetachDisk"
+	TestCreateExternalNetwork = "TestCreateExternalNetwork"
+	TestDeleteExternalNetwork = "TestDeleteExternalNetwork"
+	TestLbServiceMonitor      = "TestLbServiceMonitor"
+	TestLbServerPool          = "TestLbServerPool"
+	TestLbAppProfile          = "TestLbAppProfile"
+	TestLbAppRule             = "TestLbAppRule"
+	TestLbVirtualServer       = "TestLbVirtualServer"
+	TestLb                    = "TestLb"
+	TestNsxvSnatRule          = "TestNsxvSnatRule"
+	TestNsxvDnatRule          = "TestNsxvDnatRule"
 )
 
 const (
@@ -226,6 +228,7 @@ type TestConfig struct {
 		NsxtMedia        string `yaml:"nsxtBackedMediaName,omitempty"`
 		PhotonOsOvaPath  string `yaml:"photonOsOvaPath,omitempty"`
 		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
+		UiPluginPath     string `yaml:"uiPluginPath,omitempty"`
 	} `yaml:"media"`
 }
 
@@ -1099,6 +1102,11 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 
+		_, err = adminCatalog.GetMediaByName(entity.Name, true)
+		if ContainsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
 		err = adminCatalog.RemoveMediaIfExists(entity.Name)
 		if err == nil {
 			vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
@@ -2018,4 +2026,29 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 	}
 
 	return vcdClient, newUser, nil
+}
+
+func (vcd *TestVCD) skipIfNotSysAdmin(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip(fmt.Sprintf("Skipping %s: requires system administrator privileges", check.TestName()))
+	}
+}
+
+// retryOnError is a function that will attempt to execute function with signature `func() error`
+// multiple times (until maxRetries) and waiting given retryInterval between tries. It will return
+// original deletion error for troubleshooting.
+func retryOnError(operation func() error, maxRetries int, retryInterval time.Duration) error {
+	var err error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err = operation()
+		if err == nil {
+			return nil
+		}
+
+		fmt.Printf("# retrying after %v (Attempt %d/%d)\n", retryInterval, attempt+1, maxRetries)
+		fmt.Printf("# error was: %s", err)
+		time.Sleep(retryInterval)
+	}
+
+	return fmt.Errorf("exceeded maximum retries, final error: %s", err)
 }

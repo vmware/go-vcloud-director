@@ -1627,18 +1627,25 @@ type DiskSection struct {
 
 // DiskSettings from Vm/VmSpecSection/DiskSection struct
 type DiskSettings struct {
-	DiskId              string     `xml:"DiskId,omitempty"`              // Specifies a unique identifier for this disk in the scope of the corresponding VM. This element is optional when creating a VM, but if it is provided it should be unique. This element is mandatory when updating an existing disk.
-	SizeMb              int64      `xml:"SizeMb"`                        // The size of the disk in MB.
-	UnitNumber          int        `xml:"UnitNumber"`                    // The device number on the SCSI or IDE controller of the disk.
-	BusNumber           int        `xml:"BusNumber"`                     //	The number of the SCSI or IDE controller itself.
-	AdapterType         string     `xml:"AdapterType"`                   // The type of disk controller, e.g. IDE vs SCSI and if SCSI bus-logic vs LSI logic.
-	ThinProvisioned     *bool      `xml:"ThinProvisioned,omitempty"`     // Specifies whether the disk storage is pre-allocated or allocated on demand.
-	Disk                *Reference `xml:"Disk,omitempty"`                // Specifies reference to a named disk.
-	StorageProfile      *Reference `xml:"StorageProfile,omitempty"`      // Specifies reference to a storage profile to be associated with the disk.
-	OverrideVmDefault   bool       `xml:"overrideVmDefault"`             // Specifies that the disk storage profile overrides the VM's default storage profile.
-	Iops                *int64     `xml:"iops,omitempty"`                // Specifies the IOPS for the disk.
-	VirtualQuantity     *int64     `xml:"VirtualQuantity,omitempty"`     // The actual size of the disk.
-	VirtualQuantityUnit string     `xml:"VirtualQuantityUnit,omitempty"` // The units in which VirtualQuantity is measured.
+	DiskId              string        `xml:"DiskId,omitempty"`              // Specifies a unique identifier for this disk in the scope of the corresponding VM. This element is optional when creating a VM, but if it is provided it should be unique. This element is mandatory when updating an existing disk.
+	SizeMb              int64         `xml:"SizeMb"`                        // The size of the disk in MB.
+	UnitNumber          int           `xml:"UnitNumber"`                    // The device number on the SCSI or IDE controller of the disk.
+	BusNumber           int           `xml:"BusNumber"`                     //	The number of the SCSI or IDE controller itself.
+	AdapterType         string        `xml:"AdapterType"`                   // The type of disk controller, e.g. IDE vs SCSI and if SCSI bus-logic vs LSI logic.
+	ThinProvisioned     *bool         `xml:"ThinProvisioned,omitempty"`     // Specifies whether the disk storage is pre-allocated or allocated on demand.
+	Disk                *Reference    `xml:"Disk,omitempty"`                // Specifies reference to a named disk.
+	StorageProfile      *Reference    `xml:"StorageProfile,omitempty"`      // Specifies reference to a storage profile to be associated with the disk.
+	OverrideVmDefault   bool          `xml:"overrideVmDefault"`             // Specifies that the disk storage profile overrides the VM's default storage profile.
+	IopsAllocation      *IopsResource `xml:"IopsAllocation"`                // IOPS definition for the disk - added in 10.4 in replacement of 'iops'
+	VirtualQuantity     *int64        `xml:"VirtualQuantity,omitempty"`     // The actual size of the disk.
+	VirtualQuantityUnit string        `xml:"VirtualQuantityUnit,omitempty"` // The units in which VirtualQuantity is measured.
+}
+
+type IopsResource struct {
+	Reservation int64  `xml:"Reservation"` // The amount of reservation of IOPS on the underlying virtualization infrastructure. This is a read-only.
+	Limit       int64  `xml:"Limit"`       // The limit for how much of IOPS can be consumed on the underlying virtualization infrastructure. This is only valid when the resource allocation is not unlimited.
+	SharesLevel string `xml:"SharesLevel"` // LOW - NORMAL - HIGH - CUSTOM
+	Shares      int64  `xml:"Shares"`      // Custom priority for IOPS. This is a read-only.
 }
 
 // MediaSection from Vm/VmSpecSection struct

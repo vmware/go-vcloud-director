@@ -14,6 +14,7 @@ import (
 func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+	vcd.skipIfNotSysAdmin(check)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -132,6 +133,7 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 func (vcd *TestVCD) Test_NsxtEdgeVdcGroup(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+	vcd.skipIfNotSysAdmin(check)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -228,6 +230,7 @@ func (vcd *TestVCD) Test_NsxtEdgeVdcGroup(check *C) {
 func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+	vcd.skipIfNotSysAdmin(check)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)

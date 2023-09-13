@@ -263,8 +263,10 @@ func (vcd *TestVCD) Test_QueryVM(check *C) {
 
 	check.Assert(vm.VM.Name, Equals, vmName)
 
-	check.Assert(vm.VM.Moref, Not(Equals), "")
-	check.Assert(strings.HasPrefix(vm.VM.Moref, "vm-"), Equals, true)
+	if vcd.client.Client.IsSysAdmin {
+		check.Assert(vm.VM.Moref, Not(Equals), "")
+		check.Assert(strings.HasPrefix(vm.VM.Moref, "vm-"), Equals, true)
+	}
 }
 
 func init() {

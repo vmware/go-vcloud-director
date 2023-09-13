@@ -13,6 +13,7 @@ import (
 )
 
 func (vcd *TestVCD) Test_QueryNsxtManagerByName(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	skipNoNsxtConfiguration(vcd, check)
 	nsxtManagers, err := vcd.client.QueryNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)

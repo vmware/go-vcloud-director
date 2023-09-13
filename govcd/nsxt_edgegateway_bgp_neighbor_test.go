@@ -10,6 +10,7 @@ import (
 func (vcd *TestVCD) Test_NsxEdgeBgpNeighbor(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeBgpNeighbor)
+	vcd.skipIfNotSysAdmin(check)
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
