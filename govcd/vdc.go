@@ -1038,7 +1038,10 @@ func (vdc *Vdc) CreateStandaloneVmAsync(params *types.CreateVmParams) (Task, err
 	}
 	params.XmlnsOvf = types.XMLNamespaceOVF
 
-	return vdc.client.ExecuteTaskRequest(href, http.MethodPost, types.MimeCreateVmParams, "error creating standalone VM: %s", params)
+	// 37.1 Introduced new parameters to VM configuration
+	return vdc.client.ExecuteTaskRequestWithApiVersion(href, http.MethodPost,
+		types.MimeCreateVmParams, "error creating standalone VM: %s", params,
+		vdc.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 }
 
 // getVmFromTask finds a VM from a running standalone VM creation task
@@ -1349,4 +1352,71 @@ func (vdc *Vdc) CloneVapp(sourceVapp *types.CloneVAppParams) (*VApp, error) {
 	}
 	err = vapp.Refresh()
 	return vapp, err
+}
+
+// Get the details of a hardware version
+func (vdc *Vdc) GetHardwareVersion(name string) (*types.VirtualHardwareVersion, error) {
+	if len(vdc.Vdc.Capabilities) == 0 {
+		return nil, fmt.Errorf("VDC doesn't have any virtual hardware version support information stored")
+	}
+
+	found := false
+	for _, hwVersion := range vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion {
+		if hwVersion.Name == name {
+			found = true
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("hardware version %s not found or not supported", name)
+	}
+
+	vdcHref, err := url.ParseRequestURI(vdc.Vdc.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("error getting VDC href: %s", err)
+	}
+	vdcHref.Path += "/hwv/" + name
+
+	hardwareVersion := &types.VirtualHardwareVersion{}
+
+	_, err = vdc.client.ExecuteRequest(vdcHref.String(), http.MethodGet, types.MimeVirtualHardwareVersion, "error getting hardware version: %s", nil, hardwareVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	return hardwareVersion, nil
+}
+
+// Get highest supported hardware version of a VDC
+func (vdc *Vdc) GetHighestHardwareVersion() (*types.VirtualHardwareVersion, error) {
+	err := vdc.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(vdc.Vdc.Capabilities) == 0 {
+		return nil, fmt.Errorf("VDC doesn't have any virtual hardware version support information stored")
+	}
+
+	hardwareVersions := vdc.Vdc.Capabilities[0].SupportedHardwareVersions.SupportedHardwareVersion
+	// Get last item (highest version) of SupportedHardwareVersions
+	highestVersion := hardwareVersions[len(hardwareVersions)-1].Name
+
+	hardwareVersion, err := vdc.GetHardwareVersion(highestVersion)
+	if err != nil {
+		return nil, err
+	}
+	return hardwareVersion, nil
+}
+
+// FindOsFromId attempts to find a OS by ID using the given hardware version
+func (vdc *Vdc) FindOsFromId(hardwareVersion *types.VirtualHardwareVersion, osId string) (*types.OperatingSystemInfoType, error) {
+	for _, osFamily := range hardwareVersion.SupportedOperatingSystems.OperatingSystemFamilyInfo {
+		for _, os := range osFamily.OperatingSystems {
+			if osId == os.InternalName {
+				return os, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no OS found with ID: %s", osId)
 }

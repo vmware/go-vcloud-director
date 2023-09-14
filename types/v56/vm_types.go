@@ -65,6 +65,7 @@ type Vm struct {
 	ProductSection *ProductSection `xml:"ProductSection,omitempty"`
 	ComputePolicy  *ComputePolicy  `xml:"ComputePolicy,omitempty"` // accessible only from version API 33.0
 	Media          *Reference      `xml:"Media,omitempty"`         // Reference to the media object to insert in a new VM.
+	BootOptions    *BootOptions    `xml:"BootOptions,omitempty"`   // Accessible only from API version 37.1+
 }
 
 type RuntimeInfoSection struct {
@@ -82,6 +83,7 @@ type VmSpecSection struct {
 	Modified          *bool             `xml:"Modified,attr,omitempty"`
 	Info              string            `xml:"ovf:Info"`
 	OsType            string            `xml:"OsType,omitempty"`            // The type of the OS. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
+	Firmware          string            `xml:"Firmware,omitempty"`          // Available since API 37.1. VM's Firmware, can be either 'bios' or 'efi'.
 	NumCpus           *int              `xml:"NumCpus,omitempty"`           // Number of CPUs. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
 	NumCoresPerSocket *int              `xml:"NumCoresPerSocket,omitempty"` // Number of cores among which to distribute CPUs in this virtual machine. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
 	CpuResourceMhz    *CpuResourceMhz   `xml:"CpuResourceMhz,omitempty"`    // CPU compute resources. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
@@ -92,6 +94,16 @@ type VmSpecSection struct {
 	VmToolsVersion    string            `xml:"VmToolsVersion,omitempty"`    // VMware tools version of this VM.
 	VirtualCpuType    string            `xml:"VirtualCpuType,omitempty"`    // The capabilities settings for this VM. This parameter may be omitted when using the VmSpec to update the contents of an existing VM.
 	TimeSyncWithHost  *bool             `xml:"TimeSyncWithHost,omitempty"`  // Synchronize the VM's time with the host.
+}
+
+// BootOptions allows to specify boot options of a VM
+type BootOptions struct {
+	BootDelay            *int   `xml:"BootDelay,omitempty"`            // Delay between power-on and boot of the VM
+	EnterBiosSetup       *bool  `xml:"EnterBIOSSetup,omitempty"`       // Set to false on the next boot
+	BootRetryEnabled     *bool  `xml:"BootRetryEnabled,omitempty"`     // Available since API 37.1
+	BootRetryDelay       *int   `xml:"BootRetryDelay,omitempty"`       // Available since API 37.1. Doesn't have an effect if BootRetryEnabled is set to false
+	EfiSecureBootEnabled *bool  `xml:"EfiSecureBootEnabled,omitempty"` // Available since API 37.1
+	NetworkBootProtocol  string `xml:"NetworkBootProtocol,omitempty"`  // Available since API 37.1
 }
 
 // RecomposeVAppParamsForEmptyVm represents a vApp structure which allows to create VM.
@@ -113,7 +125,8 @@ type CreateItem struct {
 	VmSpecSection             *VmSpecSection             `xml:"VmSpecSection,omitempty"`
 	StorageProfile            *Reference                 `xml:"StorageProfile,omitempty"`
 	ComputePolicy             *ComputePolicy             `xml:"ComputePolicy,omitempty"` // accessible only from version API 33.0
-	BootImage                 *Media                     `xml:"Media,omitempty"`         // boot image as vApp template. Href, Id and name needed.
+	BootOptions               *BootOptions               `xml:"BootOptions,omitempty"`
+	BootImage                 *Media                     `xml:"Media,omitempty"` // boot image as vApp template. Href, Id and name needed.
 }
 
 // ComputePolicy represents structure to manage VM compute polices, part of RecomposeVAppParams structure.
