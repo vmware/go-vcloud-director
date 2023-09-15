@@ -159,9 +159,11 @@ func (vapp *VApp) AddRawVM(vAppComposition *types.ReComposeVAppParams) (*VM, err
 	apiEndpoint.Path += "/action/recomposeVApp"
 
 	// Return the task
-	task, err := vapp.client.ExecuteTaskRequest(apiEndpoint.String(), http.MethodPost, types.MimeRecomposeVappParams, "error instantiating a new VM: %s", vAppComposition)
+	task, err := vapp.client.ExecuteTaskRequestWithApiVersion(apiEndpoint.String(), http.MethodPost,
+		types.MimeRecomposeVappParams, "error instantiating a new VM: %s",
+		vAppComposition, vapp.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
 	if err != nil {
-		return nil, fmt.Errorf("error instantiating a new VM: %s", err)
+		return nil, err
 	}
 
 	err = task.WaitTaskCompletion()
