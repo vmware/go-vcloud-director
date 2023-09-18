@@ -4,6 +4,7 @@ package govcd
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -106,9 +107,26 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(deletedServerTunnel, IsNil)
 
 	// CLIENT Tunnel part
-	clientTunnelParams := serverTunnelParams
-	clientTunnelParams.SessionMode = "CLIENT"
-	clientTunnelParams.PeerCode = peerCode
+	clientTunnelParams := &types.NsxtL2VpnTunnel{
+		Name:             check.TestName(),
+		Description:      check.TestName(),
+		SessionMode:      "CLIENT",
+		Enabled:          true,
+		LocalEndpointIp:  localEndpointIp[0].IPAddress,
+		RemoteEndpointIp: "1.1.1.1",
+		PreSharedKey:     check.TestName(),
+		PeerCode:         peerCode,
+		StretchedNetworks: []types.EdgeL2VpnStretchedNetwork{
+			{
+				NetworkRef: types.OpenApiReference{
+					Name: network.OrgVDCNetwork.Name,
+					ID:   network.OrgVDCNetwork.ID,
+				},
+				TunnelID: 1,
+			},
+		},
+		Logging: false,
+	}
 
 	clientTunnel, err := edge.CreateL2VpnTunnel(clientTunnelParams)
 	check.Assert(err, IsNil)
@@ -124,7 +142,6 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(clientTunnel.NsxtL2VpnTunnel.Enabled, Equals, true)
 	check.Assert(clientTunnel.NsxtL2VpnTunnel.LocalEndpointIp, Equals, localEndpointIp[0].IPAddress)
 	check.Assert(clientTunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "1.1.1.1")
-	check.Assert(clientTunnel.NsxtL2VpnTunnel.ConnectorInitiationMode, Equals, "ON_DEMAND")
 	check.Assert(clientTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
 
 	fetchedClientTunnel, err := edge.GetL2VpnTunnelById(clientTunnel.NsxtL2VpnTunnel.ID)
@@ -132,11 +149,9 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(fetchedClientTunnel, DeepEquals, clientTunnel)
 
 	updatedClientTunnelParams := clientTunnelParams
-	updatedClientTunnelParams.ConnectorInitiationMode = "INITIATOR"
 	updatedClientTunnelParams.RemoteEndpointIp = "2.2.2.2"
-	updatedClientTunnelParams.TunnelInterface = "192.168.0.1/24"
 
-	updatedClientTunnel, err := clientTunnel.Update(updatedServerTunnelParams)
+	updatedClientTunnel, err := clientTunnel.Update(updatedClientTunnelParams)
 	check.Assert(err, IsNil)
 	check.Assert(updatedClientTunnel, NotNil)
 
@@ -146,14 +161,21 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.Enabled, Equals, true)
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.LocalEndpointIp, Equals, localEndpointIp[0].IPAddress)
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "2.2.2.2")
-	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.TunnelInterface, Equals, "192.168.0.1/24")
-	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.ConnectorInitiationMode, Equals, "INITIATOR")
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
+
+	// There is an unexpected error in all versions up to 10.5.0, it happens
+	// when a L2 VPN Tunnel is created in CLIENT mode, has atleast one Org VDC
+	// network attached, and is updated in any way. After that, to delete the tunnel,
+	// one needs to send a DELETE request twice (and get an error on the first attempt)
+	// or de-attach the Org Networks from the Tunnel and send the DELETE request
+	err = updatedClientTunnel.Delete()
+	errorMessage := regexp.MustCompile("error code 500030")
+	check.Assert(errorMessage.MatchString(err.Error()), Equals, true)
 
 	err = updatedClientTunnel.Delete()
 	check.Assert(err, IsNil)
 
 	deletedClientTunnel, err := edge.GetL2VpnTunnelById(clientTunnel.NsxtL2VpnTunnel.ID)
 	check.Assert(err, NotNil)
-	check.Assert(deletedClientTunnel, Equals, nil)
+	check.Assert(deletedClientTunnel, IsNil)
 }
