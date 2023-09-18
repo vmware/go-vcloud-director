@@ -1785,3 +1785,145 @@ type NsxtEdgeGatewayStaticRouteNextHopScope struct {
 	// * SYSTEM_OWNED
 	ScopeType string `json:"scopeType"`
 }
+
+type NsxtSegmentProfileTemplate struct {
+	ID                     string                               `json:"id,omitempty"`
+	Name                   string                               `json:"name"`
+	Description            string                               `json:"description,omitempty"`
+	LastModified           string                               `json:"lastModified,omitempty"`
+	SourceNsxTManagerRef   *OpenApiReference                    `json:"sourceNsxTManagerRef,omitempty"`
+	IPDiscoveryProfile     *NsxtSegmentProfileTemplateReference `json:"ipDiscoveryProfile,omitempty"`
+	MacDiscoveryProfile    *NsxtSegmentProfileTemplateReference `json:"macDiscoveryProfile,omitempty"`
+	QosProfile             *NsxtSegmentProfileTemplateReference `json:"qosProfile,omitempty"`
+	SegmentSecurityProfile *NsxtSegmentProfileTemplateReference `json:"segmentSecurityProfile,omitempty"`
+	SpoofGuardProfile      *NsxtSegmentProfileTemplateReference `json:"spoofGuardProfile,omitempty"`
+}
+
+type NsxtSegmentProfileTemplateReference struct {
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+	Type string `json:"type,omitempty"`
+}
+
+type NsxtSegmentProfileTemplateCommonFields struct {
+	ID             string            `json:"id,omitempty"`
+	Description    string            `json:"description,omitempty"`
+	DisplayName    string            `json:"displayName"`
+	NsxTManagerRef *OpenApiReference `json:"nsxTManagerRef"`
+}
+
+type NsxtSegmentProfileTemplateIpDiscovery struct {
+	NsxtSegmentProfileTemplateCommonFields
+	ArpBindingLimit               int  `json:"arpBindingLimit"`
+	ArpNdBindingTimeout           int  `json:"arpNdBindingTimeout"`
+	IsArpSnoopingEnabled          bool `json:"isArpSnoopingEnabled"`
+	IsDhcpSnoopingV4Enabled       bool `json:"isDhcpSnoopingV4Enabled"`
+	IsDhcpSnoopingV6Enabled       bool `json:"isDhcpSnoopingV6Enabled"`
+	IsDuplicateIPDetectionEnabled bool `json:"isDuplicateIpDetectionEnabled"`
+	IsNdSnoopingEnabled           bool `json:"isNdSnoopingEnabled"`
+	IsTofuEnabled                 bool `json:"isTofuEnabled"`
+	IsVMToolsV4Enabled            bool `json:"isVmToolsV4Enabled"`
+	IsVMToolsV6Enabled            bool `json:"isVmToolsV6Enabled"`
+	NdSnoopingLimit               int  `json:"ndSnoopingLimit"`
+}
+
+type NsxtSegmentProfileTemplateMacDiscovery struct {
+	NsxtSegmentProfileTemplateCommonFields
+	IsMacChangeEnabled              bool   `json:"isMacChangeEnabled"`
+	IsMacLearningEnabled            bool   `json:"isMacLearningEnabled"`
+	IsUnknownUnicastFloodingEnabled bool   `json:"isUnknownUnicastFloodingEnabled"`
+	MacLearningAgingTime            int    `json:"macLearningAgingTime"`
+	MacLimit                        int    `json:"macLimit"`
+	MacPolicy                       string `json:"macPolicy"`
+}
+
+type NsxtSegmentProfileTemplateSegmentSpoofGuard struct {
+	NsxtSegmentProfileTemplateCommonFields
+	IsAddressBindingWhitelistEnabled bool `json:"isAddressBindingWhitelistEnabled"`
+}
+
+type NsxtSegmentProfileTemplateSegmentQosProfile struct {
+	NsxtSegmentProfileTemplateCommonFields
+
+	ClassOfService int `json:"classOfService"`
+	DscpConfig     struct {
+		Priority  int    `json:"priority"`
+		TrustMode string `json:"trustMode"`
+	} `json:"dscpConfig"`
+	EgressRateLimiter struct {
+		AvgBandwidth  int `json:"avgBandwidth"`
+		BurstSize     int `json:"burstSize"`
+		PeakBandwidth int `json:"peakBandwidth"`
+	} `json:"egressRateLimiter"`
+	IngressBroadcastRateLimiter struct {
+		AvgBandwidth  int `json:"avgBandwidth"`
+		BurstSize     int `json:"burstSize"`
+		PeakBandwidth int `json:"peakBandwidth"`
+	} `json:"ingressBroadcastRateLimiter"`
+	IngressRateLimiter struct {
+		AvgBandwidth  int `json:"avgBandwidth"`
+		BurstSize     int `json:"burstSize"`
+		PeakBandwidth int `json:"peakBandwidth"`
+	} `json:"ingressRateLimiter"`
+}
+
+type NsxtSegmentProfileTemplateSegmentSecurity struct {
+	NsxtSegmentProfileTemplateCommonFields
+
+	BpduFilterAllowList        []string `json:"bpduFilterAllowList"`
+	IsBpduFilterEnabled        bool     `json:"isBpduFilterEnabled"`
+	IsDhcpClientBlockV4Enabled bool     `json:"isDhcpClientBlockV4Enabled"`
+	IsDhcpClientBlockV6Enabled bool     `json:"isDhcpClientBlockV6Enabled"`
+	IsDhcpServerBlockV4Enabled bool     `json:"isDhcpServerBlockV4Enabled"`
+	IsDhcpServerBlockV6Enabled bool     `json:"isDhcpServerBlockV6Enabled"`
+	IsNonIPTrafficBlockEnabled bool     `json:"isNonIpTrafficBlockEnabled"`
+	IsRaGuardEnabled           bool     `json:"isRaGuardEnabled"`
+	IsRateLimitingEnabled      bool     `json:"isRateLimitingEnabled"`
+	RateLimits                 struct {
+		RxBroadcast int `json:"rxBroadcast"`
+		RxMulticast int `json:"rxMulticast"`
+		TxBroadcast int `json:"txBroadcast"`
+		TxMulticast int `json:"txMulticast"`
+	} `json:"rateLimits"`
+}
+
+type NsxtManager struct {
+	OtherAttributes struct {
+	} `json:"otherAttributes"`
+	Link []struct {
+		OtherAttributes struct {
+		} `json:"otherAttributes"`
+		Href            string        `json:"href"`
+		ID              interface{}   `json:"id"`
+		Type            string        `json:"type"`
+		Name            interface{}   `json:"name"`
+		Rel             string        `json:"rel"`
+		Model           interface{}   `json:"model"`
+		VCloudExtension []interface{} `json:"vCloudExtension"`
+	} `json:"link"`
+	Href                        string        `json:"href"`
+	Type                        string        `json:"type"`
+	ID                          string        `json:"id"`
+	OperationKey                interface{}   `json:"operationKey"`
+	Description                 string        `json:"description"`
+	Tasks                       interface{}   `json:"tasks"`
+	Name                        string        `json:"name"`
+	Username                    string        `json:"username"`
+	Password                    interface{}   `json:"password"`
+	URL                         string        `json:"url"`
+	DeploymentType              string        `json:"deploymentType"`
+	VirtualCenterReference      interface{}   `json:"virtualCenterReference"`
+	ServiceAppReference         interface{}   `json:"serviceAppReference"`
+	NetworkProviderScope        interface{}   `json:"networkProviderScope"`
+	Version                     string        `json:"version"`
+	ProxyConfigurationReference interface{}   `json:"proxyConfigurationReference"`
+	GlobalManager               bool          `json:"globalManager"`
+	LocalNsxTManagerRef         []interface{} `json:"localNsxTManagerRef"`
+	LocalManagerLocationName    interface{}   `json:"localManagerLocationName"`
+	VCloudExtension             []interface{} `json:"vCloudExtension"`
+}
+
+type NsxtSegmentProfileTemplateDefaultDefinition struct {
+	VappNetworkSegmentProfileTemplateRef *OpenApiReference `json:"vappNetworkSegmentProfileTemplateRef,omitempty"`
+	VdcNetworkSegmentProfileTemplateRef  *OpenApiReference `json:"vdcNetworkSegmentProfileTemplateRef,omitempty"`
+}

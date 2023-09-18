@@ -199,6 +199,11 @@ type TestConfig struct {
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
 			NsxtAlbImportableCloud    string `yaml:"nsxtAlbImportableCloud"`
 			NsxtAlbServiceEngineGroup string `yaml:"nsxtAlbServiceEngineGroup"`
+			IpDiscoveryProfile        string `yaml:"ipDiscoveryProfile"`
+			MacDiscoveryProfile       string `yaml:"macDiscoveryProfile"`
+			SpoofGuardProfile         string `yaml:"spoofGuardProfile"`
+			QosProfile                string `yaml:"qosProfile"`
+			SegmentSecurityProfile    string `yaml:"segmentSecurityProfile"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Vsphere struct {

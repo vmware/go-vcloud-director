@@ -109,6 +109,16 @@ vcd:
       nsxtAlbImportableCloud: NSXT AVI Cloud
       # Service Engine Group name within (Should be configured in Active Standby mode)
       nsxtAlbServiceEngineGroup: active-standby-service-engine-group
+      # IP Discovery profile defined in NSX-T Manager
+      ipDiscoveryProfile: "ip-discovery-profile"
+      # MAC Discovery profile defined in NSX-T Manager
+      macDiscoveryProfile: "mac-discovery-profile"
+      # Spoof Guard profile defined in NSX-T Manager
+      spoofGuardProfile: "spoof-guard-profile"
+      # QoS profile defined in NSX-T Manager
+      qosProfile: "qos-profile"
+      # Segment Security profile defined in NSX-T Manager
+      segmentSecurityProfile: "segment-security-profile"
     # An Org catalog, possibly containing at least one item
     catalog:
         name: mycat
