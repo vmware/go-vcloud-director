@@ -3,7 +3,7 @@ GOFMT_FILES?=$$(find . -name '*.go')
 maindir=$(PWD)
 timeout=0
 ifdef VCD_TIMEOUT
-timeout="$(VCD_TIMEOUT)m"
+timeout="$(VCD_TIMEOUT)"
 endif
 
 default: fmtcheck vet static security build
