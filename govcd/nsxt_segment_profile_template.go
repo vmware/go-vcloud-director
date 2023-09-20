@@ -41,6 +41,62 @@ func (nsxtManager *NsxtManager) CreateSegmentProfileTemplate(segmentProfileConfi
 	return returnSegmentProfile, nil
 }
 
+func (cl *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *types.NsxtSegmentProfileTemplate) (*NsxtSegmentProfileTemplate, error) {
+	client := cl.Client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	returnSegmentProfile := &NsxtSegmentProfileTemplate{
+		NsxtSegmentProfileTemplate: &types.NsxtSegmentProfileTemplate{},
+		VCDClient:                  cl,
+	}
+
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, segmentProfileConfig, returnSegmentProfile.NsxtSegmentProfileTemplate, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating NSX-T Segment Profile Template: %s", err)
+	}
+
+	return returnSegmentProfile, nil
+}
+
+func (cl *VCDClient) GetSegmentProfileTemplateById(id string) (*NsxtSegmentProfileTemplate, error) {
+	client := cl.Client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	if id == "" {
+		return nil, fmt.Errorf("empty NSX-T Segment Profile Template ID")
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
+	if err != nil {
+		return nil, err
+	}
+
+	returnSegmentProfile := &NsxtSegmentProfileTemplate{
+		NsxtSegmentProfileTemplate: &types.NsxtSegmentProfileTemplate{},
+		VCDClient:                  cl,
+	}
+
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, returnSegmentProfile.NsxtSegmentProfileTemplate, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return returnSegmentProfile, nil
+}
+
 func (nsxtManager *NsxtManager) GetSegmentProfileTemplateById(id string) (*NsxtSegmentProfileTemplate, error) {
 	client := nsxtManager.VCDClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates

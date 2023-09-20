@@ -67,21 +67,21 @@ func genericGetSingleEntity[T any](client *Client, endpoint, exactEndpoint strin
 // An example usage which can be found in nsxt_manager.go:
 // endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles
 // return genericGetAllFilteredEntities[types.NsxtSegmentProfileTemplateMacDiscovery](client, endpoint, queryParameters)
-func genericGetAllFilteredEntities[T any](client *Client, endpoint string, queryParameters url.Values) ([]*T, error) {
+func genericGetAllFilteredEntities[T any](client *Client, endpoint string, queryParameters url.Values, entityName string) ([]*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting API version for entity '%s': %s", entityName, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", entityName, err)
 	}
 
 	typeResponses := make([]*T, 0)
 	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", entityName, err)
 	}
 
 	return typeResponses, nil
