@@ -47,8 +47,8 @@ func (vcd *TestVCD) Test_FindVMByHREF(check *C) {
 // Test attach disk to VM and detach disk from VM
 func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 	// Find VM
-	if vcd.vapp != nil && vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
+	if skipVappCreation {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
 
 	vapp := vcd.findFirstVapp()
@@ -130,98 +130,8 @@ func (vcd *TestVCD) Test_VMAttachOrDetachDisk(check *C) {
 
 }
 
-// Test attach disk to VM
-func (vcd *TestVCD) Test_VMAttachDisk(check *C) {
-
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-	if vcd.skipVappTests {
-		check.Skip("skipping test because vApp wasn't properly created")
-	}
-
-	// Find VM
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Discard vApp suspension
-	// Disk attach and detach operations are not working if vApp is suspended
-	err := vcd.ensureVappIsSuitableForVMTest(vapp)
-	check.Assert(err, IsNil)
-	err = vcd.ensureVMIsSuitableForVMTest(vm)
-	check.Assert(err, IsNil)
-
-	// Create disk
-	diskCreateParamsDisk := &types.Disk{
-		Name:        TestVMAttachDisk,
-		SizeMb:      1,
-		Description: TestVMAttachDisk,
-	}
-
-	diskCreateParams := &types.DiskCreateParams{
-		Disk: diskCreateParamsDisk,
-	}
-
-	task, err := vcd.vdc.CreateDisk(diskCreateParams)
-	check.Assert(err, IsNil)
-
-	check.Assert(task.Task.Owner.Type, Equals, types.MimeDisk)
-	diskHREF := task.Task.Owner.HREF
-
-	PrependToCleanupList(diskHREF, "disk", "", check.TestName())
-
-	// Wait for disk creation complete
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	// Verify created disk
-	check.Assert(diskHREF, Not(Equals), "")
-	disk, err := vcd.vdc.GetDiskByHref(diskHREF)
-	check.Assert(err, IsNil)
-	check.Assert(disk.Disk.Name, Equals, diskCreateParamsDisk.Name)
-	check.Assert(disk.Disk.SizeMb, Equals, diskCreateParamsDisk.SizeMb)
-	check.Assert(disk.Disk.Description, Equals, diskCreateParamsDisk.Description)
-
-	// Attach disk
-	attachDiskTask, err := vm.AttachDisk(&types.DiskAttachOrDetachParams{
-		Disk: &types.Reference{
-			HREF: disk.Disk.HREF,
-		},
-	})
-	check.Assert(err, IsNil)
-
-	err = attachDiskTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	// Get attached VM
-	vmRef, err := disk.AttachedVM()
-	check.Assert(err, IsNil)
-	check.Assert(vmRef, NotNil)
-	check.Assert(vmRef.Name, Equals, vm.VM.Name)
-
-	// Cleanup: Detach disk
-	detachDiskTask, err := vm.attachOrDetachDisk(&types.DiskAttachOrDetachParams{
-		Disk: &types.Reference{
-			HREF: disk.Disk.HREF,
-		},
-	}, types.RelDiskDetach)
-	check.Assert(err, IsNil)
-
-	err = detachDiskTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-}
-
-// Test detach disk from VM
-func (vcd *TestVCD) Test_VMDetachDisk(check *C) {
+// Test attach/detach disk from VM
+func (vcd *TestVCD) Test_VMAttachAndDetachDisk(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("skipping test because vApp wasn't properly created")
 	}
@@ -314,7 +224,7 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vapp was not successfully created at setup")
 	}
-	itemName := "TestHandleInsertOrEjectMedia"
+	itemName := check.TestName()
 
 	// Find VApp
 	if vcd.vapp != nil && vcd.vapp.VApp == nil {
@@ -366,166 +276,8 @@ func (vcd *TestVCD) Test_HandleInsertOrEjectMedia(check *C) {
 
 	//verify
 	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, false)
-}
 
-// Test Insert or Eject Media for VM
-func (vcd *TestVCD) Test_InsertOrEjectMedia(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-
-	// Skipping this test due to a bug in vCD. VM refresh status returns old state, though eject task is finished.
-	if vcd.client.Client.APIVCDMaxVersionIs(">= 32.0, <= 33.0") {
-		check.Skip("Skipping test because this vCD version has a bug")
-	}
-
-	itemName := "TestInsertOrEjectMedia"
-
-	// Find VApp
-	if vcd.vapp != nil && vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
-	}
-
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Upload Media
-	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_InsertOrEjectMedia")
-
-	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	media, err := catalog.GetMediaByName(itemName, false)
-	check.Assert(err, IsNil)
-	check.Assert(media, NotNil)
-
-	// Insert Media
-	insertMediaTask, err := vm.insertOrEjectMedia(&types.MediaInsertOrEjectParams{
-		Media: &types.Reference{
-			HREF: media.Media.HREF,
-			Name: media.Media.Name,
-			ID:   media.Media.ID,
-			Type: media.Media.Type,
-		},
-	}, types.RelMediaInsertMedia)
-	check.Assert(err, IsNil)
-
-	err = insertMediaTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-
-	check.Assert(isMediaInjected(vm.VM.VirtualHardwareSection.Item), Equals, true)
-
-	// Insert Media
-	ejectMediaTask, err := vm.insertOrEjectMedia(&types.MediaInsertOrEjectParams{
-		Media: &types.Reference{
-			HREF: media.Media.HREF,
-		},
-	}, types.RelMediaEjectMedia)
-	check.Assert(err, IsNil)
-
-	err = ejectMediaTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-
-	// Expecting outcome to be 'false', but VCD sometimes lags to report that media is ejected in VM
-	// state (even after ejection task is finished).
-	// In such cases, do additional VM refresh and try to see if the structure has no media anymore
-	mediaInjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
-	retryCount := 5
-	if mediaInjected {
-		// Run a few more attempts every second to see if the VM finally shows no media being
-		// present in VirtualHardwareItem structure
-		for a := 0; a < retryCount; a++ {
-			fmt.Printf("attempt %d\n", a)
-			err = vm.Refresh()
-			if err != nil {
-				fmt.Printf("error refreshing VM: %s\n", err)
-			}
-			retryIsMediaInjected := isMediaInjected(vm.VM.VirtualHardwareSection.Item)
-			if !retryIsMediaInjected {
-				fmt.Printf("media error recovered at %d refresh attempt\n", a)
-				check.SucceedNow()
-			}
-			time.Sleep(time.Second)
-		}
-		check.Errorf("error was not recovered after %d attempts - ejection FAILED", retryCount)
-	}
-}
-
-// Test Insert or Eject Media for VM
-func (vcd *TestVCD) Test_AnswerVmQuestion(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
-	}
-
-	itemName := "TestAnswerVmQuestion"
-
-	// Find VApp
-	if vcd.vapp != nil && vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
-	}
-
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Upload Media
-	catalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
-	check.Assert(err, IsNil)
-	err = uploadTask.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, "Test_AnswerVmQuestion")
-
-	catalog, err = vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
-	check.Assert(err, IsNil)
-	check.Assert(catalog, NotNil)
-
-	media, err := catalog.GetMediaByName(itemName, false)
-	check.Assert(err, IsNil)
-	check.Assert(media, NotNil)
-
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-
-	insertMediaTask, err := vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
+	insertMediaTask, err = vm.HandleInsertMedia(vcd.org, vcd.config.VCD.Catalog.Name, itemName)
 	check.Assert(err, IsNil)
 
 	err = insertMediaTask.WaitTaskCompletion()
@@ -967,23 +719,26 @@ func (vcd *TestVCD) Test_VMSetGetGuestCustomizationSection(check *C) {
 	guestCustomizationPropertyTester(vcd, check, vm)
 }
 
-// Test create internal disk For VM
-func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
+// Test create/update/remove of Internal Disk
+func (vcd *TestVCD) Test_InternalDisk(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
-
-	vmName := "Test_AddInternalDisk"
-
+	vmName := check.TestName()
 	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
+	check.Assert(err, IsNil)
+
+	description := check.TestName() + "_Description"
+	vm, err = vm.UpdateVmSpecSection(vm.VM.VmSpecSection, description)
 	check.Assert(err, IsNil)
 
 	//verify
 	disk, err := vm.GetInternalDiskById(diskId, true)
 	check.Assert(err, IsNil)
+	check.Assert(disk, NotNil)
 
 	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
 	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
@@ -997,9 +752,49 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
 	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
 
+	// increase new disk size
+	vmSpecSection := vm.VM.VmSpecSection
+	changeDiskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
+	for _, diskSettings := range changeDiskSettings {
+		if diskSettings.DiskId == diskId {
+			diskSettings.SizeMb = 2048
+		}
+	}
+
+	vmSpecSection.DiskSection.DiskSettings = changeDiskSettings
+
+	vmSpecSection, err = vm.UpdateInternalDisks(vmSpecSection)
+	check.Assert(err, IsNil)
+	check.Assert(vmSpecSection, NotNil)
+
+	disk, err = vm.GetInternalDiskById(diskId, true)
+	check.Assert(err, IsNil)
+	check.Assert(disk, NotNil)
+
+	//verify
+	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
+	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
+	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
+	check.Assert(disk.IopsAllocation.Reservation, Equals, diskSettings.IopsAllocation.Reservation)
+	check.Assert(disk.SizeMb, Equals, int64(2048))
+	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
+	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
+	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
+
+	// verify that VM description is still available - test for bugfix #418
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	check.Assert(vm.VM.Description, Equals, description)
+
+	// attach independent disk
+	independentDisk, err := attachIndependentDisk(vcd, check, vm)
+	check.Assert(err, IsNil)
+
 	//cleanup
 	err = vm.DeleteInternalDisk(diskId)
 	check.Assert(err, IsNil)
+	detachIndependentDisk(vcd, check, independentDisk)
 
 	// disable fast provisioning if needed
 	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
@@ -1012,9 +807,6 @@ func (vcd *TestVCD) Test_AddInternalDisk(check *C) {
 // createInternalDisk Finds available VM and creates internal Disk in it.
 // returns VM, storage profile, disk settings, disk id and error.
 func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (*VM, types.Reference, *types.DiskSettings, string, string, error) {
-	if vcd.skipVappTests {
-		check.Skip("Skipping test because vApp wasn't properly created")
-	}
 	if vcd.config.VCD.StorageProfile.SP1 == "" {
 		check.Skip("No Storage Profile given for VDC tests")
 	}
@@ -1034,7 +826,7 @@ func (vcd *TestVCD) createInternalDisk(check *C, vmName string, busNumber int) (
 	vdc, _, vappTemplate, vapp, desiredNetConfig, err := vcd.createAndGetResourcesForVmCreation(check, vmName)
 	check.Assert(err, IsNil)
 
-	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", true)
+	vm, err := spawnVM("FirstNode", 512, *vdc, *vapp, desiredNetConfig, vappTemplate, check, "", false)
 	check.Assert(err, IsNil)
 
 	storageProfile, err := vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
@@ -1094,132 +886,9 @@ func updateVdcFastProvisioning(vcd *TestVCD, check *C, enable string) string {
 	return vdcFastProvisioningValue
 }
 
-// Test delete internal disk For VM
-func (vcd *TestVCD) Test_DeleteInternalDisk(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
-
-	vmName := "Test_DeleteInternalDisk"
-
-	vm, _, _, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 2)
-	check.Assert(err, IsNil)
-
-	//verify
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-
-	err = vm.DeleteInternalDisk(diskId)
-	check.Assert(err, IsNil)
-
-	disk, err := vm.GetInternalDiskById(diskId, true)
-	check.Assert(err, Equals, ErrorEntityNotFound)
-	check.Assert(disk, IsNil)
-
-	// enable fast provisioning if needed
-	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
-
-	// delete Vapp early to avoid env capacity issue
-	err = deleteVapp(vcd, vmName)
-	check.Assert(err, IsNil)
-}
-
-// Test update internal disk for VM which has independent disk
-func (vcd *TestVCD) Test_UpdateInternalDisk(check *C) {
-	fmt.Printf("Running: %s\n", check.TestName())
-
-	// In general VM internal disks works with Org users, but due we need change VDC fast provisioning value, we have to be sys admins
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
-	vmName := "Test_UpdateInternalDisk"
-	vm, storageProfile, diskSettings, diskId, previousProvisioningValue, err := vcd.createInternalDisk(check, vmName, 1)
-	check.Assert(err, IsNil)
-
-	// verify VM description still available - test for bugfix #418
-	description := "Test_UpdateInternalDisk_Description"
-	vm, err = vm.UpdateVmSpecSection(vm.VM.VmSpecSection, description)
-	check.Assert(err, IsNil)
-
-	//verify
-	disk, err := vm.GetInternalDiskById(diskId, true)
-	check.Assert(err, IsNil)
-	check.Assert(disk, NotNil)
-
-	// increase new disk size
-	vmSpecSection := vm.VM.VmSpecSection
-	changeDiskSettings := vm.VM.VmSpecSection.DiskSection.DiskSettings
-	for _, ds := range changeDiskSettings {
-		if ds.DiskId == diskId {
-			ds.SizeMb = 2048
-		}
-	}
-
-	vmSpecSection.DiskSection.DiskSettings = changeDiskSettings
-
-	vmSpecSection, err = vm.UpdateInternalDisks(vmSpecSection)
-	check.Assert(err, IsNil)
-	check.Assert(vmSpecSection, NotNil)
-
-	disk, err = vm.GetInternalDiskById(diskId, true)
-	check.Assert(err, IsNil)
-	check.Assert(disk, NotNil)
-
-	//verify
-	check.Assert(disk.StorageProfile.HREF, Equals, storageProfile.HREF)
-	check.Assert(disk.StorageProfile.ID, Equals, storageProfile.ID)
-	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
-	check.Assert(*disk.ThinProvisioned, Equals, *diskSettings.ThinProvisioned)
-	check.Assert(disk.IopsAllocation, NotNil)
-	check.Assert(diskSettings.IopsAllocation, NotNil)
-	check.Assert(disk.IopsAllocation.Shares, Equals, diskSettings.IopsAllocation.Shares)
-	check.Assert(disk.IopsAllocation.Reservation, Equals, diskSettings.IopsAllocation.Reservation)
-	check.Assert(disk.SizeMb, Equals, int64(2048))
-	check.Assert(disk.UnitNumber, Equals, diskSettings.UnitNumber)
-	check.Assert(disk.BusNumber, Equals, diskSettings.BusNumber)
-	check.Assert(disk.AdapterType, Equals, diskSettings.AdapterType)
-
-	// verify VM description still available - test for bugfix #418
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-	check.Assert(vm.VM.Description, Equals, description)
-
-	// attach independent disk
-	independentDisk, err := attachIndependentDisk(vcd, check)
-	check.Assert(err, IsNil)
-
-	//cleanup
-	err = vm.DeleteInternalDisk(diskId)
-	check.Assert(err, IsNil)
-	detachIndependentDisk(vcd, check, independentDisk)
-
-	// disable fast provisioning if needed
-	updateVdcFastProvisioning(vcd, check, previousProvisioningValue)
-
-	// delete Vapp early to avoid env capacity issue
-	err = deleteVapp(vcd, vmName)
-	check.Assert(err, IsNil)
-}
-
-func attachIndependentDisk(vcd *TestVCD, check *C) (*Disk, error) {
-	// Find VM
-	vapp := vcd.findFirstVapp()
-	vmType, vmName := vcd.findFirstVm(vapp)
-	if vmName == "" {
-		check.Skip("skipping test because no VM is found")
-	}
-
-	vm := NewVM(&vcd.client.Client)
-	vm.VM = &vmType
-
-	// Ensure vApp and VM are suitable for this test
+func attachIndependentDisk(vcd *TestVCD, check *C, vm *VM) (*Disk, error) {
 	// Disk attach and detach operations are not working if VM is suspended
-	err := vcd.ensureVappIsSuitableForVMTest(vapp)
-	check.Assert(err, IsNil)
-	err = vcd.ensureVMIsSuitableForVMTest(vm)
+	err := vcd.ensureVMIsSuitableForVMTest(vm)
 	check.Assert(err, IsNil)
 
 	// Create disk
@@ -1435,8 +1104,7 @@ func (vcd *TestVCD) Test_AddNewEmptyVMMultiNIC(check *C) {
 func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
-	// #nosec G101 -- Not a credential
-	vmName := "Test_UpdateVmSpecSection"
+	vmName := check.TestName()
 	if vcd.skipVappTests {
 		check.Skip("Skipping test because vApp wasn't properly created")
 	}
@@ -1448,25 +1116,99 @@ func (vcd *TestVCD) Test_UpdateVmSpecSection(check *C) {
 	check.Assert(err, IsNil)
 
 	vmSpecSection := vm.VM.VmSpecSection
-	osType := "sles10_64Guest"
-	vmSpecSection.OsType = osType
 	vmSpecSection.NumCpus = addrOf(4)
 	vmSpecSection.NumCoresPerSocket = addrOf(2)
 	vmSpecSection.MemoryResourceMb = &types.MemoryResourceMb{Configured: 768}
+	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
+		vmSpecSection.Firmware = "efi"
+	}
 
 	updatedVm, err := vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
 	check.Assert(err, IsNil)
 	check.Assert(updatedVm, NotNil)
 
 	//verify
-	check.Assert(updatedVm.VM.VmSpecSection.OsType, Equals, osType)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCpus, Equals, 4)
 	check.Assert(*updatedVm.VM.VmSpecSection.NumCoresPerSocket, Equals, 2)
 	check.Assert(updatedVm.VM.VmSpecSection.MemoryResourceMb.Configured, Equals, int64(768))
 	check.Assert(updatedVm.VM.Description, Equals, "updateDescription")
+	if vcd.client.Client.APIVCDMaxVersionIs(">=37.1") {
+		check.Assert(updatedVm.VM.VmSpecSection.Firmware, Equals, "efi")
+	}
 
 	// delete Vapp early to avoid env capacity issue
 	err = deleteVapp(vcd, vmName)
+	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_VmBootOptions(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vmName := check.TestName()
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	_, vm := createNsxtVAppAndVmWithEfiSupport(vcd, check)
+	check.Assert(err, IsNil)
+
+	hardwareVersion, err := vdc.GetHardwareVersion(vm.VM.VmSpecSection.HardwareVersion.Value)
+	check.Assert(err, IsNil)
+	check.Assert(hardwareVersion, NotNil)
+
+	var updatedVm *VM
+	vmSpecSection := vm.VM.VmSpecSection
+	supportsExtendedBootOptions := vcd.client.Client.APIVCDMaxVersionIs(">=37.1")
+	if supportsExtendedBootOptions {
+		vmSpecSection.Firmware = "efi"
+		updatedVm, err = vm.UpdateVmSpecSection(vmSpecSection, "updateDescription")
+		check.Assert(err, IsNil)
+		check.Assert(updatedVm.VM.VmSpecSection.Firmware, Equals, "efi")
+		check.Assert(updatedVm, NotNil)
+	}
+
+	bootOptions := &types.BootOptions{}
+	bootOptions.EnterBiosSetup = addrOf(true)
+	bootOptions.BootDelay = addrOf(1)
+
+	if supportsExtendedBootOptions {
+		bootOptions.EfiSecureBootEnabled = addrOf(true)
+		bootOptions.BootRetryEnabled = addrOf(true)
+		bootOptions.BootRetryDelay = addrOf(200)
+	}
+
+	updatedVm, err = vm.UpdateBootOptions(bootOptions)
+	check.Assert(err, IsNil)
+
+	if supportsExtendedBootOptions {
+		check.Assert(updatedVm.VM.BootOptions.BootRetryEnabled, DeepEquals, addrOf(true))
+		check.Assert(updatedVm.VM.BootOptions.BootRetryDelay, DeepEquals, addrOf(200))
+		check.Assert(updatedVm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
+	}
+	check.Assert(updatedVm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(true))
+	check.Assert(updatedVm.VM.BootOptions.BootDelay, DeepEquals, addrOf(1))
+
+	task, err := updatedVm.PowerOn()
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	task, err = updatedVm.PowerOff()
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	err = updatedVm.Refresh()
+	check.Assert(err, IsNil)
+
+	check.Assert(updatedVm.VM.BootOptions.EnterBiosSetup, DeepEquals, addrOf(false))
+
+	// delete Vapp early to avoid env capacity issue
+	err = deleteNsxtVapp(vcd, vmName)
 	check.Assert(err, IsNil)
 }
 
@@ -1922,7 +1664,7 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 	description := "created by " + check.TestName()
-	params := types.CreateVmParams{
+	params := &types.CreateVmParams{
 		Name:        "testStandaloneVm",
 		PowerOn:     false,
 		Description: description,
@@ -1933,7 +1675,7 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 			VmSpecSection: &types.VmSpecSection{
 				Modified:          addrOf(true),
 				Info:              "Virtual Machine specification",
-				OsType:            "debian10Guest",
+				OsType:            "sles11_64Guest",
 				NumCpus:           addrOf(1),
 				NumCoresPerSocket: addrOf(1),
 				CpuResourceMhz: &types.CpuResourceMhz{
@@ -1944,7 +1686,7 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 				},
 				DiskSection: &types.DiskSection{
 					DiskSettings: []*types.DiskSettings{
-						&types.DiskSettings{
+						{
 							SizeMb:            1024,
 							UnitNumber:        0,
 							BusNumber:         0,
@@ -1963,16 +1705,37 @@ func (vcd *TestVCD) Test_CreateStandaloneVM(check *C) {
 				Info:         "Specifies Guest OS Customization Settings",
 				ComputerName: "standalone1",
 			},
+			BootOptions: &types.BootOptions{
+				BootDelay: addrOf(0),
+			},
 		},
 		Xmlns: types.XMLNamespaceVCloud,
 	}
+
+	supportsExtendedBootOptions := vcd.client.Client.APIVCDMaxVersionIs(">=37.1")
+	if supportsExtendedBootOptions {
+		params.CreateVm.VmSpecSection.Firmware = "efi"
+		params.CreateVm.BootOptions.EfiSecureBootEnabled = addrOf(true)
+		params.CreateVm.BootOptions.BootRetryEnabled = addrOf(true)
+		params.CreateVm.BootOptions.BootRetryDelay = addrOf(1)
+	}
+
 	vappList := vdc.GetVappList()
 	vappNum := len(vappList)
-	vm, err := vdc.CreateStandaloneVm(&params)
+	vm, err := vdc.CreateStandaloneVm(params)
 	check.Assert(err, IsNil)
 	check.Assert(vm, NotNil)
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
 	AddToCleanupList(vm.VM.ID, "standaloneVm", "", check.TestName())
+
 	check.Assert(vm.VM.Description, Equals, description)
+	check.Assert(vm.VM.BootOptions.BootDelay, DeepEquals, addrOf(0))
+	if supportsExtendedBootOptions {
+		check.Assert(vm.VM.BootOptions.EfiSecureBootEnabled, DeepEquals, addrOf(true))
+		check.Assert(vm.VM.BootOptions.BootRetryEnabled, DeepEquals, addrOf(true))
+		check.Assert(vm.VM.BootOptions.BootRetryDelay, DeepEquals, addrOf(1))
+	}
 
 	_ = vdc.Refresh()
 	vappList = vdc.GetVappList()
@@ -2252,6 +2015,68 @@ func createNsxtVAppAndVm(vcd *TestVCD, check *C) (*VApp, *VM) {
 	vappStatus, err = vapp.GetStatus()
 	check.Assert(err, IsNil)
 	check.Assert(vappStatus, Equals, "POWERED_ON")
+
+	// Once the operation is successful, we won't trigger a failure
+	// until after the vApp deletion
+	check.Check(vapp.VApp.Name, Equals, check.TestName())
+	check.Check(vapp.VApp.Description, Equals, check.TestName())
+
+	// Construct VM
+	vmDef := &types.ReComposeVAppParams{
+		Ovf:              types.XMLNamespaceOVF,
+		Xsi:              types.XMLNamespaceXSI,
+		Xmlns:            types.XMLNamespaceVCloud,
+		AllEULAsAccepted: true,
+		// Deploy:           false,
+		Name: vapp.VApp.Name,
+		// PowerOn: false, // Not touching power state at this phase
+		SourcedItem: &types.SourcedCompositionItemParam{
+			Source: &types.Reference{
+				HREF: vapptemplate.VAppTemplate.Children.VM[0].HREF,
+				Name: check.TestName() + "-vm-tmpl",
+			},
+			VMGeneralParams: &types.VMGeneralParams{
+				Description: "test-vm-description",
+			},
+			InstantiationParams: &types.InstantiationParams{
+				NetworkConnectionSection: &types.NetworkConnectionSection{},
+			},
+		},
+	}
+	vm, err := vapp.AddRawVM(vmDef)
+	check.Assert(err, IsNil)
+	check.Assert(vm, NotNil)
+	check.Assert(vm.VM.Name, Equals, vmDef.SourcedItem.Source.Name)
+
+	// Refresh vApp to have latest state
+	err = vapp.Refresh()
+	check.Assert(err, IsNil)
+
+	return vapp, vm
+}
+
+func createNsxtVAppAndVmWithEfiSupport(vcd *TestVCD, check *C) (*VApp, *VM) {
+	if vcd.config.VCD.Catalog.CatalogItemWithEfiSupport == "" {
+		check.Skip("EFI supporting OVA not provided in the config")
+	}
+
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+	// Populate Catalog Item
+	catitem, err := cat.GetCatalogItemByName(vcd.config.VCD.Catalog.CatalogItemWithEfiSupport, false)
+	check.Assert(err, IsNil)
+	check.Assert(catitem, NotNil)
+	// Get VAppTemplate
+	vapptemplate, err := catitem.GetVAppTemplate()
+	check.Assert(err, IsNil)
+	check.Assert(vapptemplate.VAppTemplate.Children.VM[0].HREF, NotNil)
+
+	vapp, err := vcd.nsxtVdc.CreateRawVApp(check.TestName(), check.TestName())
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+	// After a successful creation, the entity is added to the cleanup list.
+	AddToCleanupList(vapp.VApp.Name, "vapp", vcd.nsxtVdc.Vdc.Name, check.TestName())
 
 	// Once the operation is successful, we won't trigger a failure
 	// until after the vApp deletion
