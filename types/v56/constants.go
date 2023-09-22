@@ -436,7 +436,7 @@ const (
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 
 	OpenApiEndpointNsxtSegmentProfileTemplates        = "segmentProfileTemplates/"
-	OpenApiEndpointNsxtSegmentProfileTemplatesDefault = "/segmentProfileTemplates/default"
+	OpenApiEndpointNsxtSegmentProfileTemplatesDefault = "segmentProfileTemplates/default"
 	OpenApiEndpointNsxtSegmentIpDiscoveryProfiles     = "nsxTResources/segmentIpDiscoveryProfiles"
 	OpenApiEndpointNsxtSegmentMacDiscoveryProfiles    = "nsxTResources/segmentMacDiscoveryProfiles"
 	OpenApiEndpointNsxtSegmentSpoofGuardProfiles      = "nsxTResources/segmentSpoofGuardProfiles"

@@ -41,7 +41,7 @@ func oneOrError[T any](key, name string, entitySlice []*T) (*T, error) {
 	return entitySlice[0], nil
 }
 
-func genericGetSingleEntity[T any](client *Client, endpoint, exactEndpoint string, queryParameters url.Values) (*T, error) {
+func genericGetSingleBareEntity[T any](client *Client, endpoint, exactEndpoint string, queryParameters url.Values) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -61,13 +61,13 @@ func genericGetSingleEntity[T any](client *Client, endpoint, exactEndpoint strin
 	return typeResponse, nil
 }
 
-// genericGetAllFilteredEntities can be used to retrieve a slice of any entity in the OpenAPI
+// genericGetAllBareFilteredEntities can be used to retrieve a slice of any entity in the OpenAPI
 // endpoints that are not nested into a parent type
 //
 // An example usage which can be found in nsxt_manager.go:
 // endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles
-// return genericGetAllFilteredEntities[types.NsxtSegmentProfileTemplateMacDiscovery](client, endpoint, queryParameters)
-func genericGetAllFilteredEntities[T any](client *Client, endpoint string, queryParameters url.Values, entityName string) ([]*T, error) {
+// return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplateMacDiscovery](client, endpoint, queryParameters)
+func genericGetAllBareFilteredEntities[T any](client *Client, endpoint string, queryParameters url.Values, entityName string) ([]*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for entity '%s': %s", entityName, err)
@@ -138,9 +138,9 @@ func genericLocalFilterOneOrError[T any](entities []*T, expectedFieldName, expec
 }
 
 // Two types of invocation are possible because the type T can be identified (it is a required parameter)
-// * genericUpdateEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
-// * genericUpdateEntity(&client, endpoint, endpoint, entityConfig)
-func genericUpdateEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T) (*T, error) {
+// * genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
+// * genericUpdateBareEntity(&client, endpoint, endpoint, entityConfig)
+func genericUpdateBareEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err

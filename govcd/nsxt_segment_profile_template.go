@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -95,6 +96,44 @@ func (cl *VCDClient) GetSegmentProfileTemplateById(id string) (*NsxtSegmentProfi
 	}
 
 	return returnSegmentProfile, nil
+}
+
+func (cl *VCDClient) GetAllSegmentProfileTemplates(queryFilter url.Values) ([]*NsxtSegmentProfileTemplate, error) {
+	client := cl.Client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
+
+	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate](&client, endpoint, queryFilter, "NSX-T Segment Profile Template")
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap all typeResponses into NsxtEdgeGateway types with client
+	wrappedResponses := make([]*NsxtSegmentProfileTemplate, len(allSegmentProfileTemplates))
+	for sliceIndex, singleSegmentProfileTemplate := range allSegmentProfileTemplates {
+		wrappedResponses[sliceIndex] = &NsxtSegmentProfileTemplate{
+			NsxtSegmentProfileTemplate: singleSegmentProfileTemplate,
+			VCDClient:                  cl,
+		}
+	}
+
+	return wrappedResponses, nil
+}
+
+func (cl *VCDClient) GetSegmentProfileTemplateByName(name string) (*NsxtSegmentProfileTemplate, error) {
+	filterByName := copyOrNewUrlValues(nil)
+	filterByName = queryParameterFilterAnd(fmt.Sprintf("name==%s", name), filterByName)
+
+	allSegmentProfileTemplates, err := cl.GetAllSegmentProfileTemplates(filterByName)
+	if err != nil {
+		return nil, err
+	}
+
+	singleSegmentProfileTemplate, err := oneOrError("name", name, allSegmentProfileTemplates)
+	if err != nil {
+		return nil, err
+	}
+
+	return singleSegmentProfileTemplate, nil
 }
 
 func (nsxtManager *NsxtManager) GetSegmentProfileTemplateById(id string) (*NsxtSegmentProfileTemplate, error) {
@@ -194,12 +233,12 @@ func deleteById(client *Client, endpoint string, deletionUrl string, entityName 
 
 func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtSegmentProfileTemplateDefaultDefinition, error) {
 	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSpoofGuardProfiles
-	return genericGetSingleEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, nil)
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
+	return genericGetSingleBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, nil)
 }
 
 func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtSegmentProfileTemplateDefaultDefinition) (*types.NsxtSegmentProfileTemplateDefaultDefinition, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericUpdateEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
+	return genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
 }

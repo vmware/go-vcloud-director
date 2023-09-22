@@ -849,6 +849,14 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+	case "OpenApiEntityGlobalDefaultSegmentProfileTemplate":
+		_, err := vcd.client.UpdateGlobalDefaultSegmentProfileTemplates(&types.NsxtSegmentProfileTemplateDefaultDefinition{})
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	// 	OpenApiEntityAlbSettingsDisable has different API structure therefore generic `OpenApiEntity` case does not fit cleanup
 	case "OpenApiEntityAlbSettingsDisable":
 		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Parent)
