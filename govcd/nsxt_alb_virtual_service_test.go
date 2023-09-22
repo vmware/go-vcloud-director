@@ -4,6 +4,7 @@ package govcd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
@@ -68,7 +69,7 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 		err = poolWithMemberGroup.Delete()
 		check.Assert(err, IsNil)
 
-		err = ipSet.Delete()
+		err = retryOnError(ipSet.Delete, 5, 1*time.Second)
 		check.Assert(err, IsNil)
 	}
 

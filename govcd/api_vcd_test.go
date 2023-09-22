@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/yaml.v2"
@@ -152,14 +153,15 @@ type TestConfig struct {
 			PlacementPolicyVmGroup string `yaml:"placementPolicyVmGroup,omitempty"`
 		} `yaml:"nsxt_provider_vdc"`
 		Catalog struct {
-			Name                    string `yaml:"name,omitempty"`
-			NsxtBackedCatalogName   string `yaml:"nsxtBackedCatalogName,omitempty"`
-			Description             string `yaml:"description,omitempty"`
-			CatalogItem             string `yaml:"catalogItem,omitempty"`
-			NsxtCatalogItem         string `yaml:"nsxtCatalogItem,omitempty"`
-			CatalogItemDescription  string `yaml:"catalogItemDescription,omitempty"`
-			CatalogItemWithMultiVms string `yaml:"catalogItemWithMultiVms,omitempty"`
-			VmNameInMultiVmItem     string `yaml:"vmNameInMultiVmItem,omitempty"`
+			Name                      string `yaml:"name,omitempty"`
+			NsxtBackedCatalogName     string `yaml:"nsxtBackedCatalogName,omitempty"`
+			Description               string `yaml:"description,omitempty"`
+			CatalogItem               string `yaml:"catalogItem,omitempty"`
+			CatalogItemWithEfiSupport string `yaml:"catalogItemWithEfiSupport,omitempty"`
+			NsxtCatalogItem           string `yaml:"nsxtCatalogItem,omitempty"`
+			CatalogItemDescription    string `yaml:"catalogItemDescription,omitempty"`
+			CatalogItemWithMultiVms   string `yaml:"catalogItemWithMultiVms,omitempty"`
+			VmNameInMultiVmItem       string `yaml:"vmNameInMultiVmItem,omitempty"`
 		} `yaml:"catalog"`
 		Network struct {
 			Net1 string `yaml:"network1"`
@@ -2032,4 +2034,23 @@ func (vcd *TestVCD) skipIfNotSysAdmin(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip(fmt.Sprintf("Skipping %s: requires system administrator privileges", check.TestName()))
 	}
+}
+
+// retryOnError is a function that will attempt to execute function with signature `func() error`
+// multiple times (until maxRetries) and waiting given retryInterval between tries. It will return
+// original deletion error for troubleshooting.
+func retryOnError(operation func() error, maxRetries int, retryInterval time.Duration) error {
+	var err error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err = operation()
+		if err == nil {
+			return nil
+		}
+
+		fmt.Printf("# retrying after %v (Attempt %d/%d)\n", retryInterval, attempt+1, maxRetries)
+		fmt.Printf("# error was: %s", err)
+		time.Sleep(retryInterval)
+	}
+
+	return fmt.Errorf("exceeded maximum retries, final error: %s", err)
 }

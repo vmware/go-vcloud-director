@@ -121,6 +121,8 @@ vcd:
         # One item in the NSX-T catalog. It will be used to compose test vApps. Some tests rely on it
         # being Photon OS. If it is not Photon OS - some tests will be skipped
         nsxtCatalogItem: my-nsxt-item
+        # Item in the NSX-T catalog that has a newer hardware version and supports EFI boot.
+        catalogItemWithEfiSupport: my-cat-item-with-efi-support
         #
         # An optional description for the catalog. Its test will be skipped if omitted.
         # If provided, it must be the current description of the catalog
