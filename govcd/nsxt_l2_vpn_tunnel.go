@@ -220,6 +220,13 @@ func (l2Vpn *NsxtL2VpnTunnel) Update(tunnelParams *types.NsxtL2VpnTunnel) (*Nsxt
 		return nil, fmt.Errorf("error updating the L2 VPN Tunnel: session mode can't be changed after creation")
 	}
 
+	if tunnelParams.SessionMode == "CLIENT" && !tunnelParams.Enabled {
+		// There is a known bug up to 10.5.0, the CLIENT sessions can't be
+		// disabled and can result in unexpected behaviour for the following
+		// operations
+		return nil, fmt.Errorf("client sessions can't be disabled")
+	}
+
 	client := l2Vpn.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayL2VpnTunnel
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -247,6 +254,11 @@ func (l2Vpn *NsxtL2VpnTunnel) Update(tunnelParams *types.NsxtL2VpnTunnel) (*Nsxt
 }
 
 // Delete deletes the L2 VPN Tunnel
+// On versions up to 10.5.0 (as of writing) there is a bug wtih deleting
+// CLIENT tunnels. If there are any networks attached to the tunnel, the
+// DELETE call will fail the amount of times the resource was updated,
+// so the best choice is to remove the networks and then call Delete(), or
+// call Delete() in a loop until it's successful.
 func (l2Vpn *NsxtL2VpnTunnel) Delete() error {
 	client := l2Vpn.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayL2VpnTunnel
