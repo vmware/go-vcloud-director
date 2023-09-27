@@ -865,8 +865,7 @@ type NsxtL2VpnTunnel struct {
 	// State of the tunnel. Default is true
 	Enabled bool `json:"enabled"`
 
-	// LocalEndpoint corresponds to the Edge Gateway the L2 VPN Tunnel is being configured on. Local Endpoint
-	// requires an IP. That IP must be sub-allocated to the edge gateway
+	// The IP address of the local endpoint, which corresponds to the Edge Gateway the tunnel is being configured on.
 	LocalEndpointIp string `json:"localEndpointIP"`
 
 	// The IP address of the remote endpoint, which corresponds to the device on the remote site terminating the VPN tunnel.
