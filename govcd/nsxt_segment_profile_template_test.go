@@ -40,11 +40,11 @@ func (vcd *TestVCD) Test_NsxtSegmentProfileTemplate(check *C) {
 	config := &types.NsxtSegmentProfileTemplate{
 		Name:                   check.TestName(),
 		Description:            check.TestName() + "-description",
-		IPDiscoveryProfile:     &types.NsxtSegmentProfileTemplateReference{ID: ipDiscoveryProfile.ID},
-		MacDiscoveryProfile:    &types.NsxtSegmentProfileTemplateReference{ID: macDiscoveryProfile.ID},
-		QosProfile:             &types.NsxtSegmentProfileTemplateReference{ID: qosProfile.ID},
-		SegmentSecurityProfile: &types.NsxtSegmentProfileTemplateReference{ID: segmentSecurityProfile.ID},
-		SpoofGuardProfile:      &types.NsxtSegmentProfileTemplateReference{ID: spoofGuardProfile.ID},
+		IPDiscoveryProfile:     &types.OpenApiReferenceWithType{ID: ipDiscoveryProfile.ID},
+		MacDiscoveryProfile:    &types.OpenApiReferenceWithType{ID: macDiscoveryProfile.ID},
+		QosProfile:             &types.OpenApiReferenceWithType{ID: qosProfile.ID},
+		SegmentSecurityProfile: &types.OpenApiReferenceWithType{ID: segmentSecurityProfile.ID},
+		SpoofGuardProfile:      &types.OpenApiReferenceWithType{ID: spoofGuardProfile.ID},
 		SourceNsxTManagerRef:   &types.OpenApiReference{ID: nsxtManager.NsxtManager.ID},
 	}
 
@@ -59,8 +59,21 @@ func (vcd *TestVCD) Test_NsxtSegmentProfileTemplate(check *C) {
 	// Retrieve segment profile template
 	retrievedSpt, err := nsxtManager.GetSegmentProfileTemplateById(createdSegmentProfileTemplate.NsxtSegmentProfileTemplate.ID)
 	check.Assert(err, IsNil)
-
 	check.Assert(retrievedSpt.NsxtSegmentProfileTemplate, DeepEquals, createdSegmentProfileTemplate.NsxtSegmentProfileTemplate)
+
+	// Get all and look for the required one
+	allSpts, err := vcd.client.GetAllSegmentProfileTemplates(nil)
+	check.Assert(err, IsNil)
+	check.Assert(allSpts, NotNil)
+	found := false
+	for _, spt := range allSpts {
+		if spt.NsxtSegmentProfileTemplate.ID == createdSegmentProfileTemplate.NsxtSegmentProfileTemplate.ID {
+			found = true
+			break
+		}
+	}
+
+	check.Assert(found, Equals, true)
 
 	// Test update
 	createdSegmentProfileTemplate.NsxtSegmentProfileTemplate.Description = check.TestName() + "updated"
@@ -106,11 +119,11 @@ func (vcd *TestVCD) Test_NsxtGlobalDefaultSegmentProfileTemplate(check *C) {
 	config := &types.NsxtSegmentProfileTemplate{
 		Name:                   check.TestName(),
 		Description:            check.TestName() + "-description",
-		IPDiscoveryProfile:     &types.NsxtSegmentProfileTemplateReference{ID: ipDiscoveryProfile.ID},
-		MacDiscoveryProfile:    &types.NsxtSegmentProfileTemplateReference{ID: macDiscoveryProfile.ID},
-		QosProfile:             &types.NsxtSegmentProfileTemplateReference{ID: qosProfile.ID},
-		SegmentSecurityProfile: &types.NsxtSegmentProfileTemplateReference{ID: segmentSecurityProfile.ID},
-		SpoofGuardProfile:      &types.NsxtSegmentProfileTemplateReference{ID: spoofGuardProfile.ID},
+		IPDiscoveryProfile:     &types.OpenApiReferenceWithType{ID: ipDiscoveryProfile.ID},
+		MacDiscoveryProfile:    &types.OpenApiReferenceWithType{ID: macDiscoveryProfile.ID},
+		QosProfile:             &types.OpenApiReferenceWithType{ID: qosProfile.ID},
+		SegmentSecurityProfile: &types.OpenApiReferenceWithType{ID: segmentSecurityProfile.ID},
+		SpoofGuardProfile:      &types.OpenApiReferenceWithType{ID: spoofGuardProfile.ID},
 		SourceNsxTManagerRef:   &types.OpenApiReference{ID: nsxtManager.NsxtManager.ID},
 	}
 

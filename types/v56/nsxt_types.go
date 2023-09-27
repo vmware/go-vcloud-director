@@ -207,6 +207,18 @@ type OpenApiOrgVdcNetwork struct {
 	// EnableDualSubnetNetwork defines whether or not this network will support two subnets (IPv4
 	// and IPv6)
 	EnableDualSubnetNetwork *bool `json:"enableDualSubnetNetwork,omitempty"`
+
+	// SegmentProfileTemplate reference to the Segment Profile Template that is to be used when
+	// creating/updating this network. Setting this will override any Org VDC Network Segment
+	// Profile Template defined at global level or an Org VDC level.
+	//
+	// Notes:
+	// * This field is only relevant during network create/update operation and will not be returned
+	// on GETs.
+	// * For specific profile types where there are no corresponding profiles defined in the
+	// template, VCD will use the default NSX-T profile.
+	// * This field is only applicable for NSX-T Org vDC Networks.
+	SegmentProfileTemplate *OpenApiReference `json:"segmentProfileTemplateRef,omitempty"`
 }
 
 // OrgVdcNetworkSubnetIPRanges is a type alias to reuse the same definitions with appropriate names
@@ -1787,19 +1799,19 @@ type NsxtEdgeGatewayStaticRouteNextHopScope struct {
 }
 
 type NsxtSegmentProfileTemplate struct {
-	ID                     string                               `json:"id,omitempty"`
-	Name                   string                               `json:"name"`
-	Description            string                               `json:"description,omitempty"`
-	LastModified           string                               `json:"lastModified,omitempty"`
-	SourceNsxTManagerRef   *OpenApiReference                    `json:"sourceNsxTManagerRef,omitempty"`
-	IPDiscoveryProfile     *NsxtSegmentProfileTemplateReference `json:"ipDiscoveryProfile,omitempty"`
-	MacDiscoveryProfile    *NsxtSegmentProfileTemplateReference `json:"macDiscoveryProfile,omitempty"`
-	QosProfile             *NsxtSegmentProfileTemplateReference `json:"qosProfile,omitempty"`
-	SegmentSecurityProfile *NsxtSegmentProfileTemplateReference `json:"segmentSecurityProfile,omitempty"`
-	SpoofGuardProfile      *NsxtSegmentProfileTemplateReference `json:"spoofGuardProfile,omitempty"`
+	ID                     string                    `json:"id,omitempty"`
+	Name                   string                    `json:"name"`
+	Description            string                    `json:"description,omitempty"`
+	LastModified           string                    `json:"lastModified,omitempty"`
+	SourceNsxTManagerRef   *OpenApiReference         `json:"sourceNsxTManagerRef,omitempty"`
+	IPDiscoveryProfile     *OpenApiReferenceWithType `json:"ipDiscoveryProfile,omitempty"`
+	MacDiscoveryProfile    *OpenApiReferenceWithType `json:"macDiscoveryProfile,omitempty"`
+	QosProfile             *OpenApiReferenceWithType `json:"qosProfile,omitempty"`
+	SegmentSecurityProfile *OpenApiReferenceWithType `json:"segmentSecurityProfile,omitempty"`
+	SpoofGuardProfile      *OpenApiReferenceWithType `json:"spoofGuardProfile,omitempty"`
 }
 
-type NsxtSegmentProfileTemplateReference struct {
+type OpenApiReferenceWithType struct {
 	ID   string `json:"id"`
 	Name string `json:"name,omitempty"`
 	Type string `json:"type,omitempty"`
@@ -1926,4 +1938,20 @@ type NsxtManager struct {
 type NsxtSegmentProfileTemplateDefaultDefinition struct {
 	VappNetworkSegmentProfileTemplateRef *OpenApiReference `json:"vappNetworkSegmentProfileTemplateRef,omitempty"`
 	VdcNetworkSegmentProfileTemplateRef  *OpenApiReference `json:"vdcNetworkSegmentProfileTemplateRef,omitempty"`
+}
+
+// OpenApiReference
+type OrgVdcNetworkSegmentProfiles struct {
+	SegmentProfileTemplate *SegmentProfileTemplate `json:"segmentProfileTemplate"`
+
+	IPDiscoveryProfile     *OpenApiReferenceWithType `json:"ipDiscoveryProfile"`
+	MacDiscoveryProfile    *OpenApiReferenceWithType `json:"macDiscoveryProfile"`
+	QosProfile             *OpenApiReferenceWithType `json:"qosProfile"`
+	SegmentSecurityProfile *OpenApiReferenceWithType `json:"segmentSecurityProfile"`
+	SpoofGuardProfile      *OpenApiReferenceWithType `json:"spoofGuardProfile"`
+}
+
+type SegmentProfileTemplate struct {
+	Source      string            `json:"source"`
+	TemplateRef *OpenApiReference `json:"templateRef"`
 }

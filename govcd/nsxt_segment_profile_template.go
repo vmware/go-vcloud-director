@@ -232,13 +232,23 @@ func deleteById(client *Client, endpoint string, deletionUrl string, entityName 
 }
 
 func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtSegmentProfileTemplateDefaultDefinition, error) {
-	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericGetSingleBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, nil)
+	return genericGetSingleBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&vcdClient.Client, endpoint, endpoint, nil)
 }
 
 func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtSegmentProfileTemplateDefaultDefinition) (*types.NsxtSegmentProfileTemplateDefaultDefinition, error) {
-	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
+	return genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&vcdClient.Client, endpoint, endpoint, entityConfig)
+}
+
+func (orgVdcNet *OpenApiOrgVdcNetwork) GetSegmentProfile() (*types.OrgVdcNetworkSegmentProfiles, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
+	exactEndpoint := fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	return genericGetSingleBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, exactEndpoint, nil)
+}
+
+func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.OrgVdcNetworkSegmentProfiles) (*types.OrgVdcNetworkSegmentProfiles, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
+	exactEndpoint := fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	return genericUpdateBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, exactEndpoint, entityConfig)
 }
