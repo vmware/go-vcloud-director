@@ -695,6 +695,7 @@ const (
 
 // Values used to identify the type of network pool
 const (
+	NetworkPoolVxlanType     = "VXLAN" // NSX-V backed network pool. Only used as read-only
 	NetworkPoolVlanType      = "VLAN"
 	NetworkPoolGeneveType    = "GENEVE"
 	NetworkPoolPortGroupType = "PORTGROUP_BACKED"
