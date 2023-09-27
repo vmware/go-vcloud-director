@@ -199,7 +199,7 @@ func (np *NetworkPool) Delete() error {
 
 // CreateNetworkPoolGeneve creates a network pool of GENEVE type
 // The function retrieves the given NSX-T manager and corresponding transport zone names
-// If the trasport zone name is empty, the first available will be used
+// If the transport zone name is empty, the first available will be used
 func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerName, transportZoneName string) (*NetworkPool, error) {
 	managers, err := vcdClient.QueryNsxtManagerByName(managerName)
 	if err != nil {
@@ -217,7 +217,7 @@ func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerNa
 	managerId := "urn:vcloud:nsxtmanager:" + extractUuid(managers[0].HREF)
 	transportZones, err := vcdClient.GetAllNsxtTransportZones(managerId, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving transport xones for manager '%s': %s", manager.Name, err)
+		return nil, fmt.Errorf("error retrieving transport zones for manager '%s': %s", manager.Name, err)
 	}
 	var transportZone *types.TransportZone
 	for _, tz := range transportZones {
