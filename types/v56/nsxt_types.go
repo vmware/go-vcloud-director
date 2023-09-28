@@ -214,7 +214,8 @@ type OpenApiOrgVdcNetwork struct {
 	//
 	// Notes:
 	// * This field is only relevant during network create/update operation and will not be returned
-	// on GETs.
+	// on GETs. To retrieve currently set Segment Profile Template one can use different endpoint
+	// and function `vdc.GetVdcNetworkProfile()`
 	// * For specific profile types where there are no corresponding profiles defined in the
 	// template, VCD will use the default NSX-T profile.
 	// * This field is only applicable for NSX-T Org vDC Networks.
@@ -1811,90 +1812,161 @@ type NsxtSegmentProfileTemplate struct {
 	SpoofGuardProfile      *OpenApiReferenceWithType `json:"spoofGuardProfile,omitempty"`
 }
 
-type OpenApiReferenceWithType struct {
-	ID   string `json:"id"`
-	Name string `json:"name,omitempty"`
-	Type string `json:"type,omitempty"`
-}
-
+// NsxtSegmentProfileTemplateCommonFields holds common fields that are used in all NSX-T Segment
+// Profiles
 type NsxtSegmentProfileTemplateCommonFields struct {
-	ID             string            `json:"id,omitempty"`
-	Description    string            `json:"description,omitempty"`
-	DisplayName    string            `json:"displayName"`
+	ID string `json:"id,omitempty"`
+	// Description of the segment profile.
+	Description string `json:"description,omitempty"`
+	// DisplayName represents name of the segment profile. This corresponds to the name used in
+	// NSX-T managers logs or GUI.
+	DisplayName string `json:"displayName"`
+	// NsxTManagerRef where this segment profile is configured.
 	NsxTManagerRef *OpenApiReference `json:"nsxTManagerRef"`
 }
 
-type NsxtSegmentProfileTemplateIpDiscovery struct {
+// NsxtSegmentProfileIpDiscovery contains information about NSX-T IP Discovery Segment Profile
+// It is a read-only construct in VCD
+type NsxtSegmentProfileIpDiscovery struct {
 	NsxtSegmentProfileTemplateCommonFields
-	ArpBindingLimit               int  `json:"arpBindingLimit"`
-	ArpNdBindingTimeout           int  `json:"arpNdBindingTimeout"`
-	IsArpSnoopingEnabled          bool `json:"isArpSnoopingEnabled"`
-	IsDhcpSnoopingV4Enabled       bool `json:"isDhcpSnoopingV4Enabled"`
-	IsDhcpSnoopingV6Enabled       bool `json:"isDhcpSnoopingV6Enabled"`
+	// ArpBindingLimit indicates the number of arp snooped IP addresses to be remembered per
+	// LogicalPort.
+	ArpBindingLimit int `json:"arpBindingLimit"`
+	// ArpNdBindingTimeout indicates ARP and ND cache timeout (in minutes).
+	ArpNdBindingTimeout int `json:"arpNdBindingTimeout"`
+	// IsArpSnoopingEnabled defines whether ARP snooping is enabled.
+	IsArpSnoopingEnabled bool `json:"isArpSnoopingEnabled"`
+	// IsDhcpSnoopingV4Enabled defines whether DHCP snooping for IPv4 is enabled.
+	IsDhcpSnoopingV4Enabled bool `json:"isDhcpSnoopingV4Enabled"`
+	// IsDhcpSnoopingV6Enabled defines whether DHCP snooping for IPv6 is enabled.
+	IsDhcpSnoopingV6Enabled bool `json:"isDhcpSnoopingV6Enabled"`
+	// IsDuplicateIPDetectionEnabled indicates whether duplicate IP detection is enabled. Duplicate
+	// IP detection is used to determine if there is any IP conflict with any other port on the same
+	// logical switch. If a conflict is detected, then the IP is marked as a duplicate on the port
+	// where the IP was discovered last.
 	IsDuplicateIPDetectionEnabled bool `json:"isDuplicateIpDetectionEnabled"`
-	IsNdSnoopingEnabled           bool `json:"isNdSnoopingEnabled"`
-	IsTofuEnabled                 bool `json:"isTofuEnabled"`
-	IsVMToolsV4Enabled            bool `json:"isVmToolsV4Enabled"`
-	IsVMToolsV6Enabled            bool `json:"isVmToolsV6Enabled"`
-	NdSnoopingLimit               int  `json:"ndSnoopingLimit"`
+	// IsNdSnoopingEnabled indicates whether ND snooping is enabled. If true, this method will snoop
+	// the NS (Neighbor Solicitation) and NA (Neighbor Advertisement) messages in the ND (Neighbor
+	// Discovery Protocol) family of messages which are transmitted by a VM. From the NS messages,
+	// we will learn about the source which sent this NS message. From the NA message, we will learn
+	// the resolved address in the message which the VM is a recipient of. Addresses snooped by this
+	// method are subject to TOFU.
+	IsNdSnoopingEnabled bool `json:"isNdSnoopingEnabled"`
+	// IsTofuEnabled defines whether 'Trust on First Use(TOFU)' paradigm is enabled.
+	IsTofuEnabled bool `json:"isTofuEnabled"`
+	// IsVMToolsV4Enabled indicates whether fetching IPv4 address using vm-tools is enabled. This
+	// option is only supported on ESX where vm-tools is installed.
+	IsVMToolsV4Enabled bool `json:"isVmToolsV4Enabled"`
+	// IsVMToolsV6Enabled indicates whether fetching IPv6 address using vm-tools is enabled. This
+	// will learn the IPv6 addresses which are configured on interfaces of a VM with the help of the
+	// VMTools software.
+	IsVMToolsV6Enabled bool `json:"isVmToolsV6Enabled"`
+	// NdSnoopingLimit defines maximum number of ND (Neighbor Discovery Protocol) snooped IPv6 addresses.
+	NdSnoopingLimit int `json:"ndSnoopingLimit"`
 }
 
-type NsxtSegmentProfileTemplateMacDiscovery struct {
+// NsxtSegmentProfileMacDiscovery contains information about NSX-T MAC Discovery Segment Profile
+// It is a read-only construct in VCD
+type NsxtSegmentProfileMacDiscovery struct {
 	NsxtSegmentProfileTemplateCommonFields
-	IsMacChangeEnabled              bool   `json:"isMacChangeEnabled"`
-	IsMacLearningEnabled            bool   `json:"isMacLearningEnabled"`
-	IsUnknownUnicastFloodingEnabled bool   `json:"isUnknownUnicastFloodingEnabled"`
-	MacLearningAgingTime            int    `json:"macLearningAgingTime"`
-	MacLimit                        int    `json:"macLimit"`
-	MacPolicy                       string `json:"macPolicy"`
+	// IsMacChangeEnabled indcates whether source MAC address change is enabled.
+	IsMacChangeEnabled bool `json:"isMacChangeEnabled"`
+	// IsMacLearningEnabled indicates whether source MAC address learning is enabled.
+	IsMacLearningEnabled bool `json:"isMacLearningEnabled"`
+	// IsUnknownUnicastFloodingEnabled indicates whether unknown unicast flooding rule is enabled.
+	// This allows flooding for unlearned MAC for ingress traffic.
+	IsUnknownUnicastFloodingEnabled bool `json:"isUnknownUnicastFloodingEnabled"`
+	// MacLearningAgingTime indicates aging time in seconds for learned MAC address. Indicates how
+	// long learned MAC address remain.
+	MacLearningAgingTime int `json:"macLearningAgingTime"`
+	// MacLimit indicates The maximum number of MAC addresses that can be learned on this port.
+	MacLimit int `json:"macLimit"`
+	// MacPolicy defines the policy after MAC Limit is exceeded. It can be either 'ALLOW' or 'DROP'.
+	MacPolicy string `json:"macPolicy"`
 }
 
-type NsxtSegmentProfileTemplateSegmentSpoofGuard struct {
+// NsxtSegmentProfileSegmentSpoofGuard contains information about NSX-T Spoof Guard Segment Profile
+// It is a read-only construct in VCD
+type NsxtSegmentProfileSegmentSpoofGuard struct {
 	NsxtSegmentProfileTemplateCommonFields
+	// IsAddressBindingWhitelistEnabled indicats whether Spoof Guard is enabled. If true, it only
+	// allows VM sending traffic with the IPs in the whitelist.
 	IsAddressBindingWhitelistEnabled bool `json:"isAddressBindingWhitelistEnabled"`
 }
 
-type NsxtSegmentProfileTemplateSegmentQosProfile struct {
+// NsxtSegmentProfileSegmentQosProfile contains information about NSX-T QoS Segment Profile
+// It is a read-only construct in VCD
+type NsxtSegmentProfileSegmentQosProfile struct {
 	NsxtSegmentProfileTemplateCommonFields
 
+	// ClassOfService groups similar types of traffic in the network and each type of traffic is
+	// treated as a class with its own level of service priority. The lower priority traffic is
+	// slowed down or in some cases dropped to provide better throughput for higher priority
+	// traffic.
 	ClassOfService int `json:"classOfService"`
-	DscpConfig     struct {
+	// DscpConfig contains a Differentiated Services Code Point (DSCP) Configuration for this
+	// Segment QoS Profile.
+	DscpConfig struct {
 		Priority  int    `json:"priority"`
 		TrustMode string `json:"trustMode"`
 	} `json:"dscpConfig"`
-	EgressRateLimiter struct {
-		AvgBandwidth  int `json:"avgBandwidth"`
-		BurstSize     int `json:"burstSize"`
-		PeakBandwidth int `json:"peakBandwidth"`
-	} `json:"egressRateLimiter"`
-	IngressBroadcastRateLimiter struct {
-		AvgBandwidth  int `json:"avgBandwidth"`
-		BurstSize     int `json:"burstSize"`
-		PeakBandwidth int `json:"peakBandwidth"`
-	} `json:"ingressBroadcastRateLimiter"`
-	IngressRateLimiter struct {
-		AvgBandwidth  int `json:"avgBandwidth"`
-		BurstSize     int `json:"burstSize"`
-		PeakBandwidth int `json:"peakBandwidth"`
-	} `json:"ingressRateLimiter"`
+	// EgressRateLimiter indicates egress rate properties in Mb/s.
+	EgressRateLimiter NsxtSegmentProfileSegmentQosProfileRateLimiter `json:"egressRateLimiter"`
+	// IngressBroadcastRateLimiter indicates broadcast rate properties in Mb/s.
+	IngressBroadcastRateLimiter NsxtSegmentProfileSegmentQosProfileRateLimiter `json:"ingressBroadcastRateLimiter"`
+	// IngressRateLimiter indicates ingress rate properties in Mb/s.
+	IngressRateLimiter NsxtSegmentProfileSegmentQosProfileRateLimiter `json:"ingressRateLimiter"`
 }
 
-type NsxtSegmentProfileTemplateSegmentSecurity struct {
+// NsxtSegmentProfileIpDiscovery contains information about NSX-T IP Discovery Segment Profile
+// It is a read-only construct in VCD
+type NsxtSegmentProfileSegmentQosProfileRateLimiter struct {
+	// Average bandwidth in Mb/s.
+	AvgBandwidth int `json:"avgBandwidth"`
+	// Burst size in bytes.
+	BurstSize int `json:"burstSize"`
+	// Peak bandwidth in Mb/s.
+	PeakBandwidth int `json:"peakBandwidth"`
+}
+
+// NsxtSegmentProfileSegmentSecurity contains information about NSX-T Segment Security Profile
+// It is a read-only construct in VCD
+type NsxtSegmentProfileSegmentSecurity struct {
 	NsxtSegmentProfileTemplateCommonFields
 
-	BpduFilterAllowList        []string `json:"bpduFilterAllowList"`
-	IsBpduFilterEnabled        bool     `json:"isBpduFilterEnabled"`
-	IsDhcpClientBlockV4Enabled bool     `json:"isDhcpClientBlockV4Enabled"`
-	IsDhcpClientBlockV6Enabled bool     `json:"isDhcpClientBlockV6Enabled"`
-	IsDhcpServerBlockV4Enabled bool     `json:"isDhcpServerBlockV4Enabled"`
-	IsDhcpServerBlockV6Enabled bool     `json:"isDhcpServerBlockV6Enabled"`
-	IsNonIPTrafficBlockEnabled bool     `json:"isNonIpTrafficBlockEnabled"`
-	IsRaGuardEnabled           bool     `json:"isRaGuardEnabled"`
-	IsRateLimitingEnabled      bool     `json:"isRateLimitingEnabled"`
-	RateLimits                 struct {
+	// BpduFilterAllowList indicates pre-defined list of allowed MAC addresses to be excluded from
+	// BPDU filtering.
+	BpduFilterAllowList []string `json:"bpduFilterAllowList"`
+	// IsBpduFilterEnabled indicates whether BPDU filter is enabled.
+	IsBpduFilterEnabled bool `json:"isBpduFilterEnabled"`
+	// IsDhcpClientBlockV4Enabled indicates whether DHCP Client block IPv4 is enabled. This filters
+	// DHCP Client IPv4 traffic.
+	IsDhcpClientBlockV4Enabled bool `json:"isDhcpClientBlockV4Enabled"`
+	// IsDhcpClientBlockV6Enabled indicates whether DHCP Client block IPv6 is enabled. This filters
+	// DHCP Client IPv6 traffic.
+	IsDhcpClientBlockV6Enabled bool `json:"isDhcpClientBlockV6Enabled"`
+	// IsDhcpServerBlockV4Enabled indicates whether DHCP Server block IPv4 is enabled. This filters
+	// DHCP Server IPv4 traffic.
+	IsDhcpServerBlockV4Enabled bool `json:"isDhcpServerBlockV4Enabled"`
+	// IsDhcpServerBlockV6Enabled indicates whether DHCP Server block IPv6 is enabled. This filters
+	// DHCP Server IPv6 traffic.
+	IsDhcpServerBlockV6Enabled bool `json:"isDhcpServerBlockV6Enabled"`
+	// IsNonIPTrafficBlockEnabled indicates whether non IP traffic block is enabled. If true, it
+	// blocks all traffic except IP/(G)ARP/BPDU.
+	IsNonIPTrafficBlockEnabled bool `json:"isNonIpTrafficBlockEnabled"`
+	// IsRaGuardEnabled indicates whether Router Advertisement Guard is enabled. This filters DHCP
+	// Server IPv6 traffic.
+	IsRaGuardEnabled bool `json:"isRaGuardEnabled"`
+	// IsRateLimitingEnabled indicates whether Rate Limiting is enabled.
+	IsRateLimitingEnabled bool `json:"isRateLimitingEnabled"`
+	RateLimits            struct {
+		// Incoming broadcast traffic limit in packets per second.
 		RxBroadcast int `json:"rxBroadcast"`
+		// Incoming multicast traffic limit in packets per second.
 		RxMulticast int `json:"rxMulticast"`
+		// Outgoing broadcast traffic limit in packets per second.
 		TxBroadcast int `json:"txBroadcast"`
+		// Outgoing multicast traffic limit in packets per second.
 		TxMulticast int `json:"txMulticast"`
 	} `json:"rateLimits"`
 }

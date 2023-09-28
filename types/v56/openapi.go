@@ -243,6 +243,13 @@ type OpenApiReference struct {
 	ID   string `json:"id,omitempty"`
 }
 
+// OpenApiReference is a reference type based on OpenApiReference, but additionally has `Type` field
+// which some of the entities provide
+type OpenApiReferenceWithType struct {
+	OpenApiReference
+	Type string `json:"type,omitempty"`
+}
+
 type OpenApiReferences []OpenApiReference
 
 // VdcCapability can be used to determine VDC capabilities, including such:

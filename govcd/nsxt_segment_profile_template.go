@@ -102,7 +102,7 @@ func (cl *VCDClient) GetAllSegmentProfileTemplates(queryFilter url.Values) ([]*N
 	client := cl.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
 
-	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate](&client, endpoint, queryFilter, "NSX-T Segment Profile Template")
+	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate](&client, endpoint, endpoint, queryFilter, "NSX-T Segment Profile Template")
 	if err != nil {
 		return nil, err
 	}
