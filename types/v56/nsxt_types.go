@@ -894,7 +894,7 @@ type NsxtL2VpnTunnel struct {
 	PreSharedKey string `json:"preSharedKey"`
 
 	// The list of OrgVDC Network entity references which are currently attached to this L2VPN tunnel.
-	StretchedNetworks []EdgeL2VpnStretchedNetwork `json:"stretchedNetworks"`
+	StretchedNetworks []EdgeL2VpnStretchedNetwork `json:"stretchedNetworks,omitempty"`
 
 	// Whether logging for the tunnel is enabled or not.
 	Logging bool `json:"logging"`

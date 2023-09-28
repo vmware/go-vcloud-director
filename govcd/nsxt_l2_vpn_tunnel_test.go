@@ -4,7 +4,6 @@ package govcd
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -161,16 +160,15 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.Enabled, Equals, true)
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.LocalEndpointIp, Equals, localEndpointIp[0].IPAddress)
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "2.2.2.2")
-	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
 
-	// There is an unexpected error in all versions up to 10.5.0, it happens
+	// There is a bug in all versions up to 10.5.0, it happens
 	// when a L2 VPN Tunnel is created in CLIENT mode, has atleast one Org VDC
-	// network attached, and is updated in any way. After that, to delete the tunnel,
-	// one needs to send a DELETE request twice (and get an error on the first attempt)
-	// or de-attach the Org Networks from the Tunnel and send the DELETE request
-	err = updatedClientTunnel.Delete()
-	errorMessage := regexp.MustCompile("error code 500030")
-	check.Assert(errorMessage.MatchString(err.Error()), Equals, true)
+	// network attached, and is updated in any way. After that, to delete the tunnel
+	// one needs to de-attach all the networks
+	// or call Delete() the amount of times the object was updated
+	updatedClientTunnelParams.StretchedNetworks = nil
+	updatedClientTunnel, err = updatedClientTunnel.Update(updatedClientTunnelParams)
+	check.Assert(err, IsNil)
 
 	err = updatedClientTunnel.Delete()
 	check.Assert(err, IsNil)
