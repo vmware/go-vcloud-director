@@ -50,6 +50,9 @@ func (vcd *TestVCD) Test_GetNetworkPools(check *C) {
 	}
 }
 
+// Test_CreateNetworkPoolGeneve shows the creation of a "GENEVE" network pool
+// using first the low-level method, then using the shortcut methods,
+// and finally using the shortcut method without explicit transport zone
 func (vcd *TestVCD) Test_CreateNetworkPoolGeneve(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip("this test requires system administrator privileges")
@@ -124,6 +127,9 @@ func (vcd *TestVCD) Test_CreateNetworkPoolGeneve(check *C) {
 	}, nil, check)
 }
 
+// Test_CreateNetworkPoolPortgroup shows the creation of a "PORTGROUP_BACKED" network pool
+// using first the low-level method, then using the shortcut methods,
+// and finally using the shortcut method without explicit port group
 func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip("this test requires system administrator privileges")
@@ -180,6 +186,9 @@ func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
 	}, nil, check)
 }
 
+// Test_CreateNetworkPoolVlan shows the creation of a "VLAN" network pool
+// using first the low-level method, then using the shortcut methods,
+// and finally using the shortcut method without explicit distributed switch
 func (vcd *TestVCD) Test_CreateNetworkPoolVlan(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip("this test requires system administrator privileges")
@@ -275,6 +284,8 @@ func (vcd *TestVCD) Test_CreateNetworkPoolVlan(check *C) {
 		check)
 }
 
+// runTestCreateNetworkPool runs a generic test for network pool creation, using `creationFunc` for creating the object
+// and `postCreation` to run updates or other management actions
 func runTestCreateNetworkPool(label string, creationFunc func() (*NetworkPool, error), postCreation func(pool *NetworkPool), check *C) {
 	fmt.Printf("[test create network pool] %s\n", label)
 
