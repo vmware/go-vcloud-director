@@ -1861,7 +1861,8 @@ type NsxtSegmentProfileIpDiscovery struct {
 	// will learn the IPv6 addresses which are configured on interfaces of a VM with the help of the
 	// VMTools software.
 	IsVMToolsV6Enabled bool `json:"isVmToolsV6Enabled"`
-	// NdSnoopingLimit defines maximum number of ND (Neighbor Discovery Protocol) snooped IPv6 addresses.
+	// NdSnoopingLimit defines maximum number of ND (Neighbor Discovery Protocol) snooped IPv6
+	// addresses.
 	NdSnoopingLimit int `json:"ndSnoopingLimit"`
 }
 
@@ -1879,7 +1880,7 @@ type NsxtSegmentProfileMacDiscovery struct {
 	// MacLearningAgingTime indicates aging time in seconds for learned MAC address. Indicates how
 	// long learned MAC address remain.
 	MacLearningAgingTime int `json:"macLearningAgingTime"`
-	// MacLimit indicates The maximum number of MAC addresses that can be learned on this port.
+	// MacLimit indicates the maximum number of MAC addresses that can be learned on this port.
 	MacLimit int `json:"macLimit"`
 	// MacPolicy defines the policy after MAC Limit is exceeded. It can be either 'ALLOW' or 'DROP'.
 	MacPolicy string `json:"macPolicy"`
@@ -1889,7 +1890,7 @@ type NsxtSegmentProfileMacDiscovery struct {
 // It is a read-only construct in VCD
 type NsxtSegmentProfileSegmentSpoofGuard struct {
 	NsxtSegmentProfileTemplateCommonFields
-	// IsAddressBindingWhitelistEnabled indicats whether Spoof Guard is enabled. If true, it only
+	// IsAddressBindingWhitelistEnabled indicates whether Spoof Guard is enabled. If true, it only
 	// allows VM sending traffic with the IPs in the whitelist.
 	IsAddressBindingWhitelistEnabled bool `json:"isAddressBindingWhitelistEnabled"`
 }
@@ -1943,7 +1944,7 @@ type NsxtSegmentProfileSegmentSecurity struct {
 	// DHCP Client IPv4 traffic.
 	IsDhcpClientBlockV4Enabled bool `json:"isDhcpClientBlockV4Enabled"`
 	// IsDhcpClientBlockV6Enabled indicates whether DHCP Client block IPv6 is enabled. This filters
-	// DHCP Client IPv6 traffic.
+	// DHCP Client IPv4 traffic.
 	IsDhcpClientBlockV6Enabled bool `json:"isDhcpClientBlockV6Enabled"`
 	// IsDhcpServerBlockV4Enabled indicates whether DHCP Server block IPv4 is enabled. This filters
 	// DHCP Server IPv4 traffic.
