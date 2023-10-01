@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-
 	. "gopkg.in/check.v1"
 )
 
@@ -36,6 +35,49 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 
 	itemName := "TestDeleteMedia"
 	uploadTask, err := catalog.UploadMediaImage(itemName, "upload from test", vcd.config.Media.MediaPath, 1024)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+
+	media, err := catalog.GetMediaByName(itemName, true)
+	check.Assert(err, IsNil)
+	check.Assert(media, NotNil)
+	check.Assert(media.Media.Name, Equals, itemName)
+
+	task, err := media.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	_, err = catalog.GetMediaByName(itemName, true)
+	check.Assert(err, NotNil)
+	check.Assert(IsNotFound(err), Equals, true)
+}
+
+func (vcd *TestVCD) Test_UploadAnyMediaFile(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_UploadAnyMediaFile: Org name not given")
+		return
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Test_UploadAnyMediaFile: Catalog name not given")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	itemName := "TestUploadAnyMedia"
+	itemPath := "media.go"
+	uploadTask, err := catalog.UploadMediaFile(itemName, "Text file uploaded from test", itemPath, 1024, false)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
 	check.Assert(err, IsNil)
