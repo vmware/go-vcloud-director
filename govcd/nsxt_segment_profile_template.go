@@ -233,22 +233,22 @@ func deleteById(client *Client, endpoint string, deletionUrl string, entityName 
 
 func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtSegmentProfileTemplateDefaultDefinition, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericGetSingleBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&vcdClient.Client, endpoint, endpoint, nil)
+	return genericGetSingleBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&vcdClient.Client, endpoint, endpoint, nil, "Global default Segment Profile Template")
 }
 
 func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtSegmentProfileTemplateDefaultDefinition) (*types.NsxtSegmentProfileTemplateDefaultDefinition, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&vcdClient.Client, endpoint, endpoint, entityConfig)
+	return genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&vcdClient.Client, endpoint, endpoint, entityConfig, "Global default Segment Profile Template")
 }
 
 func (orgVdcNet *OpenApiOrgVdcNetwork) GetSegmentProfile() (*types.OrgVdcNetworkSegmentProfiles, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
 	exactEndpoint := fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID)
-	return genericGetSingleBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, exactEndpoint, nil)
+	return genericGetSingleBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, exactEndpoint, nil, "Org VDC Network Segment Profile")
 }
 
 func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.OrgVdcNetworkSegmentProfiles) (*types.OrgVdcNetworkSegmentProfiles, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
 	exactEndpoint := fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID)
-	return genericUpdateBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, exactEndpoint, entityConfig)
+	return genericUpdateBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, exactEndpoint, entityConfig, "Org VDC Network Segment Profile")
 }

@@ -44,22 +44,23 @@ func oneOrError[T any](key, name string, entitySlice []*T) (*T, error) {
 // genericGetSingleBareEntity is an implementation for a common pattern in our code where we have to
 // retrieve bare entity (usually *types.XXXX) and does not need to be wrapped in a parent container.
 // * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
-// * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
-func genericGetSingleBareEntity[T any](client *Client, endpoint, exactEndpoint string, queryParameters url.Values) (*T, error) {
+// * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities in the path)
+// * `entityName` is used for detailing error messages with an explicit entity name
+func genericGetSingleBareEntity[T any](client *Client, endpoint, exactEndpoint string, queryParameters url.Values, entityName string) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting API version for entity '%s': %s", entityName, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", entityName, err)
 	}
 
 	typeResponse := new(T)
 	err = client.OpenApiGetItem(apiVersion, urlRef, queryParameters, typeResponse, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", entityName, err)
 	}
 
 	return typeResponse, nil
@@ -101,7 +102,7 @@ func genericGetAllBareFilteredEntities[T any](client *Client, endpoint, exactEnd
 // not support filtering and it must be done on client side.
 //
 // Note The field name `fieldName` must be present in a given type T
-func genericLocalFilter[T any](entities []*T, fieldName, expectedFieldValue string) ([]*T, error) {
+func genericLocalFilter[T any](entities []*T, fieldName, expectedFieldValue string, entityName string) ([]*T, error) {
 	if len(entities) == 0 {
 		return nil, fmt.Errorf("zero entities provided for filtering")
 	}
@@ -111,19 +112,19 @@ func genericLocalFilter[T any](entities []*T, fieldName, expectedFieldValue stri
 	for _, entity := range entities {
 
 		// Need to deference pointer because `reflect` package requires to work with types and not
-		// pointers of types
+		// pointers to types
 		var entityValue T
 		if entity != nil {
 			entityValue = *entity
 		} else {
-			return nil, fmt.Errorf("given entity is a nil pointer")
+			return nil, fmt.Errorf("given entity for %s is a nil pointer", entityName)
 		}
 
 		value := reflect.ValueOf(entityValue)
 		field := value.FieldByName(fieldName)
 
 		if !field.IsValid() {
-			return nil, fmt.Errorf("the struct does not have the field '%s'", fieldName)
+			return nil, fmt.Errorf("the struct for %s does not have the field '%s'", entityName, fieldName)
 		}
 
 		if field.Type().Name() != "string" {
@@ -141,12 +142,12 @@ func genericLocalFilter[T any](entities []*T, fieldName, expectedFieldValue stri
 // genericLocalFilterOneOrError performs local filtering using `genericLocalFilter()` and
 // additionally verifies that only a single result is present using `oneOrError()`. Common use case
 // for GetXByName methods where API does not support filtering and it must be done on client side.
-func genericLocalFilterOneOrError[T any](entities []*T, fieldName, expectedFieldValue string) (*T, error) {
+func genericLocalFilterOneOrError[T any](entities []*T, fieldName, expectedFieldValue string, entityName string) (*T, error) {
 	if fieldName == "" || expectedFieldValue == "" {
-		return nil, fmt.Errorf("expected field name and value must be specified")
+		return nil, fmt.Errorf("expected field name and value must be specified to filter %s", entityName)
 	}
 
-	filteredValues, err := genericLocalFilter(entities, fieldName, expectedFieldValue)
+	filteredValues, err := genericLocalFilter(entities, fieldName, expectedFieldValue, entityName)
 	if err != nil {
 		return nil, err
 	}
@@ -162,21 +163,21 @@ func genericLocalFilterOneOrError[T any](entities []*T, fieldName, expectedField
 // * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
 // * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
 // * `entityName` is used for detailing error messages with an explicit entity name
-func genericUpdateBareEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T) (*T, error) {
+func genericUpdateBareEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T, entityName string) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", entityName, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", entityName, err)
 	}
 
 	updatedEntityConfig := new(T)
 	err = client.OpenApiPutItem(apiVersion, urlRef, nil, entityConfig, updatedEntityConfig, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error updating entity of type '%s': %s", entityName, err)
 	}
 
 	return updatedEntityConfig, nil

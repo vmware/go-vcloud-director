@@ -25,7 +25,7 @@ func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParame
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name)
+	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment IP Discovery Profile")
 }
 
 // GetAllMacDiscoveryProfiles retrieves all MAC Discovery Profiles configured on an NSX-T manager.
@@ -43,7 +43,7 @@ func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParam
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name)
+	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment MAC Discovery Profile")
 }
 
 // GetAllSpoofGuardProfiles retrieves all Spoof Guard Profiles configured on an NSX-T manager.
@@ -61,7 +61,7 @@ func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParamet
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name)
+	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment Spoof Guard Profile")
 }
 
 // GetAllQoSProfiles retrieves all QoS Profiles configured on an NSX-T manager.
@@ -79,7 +79,7 @@ func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name)
+	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment QoS Profile")
 }
 
 // GetAllSegmentSecurityProfiles retrieves all Segment Security Profiles configured on an NSX-T manager.
@@ -97,5 +97,5 @@ func (vcdClient *VCDClient) GetSegmentSecurityProfileByName(name string, queryPa
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name)
+	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment Security Profile")
 }
