@@ -60,6 +60,7 @@ func (egw *NsxtEdgeGateway) CreateL2VpnTunnel(tunnel *types.NsxtL2VpnTunnel) (*N
 	return newTunnel, nil
 }
 
+// Refresh updates the provided NsxtL2VpnTunnel and returns an error if it failed
 func (l2Vpn *NsxtL2VpnTunnel) Refresh() error {
 	client := l2Vpn.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayL2VpnTunnel
