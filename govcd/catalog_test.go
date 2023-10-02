@@ -1460,6 +1460,7 @@ func (vcd *TestVCD) Test_CatalogAccessAsOrgUsersReadOnly(check *C) {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_CatalogCreateCompleteness(check *C) {
