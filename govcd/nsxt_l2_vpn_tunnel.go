@@ -139,7 +139,7 @@ func (egw *NsxtEdgeGateway) GetL2VpnTunnelByName(name string) (*NsxtL2VpnTunnel,
 	return tunnel, nil
 }
 
-// GetL2VpnTunnelById gets the L2 VPN Tunnel by it's ID
+// GetL2VpnTunnelById gets the L2 VPN Tunnel by its ID
 func (egw *NsxtEdgeGateway) GetL2VpnTunnelById(id string) (*NsxtL2VpnTunnel, error) {
 	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
 		return nil, fmt.Errorf("cannot get L2 VPN tunnel for NSX-T Edge Gateway without ID")
