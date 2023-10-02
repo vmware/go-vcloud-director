@@ -182,3 +182,57 @@ func genericUpdateBareEntity[T any](client *Client, endpoint, exactEndpoint stri
 
 	return updatedEntityConfig, nil
 }
+
+// genericCreateBareEntity implements a common pattern for creating an entity throughout codebase
+// Two types of invocation are possible because the type T can be identified (it is a required parameter)
+// * genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
+// * genericUpdateBareEntity(&client, endpoint, endpoint, entityConfig)
+//
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
+// * `entityName` is used for detailing error messages with an explicit entity name
+func genericCreateBareEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T, entityName string) (*T, error) {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", entityName, err)
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", entityName, err)
+	}
+
+	createdEntityConfig := new(T)
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, entityConfig, createdEntityConfig, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating entity of type '%s': %s", entityName, err)
+	}
+
+	return createdEntityConfig, nil
+}
+
+// deleteById performs a common operation for OpenAPI endpoints that calls DELETE method for a given
+// endpoint.
+//
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
+// * `entityName` is used for detailing error messages with an explicit entity name
+func deleteById(client *Client, endpoint string, exactEndpoint string, entityName string) error {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
+	if err != nil {
+		return err
+	}
+
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+
+	if err != nil {
+		return fmt.Errorf("error deleting %s: %s", entityName, err)
+	}
+
+	return nil
+}

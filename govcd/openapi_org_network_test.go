@@ -942,7 +942,7 @@ func preCreateSegmentProfileTemplate(vcd *TestVCD, check *C, sptNameSuffix strin
 		SourceNsxTManagerRef:   &types.OpenApiReference{ID: nsxtManager.NsxtManager.ID},
 	}
 
-	createdSegmentProfileTemplate, err := nsxtManager.CreateSegmentProfileTemplate(config)
+	createdSegmentProfileTemplate, err := vcd.client.CreateSegmentProfileTemplate(config)
 	check.Assert(err, IsNil)
 	check.Assert(createdSegmentProfileTemplate, NotNil)
 
