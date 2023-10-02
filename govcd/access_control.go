@@ -476,49 +476,6 @@ func publishCatalog(client *Client, catalogUrl string, tenantContext *TenantCont
 	return err
 }
 
-// publish publishes a catalog read-only access control to all organizations
-// This operation is usually the second step for a read-only sharing to all Orgs
-func (cat *Catalog) publish(isPublished bool) error {
-	if cat.Catalog == nil {
-		return fmt.Errorf("cannot publish catalog, Object is empty")
-	}
-
-	catalogUrl := cat.Catalog.HREF
-	if catalogUrl == "nil" || catalogUrl == "" {
-		return fmt.Errorf("cannot publish catalog, HREF is empty")
-	}
-
-	tenantContext, err := cat.getTenantContext()
-	if err != nil {
-		return fmt.Errorf("cannot publish catalog, tenant context error: %s", err)
-	}
-
-	publishParameters := types.PublishCatalogParams{
-		IsPublished: &isPublished,
-	}
-	err = publishCatalog(cat.client, catalogUrl, tenantContext, publishParameters)
-	if err != nil {
-		return err
-	}
-
-	return cat.Refresh()
-}
-
-// SetReadOnlyAccessControl will create or rescind the read-only catalog sharing to all organizations
-func (cat *Catalog) SetReadOnlyAccessControl(isPublished bool) error {
-	if cat.Catalog == nil {
-		return fmt.Errorf("cannot set access control, Object is empty")
-	}
-	err := cat.SetAccessControl(&types.ControlAccessParams{
-		IsSharedToEveryone:  false,
-		EveryoneAccessLevel: addrOf(types.ControlAccessReadOnly),
-	}, true)
-	if err != nil {
-		return fmt.Errorf("error resetting access control record for catalog %s: %s", cat.Catalog.Name, err)
-	}
-	return cat.publish(isPublished)
-}
-
 // IsSharedReadOnly returns the state of the catalog read-only sharing to all organizations
 func (cat *Catalog) IsSharedReadOnly() (bool, error) {
 	accessControl, err := cat.GetAccessControl(true)
@@ -553,6 +510,34 @@ func (cat *AdminCatalog) IsSharedReadOnly() (bool, error) {
 
 // publish publishes a catalog read-only access control to all organizations
 // This operation is usually the second step for a read-only sharing to all Orgs
+func (cat *Catalog) publish(isPublished bool) error {
+	if cat.Catalog == nil {
+		return fmt.Errorf("cannot publish catalog, Object is empty")
+	}
+
+	catalogUrl := cat.Catalog.HREF
+	if catalogUrl == "nil" || catalogUrl == "" {
+		return fmt.Errorf("cannot publish catalog, HREF is empty")
+	}
+
+	tenantContext, err := cat.getTenantContext()
+	if err != nil {
+		return fmt.Errorf("cannot publish catalog, tenant context error: %s", err)
+	}
+
+	publishParameters := types.PublishCatalogParams{
+		IsPublished: &isPublished,
+	}
+	err = publishCatalog(cat.client, catalogUrl, tenantContext, publishParameters)
+	if err != nil {
+		return err
+	}
+
+	return cat.Refresh()
+}
+
+// publish publishes a catalog read-only access control to all organizations
+// This operation is usually the second step for a read-only sharing to all Orgs
 func (cat *AdminCatalog) publish(isPublished bool) error {
 	if cat.AdminCatalog == nil {
 		return fmt.Errorf("cannot publish catalog, Object is empty")
@@ -582,6 +567,21 @@ func (cat *AdminCatalog) publish(isPublished bool) error {
 	}
 
 	return err
+}
+
+// SetReadOnlyAccessControl will create or rescind the read-only catalog sharing to all organizations
+func (cat *Catalog) SetReadOnlyAccessControl(isPublished bool) error {
+	if cat.Catalog == nil {
+		return fmt.Errorf("cannot set access control, Object is empty")
+	}
+	err := cat.SetAccessControl(&types.ControlAccessParams{
+		IsSharedToEveryone:  false,
+		EveryoneAccessLevel: addrOf(types.ControlAccessReadOnly),
+	}, true)
+	if err != nil {
+		return fmt.Errorf("error resetting access control record for catalog %s: %s", cat.Catalog.Name, err)
+	}
+	return cat.publish(isPublished)
 }
 
 func (cat *AdminCatalog) SetReadOnlyAccessControl(isPublished bool) error {
