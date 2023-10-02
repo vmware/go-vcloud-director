@@ -747,3 +747,68 @@ func (vdc *Vdc) QueryAllMedia(mediaName string) ([]*MediaRecord, error) {
 	util.Logger.Printf("[TRACE] Found media records by name: %#v \n", mediaResults)
 	return newMediaRecords, nil
 }
+
+func (media *Media) enableDownload() error {
+
+	downloadUrl := getUrlFromLink(media.Media.Link, "enable", "")
+	if downloadUrl == "" {
+		return fmt.Errorf("no enable URL found")
+	}
+
+	task, err := media.client.executeTaskRequest(downloadUrl, http.MethodPost, types.MimeTask, "error enabling download: %s", nil, media.client.APIVersion)
+	if err != nil {
+		return err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return err
+	}
+	return media.Refresh()
+}
+
+// Download gets the contents of a media item as a byte stream
+func (media *Media) Download() ([]byte, error) {
+
+	err := media.enableDownload()
+	if err != nil {
+		return nil, err
+	}
+
+	if media.Media.Files == nil || len(media.Media.Files.File) == 0 {
+		return nil, fmt.Errorf("no downloadable file found")
+	}
+
+	downloadHref := ""
+	for _, f := range media.Media.Files.File {
+		for _, l := range f.Link {
+			if strings.HasPrefix(l.Rel, "download") {
+				downloadHref = l.HREF
+			}
+		}
+	}
+
+	if downloadHref == "" {
+		return nil, fmt.Errorf("no download URL found")
+	}
+
+	downloadUrl, err := url.ParseRequestURI(downloadHref)
+	if err != nil {
+		return nil, fmt.Errorf("error getting download URL: %s", err)
+	}
+
+	request := media.client.NewRequest(map[string]string{}, http.MethodGet, *downloadUrl, nil)
+	resp, err := media.client.Http.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error getting media download: %s", err)
+	}
+
+	if !isSuccessStatus(resp.StatusCode) {
+		return nil, fmt.Errorf("error downloading media: %s", resp.Status)
+	}
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
+}
