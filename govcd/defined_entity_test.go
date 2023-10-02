@@ -564,7 +564,7 @@ func testRdeTypeAccessControls(check *C, rdeType *DefinedEntityType, behavior *t
 		}
 	}
 
-	err = rdeType.SetBehaviorAccessControls(payload) // payload is nil, it is equivalent to have an empty slice
+	err = rdeType.SetBehaviorAccessControls(payload) // payload is nil, it should be equivalent to set an empty slice of access controls
 	check.Assert(err, IsNil)
 
 	allAccCtrl, err = rdeType.GetAllBehaviorsAccessControls(nil)
