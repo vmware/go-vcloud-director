@@ -556,7 +556,15 @@ func testRdeTypeAccessControls(check *C, rdeType *DefinedEntityType, behavior *t
 	err = rdeType.SetBehaviorAccessControls([]*types.BehaviorAccess{})
 	check.Assert(err, IsNil)
 
-	err = rdeType.SetBehaviorAccessControls(nil)
+	var payload []*types.BehaviorAccess
+	// This one simulates a filtering that goes wrong and leaves "payload" nil
+	for _, acl := range allAccCtrl {
+		if acl.BehaviorId == "notExist" {
+			payload = append(payload, acl)
+		}
+	}
+
+	err = rdeType.SetBehaviorAccessControls(payload) // payload is nil, it is equivalent to have an empty slice
 	check.Assert(err, IsNil)
 
 	allAccCtrl, err = rdeType.GetAllBehaviorsAccessControls(nil)
