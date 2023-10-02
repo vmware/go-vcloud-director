@@ -7,12 +7,12 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// NsxtL2VpnTunnel extend your organization VDC by enabling virtual machines to
+// NsxtL2VpnTunnel extends an organization VDC by enabling virtual machines to
 // maintain their network connectivity across geographical boundaries while keeping
 // the same IP address. The connection is secured with a route-based IPSec tunnel between the two sides of the tunnel.
-// You can configure the L2 VPN service on an NSX-T edge gateway in your VMware Cloud Director environment
-// and create a L2 VPN tunnel. Virtual machines remain on the same subnet, which enables you to extend
-// your organization VDC by stretching its network. This way, an edge gateway at one site can provide
+// The L2 VPN service can be configured on an NSX-T edge gateway in a VMware Cloud Director environment
+// to create a L2 VPN tunnel. Virtual machines remain on the same subnet, which extends
+// the organization VDC by stretching its network. This way, an edge gateway at one site can provide
 // all services to virtual machines on the other site.
 type NsxtL2VpnTunnel struct {
 	NsxtL2VpnTunnel *types.NsxtL2VpnTunnel
@@ -107,7 +107,7 @@ func (egw *NsxtEdgeGateway) GetAllL2VpnTunnels(queryParameters url.Values) ([]*N
 		return nil, err
 	}
 
-	// Wrap all typeResponses into IpSpaceOrgAssignment types with client
+	// Wrap all typeResponses into NsxtL2VpnTunnel types with client
 	results := make([]*NsxtL2VpnTunnel, len(typeResponses))
 	for sliceIndex := range typeResponses {
 		results[sliceIndex] = &NsxtL2VpnTunnel{
@@ -138,7 +138,7 @@ func (egw *NsxtEdgeGateway) GetL2VpnTunnelByName(name string) (*NsxtL2VpnTunnel,
 	return tunnel, nil
 }
 
-// GetL2VpnTunnelById gets the L2 VPN Tunnel by its' ID
+// GetL2VpnTunnelById gets the L2 VPN Tunnel by it's ID
 func (egw *NsxtEdgeGateway) GetL2VpnTunnelById(id string) (*NsxtL2VpnTunnel, error) {
 	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
 		return nil, fmt.Errorf("cannot get L2 VPN tunnel for NSX-T Edge Gateway without ID")
@@ -224,7 +224,9 @@ func (l2Vpn *NsxtL2VpnTunnel) Update(tunnelParams *types.NsxtL2VpnTunnel) (*Nsxt
 		// There is a known bug up to 10.5.0, the CLIENT sessions can't be
 		// disabled and can result in unexpected behaviour for the following
 		// operations
-		return nil, fmt.Errorf("client sessions can't be disabled")
+		if l2Vpn.client.APIVCDMaxVersionIs("38.0") {
+			return nil, fmt.Errorf("client sessions can't be disabled")
+		}
 	}
 
 	client := l2Vpn.client
@@ -254,7 +256,7 @@ func (l2Vpn *NsxtL2VpnTunnel) Update(tunnelParams *types.NsxtL2VpnTunnel) (*Nsxt
 }
 
 // Delete deletes the L2 VPN Tunnel
-// On versions up to 10.5.0 (as of writing) there is a bug wtih deleting
+// On versions up to 10.5.0 (as of writing) there is a bug with deleting
 // CLIENT tunnels. If there are any networks attached to the tunnel, the
 // DELETE call will fail the amount of times the resource was updated,
 // so the best choice is to remove the networks and then call Delete(), or

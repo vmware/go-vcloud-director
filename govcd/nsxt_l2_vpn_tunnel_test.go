@@ -162,7 +162,7 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "2.2.2.2")
 
 	// There is a bug in all versions up to 10.5.0, it happens
-	// when a L2 VPN Tunnel is created in CLIENT mode, has atleast one Org VDC
+	// when a L2 VPN Tunnel is created in CLIENT mode, has at least one Org VDC
 	// network attached, and is updated in any way. After that, to delete the tunnel
 	// one needs to de-attach all the networks
 	// or call Delete() the amount of times the object was updated
