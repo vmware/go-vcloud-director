@@ -9,6 +9,9 @@ package govcd
 import (
 	"fmt"
 	. "gopkg.in/check.v1"
+	"os"
+	"path"
+	"runtime"
 )
 
 // Tests System function Delete by creating media item and
@@ -75,8 +78,11 @@ func (vcd *TestVCD) Test_UploadAnyMediaFile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(catalog, NotNil)
 
+	_, sourceFile, _, _ := runtime.Caller(0)
+	sourceFile = path.Clean(sourceFile)
+	fmt.Printf("source file: %s\n", sourceFile)
 	itemName := "TestUploadAnyMedia"
-	itemPath := "media.go"
+	itemPath := sourceFile
 	uploadTask, err := catalog.UploadMediaFile(itemName, "Text file uploaded from test", itemPath, 1024, false)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
@@ -88,6 +94,17 @@ func (vcd *TestVCD) Test_UploadAnyMediaFile(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
 	check.Assert(media.Media.Name, Equals, itemName)
+
+	contents, err := media.Download()
+	check.Assert(err, IsNil)
+	check.Assert(contents, Not(Equals), "")
+	check.Assert(media.Media.Files, NotNil)
+	check.Assert(media.Media.Files.File, NotNil)
+	check.Assert(media.Media.Files.File[0].Name, Not(Equals), "")
+	check.Assert(len(media.Media.Files.File[0].Link), Not(Equals), 0)
+
+	fromFile, err := os.ReadFile(sourceFile)
+	check.Assert(len(fromFile), Equals, len(contents))
 
 	task, err := media.Delete()
 	check.Assert(err, IsNil)
