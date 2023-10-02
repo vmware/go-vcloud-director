@@ -833,8 +833,8 @@ func (cat *Catalog) UploadMediaImage(mediaName, mediaDescription, filePath strin
 }
 
 // UploadMediaFile uploads any file to the catalog.
-// However, if checkFileType is true, only .ISO are allowed.
-func (cat *Catalog) UploadMediaFile(fileName, mediaDescription, filePath string, uploadPieceSize int64, checkFileType bool) (UploadTask, error) {
+// However, if checkFileIsIso is true, only .ISO are allowed.
+func (cat *Catalog) UploadMediaFile(fileName, mediaDescription, filePath string, uploadPieceSize int64, checkFileIsIso bool) (UploadTask, error) {
 
 	if *cat == (Catalog{}) {
 		return UploadTask{}, errors.New("catalog can not be empty or nil")
@@ -845,7 +845,7 @@ func (cat *Catalog) UploadMediaFile(fileName, mediaDescription, filePath string,
 		return UploadTask{}, err
 	}
 
-	if checkFileType {
+	if checkFileIsIso {
 		isISOGood, err := verifyIso(mediaFilePath)
 		if err != nil || !isISOGood {
 			return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %#v", mediaFilePath, err)
