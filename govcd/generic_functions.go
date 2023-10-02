@@ -41,10 +41,71 @@ func oneOrError[T any](key, name string, entitySlice []*T) (*T, error) {
 	return entitySlice[0], nil
 }
 
+// genericCreateBareEntity implements a common pattern for creating an entity throughout codebase
+// Two types of invocation are possible because the type T can be identified (it is a required parameter)
+// * genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
+// * genericUpdateBareEntity(&client, endpoint, endpoint, entityConfig)
+// Parameters:
+// * `client` is a *Client
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
+// * `entityName` is used for detailing error messages with an explicit entity name
+func genericCreateBareEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T, entityName string) (*T, error) {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", entityName, err)
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", entityName, err)
+	}
+
+	createdEntityConfig := new(T)
+	err = client.OpenApiPostItem(apiVersion, urlRef, nil, entityConfig, createdEntityConfig, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating entity of type '%s': %s", entityName, err)
+	}
+
+	return createdEntityConfig, nil
+}
+
+// genericUpdateBareEntity implements a common pattern for updating entity throughout codebase
+// Two types of invocation are possible because the type T can be identified (it is a required parameter)
+// * genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
+// * genericUpdateBareEntity(&client, endpoint, endpoint, entityConfig)
+// Parameters:
+// * `client` is a *Client
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
+// * `entityName` is used for detailing error messages with an explicit entity name
+func genericUpdateBareEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T, entityName string) (*T, error) {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", entityName, err)
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", entityName, err)
+	}
+
+	updatedEntityConfig := new(T)
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, entityConfig, updatedEntityConfig, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error updating entity of type '%s': %s", entityName, err)
+	}
+
+	return updatedEntityConfig, nil
+}
+
 // genericGetSingleBareEntity is an implementation for a common pattern in our code where we have to
 // retrieve bare entity (usually *types.XXXX) and does not need to be wrapped in a parent container.
+// Parameters:
+// * `client` is a *Client
 // * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
 // * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities in the path)
+// * `queryParameters` for the API call. Most common use case - applying a `filter`
 // * `entityName` is used for detailing error messages with an explicit entity name
 func genericGetSingleBareEntity[T any](client *Client, endpoint, exactEndpoint string, queryParameters url.Values, entityName string) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
@@ -72,11 +133,12 @@ func genericGetSingleBareEntity[T any](client *Client, endpoint, exactEndpoint s
 // An example usage which can be found in nsxt_manager.go:
 // endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles
 // return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplateMacDiscovery](client, endpoint, queryParameters)
-//
+// Parameters:
+// * `client` is a *Client
 // * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
 // * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
+// * `queryParameters` can be applied to API. `queryParameters` for the API call. Most common use case - applying a `filter`
 // * `entityName` is used for detailing error messages with an explicit entity name
-// * queryParameters can be applied to API. Usually these are filtering parameters
 func genericGetAllBareFilteredEntities[T any](client *Client, endpoint, exactEndpoint string, queryParameters url.Values, entityName string) ([]*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
@@ -101,7 +163,7 @@ func genericGetAllBareFilteredEntities[T any](client *Client, endpoint, exactEnd
 // expected string value `expectedFieldValue`. Common use case for GetAllX methods where API does
 // not support filtering and it must be done on client side.
 //
-// Note The field name `fieldName` must be present in a given type T
+// Note The field name `fieldName` must be present in a given type T (letter casing is important)
 func genericLocalFilter[T any](entities []*T, fieldName, expectedFieldValue string, entityName string) ([]*T, error) {
 	if len(entities) == 0 {
 		return nil, fmt.Errorf("zero entities provided for filtering")
@@ -155,65 +217,10 @@ func genericLocalFilterOneOrError[T any](entities []*T, fieldName, expectedField
 	return oneOrError(fieldName, expectedFieldValue, filteredValues)
 }
 
-// genericUpdateBareEntity implements a common pattern for updating entity throughout codebase
-// Two types of invocation are possible because the type T can be identified (it is a required parameter)
-// * genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
-// * genericUpdateBareEntity(&client, endpoint, endpoint, entityConfig)
-//
-// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
-// * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
-// * `entityName` is used for detailing error messages with an explicit entity name
-func genericUpdateBareEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T, entityName string) (*T, error) {
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", entityName, err)
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", entityName, err)
-	}
-
-	updatedEntityConfig := new(T)
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, entityConfig, updatedEntityConfig, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error updating entity of type '%s': %s", entityName, err)
-	}
-
-	return updatedEntityConfig, nil
-}
-
-// genericCreateBareEntity implements a common pattern for creating an entity throughout codebase
-// Two types of invocation are possible because the type T can be identified (it is a required parameter)
-// * genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig)
-// * genericUpdateBareEntity(&client, endpoint, endpoint, entityConfig)
-//
-// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
-// * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
-// * `entityName` is used for detailing error messages with an explicit entity name
-func genericCreateBareEntity[T any](client *Client, endpoint, exactEndpoint string, entityConfig *T, entityName string) (*T, error) {
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", entityName, err)
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", entityName, err)
-	}
-
-	createdEntityConfig := new(T)
-	err = client.OpenApiPostItem(apiVersion, urlRef, nil, entityConfig, createdEntityConfig, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating entity of type '%s': %s", entityName, err)
-	}
-
-	return createdEntityConfig, nil
-}
-
 // deleteById performs a common operation for OpenAPI endpoints that calls DELETE method for a given
 // endpoint.
-//
+// Parameters:
+// * `client` is a *Client
 // * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
 // * `exactEndpoint` is that same endpoint with placeholders filled (usually these are URNs of entities)
 // * `entityName` is used for detailing error messages with an explicit entity name
