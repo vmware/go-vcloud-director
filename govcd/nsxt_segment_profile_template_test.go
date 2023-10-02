@@ -136,7 +136,7 @@ func (vcd *TestVCD) Test_NsxtGlobalDefaultSegmentProfileTemplate(check *C) {
 	AddToCleanupListOpenApi(config.Name, check.TestName(), openApiEndpoint)
 
 	// Set global profile template
-	globalDefaultSegmentProfileConfig := &types.NsxtSegmentProfileTemplateDefaultDefinition{
+	globalDefaultSegmentProfileConfig := &types.NsxtGlobalDefaultSegmentProfileTemplate{
 		VappNetworkSegmentProfileTemplateRef: &types.OpenApiReference{ID: createdSegmentProfileTemplate.NsxtSegmentProfileTemplate.ID},
 		VdcNetworkSegmentProfileTemplateRef:  &types.OpenApiReference{ID: createdSegmentProfileTemplate.NsxtSegmentProfileTemplate.ID},
 	}
@@ -151,7 +151,7 @@ func (vcd *TestVCD) Test_NsxtGlobalDefaultSegmentProfileTemplate(check *C) {
 	PrependToCleanupList(openApiEndpoint, "OpenApiEntityGlobalDefaultSegmentProfileTemplate", "", check.TestName())
 
 	// Cleanup
-	resetDefaults, err := vcd.client.UpdateGlobalDefaultSegmentProfileTemplates(&types.NsxtSegmentProfileTemplateDefaultDefinition{})
+	resetDefaults, err := vcd.client.UpdateGlobalDefaultSegmentProfileTemplates(&types.NsxtGlobalDefaultSegmentProfileTemplate{})
 	check.Assert(err, IsNil)
 	check.Assert(resetDefaults, NotNil)
 	check.Assert(resetDefaults.VappNetworkSegmentProfileTemplateRef, IsNil)

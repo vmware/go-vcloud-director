@@ -231,14 +231,14 @@ func deleteById(client *Client, endpoint string, deletionUrl string, entityName 
 	return nil
 }
 
-func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtSegmentProfileTemplateDefaultDefinition, error) {
+func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericGetSingleBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&vcdClient.Client, endpoint, endpoint, nil, "Global default Segment Profile Template")
+	return genericGetSingleBareEntity[types.NsxtGlobalDefaultSegmentProfileTemplate](&vcdClient.Client, endpoint, endpoint, nil, "Global default Segment Profile Template")
 }
 
-func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtSegmentProfileTemplateDefaultDefinition) (*types.NsxtSegmentProfileTemplateDefaultDefinition, error) {
+func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtGlobalDefaultSegmentProfileTemplate) (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericUpdateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&vcdClient.Client, endpoint, endpoint, entityConfig, "Global default Segment Profile Template")
+	return genericUpdateBareEntity[types.NsxtGlobalDefaultSegmentProfileTemplate](&vcdClient.Client, endpoint, endpoint, entityConfig, "Global default Segment Profile Template")
 }
 
 func (orgVdcNet *OpenApiOrgVdcNetwork) GetSegmentProfile() (*types.OrgVdcNetworkSegmentProfiles, error) {
