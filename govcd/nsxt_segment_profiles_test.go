@@ -15,6 +15,7 @@ import (
 
 func (vcd *TestVCD) Test_GetNsxtSegmentProfiles(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
+	vcd.skipIfNotSysAdmin(check)
 
 	nsxtManager, err := vcd.client.GetNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)
