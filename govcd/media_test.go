@@ -80,9 +80,10 @@ func (vcd *TestVCD) Test_UploadAnyMediaFile(check *C) {
 
 	_, sourceFile, _, _ := runtime.Caller(0)
 	sourceFile = path.Clean(sourceFile)
-	fmt.Printf("source file: %s\n", sourceFile)
-	itemName := "TestUploadAnyMedia"
+	itemName := check.TestName()
 	itemPath := sourceFile
+
+	// Upload the source file of the current test as a media item
 	uploadTask, err := catalog.UploadMediaFile(itemName, "Text file uploaded from test", itemPath, 1024, false)
 	check.Assert(err, IsNil)
 	err = uploadTask.WaitTaskCompletion()
@@ -90,21 +91,30 @@ func (vcd *TestVCD) Test_UploadAnyMediaFile(check *C) {
 
 	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
 
+	// Retrieve the media item
 	media, err := catalog.GetMediaByName(itemName, true)
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
 	check.Assert(media.Media.Name, Equals, itemName)
 
-	contents, err := media.Download()
-	check.Assert(err, IsNil)
-	check.Assert(contents, Not(Equals), "")
-	check.Assert(media.Media.Files, NotNil)
-	check.Assert(media.Media.Files.File, NotNil)
-	check.Assert(media.Media.Files.File[0].Name, Not(Equals), "")
-	check.Assert(len(media.Media.Files.File[0].Link), Not(Equals), 0)
+	// Repeat the download a few times. Make sure that a repeated download works as well as the first one
+	for i := 0; i < 2; i++ {
+		// Download the media item from VCD as a byte slice
+		contents, err := media.Download()
+		check.Assert(err, IsNil)
+		check.Assert(contents, Not(Equals), "")
+		check.Assert(media.Media.Files, NotNil)
+		check.Assert(media.Media.Files.File, NotNil)
+		check.Assert(media.Media.Files.File[0].Name, Not(Equals), "")
+		check.Assert(len(media.Media.Files.File[0].Link), Not(Equals), 0)
 
-	fromFile, err := os.ReadFile(sourceFile)
-	check.Assert(len(fromFile), Equals, len(contents))
+		// Read the source file from disk
+		fromFile, err := os.ReadFile(sourceFile)
+		check.Assert(err, IsNil)
+		// Make sure that what we downloaded from VCD corresponds to the file contents.
+		check.Assert(len(fromFile), Equals, len(contents))
+		check.Assert(fromFile, DeepEquals, contents)
+	}
 
 	task, err := media.Delete()
 	check.Assert(err, IsNil)
