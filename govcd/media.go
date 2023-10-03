@@ -748,47 +748,69 @@ func (vdc *Vdc) QueryAllMedia(mediaName string) ([]*MediaRecord, error) {
 	return newMediaRecords, nil
 }
 
-func (media *Media) enableDownload() error {
-
+// enableDownload prepares a media item for download and returns a download link
+func (media *Media) enableDownload() (string, error) {
 	downloadUrl := getUrlFromLink(media.Media.Link, "enable", "")
 	if downloadUrl == "" {
-		return fmt.Errorf("no enable URL found")
+		return "", fmt.Errorf("no enable URL found")
 	}
-
-	task, err := media.client.executeTaskRequest(downloadUrl, http.MethodPost, types.MimeTask, "error enabling download: %s", nil, media.client.APIVersion)
+	// The result of this operation is the creation of an entry in the 'Files' field of the media structure
+	// Inside that field, there will be a Link entry with the URL for the download
+	// e.g.
+	//<Files>
+	//    <File size="25434" name="file">
+	//        <Link rel="download:default" href="https://example.com/transfer/1638969a-06da-4f6c-b097-7796c1556c54/file"/>
+	//    </File>
+	//</Files>
+	task, err := media.client.executeTaskRequest(
+		downloadUrl,
+		http.MethodPost,
+		types.MimeTask,
+		"error enabling download: %s",
+		nil,
+		media.client.APIVersion)
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return err
+		return "", err
 	}
-	return media.Refresh()
-}
 
-// Download gets the contents of a media item as a byte stream
-func (media *Media) Download() ([]byte, error) {
-
-	err := media.enableDownload()
+	err = media.Refresh()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if media.Media.Files == nil || len(media.Media.Files.File) == 0 {
-		return nil, fmt.Errorf("no downloadable file found")
+		return "", fmt.Errorf("no downloadable file info found")
 	}
-
 	downloadHref := ""
 	for _, f := range media.Media.Files.File {
 		for _, l := range f.Link {
-			if strings.HasPrefix(l.Rel, "download") {
+			if l.Rel == "download:default" {
 				downloadHref = l.HREF
+				break
+			}
+			if downloadHref != "" {
+				break
 			}
 		}
 	}
 
 	if downloadHref == "" {
-		return nil, fmt.Errorf("no download URL found")
+		return "", fmt.Errorf("no download URL found")
+	}
+
+	return downloadHref, nil
+}
+
+// Download gets the contents of a media item as a byte stream
+func (media *Media) Download() ([]byte, error) {
+
+	downloadHref, err := media.enableDownload()
+	if err != nil {
+		return nil, err
 	}
 
 	downloadUrl, err := url.ParseRequestURI(downloadHref)
