@@ -38,7 +38,7 @@ func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *t
 func (vcdClient *VCDClient) GetAllSegmentProfileTemplates(queryFilter url.Values) ([]*NsxtSegmentProfileTemplate, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate](&client, endpoint, endpoint, queryFilter, "NSX-T Segment Profile Template")
+	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate](&client, endpoint, endpoint, queryFilter, "Segment Profile Template")
 	if err != nil {
 		return nil, err
 	}
@@ -115,10 +115,10 @@ func (spt *NsxtSegmentProfileTemplate) Update(nsxtSegmentProfileTemplateConfig *
 	return returnSpt, nil
 }
 
-// Delete allows deleting NSX-TNSX-T Segment Profile Template
+// Delete allows deleting NSX-T Segment Profile Template
 func (spt *NsxtSegmentProfileTemplate) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
 	exactEndpoint := endpoint + spt.NsxtSegmentProfileTemplate.ID
 
-	return deleteById(&spt.VCDClient.Client, endpoint, exactEndpoint, "NSX-T Segment Profile Template")
+	return deleteById(&spt.VCDClient.Client, endpoint, exactEndpoint, "Segment Profile Template")
 }

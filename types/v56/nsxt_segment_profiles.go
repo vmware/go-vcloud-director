@@ -1,6 +1,6 @@
 package types
 
-// NsxtSegmentProfileTemplate allow management of templates that define the segment profiles that
+// NsxtSegmentProfileTemplate allows management of templates that define the segment profiles that
 // will be applied during network creation.
 type NsxtSegmentProfileTemplate struct {
 	ID string `json:"id,omitempty"`
@@ -20,7 +20,7 @@ type NsxtSegmentProfileTemplate struct {
 	LastModified string `json:"lastModified,omitempty"`
 }
 
-// NsxtSegmentProfileCommonFields holds common fields that are used in all NSX-T Segment
+// NsxtSegmentProfileCommonFields contains common fields that are used in all NSX-T Segment
 // Profiles
 type NsxtSegmentProfileCommonFields struct {
 	ID string `json:"id,omitempty"`
@@ -107,7 +107,6 @@ type NsxtSegmentProfileSegmentSpoofGuard struct {
 // It is a read-only construct in VCD
 type NsxtSegmentProfileSegmentQosProfile struct {
 	NsxtSegmentProfileCommonFields
-
 	// ClassOfService groups similar types of traffic in the network and each type of traffic is
 	// treated as a class with its own level of service priority. The lower priority traffic is
 	// slowed down or in some cases dropped to provide better throughput for higher priority
@@ -142,7 +141,6 @@ type NsxtSegmentProfileSegmentQosProfileRateLimiter struct {
 // It is a read-only construct in VCD
 type NsxtSegmentProfileSegmentSecurity struct {
 	NsxtSegmentProfileCommonFields
-
 	// BpduFilterAllowList indicates pre-defined list of allowed MAC addresses to be excluded from
 	// BPDU filtering.
 	BpduFilterAllowList []string `json:"bpduFilterAllowList"`
@@ -180,6 +178,8 @@ type NsxtSegmentProfileSegmentSecurity struct {
 	} `json:"rateLimits"`
 }
 
+// NsxtGlobalDefaultSegmentProfileTemplate is a structure that sets VCD global default Segment
+// Profile Templates
 type NsxtGlobalDefaultSegmentProfileTemplate struct {
 	VappNetworkSegmentProfileTemplateRef *OpenApiReference `json:"vappNetworkSegmentProfileTemplateRef,omitempty"`
 	VdcNetworkSegmentProfileTemplateRef  *OpenApiReference `json:"vdcNetworkSegmentProfileTemplateRef,omitempty"`
@@ -188,9 +188,9 @@ type NsxtGlobalDefaultSegmentProfileTemplate struct {
 // OrgVdcNetworkSegmentProfiles defines Segment Profile configuration structure for Org VDC networks
 // An Org VDC network may have a Segment Profile Template assigned, or individual Segment Profiles
 type OrgVdcNetworkSegmentProfiles struct {
-	// SegmentProfileTemplate contains a read-only reference to Segment Profile Template To update
-	// Segment Profile Template for a particular Org VDC network, one must use
-	// `OpenApiOrgVdcNetwork.SegmentProfileTemplate`
+	// SegmentProfileTemplate contains a read-only reference to Segment Profile Template
+	// To update Segment Profile Template for a particular Org VDC network, one must use
+	// `OpenApiOrgVdcNetwork.SegmentProfileTemplate` field and `OpenApiOrgVdcNetwork.Update()`
 	SegmentProfileTemplate *SegmentProfileTemplateRef `json:"segmentProfileTemplate,omitempty"`
 
 	IPDiscoveryProfile     *OpenApiReferenceWithType `json:"ipDiscoveryProfile"`

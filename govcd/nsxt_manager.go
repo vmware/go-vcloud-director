@@ -52,7 +52,8 @@ func (vcdClient *VCDClient) GetNsxtManagerByName(name string) (*NsxtManager, err
 		return nil, err
 	}
 
-	// Populate computed URN field, which is not usually provided in API
+	// Populate computed URN field, which is not usually provided in API, but is useful in other
+	// endpoints
 	nsxtManager.Urn = nsxtManager.NsxtManager.ID
 	if !isUrn(nsxtManager.NsxtManager.ID) {
 		nsxtManagerUrn, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", nsxtManager.NsxtManager.ID)

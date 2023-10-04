@@ -10,7 +10,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// GetAllIpDiscoveryProfiles retrieves all IP Discovery Profiles configured on an NSX-T manager.
+// GetAllIpDiscoveryProfiles retrieves all IP Discovery Profiles configured in an NSX-T manager.
 // NSX-T manager ID (nsxTManagerRef.id), Org VDC ID (orgVdcId) or VDC Group ID (vdcGroupId) must be
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
@@ -20,7 +20,7 @@ func (vcdClient *VCDClient) GetAllIpDiscoveryProfiles(queryParameters url.Values
 }
 
 func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileIpDiscovery, error) {
-	apiFilteredEntities, err := vcdClient.GetAllIpDiscoveryProfiles(queryParameters) // API filtering by displayName is not supported
+	apiFilteredEntities, err := vcdClient.GetAllIpDiscoveryProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParame
 	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment IP Discovery Profile")
 }
 
-// GetAllMacDiscoveryProfiles retrieves all MAC Discovery Profiles configured on an NSX-T manager.
+// GetAllMacDiscoveryProfiles retrieves all MAC Discovery Profiles configured in an NSX-T manager.
 // NSX-T manager ID (nsxTManagerRef.id), Org VDC ID (orgVdcId) or VDC Group ID (vdcGroupId) must be
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
@@ -38,7 +38,7 @@ func (vcdClient *VCDClient) GetAllMacDiscoveryProfiles(queryParameters url.Value
 }
 
 func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileMacDiscovery, error) {
-	apiFilteredEntities, err := vcdClient.GetAllMacDiscoveryProfiles(queryParameters) // API filtering by displayName is not supported
+	apiFilteredEntities, err := vcdClient.GetAllMacDiscoveryProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParam
 	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment MAC Discovery Profile")
 }
 
-// GetAllSpoofGuardProfiles retrieves all Spoof Guard Profiles configured on an NSX-T manager.
+// GetAllSpoofGuardProfiles retrieves all Spoof Guard Profiles configured in an NSX-T manager.
 // NSX-T manager ID (nsxTManagerRef.id), Org VDC ID (orgVdcId) or VDC Group ID (vdcGroupId) must be
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
@@ -56,7 +56,7 @@ func (vcdClient *VCDClient) GetAllSpoofGuardProfiles(queryParameters url.Values)
 }
 
 func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentSpoofGuard, error) {
-	apiFilteredEntities, err := vcdClient.GetAllSpoofGuardProfiles(queryParameters) // API filtering by displayName is not supported
+	apiFilteredEntities, err := vcdClient.GetAllSpoofGuardProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParamet
 	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment Spoof Guard Profile")
 }
 
-// GetAllQoSProfiles retrieves all QoS Profiles configured on an NSX-T manager.
+// GetAllQoSProfiles retrieves all QoS Profiles configured in an NSX-T manager.
 // NSX-T manager ID (nsxTManagerRef.id), Org VDC ID (orgVdcId) or VDC Group ID (vdcGroupId) must be
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
@@ -74,7 +74,7 @@ func (vcdClient *VCDClient) GetAllQoSProfiles(queryParameters url.Values) ([]*ty
 }
 
 func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentQosProfile, error) {
-	apiFilteredEntities, err := vcdClient.GetAllQoSProfiles(queryParameters) // API filtering by displayName is not supported
+	apiFilteredEntities, err := vcdClient.GetAllQoSProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url
 	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment QoS Profile")
 }
 
-// GetAllSegmentSecurityProfiles retrieves all Segment Security Profiles configured on an NSX-T manager.
+// GetAllSegmentSecurityProfiles retrieves all Segment Security Profiles configured in an NSX-T manager.
 // NSX-T manager ID (nsxTManagerRef.id), Org VDC ID (orgVdcId) or VDC Group ID (vdcGroupId) must be
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
@@ -92,7 +92,7 @@ func (vcdClient *VCDClient) GetAllSegmentSecurityProfiles(queryParameters url.Va
 }
 
 func (vcdClient *VCDClient) GetSegmentSecurityProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentSecurity, error) {
-	apiFilteredEntities, err := vcdClient.GetAllSegmentSecurityProfiles(queryParameters) // API filtering by displayName is not supported
+	apiFilteredEntities, err := vcdClient.GetAllSegmentSecurityProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
 		return nil, err
 	}

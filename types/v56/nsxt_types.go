@@ -1799,6 +1799,7 @@ type NsxtEdgeGatewayStaticRouteNextHopScope struct {
 	ScopeType string `json:"scopeType"`
 }
 
+// NsxtManager structure for reading NSX-T Manager
 type NsxtManager struct {
 	OtherAttributes struct {
 	} `json:"otherAttributes"`
