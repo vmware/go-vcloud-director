@@ -109,7 +109,7 @@ func (vcd *TestVCD) Test_UploadAnyMediaFile(check *C) {
 		check.Assert(len(media.Media.Files.File[0].Link), Not(Equals), 0)
 
 		// Read the source file from disk
-		fromFile, err := os.ReadFile(sourceFile)
+		fromFile, err := os.ReadFile(path.Clean(sourceFile))
 		check.Assert(err, IsNil)
 		// Make sure that what we downloaded from VCD corresponds to the file contents.
 		check.Assert(len(fromFile), Equals, len(contents))
