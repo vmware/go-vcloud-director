@@ -131,6 +131,10 @@ func CreateCatalogWithStorageProfile(client *Client, links types.LinkList, Name,
 	_, err := client.ExecuteRequest(createOrgLink.HREF, http.MethodPost,
 		"application/vnd.vmware.admin.catalog+xml", "error creating catalog: %s", vcomp, catalog.AdminCatalog)
 
+	err = catalog.WaitForTasks()
+	if err != nil {
+		return nil, err
+	}
 	return catalog, err
 }
 
