@@ -829,6 +829,13 @@ func (media *Media) Download() ([]byte, error) {
 	}
 	body, err := io.ReadAll(resp.Body)
 
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			panic(fmt.Sprintf("error closing body: %s", err))
+		}
+	}()
+
 	if err != nil {
 		return nil, err
 	}
