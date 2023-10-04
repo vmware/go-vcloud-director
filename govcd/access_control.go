@@ -584,6 +584,7 @@ func (cat *Catalog) SetReadOnlyAccessControl(isPublished bool) error {
 	return cat.publish(isPublished)
 }
 
+// SetReadOnlyAccessControl will create or rescind the read-only AdminCatalog sharing to all organizations
 func (cat *AdminCatalog) SetReadOnlyAccessControl(isPublished bool) error {
 	if cat.AdminCatalog == nil {
 		return fmt.Errorf("cannot set access control, Object is empty")
