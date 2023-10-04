@@ -850,7 +850,19 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	case "OpenApiEntityGlobalDefaultSegmentProfileTemplate":
-		_, err := vcd.client.UpdateGlobalDefaultSegmentProfileTemplates(&types.NsxtGlobalDefaultSegmentProfileTemplate{})
+		// Check if any default settings are applied
+		gdSpt, err := vcd.client.GetGlobalDefaultSegmentProfileTemplates()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		if gdSpt.VappNetworkSegmentProfileTemplateRef == nil && gdSpt.VdcNetworkSegmentProfileTemplateRef == nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		_, err = vcd.client.UpdateGlobalDefaultSegmentProfileTemplates(&types.NsxtGlobalDefaultSegmentProfileTemplate{})
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
