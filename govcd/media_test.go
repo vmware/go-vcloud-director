@@ -102,7 +102,7 @@ func (vcd *TestVCD) Test_UploadAnyMediaFile(check *C) {
 		// Download the media item from VCD as a byte slice
 		contents, err := media.Download()
 		check.Assert(err, IsNil)
-		check.Assert(contents, Not(Equals), "")
+		check.Assert(len(contents), Not(Equals), 0)
 		check.Assert(media.Media.Files, NotNil)
 		check.Assert(media.Media.Files.File, NotNil)
 		check.Assert(media.Media.Files.File[0].Name, Not(Equals), "")
