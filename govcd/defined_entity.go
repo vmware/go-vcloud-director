@@ -306,6 +306,7 @@ func (rdeType *DefinedEntityType) DeleteBehaviorOverride(behaviorId string) erro
 }
 
 // SetBehaviorAccessControls sets the given slice of BehaviorAccess to the receiver Defined Entity Type.
+// If the input is nil, it removes all access controls from the receiver Defined Entity Type.
 func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAccess) error {
 	if det.DefinedEntityType.ID == "" {
 		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
@@ -322,8 +323,13 @@ func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAc
 		return err
 	}
 
+	sanitizedAcls := acls
+	if acls == nil {
+		sanitizedAcls = []*types.BehaviorAccess{}
+	}
+
 	// Wrap it in OpenAPI pages, this endpoint requires it
-	rawMessage, err := json.Marshal(acls)
+	rawMessage, err := json.Marshal(sanitizedAcls)
 	if err != nil {
 		return fmt.Errorf("error setting Access controls in payload: %s", err)
 	}
