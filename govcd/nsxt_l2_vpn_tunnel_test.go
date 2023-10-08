@@ -16,6 +16,7 @@ import (
 func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	skipNoNsxtConfiguration(vcd, check)
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGatewayL2VpnTunnel)
+	vcd.skipIfNotSysAdmin(check)
 
 	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -161,14 +162,26 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.LocalEndpointIp, Equals, localEndpointIp[0].IPAddress)
 	check.Assert(updatedClientTunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "2.2.2.2")
 
+	// Check if the bug exists in versions above 38.0, so the testsuite would let us adjust the
+	// version constraint in Update()
+	if vcd.client.Client.APIVCDMaxVersionIs("> 38.0") {
+		disabledClientTunnelParams := updatedClientTunnelParams
+		disabledClientTunnelParams.Enabled = false
+		disabledClientTunnel, err := updatedClientTunnel.Update(disabledClientTunnelParams)
+		check.Assert(err, IsNil)
+		check.Assert(disabledClientTunnel.NsxtL2VpnTunnel.Enabled, Equals, false)
+	}
+
 	// There is a bug in all versions up to 10.5.0, it happens
 	// when a L2 VPN Tunnel is created in CLIENT mode, has at least one Org VDC
 	// network attached, and is updated in any way. After that, to delete the tunnel
 	// one needs to de-attach all the networks
 	// or call Delete() the amount of times the object was updated
-	updatedClientTunnelParams.StretchedNetworks = nil
-	updatedClientTunnel, err = updatedClientTunnel.Update(updatedClientTunnelParams)
-	check.Assert(err, IsNil)
+	if vcd.client.Client.APIVCDMaxVersionIs("<= 38.0") {
+		updatedClientTunnelParams.StretchedNetworks = nil
+		updatedClientTunnel, err = updatedClientTunnel.Update(updatedClientTunnelParams)
+		check.Assert(err, IsNil)
+	}
 
 	err = updatedClientTunnel.Delete()
 	check.Assert(err, IsNil)

@@ -123,10 +123,10 @@ func (egw *NsxtEdgeGateway) GetAllL2VpnTunnels(queryParameters url.Values) ([]*N
 
 // GetL2VpnTunnelByName gets the L2 VPN Tunnel by name
 func (egw *NsxtEdgeGateway) GetL2VpnTunnelByName(name string) (*NsxtL2VpnTunnel, error) {
-	queryParams := url.Values{}
-	queryParams.Add("name", name)
+	filterByName := copyOrNewUrlValues(nil)
+	filterByName = queryParameterFilterAnd(fmt.Sprintf("name==%s", name), filterByName)
 
-	results, err := egw.GetAllL2VpnTunnels(queryParams)
+	results, err := egw.GetAllL2VpnTunnels(filterByName)
 	if err != nil {
 		return nil, err
 	}
@@ -157,16 +157,16 @@ func (egw *NsxtEdgeGateway) GetL2VpnTunnelById(id string) (*NsxtL2VpnTunnel, err
 		return nil, err
 	}
 
-	updatedTunnel := &NsxtL2VpnTunnel{
+	tunnel := &NsxtL2VpnTunnel{
 		client:        egw.client,
 		edgeGatewayId: egw.EdgeGateway.ID,
 	}
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, &updatedTunnel.NsxtL2VpnTunnel, nil)
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, &tunnel.NsxtL2VpnTunnel, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return updatedTunnel, nil
+	return tunnel, nil
 }
 
 // Statistics retrieves connection statistics for a given L2 VPN Tunnel configured on an Edge Gateway.
@@ -225,7 +225,7 @@ func (l2Vpn *NsxtL2VpnTunnel) Update(tunnelParams *types.NsxtL2VpnTunnel) (*Nsxt
 		// There is a known bug up to 10.5.0, the CLIENT sessions can't be
 		// disabled and can result in unexpected behaviour for the following
 		// operations
-		if l2Vpn.client.APIVCDMaxVersionIs("38.0") {
+		if l2Vpn.client.APIVCDMaxVersionIs("<= 38.0") {
 			return nil, fmt.Errorf("client sessions can't be disabled")
 		}
 	}
