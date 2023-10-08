@@ -123,20 +123,18 @@ func (egw *NsxtEdgeGateway) GetAllL2VpnTunnels(queryParameters url.Values) ([]*N
 
 // GetL2VpnTunnelByName gets the L2 VPN Tunnel by name
 func (egw *NsxtEdgeGateway) GetL2VpnTunnelByName(name string) (*NsxtL2VpnTunnel, error) {
-	filterByName := copyOrNewUrlValues(nil)
-	filterByName = queryParameterFilterAnd(fmt.Sprintf("name==%s", name), filterByName)
-
-	results, err := egw.GetAllL2VpnTunnels(filterByName)
+	results, err := egw.GetAllL2VpnTunnels(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	tunnel, err := oneOrError("name", name, results)
-	if err != nil {
-		return nil, err
+	for _, tunnel := range results {
+		if tunnel.NsxtL2VpnTunnel.Name == name {
+			return tunnel, nil
+		}
 	}
 
-	return tunnel, nil
+	return nil, fmt.Errorf("tunnel with the name %s not found", name)
 }
 
 // GetL2VpnTunnelById gets the L2 VPN Tunnel by its ID

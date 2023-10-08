@@ -99,6 +99,14 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(updatedServerTunnel.NsxtL2VpnTunnel.ConnectorInitiationMode, Equals, "INITIATOR")
 	check.Assert(updatedServerTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
 
+	tunnelByName, err := edge.GetL2VpnTunnelByName(serverTunnel.NsxtL2VpnTunnel.Name)
+	check.Assert(err, IsNil)
+	check.Assert(tunnelByName.NsxtL2VpnTunnel.ID, Equals, serverTunnel.NsxtL2VpnTunnel.ID)
+
+	nonexistentTunnel, err := edge.GetL2VpnTunnelByName("nonexistent-tunnel")
+	check.Assert(err, NotNil)
+	check.Assert(nonexistentTunnel, IsNil)
+
 	err = updatedServerTunnel.Delete()
 	check.Assert(err, IsNil)
 
