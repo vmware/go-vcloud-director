@@ -128,10 +128,24 @@ func (egw *NsxtEdgeGateway) GetL2VpnTunnelByName(name string) (*NsxtL2VpnTunnel,
 		return nil, err
 	}
 
+	var found bool
+	var foundTunnel *NsxtL2VpnTunnel
 	for _, tunnel := range results {
 		if tunnel.NsxtL2VpnTunnel.Name == name {
-			return tunnel, nil
+			// There can be more than one SERVER tunnel with the same name,
+			// return an error if more than two are found
+			if !found {
+				found = true
+				foundTunnel = tunnel
+			}
+			if found {
+				return nil, fmt.Errorf("two tunnels with the name %s found", name)
+			}
 		}
+	}
+
+	if foundTunnel != nil {
+		return foundTunnel, nil
 	}
 
 	return nil, fmt.Errorf("tunnel with the name %s not found", name)
