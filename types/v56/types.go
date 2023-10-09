@@ -1134,7 +1134,7 @@ type PublishExternalCatalogParams struct {
 	PreserveIdentityInfoFlag *bool  `xml:"PreserveIdentityInfoFlag,omitempty"` // True includes BIOS UUIDs and MAC addresses in the downloaded OVF package. If false, those information will be excluded.
 }
 
-// PublishCatalogParams represents the configuration parameters of a catalog published to other orgs
+// PublishCatalogParams represents the configuration parameters of a catalog published to other orgs.
 // It is used in conjunction with the "IsPublished" state of the catalog itself
 type PublishCatalogParams struct {
 	XMLName     xml.Name `xml:"PublishCatalogParams"`

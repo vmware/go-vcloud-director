@@ -508,7 +508,7 @@ func (cat *AdminCatalog) IsSharedReadOnly() (bool, error) {
 	return cat.AdminCatalog.IsPublished, nil
 }
 
-// publish publishes a catalog read-only access control to all organizations
+// publish publishes a catalog read-only access control to all organizations.
 // This operation is usually the second step for a read-only sharing to all Orgs
 func (cat *Catalog) publish(isPublished bool) error {
 	if cat.Catalog == nil {
@@ -536,7 +536,7 @@ func (cat *Catalog) publish(isPublished bool) error {
 	return cat.Refresh()
 }
 
-// publish publishes a catalog read-only access control to all organizations
+// publish publishes a catalog read-only access control to all organizations.
 // This operation is usually the second step for a read-only sharing to all Orgs
 func (cat *AdminCatalog) publish(isPublished bool) error {
 	if cat.AdminCatalog == nil {
