@@ -749,6 +749,7 @@ func (vdc *Vdc) QueryAllMedia(mediaName string) ([]*MediaRecord, error) {
 }
 
 // enableDownload prepares a media item for download and returns a download link
+// Note: depending on the size of the item, it may take a long time.
 func (media *Media) enableDownload() (string, error) {
 	downloadUrl := getUrlFromLink(media.Media.Link, "enable", "")
 	if downloadUrl == "" {
@@ -806,6 +807,7 @@ func (media *Media) enableDownload() (string, error) {
 }
 
 // Download gets the contents of a media item as a byte stream
+// NOTE: the whole item will be saved in local memory. Do not attempt this operation for very large items
 func (media *Media) Download() ([]byte, error) {
 
 	downloadHref, err := media.enableDownload()
