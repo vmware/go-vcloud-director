@@ -598,6 +598,7 @@ type VlanIdRanges struct {
 	Values []VlanIdRange `json:"values"`
 }
 
+// VlanIdRange is a component of a network pool of type VLAN
 type VlanIdRange struct {
 	StartId int `json:"startId"`
 	EndId   int `json:"endId"`
@@ -636,6 +637,7 @@ type TransportZones struct {
 	Values []*TransportZone `json:"values"`
 }
 
+// TransportZone is a backing component of a network pool of type 'GENEVE' (NSX-T backed)
 type TransportZone struct {
 	Id              string `json:"id"`
 	Name            string `json:"name"`
@@ -643,6 +645,7 @@ type TransportZone struct {
 	AlreadyImported bool   `json:"alreadyImported"`
 }
 
+// VcenterDistributedSwitch is a backing component of a network pool of type VLAN
 type VcenterDistributedSwitch struct {
 	BackingRef    OpenApiReference `json:"backingRef"`
 	VirtualCenter OpenApiReference `json:"virtualCenter"`
