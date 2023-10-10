@@ -200,17 +200,17 @@ func (np *NetworkPool) Delete() error {
 // CreateNetworkPoolGeneve creates a network pool of GENEVE type
 // The function retrieves the given NSX-T manager and corresponding transport zone names
 // If the transport zone name is empty, the first available will be used
-func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, managerName, transportZoneName string) (*NetworkPool, error) {
-	managers, err := vcdClient.QueryNsxtManagerByName(managerName)
+func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, nsxtManagerName, transportZoneName string) (*NetworkPool, error) {
+	managers, err := vcdClient.QueryNsxtManagerByName(nsxtManagerName)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(managers) == 0 {
-		return nil, fmt.Errorf("no manager '%s' found", managerName)
+		return nil, fmt.Errorf("no manager '%s' found", nsxtManagerName)
 	}
 	if len(managers) > 1 {
-		return nil, fmt.Errorf("more than one manager '%s' found", managerName)
+		return nil, fmt.Errorf("more than one manager '%s' found", nsxtManagerName)
 	}
 	manager := managers[0]
 
@@ -270,7 +270,7 @@ func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCente
 		return nil, fmt.Errorf("error retrieving vCenter '%s': %s", vCenterName, err)
 	}
 	var params = make(url.Values)
-	params.Set("virtualCenter.id", vCenter.VSphereVCenter.VcId)
+	params.Set("filter", "virtualCenter.id=="+vCenter.VSphereVCenter.VcId)
 	portgroups, err := vcdClient.GetAllVcenterImportableDvpgs(params)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving portgroups for vCenter '%s': %s", vCenterName, err)
@@ -322,8 +322,6 @@ func (vcdClient *VCDClient) CreateNetworkPoolVlan(name, description, vCenterName
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving vCenter '%s': %s", vCenterName, err)
 	}
-	var params = make(url.Values)
-	params.Set("virtualCenter.id", vCenter.VSphereVCenter.VcId)
 
 	dswitches, err := vcdClient.GetAllVcenterDistributedSwitches(vCenter.VSphereVCenter.VcId, nil)
 	if err != nil {
