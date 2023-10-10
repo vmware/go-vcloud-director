@@ -86,12 +86,12 @@ func (vcd *TestVCD) testCreateExternalNetworkV2Nsxt(check *C, backingName, backi
 // getBackingIdByNameAndType looks up Backing ID by name and type
 func getBackingIdByNameAndType(check *C, backingName string, backingType string, vcd *TestVCD, nsxtManagerId string) string {
 	var backingId string
-	switch backingType {
-	case types.ExternalNetworkBackingTypeNsxtTier0Router: // Lookup T0 router ID
+	switch {
+	case backingType == types.ExternalNetworkBackingTypeNsxtTier0Router || backingType == types.ExternalNetworkBackingTypeNsxtVrfTier0Router: // Lookup T0 or T0 VRF
 		tier0RouterVrf, err := vcd.client.GetImportableNsxtTier0RouterByName(backingName, nsxtManagerId)
 		check.Assert(err, IsNil)
 		backingId = tier0RouterVrf.NsxtTier0Router.ID
-	case types.ExternalNetworkBackingTypeNsxtSegment: // Lookup segment ID
+	case backingType == types.ExternalNetworkBackingTypeNsxtSegment: // Lookup segment ID
 		bareNsxtManagerId, err := getBareEntityUuid(nsxtManagerId)
 		check.Assert(err, IsNil)
 		filter := map[string]string{"nsxTManager": bareNsxtManagerId}
