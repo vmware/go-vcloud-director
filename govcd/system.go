@@ -1165,11 +1165,11 @@ func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryRe
 // GetGlobalDefaultSegmentProfileTemplates retrieves VCD global configuration for Segment Profile Templates
 func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericGetSingleBareEntity[types.NsxtGlobalDefaultSegmentProfileTemplate](&vcdClient.Client, endpoint, nil, nil, "Global default Segment Profile Template")
+	return genericGetSingleBareEntity[types.NsxtGlobalDefaultSegmentProfileTemplate]("Global default Segment Profile Template", &vcdClient.Client, endpoint, nil, nil, nil)
 }
 
 // UpdateGlobalDefaultSegmentProfileTemplates updates VCD global configuration for Segment Profile Templates
 func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtGlobalDefaultSegmentProfileTemplate) (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
-	return genericUpdateBareEntity[types.NsxtGlobalDefaultSegmentProfileTemplate](&vcdClient.Client, endpoint, nil, entityConfig, nil, "Global default Segment Profile Template")
+	return genericUpdateBareEntity[types.NsxtGlobalDefaultSegmentProfileTemplate]("Global default Segment Profile Template", &vcdClient.Client, endpoint, nil, entityConfig, nil, nil)
 }

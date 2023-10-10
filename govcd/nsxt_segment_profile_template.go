@@ -21,7 +21,7 @@ type NsxtSegmentProfileTemplate struct {
 // global VCD configuration, Org VDC or Org VDC Network
 func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *types.NsxtSegmentProfileTemplate) (*NsxtSegmentProfileTemplate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	spt, err := genericCreateBareEntity(&vcdClient.Client, endpoint, nil, segmentProfileConfig, nil, "Segment Profile Template")
+	spt, err := genericCreateBareEntity("Segment Profile Template", &vcdClient.Client, endpoint, nil, segmentProfileConfig, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *t
 func (vcdClient *VCDClient) GetAllSegmentProfileTemplates(queryFilter url.Values) ([]*NsxtSegmentProfileTemplate, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate](&client, endpoint, nil, queryFilter, "Segment Profile Template")
+	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate]("Segment Profile Template", &client, endpoint, nil, queryFilter, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (vcdClient *VCDClient) GetSegmentProfileTemplateById(id string) (*NsxtSegme
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	spt, err := genericGetSingleBareEntity[types.NsxtSegmentProfileTemplate](&vcdClient.Client, endpoint, []string{id}, nil, "Segment Profile Template")
+	spt, err := genericGetSingleBareEntity[types.NsxtSegmentProfileTemplate]("Segment Profile Template", &vcdClient.Client, endpoint, []string{id}, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (spt *NsxtSegmentProfileTemplate) Update(nsxtSegmentProfileTemplateConfig *
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	updatedSpt, err := genericUpdateBareEntity(&spt.VCDClient.Client, endpoint, []string{nsxtSegmentProfileTemplateConfig.ID}, nsxtSegmentProfileTemplateConfig, nil, "Segment Profile Template")
+	updatedSpt, err := genericUpdateBareEntity("Segment Profile Template", &spt.VCDClient.Client, endpoint, []string{nsxtSegmentProfileTemplateConfig.ID}, nsxtSegmentProfileTemplateConfig, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -115,5 +115,5 @@ func (spt *NsxtSegmentProfileTemplate) Update(nsxtSegmentProfileTemplateConfig *
 // Delete allows deleting NSX-T Segment Profile Template
 func (spt *NsxtSegmentProfileTemplate) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	return deleteById(&spt.VCDClient.Client, endpoint, []string{spt.NsxtSegmentProfileTemplate.ID}, nil, "Segment Profile Template")
+	return deleteById("Segment Profile Template", &spt.VCDClient.Client, endpoint, []string{spt.NsxtSegmentProfileTemplate.ID}, nil, nil)
 }

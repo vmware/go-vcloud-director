@@ -16,7 +16,7 @@ import (
 // * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
 // * `queryParameters` for the API call. Could be used for passing tenant context or other values
 // * `entityName` is used for detailing error messages with an explicit entity name
-func genericCreateBareEntity[T any](client *Client, endpoint string, endpointParams []string, entityConfig *T, queryParameters url.Values, entityName string) (*T, error) {
+func genericCreateBareEntity[T any](entityName string, client *Client, endpoint string, endpointParams []string, entityConfig *T, queryParameters url.Values, additionalHeader map[string]string) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", entityName, err)
@@ -33,7 +33,7 @@ func genericCreateBareEntity[T any](client *Client, endpoint string, endpointPar
 	}
 
 	createdEntityConfig := new(T)
-	err = client.OpenApiPostItem(apiVersion, urlRef, queryParameters, entityConfig, createdEntityConfig, nil)
+	err = client.OpenApiPostItem(apiVersion, urlRef, queryParameters, entityConfig, createdEntityConfig, additionalHeader)
 	if err != nil {
 		return nil, fmt.Errorf("error creating entity of type '%s': %s", entityName, err)
 	}
@@ -51,7 +51,7 @@ func genericCreateBareEntity[T any](client *Client, endpoint string, endpointPar
 // * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
 // * `queryParameters` for the API call. Could be used for passing tenant context or other values
 // * `entityName` is used for detailing error messages with an explicit entity name
-func genericUpdateBareEntity[T any](client *Client, endpoint string, endpointParams []string, entityConfig *T, queryParameters url.Values, entityName string) (*T, error) {
+func genericUpdateBareEntity[T any](entityName string, client *Client, endpoint string, endpointParams []string, entityConfig *T, queryParameters url.Values, additionalHeader map[string]string) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", entityName, err)
@@ -68,7 +68,7 @@ func genericUpdateBareEntity[T any](client *Client, endpoint string, endpointPar
 	}
 
 	updatedEntityConfig := new(T)
-	err = client.OpenApiPutItem(apiVersion, urlRef, queryParameters, entityConfig, updatedEntityConfig, nil)
+	err = client.OpenApiPutItem(apiVersion, urlRef, queryParameters, entityConfig, updatedEntityConfig, additionalHeader)
 	if err != nil {
 		return nil, fmt.Errorf("error updating entity of type '%s': %s", entityName, err)
 	}
@@ -84,7 +84,7 @@ func genericUpdateBareEntity[T any](client *Client, endpoint string, endpointPar
 // * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
 // * `queryParameters` for the API call. Most common use case - applying a `filter`
 // * `entityName` is used for detailing error messages with an explicit entity name
-func genericGetSingleBareEntity[T any](client *Client, endpoint string, endpointParams []string, queryParameters url.Values, entityName string) (*T, error) {
+func genericGetSingleBareEntity[T any](entityName string, client *Client, endpoint string, endpointParams []string, queryParameters url.Values, additionalHeader map[string]string) (*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for entity '%s': %s", entityName, err)
@@ -103,7 +103,7 @@ func genericGetSingleBareEntity[T any](client *Client, endpoint string, endpoint
 	typeResponse := new(T)
 	err = client.OpenApiGetItem(apiVersion, urlRef, queryParameters, typeResponse, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", entityName, err)
+		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", entityName, additionalHeader)
 	}
 
 	return typeResponse, nil
@@ -121,7 +121,7 @@ func genericGetSingleBareEntity[T any](client *Client, endpoint string, endpoint
 // * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
 // * `queryParameters` can be applied to API. `queryParameters` for the API call. Most common use case - applying a `filter`
 // * `entityName` is used for detailing error messages with an explicit entity name
-func genericGetAllBareFilteredEntities[T any](client *Client, endpoint string, endpointParams []string, queryParameters url.Values, entityName string) ([]*T, error) {
+func genericGetAllBareFilteredEntities[T any](entityName string, client *Client, endpoint string, endpointParams []string, queryParameters url.Values, additionalHeader map[string]string) ([]*T, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting API version for entity '%s': %s", entityName, err)
@@ -140,7 +140,7 @@ func genericGetAllBareFilteredEntities[T any](client *Client, endpoint string, e
 	typeResponses := make([]*T, 0)
 	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", entityName, err)
+		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", entityName, additionalHeader)
 	}
 
 	return typeResponses, nil
@@ -154,7 +154,7 @@ func genericGetAllBareFilteredEntities[T any](client *Client, endpoint string, e
 // * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
 // * `queryParameters` for the API call. Could be used for passing tenant context or other values
 // * `entityName` is used for detailing error messages with an explicit entity name
-func deleteById(client *Client, endpoint string, endpointParams []string, queryParameters url.Values, entityName string) error {
+func deleteById(entityName string, client *Client, endpoint string, endpointParams []string, queryParameters url.Values, additionalHeader map[string]string) error {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
@@ -170,7 +170,7 @@ func deleteById(client *Client, endpoint string, endpointParams []string, queryP
 		return err
 	}
 
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, queryParameters, nil)
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, queryParameters, additionalHeader)
 
 	if err != nil {
 		return fmt.Errorf("error deleting %s: %s", entityName, err)
