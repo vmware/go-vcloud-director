@@ -225,7 +225,7 @@ func (l2Vpn *NsxtL2VpnTunnel) Update(tunnelParams *types.NsxtL2VpnTunnel) (*Nsxt
 		// disabled and can result in unexpected behaviour for the following
 		// operations
 		if l2Vpn.client.APIVCDMaxVersionIs("<= 38.0") {
-			return nil, fmt.Errorf("client sessions can't be disabled")
+			return nil, fmt.Errorf("client sessions can't be disabled on VCD versions up to 10.5.0")
 		}
 	}
 
