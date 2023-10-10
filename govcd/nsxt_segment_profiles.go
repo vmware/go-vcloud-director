@@ -15,8 +15,12 @@ import (
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllIpDiscoveryProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileIpDiscovery, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileIpDiscovery](&vcdClient.Client, endpoint, nil, queryParameters, "IP Discovery Profiles")
+	c := genericCrudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles,
+		queryParameters: queryParameters,
+		entityName:      "IP Discovery Profiles",
+	}
+	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileIpDiscovery](&vcdClient.Client, c)
 }
 
 func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileIpDiscovery, error) {
@@ -33,8 +37,12 @@ func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParame
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllMacDiscoveryProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileMacDiscovery, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileMacDiscovery](&vcdClient.Client, endpoint, nil, queryParameters, "MAC Discovery Profiles")
+	c := genericCrudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles,
+		queryParameters: queryParameters,
+		entityName:      "MAC Discovery Profiles",
+	}
+	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileMacDiscovery](&vcdClient.Client, c)
 }
 
 func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileMacDiscovery, error) {
@@ -51,8 +59,12 @@ func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParam
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllSpoofGuardProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileSegmentSpoofGuard, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSpoofGuardProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentSpoofGuard](&vcdClient.Client, endpoint, nil, queryParameters, "Spoof Guard Profiles")
+	c := genericCrudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSpoofGuardProfiles,
+		queryParameters: queryParameters,
+		entityName:      "Spoof Guard Profiles",
+	}
+	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentSpoofGuard](&vcdClient.Client, c)
 }
 
 func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentSpoofGuard, error) {
@@ -69,8 +81,12 @@ func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParamet
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllQoSProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileSegmentQosProfile, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentQosProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentQosProfile](&vcdClient.Client, endpoint, nil, queryParameters, "QoS Profiles")
+	c := genericCrudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentQosProfiles,
+		queryParameters: queryParameters,
+		entityName:      "QoS Profiles",
+	}
+	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentQosProfile](&vcdClient.Client, c)
 }
 
 func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentQosProfile, error) {
@@ -87,8 +103,12 @@ func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url
 // supplied as a filter. Results can also be filtered by a single profile ID
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllSegmentSecurityProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileSegmentSecurity, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSecurityProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentSecurity](&vcdClient.Client, endpoint, nil, queryParameters, "Segment Security Profiles")
+	c := genericCrudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSecurityProfiles,
+		queryParameters: queryParameters,
+		entityName:      "Segment Security Profiles",
+	}
+	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentSecurity](&vcdClient.Client, c)
 }
 
 func (vcdClient *VCDClient) GetSegmentSecurityProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentSecurity, error) {
