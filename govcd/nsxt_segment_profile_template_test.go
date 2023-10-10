@@ -40,11 +40,11 @@ func (vcd *TestVCD) Test_NsxtSegmentProfileTemplate(check *C) {
 	config := &types.NsxtSegmentProfileTemplate{
 		Name:                   check.TestName(),
 		Description:            check.TestName() + "-description",
-		IPDiscoveryProfile:     &types.OpenApiReferenceWithType{ID: ipDiscoveryProfile.ID},
-		MacDiscoveryProfile:    &types.OpenApiReferenceWithType{ID: macDiscoveryProfile.ID},
-		QosProfile:             &types.OpenApiReferenceWithType{ID: qosProfile.ID},
-		SegmentSecurityProfile: &types.OpenApiReferenceWithType{ID: segmentSecurityProfile.ID},
-		SpoofGuardProfile:      &types.OpenApiReferenceWithType{ID: spoofGuardProfile.ID},
+		IPDiscoveryProfile:     &types.Reference{ID: ipDiscoveryProfile.ID},
+		MacDiscoveryProfile:    &types.Reference{ID: macDiscoveryProfile.ID},
+		QosProfile:             &types.Reference{ID: qosProfile.ID},
+		SegmentSecurityProfile: &types.Reference{ID: segmentSecurityProfile.ID},
+		SpoofGuardProfile:      &types.Reference{ID: spoofGuardProfile.ID},
 		SourceNsxTManagerRef:   &types.OpenApiReference{ID: nsxtManager.NsxtManager.ID},
 	}
 

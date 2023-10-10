@@ -817,11 +817,11 @@ func runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplateEndpoint(check *C, vcd
 
 	// Set segment profiles explicitly without using templates
 	entitySegmentProfileCfg := &types.OrgVdcNetworkSegmentProfiles{
-		IPDiscoveryProfile:     &types.OpenApiReferenceWithType{ID: ipDiscoveryProfile.ID},
-		MacDiscoveryProfile:    &types.OpenApiReferenceWithType{ID: macDiscoveryProfile.ID},
-		SpoofGuardProfile:      &types.OpenApiReferenceWithType{ID: spoofGuardProfile.ID},
-		QosProfile:             &types.OpenApiReferenceWithType{ID: qosProfile.ID},
-		SegmentSecurityProfile: &types.OpenApiReferenceWithType{ID: segmentSecurityProfile.ID},
+		IPDiscoveryProfile:     &types.Reference{ID: ipDiscoveryProfile.ID},
+		MacDiscoveryProfile:    &types.Reference{ID: macDiscoveryProfile.ID},
+		SpoofGuardProfile:      &types.Reference{ID: spoofGuardProfile.ID},
+		QosProfile:             &types.Reference{ID: qosProfile.ID},
+		SegmentSecurityProfile: &types.Reference{ID: segmentSecurityProfile.ID},
 	}
 
 	updatedSegmentProfiles, err := orgVdcNet.UpdateSegmentProfile(entitySegmentProfileCfg)
@@ -934,11 +934,11 @@ func preCreateSegmentProfileTemplate(vcd *TestVCD, check *C, sptNameSuffix strin
 	config := &types.NsxtSegmentProfileTemplate{
 		Name:                   check.TestName() + "-" + sptNameSuffix,
 		Description:            check.TestName() + "-description",
-		IPDiscoveryProfile:     &types.OpenApiReferenceWithType{ID: ipDiscoveryProfile.ID},
-		MacDiscoveryProfile:    &types.OpenApiReferenceWithType{ID: macDiscoveryProfile.ID},
-		QosProfile:             &types.OpenApiReferenceWithType{ID: qosProfile.ID},
-		SegmentSecurityProfile: &types.OpenApiReferenceWithType{ID: segmentSecurityProfile.ID},
-		SpoofGuardProfile:      &types.OpenApiReferenceWithType{ID: spoofGuardProfile.ID},
+		IPDiscoveryProfile:     &types.Reference{ID: ipDiscoveryProfile.ID},
+		MacDiscoveryProfile:    &types.Reference{ID: macDiscoveryProfile.ID},
+		QosProfile:             &types.Reference{ID: qosProfile.ID},
+		SegmentSecurityProfile: &types.Reference{ID: segmentSecurityProfile.ID},
+		SpoofGuardProfile:      &types.Reference{ID: spoofGuardProfile.ID},
 		SourceNsxTManagerRef:   &types.OpenApiReference{ID: nsxtManager.NsxtManager.ID},
 	}
 

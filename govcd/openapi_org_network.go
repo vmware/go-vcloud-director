@@ -379,13 +379,11 @@ func createOpenApiOrgVdcNetwork(client *Client, OrgVdcNetworkConfig *types.OpenA
 // GetSegmentProfile retrieves Segment Profile configuration for a single Org VDC Network
 func (orgVdcNet *OpenApiOrgVdcNetwork) GetSegmentProfile() (*types.OrgVdcNetworkSegmentProfiles, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
-	exactEndpoint := fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID)
-	return genericGetSingleBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, exactEndpoint, nil, "Org VDC Network Segment Profile")
+	return genericGetSingleBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, []string{orgVdcNet.OpenApiOrgVdcNetwork.ID}, nil, "Org VDC Network Segment Profile")
 }
 
 // UpdateSegmentProfile with a given configuration
 func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.OrgVdcNetworkSegmentProfiles) (*types.OrgVdcNetworkSegmentProfiles, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
-	exactEndpoint := fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID)
-	return genericUpdateBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, exactEndpoint, entityConfig, "Org VDC Network Segment Profile")
+	return genericUpdateBareEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, endpoint, []string{orgVdcNet.OpenApiOrgVdcNetwork.ID}, entityConfig, nil, "Org VDC Network Segment Profile")
 }

@@ -244,12 +244,6 @@ type OpenApiReference struct {
 }
 
 // OpenApiReference is a reference type based on OpenApiReference, but additionally has `Type` field
-// which some of the entities provide
-type OpenApiReferenceWithType struct {
-	Name string `json:"name,omitempty"`
-	ID   string `json:"id,omitempty"`
-	Type string `json:"type,omitempty"`
-}
 
 type OpenApiReferences []OpenApiReference
 

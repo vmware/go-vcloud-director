@@ -10,12 +10,12 @@ type NsxtSegmentProfileTemplate struct {
 	Description string `json:"description,omitempty"`
 
 	// SourceNsxTManagerRef points to NSX-T manager providing the source segment profiles
-	SourceNsxTManagerRef   *OpenApiReference         `json:"sourceNsxTManagerRef,omitempty"`
-	IPDiscoveryProfile     *OpenApiReferenceWithType `json:"ipDiscoveryProfile,omitempty"`
-	MacDiscoveryProfile    *OpenApiReferenceWithType `json:"macDiscoveryProfile,omitempty"`
-	QosProfile             *OpenApiReferenceWithType `json:"qosProfile,omitempty"`
-	SegmentSecurityProfile *OpenApiReferenceWithType `json:"segmentSecurityProfile,omitempty"`
-	SpoofGuardProfile      *OpenApiReferenceWithType `json:"spoofGuardProfile,omitempty"`
+	SourceNsxTManagerRef   *OpenApiReference `json:"sourceNsxTManagerRef,omitempty"`
+	IPDiscoveryProfile     *Reference        `json:"ipDiscoveryProfile,omitempty"`
+	MacDiscoveryProfile    *Reference        `json:"macDiscoveryProfile,omitempty"`
+	QosProfile             *Reference        `json:"qosProfile,omitempty"`
+	SegmentSecurityProfile *Reference        `json:"segmentSecurityProfile,omitempty"`
+	SpoofGuardProfile      *Reference        `json:"spoofGuardProfile,omitempty"`
 
 	LastModified string `json:"lastModified,omitempty"`
 }
@@ -193,11 +193,11 @@ type OrgVdcNetworkSegmentProfiles struct {
 	// `OpenApiOrgVdcNetwork.SegmentProfileTemplate` field and `OpenApiOrgVdcNetwork.Update()`
 	SegmentProfileTemplate *SegmentProfileTemplateRef `json:"segmentProfileTemplate,omitempty"`
 
-	IPDiscoveryProfile     *OpenApiReferenceWithType `json:"ipDiscoveryProfile"`
-	MacDiscoveryProfile    *OpenApiReferenceWithType `json:"macDiscoveryProfile"`
-	QosProfile             *OpenApiReferenceWithType `json:"qosProfile"`
-	SegmentSecurityProfile *OpenApiReferenceWithType `json:"segmentSecurityProfile"`
-	SpoofGuardProfile      *OpenApiReferenceWithType `json:"spoofGuardProfile"`
+	IPDiscoveryProfile     *Reference `json:"ipDiscoveryProfile"`
+	MacDiscoveryProfile    *Reference `json:"macDiscoveryProfile"`
+	QosProfile             *Reference `json:"qosProfile"`
+	SegmentSecurityProfile *Reference `json:"segmentSecurityProfile"`
+	SpoofGuardProfile      *Reference `json:"spoofGuardProfile"`
 }
 
 // SegmentProfileTemplateRef contains reference to segment profile

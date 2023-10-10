@@ -218,7 +218,7 @@ type OpenApiOrgVdcNetwork struct {
 	// and function `vdc.GetVdcNetworkProfile()`
 	// * For specific profile types where there are no corresponding profiles defined in the
 	// template, VCD will use the default NSX-T profile.
-	// * This field is only applicable for NSX-T Org vDC Networks.
+	// * This field is only applicable for NSX-T Org VDC Networks.
 	SegmentProfileTemplate *OpenApiReference `json:"segmentProfileTemplateRef,omitempty"`
 }
 
@@ -1803,17 +1803,7 @@ type NsxtEdgeGatewayStaticRouteNextHopScope struct {
 type NsxtManager struct {
 	OtherAttributes struct {
 	} `json:"otherAttributes"`
-	Link []struct {
-		OtherAttributes struct {
-		} `json:"otherAttributes"`
-		Href            string        `json:"href"`
-		ID              interface{}   `json:"id"`
-		Type            string        `json:"type"`
-		Name            interface{}   `json:"name"`
-		Rel             string        `json:"rel"`
-		Model           interface{}   `json:"model"`
-		VCloudExtension []interface{} `json:"vCloudExtension"`
-	} `json:"link"`
+	Link                        LinkList      `json:"link"`
 	Href                        string        `json:"href"`
 	Type                        string        `json:"type"`
 	ID                          string        `json:"id"`
