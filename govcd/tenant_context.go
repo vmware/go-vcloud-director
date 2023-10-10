@@ -5,7 +5,6 @@ package govcd
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -160,20 +159,6 @@ func getTenantContextHeader(tenantContext *TenantContext) map[string]string {
 		types.HeaderTenantContext: extractUuid(tenantContext.OrgId),
 		types.HeaderAuthContext:   tenantContext.OrgName,
 	}
-}
-
-func contextUrlParams(tenantContext *TenantContext) url.Values {
-	if tenantContext == nil {
-		return nil
-	}
-	if tenantContext.OrgName == "" || strings.EqualFold(tenantContext.OrgName, "system") {
-		return nil
-	}
-
-	queryParams := url.Values{}
-	queryParams.Add(types.HeaderTenantContext, extractUuid(tenantContext.OrgId))
-	queryParams.Add(types.HeaderAuthContext, tenantContext.OrgName)
-	return queryParams
 }
 
 // getTenantContextFromHeader does the opposite of getTenantContextHeader:

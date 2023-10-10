@@ -20,11 +20,8 @@ type NsxtSegmentProfileTemplate struct {
 // CreateSegmentProfileTemplate creates a Segment Profile Template that can later be assigned to
 // global VCD configuration, Org VDC or Org VDC Network
 func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *types.NsxtSegmentProfileTemplate) (*NsxtSegmentProfileTemplate, error) {
-	c := genericCrudConfig{
-		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
-		entityName: "Segment Profile Template",
-	}
-	spt, err := genericCreateBareEntity(&vcdClient.Client, segmentProfileConfig, c)
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
+	spt, err := genericCreateBareEntity(&vcdClient.Client, endpoint, nil, segmentProfileConfig, nil, "Segment Profile Template")
 	if err != nil {
 		return nil, err
 	}
@@ -39,12 +36,9 @@ func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *t
 
 // GetAllSegmentProfileTemplates retrieves all Segment Profile Templates
 func (vcdClient *VCDClient) GetAllSegmentProfileTemplates(queryFilter url.Values) ([]*NsxtSegmentProfileTemplate, error) {
-	c := genericCrudConfig{
-		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
-		entityName:      "Segment Profile Template",
-		queryParameters: queryFilter,
-	}
-	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate](&vcdClient.Client, c)
+	client := vcdClient.Client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
+	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate](&client, endpoint, nil, queryFilter, "Segment Profile Template")
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +60,8 @@ func (vcdClient *VCDClient) GetSegmentProfileTemplateById(id string) (*NsxtSegme
 		return nil, fmt.Errorf("empty NSX-T Segment Profile Template ID")
 	}
 
-	c := genericCrudConfig{
-		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
-		endpointParams: []string{id},
-		entityName:     "Segment Profile Template",
-	}
-	spt, err := genericGetSingleBareEntity[types.NsxtSegmentProfileTemplate](&vcdClient.Client, c)
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
+	spt, err := genericGetSingleBareEntity[types.NsxtSegmentProfileTemplate](&vcdClient.Client, endpoint, []string{id}, nil, "Segment Profile Template")
 	if err != nil {
 		return nil, err
 	}
@@ -108,12 +98,8 @@ func (spt *NsxtSegmentProfileTemplate) Update(nsxtSegmentProfileTemplateConfig *
 		return nil, fmt.Errorf("cannot update NSX-T Segment Profile Template without ID")
 	}
 
-	c := genericCrudConfig{
-		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
-		endpointParams: []string{nsxtSegmentProfileTemplateConfig.ID},
-		entityName:     "Segment Profile Template",
-	}
-	updatedSpt, err := genericUpdateBareEntity(&spt.VCDClient.Client, nsxtSegmentProfileTemplateConfig, c)
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
+	updatedSpt, err := genericUpdateBareEntity(&spt.VCDClient.Client, endpoint, []string{nsxtSegmentProfileTemplateConfig.ID}, nsxtSegmentProfileTemplateConfig, nil, "Segment Profile Template")
 	if err != nil {
 		return nil, err
 	}
@@ -128,10 +114,6 @@ func (spt *NsxtSegmentProfileTemplate) Update(nsxtSegmentProfileTemplateConfig *
 
 // Delete allows deleting NSX-T Segment Profile Template
 func (spt *NsxtSegmentProfileTemplate) Delete() error {
-	c := genericCrudConfig{
-		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
-		endpointParams: []string{spt.NsxtSegmentProfileTemplate.ID},
-		entityName:     "Segment Profile Template",
-	}
-	return deleteById(&spt.VCDClient.Client, c)
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
+	return deleteById(&spt.VCDClient.Client, endpoint, []string{spt.NsxtSegmentProfileTemplate.ID}, nil, "Segment Profile Template")
 }
