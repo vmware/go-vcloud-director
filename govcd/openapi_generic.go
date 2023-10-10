@@ -6,51 +6,36 @@ import (
 	"strings"
 )
 
-// genericCrudConfig contains configuration that must be supplied when invoking generic functions
-type genericCrudConfig struct {
-	// endpoint in the usual format (e.g. types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles)
-	endpoint string
-	// endpointParams contains a slice of strings that will be used to contruct request URL. It will
-	// initially replace '%s' placeholders in the `endpoint` (if any) and will add them as suffix
-	// afterwards
-	endpointParams []string
-	// entityName contains friendly entity name that is used for logging meaningful errors
-	entityName string
-	// queryParameters will be passed as GET queries to the URL. Usually they are used for API filtering parameters
-	queryParameters url.Values
-	// additionalHeader can be used to pass additional headers for API calls. One of the common purposes is to pass
-	// tenant context
-	additionalHeader map[string]string
-}
-
 // genericCreateBareEntity implements a common pattern for creating an entity throughout codebase
 // Two types of invocation are possible because the type T can be identified (it is a required parameter)
 // * genericCreateBareEntity[types.NsxtSegmentProfileTemplateDefaultDefinition](&client, endpoint, endpoint, entityConfig, entityName)
 // * genericCreateBareEntity(&client, endpoint, endpoint, entityConfig, entityName)
 // Parameters:
 // * `client` is a *Client
-// * `entityConfig` is the new entity type
-// * `c` holds settings for performing API call
-func genericCreateBareEntity[T any](client *Client, entityConfig *T, c genericCrudConfig) (*T, error) {
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
+// * `additionalHeader` for the API call. Could be used for passing tenant context or other values
+// * `entityName` is used for detailing error messages with an explicit entity name
+func genericCreateBareEntity[T any](client *Client, entityConfig *T, p genericCrudConfig) (*T, error) {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(p.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", p.entityName, err)
 	}
 
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
+	exactEndpoint, err := urlFromEndpoint(p.endpoint, p.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", p.endpoint, strings.Join(p.endpointParams, ","), p.entityName, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", c.entityName, err)
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", p.entityName, err)
 	}
 
 	createdEntityConfig := new(T)
-	err = client.OpenApiPostItem(apiVersion, urlRef, c.queryParameters, entityConfig, createdEntityConfig, c.additionalHeader)
+	err = client.OpenApiPostItem(apiVersion, urlRef, p.queryParameters, entityConfig, createdEntityConfig, p.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error creating entity of type '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error creating entity of type '%s': %s", p.entityName, err)
 	}
 
 	return createdEntityConfig, nil
@@ -62,28 +47,30 @@ func genericCreateBareEntity[T any](client *Client, entityConfig *T, c genericCr
 // * genericCreateBareEntity(&client, endpoint, endpoint, entityConfig, entityName)
 // Parameters:
 // * `client` is a *Client
-// * `entityConfig` is the new entity type
-// * `c` holds settings for performing API call
-func genericUpdateBareEntity[T any](client *Client, entityConfig *T, c genericCrudConfig) (*T, error) {
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
+// * `additionalHeader` for the API call. Could be used for passing tenant context or other values
+// * `entityName` is used for detailing error messages with an explicit entity name
+func genericUpdateBareEntity[T any](client *Client, entityConfig *T, p genericCrudConfig) (*T, error) {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(p.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", p.entityName, err)
 	}
 
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
+	exactEndpoint, err := urlFromEndpoint(p.endpoint, p.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", p.endpoint, strings.Join(p.endpointParams, ","), p.entityName, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", c.entityName, err)
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", p.entityName, err)
 	}
 
 	updatedEntityConfig := new(T)
-	err = client.OpenApiPutItem(apiVersion, urlRef, c.queryParameters, entityConfig, updatedEntityConfig, c.additionalHeader)
+	err = client.OpenApiPutItem(apiVersion, urlRef, p.queryParameters, entityConfig, updatedEntityConfig, p.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error updating entity of type '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error updating entity of type '%s': %s", p.entityName, err)
 	}
 
 	return updatedEntityConfig, nil
@@ -93,27 +80,30 @@ func genericUpdateBareEntity[T any](client *Client, entityConfig *T, c genericCr
 // retrieve bare entity (usually *types.XXXX) and does not need to be wrapped in a parent container.
 // Parameters:
 // * `client` is a *Client
-// * `c` holds settings for performing API call
-func genericGetSingleBareEntity[T any](client *Client, c genericCrudConfig) (*T, error) {
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
+// * `queryParameters` for the API call. Most common use case - applying a `filter`
+// * `entityName` is used for detailing error messages with an explicit entity name
+func genericGetSingleBareEntity[T any](client *Client, p genericCrudConfig) (*T, error) {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(p.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error getting API version for entity '%s': %s", p.entityName, err)
 	}
 
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
+	exactEndpoint, err := urlFromEndpoint(p.endpoint, p.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", p.endpoint, strings.Join(p.endpointParams, ","), p.entityName, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", p.entityName, err)
 	}
 
 	typeResponse := new(T)
-	err = client.OpenApiGetItem(apiVersion, urlRef, c.queryParameters, typeResponse, c.additionalHeader)
+	err = client.OpenApiGetItem(apiVersion, urlRef, p.queryParameters, typeResponse, p.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", p.entityName, err)
 	}
 
 	return typeResponse, nil
@@ -127,27 +117,30 @@ func genericGetSingleBareEntity[T any](client *Client, c genericCrudConfig) (*T,
 // return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplateMacDiscovery](client, endpoint, queryParameters)
 // Parameters:
 // * `client` is a *Client
-// * `c` holds settings for performing API call
-func genericGetAllBareFilteredEntities[T any](client *Client, c genericCrudConfig) ([]*T, error) {
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
+// * `queryParameters` can be applied to API. `queryParameters` for the API call. Most common use case - applying a `filter`
+// * `entityName` is used for detailing error messages with an explicit entity name
+func genericGetAllBareFilteredEntities[T any](client *Client, p genericCrudConfig) ([]*T, error) {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(p.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error getting API version for entity '%s': %s", p.entityName, err)
 	}
 
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
+	exactEndpoint, err := urlFromEndpoint(p.endpoint, p.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", p.endpoint, strings.Join(p.endpointParams, ","), p.entityName, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", p.entityName, err)
 	}
 
 	typeResponses := make([]*T, 0)
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, c.queryParameters, &typeResponses, c.additionalHeader)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, p.queryParameters, &typeResponses, p.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", p.entityName, err)
 	}
 
 	return typeResponses, nil
@@ -157,16 +150,19 @@ func genericGetAllBareFilteredEntities[T any](client *Client, c genericCrudConfi
 // endpoint.
 // Parameters:
 // * `client` is a *Client
-// * `c` holds settings for performing API call
-func deleteById(client *Client, c genericCrudConfig) error {
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
+// * `endpoint` is the endpoint as specified in `endpointMinApiVersions`
+// * `endpointParams` is a slice of strings to replace or append for a given `endpoint`
+// * `queryParameters` for the API call. Could be used for passing tenant context or other values
+// * `entityName` is used for detailing error messages with an explicit entity name
+func deleteById(client *Client, p genericCrudConfig) error {
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(p.endpoint)
 	if err != nil {
 		return err
 	}
 
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
+	exactEndpoint, err := urlFromEndpoint(p.endpoint, p.endpointParams)
 	if err != nil {
-		return fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", p.endpoint, strings.Join(p.endpointParams, ","), p.entityName, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
@@ -174,10 +170,10 @@ func deleteById(client *Client, c genericCrudConfig) error {
 		return err
 	}
 
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, c.queryParameters, c.additionalHeader)
+	err = client.OpenApiDeleteItem(apiVersion, urlRef, p.queryParameters, p.additionalHeader)
 
 	if err != nil {
-		return fmt.Errorf("error deleting %s: %s", c.entityName, err)
+		return fmt.Errorf("error deleting %s: %s", p.entityName, err)
 	}
 
 	return nil
@@ -212,4 +208,12 @@ func urlFromEndpoint(endpoint string, endpointParams []string) (string, error) {
 	}
 
 	return endpoint, nil
+}
+
+type genericCrudConfig struct {
+	endpoint         string
+	endpointParams   []string
+	entityName       string
+	queryParameters  url.Values
+	additionalHeader map[string]string
 }
