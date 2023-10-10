@@ -1965,6 +1965,14 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 	if vcd.config.VCD.Nsxt.EdgeGateway == "" {
 		check.Skip(generalMessage + "No NSX-T Edge Gateway specified in configuration")
 	}
+
+	if vcd.config.VCD.Nsxt.IpDiscoveryProfile == "" ||
+		vcd.config.VCD.Nsxt.MacDiscoveryProfile == "" ||
+		vcd.config.VCD.Nsxt.SpoofGuardProfile == "" ||
+		vcd.config.VCD.Nsxt.QosProfile == "" ||
+		vcd.config.VCD.Nsxt.SegmentSecurityProfile == "" {
+		check.Skip(generalMessage + "NSX-T Segment Profiles are not specified in configuration")
+	}
 }
 
 func skipNoNsxtAlbConfiguration(vcd *TestVCD, check *C) {

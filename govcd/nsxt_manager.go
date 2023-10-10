@@ -14,11 +14,6 @@ import (
 type NsxtManager struct {
 	NsxtManager *types.NsxtManager
 	VCDClient   *VCDClient
-	// Urn holds a URN value for NSX-T manager. None of the API endpoints return it, but filtering other entities requires that
-	// Sample format: urn:vcloud:nsxtmanager:UUID
-	//
-	// Note:  this is being computed when retrieving the structure and will not be populated if this structure is initialized manually
-	Urn string
 }
 
 // GetNsxtManagerByName searches for NSX-T managers available in VCD and returns the one that
@@ -52,16 +47,23 @@ func (vcdClient *VCDClient) GetNsxtManagerByName(name string) (*NsxtManager, err
 		return nil, err
 	}
 
-	// Populate computed URN field, which is not usually provided in API, but is useful in other
-	// endpoints
-	nsxtManager.Urn = nsxtManager.NsxtManager.ID
-	if !isUrn(nsxtManager.NsxtManager.ID) {
-		nsxtManagerUrn, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", nsxtManager.NsxtManager.ID)
-		if err != nil {
-			return nil, fmt.Errorf("error building NSX-T Manager URN from ID '%s': %s", nsxtManager.NsxtManager.ID, err)
-		}
-		nsxtManager.Urn = nsxtManagerUrn
+	return &nsxtManager, nil
+}
+
+// Urn ensures that a URN is returned insted of plain UUID because VCD returns UUID, but requires
+// URN in other APIs quite often.
+func (nsxtManager *NsxtManager) Urn() (string, error) {
+	if nsxtManager == nil || nsxtManager.NsxtManager == nil || nsxtManager.NsxtManager.ID == "" {
+		return "", fmt.Errorf("NSX-T manager structure is incomplete - cannot build URN without ID")
 	}
 
-	return &nsxtManager, nil
+	if isUrn(nsxtManager.NsxtManager.ID) {
+		return nsxtManager.NsxtManager.ID, nil
+	}
+
+	nsxtManagerUrn, err := BuildUrnWithUuid("urn:vcloud:nsxtmanager:", nsxtManager.NsxtManager.ID)
+	if err != nil {
+		return "", fmt.Errorf("error building NSX-T Manager URN from ID '%s': %s", nsxtManager.NsxtManager.ID, err)
+	}
+	return nsxtManagerUrn, nil
 }

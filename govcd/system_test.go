@@ -765,10 +765,12 @@ func (vcd *TestVCD) Test_NsxtGlobalDefaultSegmentProfileTemplate(check *C) {
 	nsxtManager, err := vcd.client.GetNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)
 	check.Assert(nsxtManager, NotNil)
+	nsxtManagerUrn, err := nsxtManager.Urn()
+	check.Assert(err, IsNil)
 
 	// Filter by NSX-T Manager
 	queryParams := copyOrNewUrlValues(nil)
-	queryParams = queryParameterFilterAnd(fmt.Sprintf("nsxTManagerRef.id==%s", nsxtManager.Urn), queryParams)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("nsxTManagerRef.id==%s", nsxtManagerUrn), queryParams)
 
 	// Lookup prerequisite profiles for Segment Profile template creation
 	ipDiscoveryProfile, err := vcd.client.GetIpDiscoveryProfileByName(vcd.config.VCD.Nsxt.IpDiscoveryProfile, queryParams)

@@ -15,6 +15,9 @@ func (vcd *TestVCD) Test_NsxtManager(check *C) {
 	nsxtManager, err := vcd.client.GetNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
 	check.Assert(err, IsNil)
 	check.Assert(nsxtManager, NotNil)
-	check.Assert(strings.HasPrefix(nsxtManager.Urn, "urn:vcloud:nsxtmanager:"), Equals, true)
+
+	urn, err := nsxtManager.Urn()
+	check.Assert(err, IsNil)
+	check.Assert(strings.HasPrefix(urn, "urn:vcloud:nsxtmanager:"), Equals, true)
 
 }
