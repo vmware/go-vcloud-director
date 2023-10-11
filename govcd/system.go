@@ -1197,7 +1197,6 @@ func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityCon
 		return nil, err
 	}
 
-	// update QoS with given qosConfig
 	updatedDefaultNetworkSegmentProfile := &types.NsxtGlobalDefaultSegmentProfileTemplate{}
 	err = vcdClient.Client.OpenApiPutItem(apiVersion, urlRef, nil, entityConfig, updatedDefaultNetworkSegmentProfile, nil)
 	if err != nil {

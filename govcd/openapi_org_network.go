@@ -411,7 +411,6 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.
 		return nil, err
 	}
 
-	// update QoS with given qosConfig
 	updatedNetworkSegmentProfile := &types.OrgVdcNetworkSegmentProfiles{}
 	err = orgVdcNet.client.OpenApiPutItem(apiVersion, urlRef, nil, entityConfig, updatedNetworkSegmentProfile, nil)
 	if err != nil {
