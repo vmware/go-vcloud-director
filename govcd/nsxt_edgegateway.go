@@ -183,6 +183,11 @@ func (adminOrg *AdminOrg) CreateNsxtEdgeGateway(edgeGatewayConfig *types.OpenAPI
 		return nil, fmt.Errorf("error creating Edge Gateway: %s", err)
 	}
 
+	err = returnEgw.reorderUplinks()
+	if err != nil {
+		return nil, fmt.Errorf("error reordering Edge Gateway Uplinks after update operation: %s", err)
+	}
+
 	return returnEgw, nil
 }
 
@@ -197,6 +202,12 @@ func (egw *NsxtEdgeGateway) Refresh() error {
 		return fmt.Errorf("error refreshing NSX-T Edge Gateway: %s", err)
 	}
 	egw.EdgeGateway = refreshedEdge.EdgeGateway
+
+	err = egw.reorderUplinks()
+	if err != nil {
+		return fmt.Errorf("error reordering Edge Gateway Uplinks after refresh operation: %s", err)
+	}
+
 	return nil
 }
 
@@ -229,6 +240,11 @@ func (egw *NsxtEdgeGateway) Update(edgeGatewayConfig *types.OpenAPIEdgeGateway) 
 	err = egw.client.OpenApiPutItem(apiVersion, urlRef, nil, edgeGatewayConfig, returnEgw.EdgeGateway, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
+	}
+
+	err = egw.reorderUplinks()
+	if err != nil {
+		return nil, fmt.Errorf("error reordering Edge Gateway Uplinks after update operation: %s", err)
 	}
 
 	return returnEgw, nil
@@ -280,6 +296,30 @@ func (egw *NsxtEdgeGateway) MoveToVdcOrVdcGroup(vdcOrVdcGroupId string) (*NsxtEd
 	return egw.Update(edgeGatewayConfig)
 }
 
+// reorderUplinks will ensure that uplink at slice index 0 is the one backed by NSX-T Tier0 External network.
+// NSX-T Edge Gateway can have many uplinks of different types (they are differentiated by 'backingType' field):
+// * MANDATORY - exactly 1 uplink to Tier0 Gateway (External network backed by NSX-T T0 Gateway or NSX-T T0 Gateway VRF) [backingType==NSXT_TIER0 or NSXT_VRF_TIER0]
+// * OPTIONAL - one or more External Network Uplinks (backed by NSX-T Segment backed External networks) [backingType==IMPORTED_T_LOGICAL_SWITCH]
+// It is expected that the Tier0 gateway uplink is always at index 0, but we have seen where VCD API
+// shuffles response values therefore it is important to ensure that uplink with
+// backingType==NSXT_TIER0 or backingType==NSXT_VRF_TIER0 the element 0 in types.EdgeGatewayUplinks to avoid breaking functionality
+// in upstream code.
+//
+// Note. This function wil be a noop in 10.4.0, because `backingType` was not present. However, this
+// poses no risks because the can be only 1 uplink up to 10.4.1, when `backingType` was introduced.
+func (egw *NsxtEdgeGateway) reorderUplinks() error {
+	if egw == nil || egw.EdgeGateway == nil {
+		return fmt.Errorf("edge gateway cannot be nil ")
+	}
+
+	if len(egw.EdgeGateway.EdgeGatewayUplinks) == 0 {
+		return fmt.Errorf("no uplinks present in Edge Gateway")
+	}
+
+	egw.EdgeGateway.EdgeGatewayUplinks = reorderEdgeGatewayUplinks(egw.EdgeGateway.EdgeGatewayUplinks)
+	return nil
+}
+
 // getNsxtEdgeGatewayById is a private parent for wrapped functions:
 // func (adminOrg *AdminOrg) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
 // func (org *Org) GetNsxtEdgeGatewayByName(id string) (*NsxtEdgeGateway, error)
@@ -313,6 +353,11 @@ func getNsxtEdgeGatewayById(client *Client, id string, queryParameters url.Value
 	if egw.EdgeGateway.GatewayBacking.GatewayType != "NSXT_BACKED" {
 		return nil, fmt.Errorf("%s: this is not NSX-T Edge Gateway (%s)",
 			ErrorEntityNotFound, egw.EdgeGateway.GatewayBacking.GatewayType)
+	}
+
+	err = egw.reorderUplinks()
+	if err != nil {
+		return nil, fmt.Errorf("error reordering Edge Gateway Uplink after API retrieval")
 	}
 
 	return egw, nil
@@ -364,6 +409,15 @@ func getAllNsxtEdgeGateways(client *Client, queryParameters url.Values) ([]*Nsxt
 	}
 
 	onlyNsxtEdges := filterOnlyNsxtEdges(wrappedResponses)
+
+	// Reorder uplink in all Edge Gateways
+	for edgeIndex := range onlyNsxtEdges {
+		err := onlyNsxtEdges[edgeIndex].reorderUplinks()
+		if err != nil {
+			return nil, fmt.Errorf("error reordering NSX-T Edge Gateway Uplinks for gateway '%s' ('%s'): %s",
+				onlyNsxtEdges[edgeIndex].EdgeGateway.Name, onlyNsxtEdges[edgeIndex].EdgeGateway.ID, err)
+		}
+	}
 
 	return onlyNsxtEdges, nil
 }
@@ -486,6 +540,66 @@ func (egw *NsxtEdgeGateway) GetAllocatedIpCount(refresh bool) (int, error) {
 	allocatedIpCount := 0
 
 	for _, uplink := range egw.EdgeGateway.EdgeGatewayUplinks {
+		for _, subnet := range uplink.Subnets.Values {
+			if subnet.TotalIPCount != nil {
+				allocatedIpCount += *subnet.TotalIPCount
+			}
+		}
+	}
+
+	return allocatedIpCount, nil
+}
+
+// GetPrimaryNetworkAllocatedIpCount returns total count of allocated IPs for first NSX-T Edge
+// Gateway uplink
+func (egw *NsxtEdgeGateway) GetPrimaryNetworkAllocatedIpCount(refresh bool) (int, error) {
+	if refresh {
+		err := egw.Refresh()
+		if err != nil {
+			return 0, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+		}
+	}
+
+	allocatedIpCount := 0
+
+	for _, subnet := range egw.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values {
+		if subnet.TotalIPCount != nil {
+			allocatedIpCount += *subnet.TotalIPCount
+		}
+	}
+
+	return allocatedIpCount, nil
+}
+
+// GetAllocatedIpCountByUplinkType will return a sum of allocated IPs for particular `uplinkType`
+// `uplinkType` can be one of 'NSXT_TIER0', 'NSXT_VRF_TIER0', 'IMPORTED_T_LOGICAL_SWITCH'
+//
+// Note. This function is based on BackingType field and requires at least VCD 10.4.1
+func (egw *NsxtEdgeGateway) GetAllocatedIpCountByUplinkType(refresh bool, uplinkType string) (int, error) {
+	if egw.client.APIVCDMaxVersionIs("< 37.1") {
+		return 0, fmt.Errorf("this function requires at least VCD 10.4.1 to work")
+	}
+
+	if uplinkType != "NSXT_TIER0" &&
+		uplinkType != "IMPORTED_T_LOGICAL_SWITCH" &&
+		uplinkType != "NSXT_VRF_TIER0" {
+		return 0, fmt.Errorf("invalid 'uplinkType', expected 'NSXT_TIER0', 'IMPORTED_T_LOGICAL_SWITCH' or 'NSXT_VRF_TIER0', got: %s", uplinkType)
+	}
+
+	if refresh {
+		err := egw.Refresh()
+		if err != nil {
+			return 0, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+		}
+	}
+
+	allocatedIpCount := 0
+
+	for _, uplink := range egw.EdgeGateway.EdgeGatewayUplinks {
+		// counting IPs only for specific uplink type
+		if uplink.BackingType != nil && *uplink.BackingType != uplinkType {
+			continue
+		}
 		for _, subnet := range uplink.Subnets.Values {
 			if subnet.TotalIPCount != nil {
 				allocatedIpCount += *subnet.TotalIPCount
@@ -970,4 +1084,29 @@ func flattenGatewayUsedIpAddressesToIpSlice(usedIpAddresses []*types.GatewayUsed
 	}
 
 	return usedIpSlice, nil
+}
+
+func reorderEdgeGatewayUplinks(edgeGatewayUplinks []types.EdgeGatewayUplinks) []types.EdgeGatewayUplinks {
+	// If only 1 uplink is present - there is nothing to reorder, because only mandatory uplink is present
+	if len(edgeGatewayUplinks) == 1 {
+		return edgeGatewayUplinks
+	}
+
+	// Element 0 is External Network backed by Tier 0 Gateway or T0 Gateway VRF - nothing to do
+	if edgeGatewayUplinks[0].BackingType != nil && (*edgeGatewayUplinks[0].BackingType == "NSXT_TIER0" || *edgeGatewayUplinks[0].BackingType == "NSXT_VRF_TIER0") {
+		return edgeGatewayUplinks
+	}
+
+	for uplinkIndex := range edgeGatewayUplinks {
+		if edgeGatewayUplinks[uplinkIndex].BackingType != nil && (*edgeGatewayUplinks[uplinkIndex].BackingType == "NSXT_TIER0" || *edgeGatewayUplinks[uplinkIndex].BackingType == "NSXT_VRF_TIER0") {
+			// Swap elements so that 'NSXT_TIER0' or 'NSXT_VRF_TIER0' is at position 0
+			t0BackedUplink := edgeGatewayUplinks[uplinkIndex]
+			edgeGatewayUplinks[uplinkIndex] = edgeGatewayUplinks[0]
+			edgeGatewayUplinks[0] = t0BackedUplink
+
+			return edgeGatewayUplinks
+		}
+	}
+
+	return edgeGatewayUplinks
 }

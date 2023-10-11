@@ -191,6 +191,7 @@ type TestConfig struct {
 			ExternalNetwork           string `yaml:"externalNetwork"`
 			EdgeGateway               string `yaml:"edgeGateway"`
 			NsxtImportSegment         string `yaml:"nsxtImportSegment"`
+			NsxtImportSegment2        string `yaml:"nsxtImportSegment2"`
 			VdcGroup                  string `yaml:"vdcGroup"`
 			VdcGroupEdgeGateway       string `yaml:"vdcGroupEdgeGateway"`
 			NsxtEdgeCluster           string `yaml:"nsxtEdgeCluster"`
