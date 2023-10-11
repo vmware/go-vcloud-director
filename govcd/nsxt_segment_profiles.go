@@ -16,7 +16,23 @@ import (
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllIpDiscoveryProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileIpDiscovery, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileIpDiscovery]("IP Discovery Profiles", &vcdClient.Client, endpoint, nil, queryParameters, nil)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtSegmentProfileIpDiscovery{{}}
+	err = vcdClient.Client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponses, nil
 }
 
 func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileIpDiscovery, error) {
@@ -25,7 +41,14 @@ func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParame
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment IP Discovery Profile")
+	filteredByName := make([]*types.NsxtSegmentProfileIpDiscovery, 0)
+	for _, v := range apiFilteredEntities {
+		if v.DisplayName == name {
+			filteredByName = append(filteredByName, v)
+		}
+	}
+
+	return oneOrError("displayName", name, filteredByName)
 }
 
 // GetAllMacDiscoveryProfiles retrieves all MAC Discovery Profiles configured in an NSX-T manager.
@@ -34,7 +57,23 @@ func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParame
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllMacDiscoveryProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileMacDiscovery, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileMacDiscovery]("MAC Discovery Profiles", &vcdClient.Client, endpoint, nil, queryParameters, nil)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtSegmentProfileMacDiscovery{{}}
+	err = vcdClient.Client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponses, nil
 }
 
 func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileMacDiscovery, error) {
@@ -43,7 +82,14 @@ func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParam
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment MAC Discovery Profile")
+	filteredByName := make([]*types.NsxtSegmentProfileMacDiscovery, 0)
+	for _, v := range apiFilteredEntities {
+		if v.DisplayName == name {
+			filteredByName = append(filteredByName, v)
+		}
+	}
+
+	return oneOrError("displayName", name, filteredByName)
 }
 
 // GetAllSpoofGuardProfiles retrieves all Spoof Guard Profiles configured in an NSX-T manager.
@@ -52,7 +98,23 @@ func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParam
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllSpoofGuardProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileSegmentSpoofGuard, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSpoofGuardProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentSpoofGuard]("Spoof Guard Profiles", &vcdClient.Client, endpoint, nil, queryParameters, nil)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtSegmentProfileSegmentSpoofGuard{{}}
+	err = vcdClient.Client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponses, nil
 }
 
 func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentSpoofGuard, error) {
@@ -61,7 +123,14 @@ func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParamet
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment Spoof Guard Profile")
+	filteredByName := make([]*types.NsxtSegmentProfileSegmentSpoofGuard, 0)
+	for _, v := range apiFilteredEntities {
+		if v.DisplayName == name {
+			filteredByName = append(filteredByName, v)
+		}
+	}
+
+	return oneOrError("displayName", name, filteredByName)
 }
 
 // GetAllQoSProfiles retrieves all QoS Profiles configured in an NSX-T manager.
@@ -70,7 +139,23 @@ func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParamet
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllQoSProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileSegmentQosProfile, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentQosProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentQosProfile]("QoS Profiles", &vcdClient.Client, endpoint, nil, queryParameters, nil)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtSegmentProfileSegmentQosProfile{{}}
+	err = vcdClient.Client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponses, nil
 }
 
 func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentQosProfile, error) {
@@ -79,7 +164,14 @@ func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment QoS Profile")
+	filteredByName := make([]*types.NsxtSegmentProfileSegmentQosProfile, 0)
+	for _, v := range apiFilteredEntities {
+		if v.DisplayName == name {
+			filteredByName = append(filteredByName, v)
+		}
+	}
+
+	return oneOrError("displayName", name, filteredByName)
 }
 
 // GetAllSegmentSecurityProfiles retrieves all Segment Security Profiles configured in an NSX-T manager.
@@ -88,7 +180,23 @@ func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url
 // (filter=nsxTManagerRef.id==nsxTManagerUrn;id==profileId).
 func (vcdClient *VCDClient) GetAllSegmentSecurityProfiles(queryParameters url.Values) ([]*types.NsxtSegmentProfileSegmentSecurity, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSecurityProfiles
-	return genericGetAllBareFilteredEntities[types.NsxtSegmentProfileSegmentSecurity]("Segment Security Profiles", &vcdClient.Client, endpoint, nil, queryParameters, nil)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtSegmentProfileSegmentSecurity{{}}
+	err = vcdClient.Client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponses, nil
 }
 
 func (vcdClient *VCDClient) GetSegmentSecurityProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentSecurity, error) {
@@ -97,5 +205,12 @@ func (vcdClient *VCDClient) GetSegmentSecurityProfileByName(name string, queryPa
 		return nil, err
 	}
 
-	return genericLocalFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment Security Profile")
+	filteredByName := make([]*types.NsxtSegmentProfileSegmentSecurity, 0)
+	for _, v := range apiFilteredEntities {
+		if v.DisplayName == name {
+			filteredByName = append(filteredByName, v)
+		}
+	}
+
+	return oneOrError("displayName", name, filteredByName)
 }

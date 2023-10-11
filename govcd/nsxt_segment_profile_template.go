@@ -21,14 +21,24 @@ type NsxtSegmentProfileTemplate struct {
 // global VCD configuration, Org VDC or Org VDC Network
 func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *types.NsxtSegmentProfileTemplate) (*NsxtSegmentProfileTemplate, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	spt, err := genericCreateBareEntity("Segment Profile Template", &vcdClient.Client, endpoint, nil, segmentProfileConfig, nil, nil)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	returnSegmentProfile := &NsxtSegmentProfileTemplate{
-		NsxtSegmentProfileTemplate: spt,
+		NsxtSegmentProfileTemplate: &types.NsxtSegmentProfileTemplate{},
 		VCDClient:                  vcdClient,
+	}
+
+	err = vcdClient.Client.OpenApiPostItem(apiVersion, urlRef, nil, segmentProfileConfig, returnSegmentProfile.NsxtSegmentProfileTemplate, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating Segment Profile Template: %s", err)
 	}
 
 	return returnSegmentProfile, nil
@@ -38,13 +48,25 @@ func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *t
 func (vcdClient *VCDClient) GetAllSegmentProfileTemplates(queryFilter url.Values) ([]*NsxtSegmentProfileTemplate, error) {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	allSegmentProfileTemplates, err := genericGetAllBareFilteredEntities[types.NsxtSegmentProfileTemplate]("Segment Profile Template", &client, endpoint, nil, queryFilter, nil)
+
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	wrappedResponses := make([]*NsxtSegmentProfileTemplate, len(allSegmentProfileTemplates))
-	for sliceIndex, singleSegmentProfileTemplate := range allSegmentProfileTemplates {
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponses := []*types.NsxtSegmentProfileTemplate{{}}
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryFilter, &typeResponses, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	wrappedResponses := make([]*NsxtSegmentProfileTemplate, len(typeResponses))
+	for sliceIndex, singleSegmentProfileTemplate := range typeResponses {
 		wrappedResponses[sliceIndex] = &NsxtSegmentProfileTemplate{
 			NsxtSegmentProfileTemplate: singleSegmentProfileTemplate,
 			VCDClient:                  vcdClient,
@@ -61,14 +83,24 @@ func (vcdClient *VCDClient) GetSegmentProfileTemplateById(id string) (*NsxtSegme
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	spt, err := genericGetSingleBareEntity[types.NsxtSegmentProfileTemplate]("Segment Profile Template", &vcdClient.Client, endpoint, []string{id}, nil, nil)
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint, id)
 	if err != nil {
 		return nil, err
 	}
 
 	wrappedSegmentProfile := &NsxtSegmentProfileTemplate{
-		NsxtSegmentProfileTemplate: spt,
+		NsxtSegmentProfileTemplate: &types.NsxtSegmentProfileTemplate{},
 		VCDClient:                  vcdClient,
+	}
+
+	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, wrappedSegmentProfile.NsxtSegmentProfileTemplate, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return wrappedSegmentProfile, nil
@@ -99,14 +131,24 @@ func (spt *NsxtSegmentProfileTemplate) Update(nsxtSegmentProfileTemplateConfig *
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	updatedSpt, err := genericUpdateBareEntity("Segment Profile Template", &spt.VCDClient.Client, endpoint, []string{nsxtSegmentProfileTemplateConfig.ID}, nsxtSegmentProfileTemplateConfig, nil, nil)
+	apiVersion, err := spt.VCDClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := spt.VCDClient.Client.OpenApiBuildEndpoint(endpoint, nsxtSegmentProfileTemplateConfig.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	returnSpt := &NsxtSegmentProfileTemplate{
-		NsxtSegmentProfileTemplate: updatedSpt,
+		NsxtSegmentProfileTemplate: &types.NsxtSegmentProfileTemplate{},
 		VCDClient:                  spt.VCDClient,
+	}
+
+	err = spt.VCDClient.Client.OpenApiPutItem(apiVersion, urlRef, nil, nsxtSegmentProfileTemplateConfig, returnSpt.NsxtSegmentProfileTemplate, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error updating Edge Gateway: %s", err)
 	}
 
 	return returnSpt, nil
@@ -115,5 +157,25 @@ func (spt *NsxtSegmentProfileTemplate) Update(nsxtSegmentProfileTemplateConfig *
 // Delete allows deleting NSX-T Segment Profile Template
 func (spt *NsxtSegmentProfileTemplate) Delete() error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates
-	return deleteById("Segment Profile Template", &spt.VCDClient.Client, endpoint, []string{spt.NsxtSegmentProfileTemplate.ID}, nil, nil)
+	apiVersion, err := spt.VCDClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	if spt.NsxtSegmentProfileTemplate.ID == "" {
+		return fmt.Errorf("cannot delete Segment Profile Template without ID")
+	}
+
+	urlRef, err := spt.VCDClient.Client.OpenApiBuildEndpoint(endpoint, spt.NsxtSegmentProfileTemplate.ID)
+	if err != nil {
+		return err
+	}
+
+	err = spt.VCDClient.Client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+
+	if err != nil {
+		return fmt.Errorf("error deleting Segment Profile Template: %s", err)
+	}
+
+	return nil
 }
