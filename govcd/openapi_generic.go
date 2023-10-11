@@ -101,9 +101,9 @@ func genericGetSingleBareEntity[T any](entityName string, client *Client, endpoi
 	}
 
 	typeResponse := new(T)
-	err = client.OpenApiGetItem(apiVersion, urlRef, queryParameters, typeResponse, nil)
+	err = client.OpenApiGetItem(apiVersion, urlRef, queryParameters, typeResponse, additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", entityName, additionalHeader)
+		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", entityName, err)
 	}
 
 	return typeResponse, nil
@@ -138,9 +138,9 @@ func genericGetAllBareFilteredEntities[T any](entityName string, client *Client,
 	}
 
 	typeResponses := make([]*T, 0)
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
+	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", entityName, additionalHeader)
+		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", entityName, err)
 	}
 
 	return typeResponses, nil
