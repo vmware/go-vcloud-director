@@ -8,8 +8,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// NsxtEdgeGatewayQosProfiles uses OpenAPI endpoint to fetch NSX-T Edge Gateway QoS Profiles defined
-// in NSX-T Manager. They can be used to configure QoS on NSX-T Edge Gateway.
+// NsxtEdgeGatewayDns can be used to configure DNS on NSX-T Edge Gateway.
 type NsxtEdgeGatewayDns struct {
 	NsxtEdgeGatewayDns *types.NsxtEdgeGatewayDns
 	client             *Client
