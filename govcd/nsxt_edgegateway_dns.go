@@ -5,6 +5,8 @@
 package govcd
 
 import (
+	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
@@ -19,13 +21,13 @@ type NsxtEdgeGatewayDns struct {
 // GetNsxtEdgeGatewayDns retrieves the DNS configuration for the underlying edge gateway
 func (egw *NsxtEdgeGateway) GetNsxtEdgeGatewayDns() (*NsxtEdgeGatewayDns, error) {
 	client := egw.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -45,13 +47,13 @@ func (egw *NsxtEdgeGateway) GetNsxtEdgeGatewayDns() (*NsxtEdgeGatewayDns, error)
 // Update updates the DNS configuration for the Edge Gateway
 func (dns *NsxtEdgeGatewayDns) Update(updatedConfig *types.NsxtEdgeGatewayDns) (*NsxtEdgeGatewayDns, error) {
 	client := dns.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, dns.EdgeGatewayId)
 	if err != nil {
 		return nil, err
 	}
@@ -67,13 +69,13 @@ func (dns *NsxtEdgeGatewayDns) Update(updatedConfig *types.NsxtEdgeGatewayDns) (
 // Refresh refreshes the DNS configuration for the Edge Gateway
 func (dns *NsxtEdgeGatewayDns) Refresh() error {
 	client := dns.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, dns.EdgeGatewayId)
 	if err != nil {
 		return err
 	}
@@ -89,13 +91,13 @@ func (dns *NsxtEdgeGatewayDns) Refresh() error {
 // Delete deletes the DNS configuration for the Edge Gateway
 func (dns *NsxtEdgeGatewayDns) Delete() error {
 	client := dns.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
+	urlRef, err := client.OpenApiBuildEndpoint(endpoint, dns.EdgeGatewayId)
 	if err != nil {
 		return err
 	}

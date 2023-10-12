@@ -1811,9 +1811,9 @@ type NsxtEdgeGatewayDns struct {
 	// Edge Gateway is connected to a Provider Gateway using IP Space.
 	SnatRuleExternalIpAddress string `json:"snatRuleExternalIpAddress"`
 	// The default forwarder zone to use if there’s no matching domain in the conditional forwarder zone.
-	DefaultForwarderZone NsxtDnsForwarderZoneConfig `json:"DefaultForwarderZone"`
+	DefaultForwarderZone *NsxtDnsForwarderZoneConfig `json:"DefaultForwarderZone"`
 	// The list of forwarder zones with its matching DNS domains.
-	ConditionalForwarderZones []NsxtDnsForwarderZoneConfig `json:"conditionalForwarderZones"`
+	ConditionalForwarderZones []*NsxtDnsForwarderZoneConfig `json:"conditionalForwarderZones"`
 	Version                   VersionField
 }
 
