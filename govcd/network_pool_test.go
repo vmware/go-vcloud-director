@@ -117,13 +117,20 @@ func (vcd *TestVCD) Test_CreateNetworkPoolGeneve(check *C) {
 			}
 		},
 			check)
+
 		runTestCreateNetworkPool("geneve-names-("+transportZone.Name+")", func() (*NetworkPool, error) {
-			return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool geneve", manager.Name, transportZone.Name)
+			return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool geneve", manager.Name, transportZone.Name, types.BackingUseExplicit)
+		}, nil, check)
+	}
+	if len(importableTransportZones) == 1 {
+		// When no transport zone name is provided and there is only one TZ, we ask for that (unnamed) only one to be used
+		runTestCreateNetworkPool("geneve-names-no-tz-name-only-element", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool geneve", manager.Name, "", types.BackingUseWhenOnlyOne)
 		}, nil, check)
 	}
 	// When no transport zone name is provided, the first one available will be used
-	runTestCreateNetworkPool("geneve-names-no-tz-name", func() (*NetworkPool, error) {
-		return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool geneve", manager.Name, "")
+	runTestCreateNetworkPool("geneve-names-no-tz-name-first-element", func() (*NetworkPool, error) {
+		return vcd.client.CreateNetworkPoolGeneve(networkPoolName, "test network pool geneve", manager.Name, "", types.BackingUseFirstAvailable)
 	}, nil, check)
 }
 
@@ -177,12 +184,18 @@ func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
 			return vcd.client.CreateNetworkPool(&config)
 		}, nil, check)
 		runTestCreateNetworkPool("port-group-names-("+pg.VcenterImportableDvpg.BackingRef.Name+")", func() (*NetworkPool, error) {
-			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, pg.VcenterImportableDvpg.BackingRef.Name)
+			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, pg.VcenterImportableDvpg.BackingRef.Name, types.BackingUseExplicit)
+		}, nil, check)
+	}
+	if len(portgroups) == 1 {
+		// When no port group name is provided, and only one is available, we ask for that (unnamed) one to be used
+		runTestCreateNetworkPool("port-group-names-no-pg-name-only-element", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, "", types.BackingUseWhenOnlyOne)
 		}, nil, check)
 	}
 	// When no port group name is provided, the first one available will be used
-	runTestCreateNetworkPool("port-group-names-no-pg-name", func() (*NetworkPool, error) {
-		return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, "")
+	runTestCreateNetworkPool("port-group-names-no-pg-name-first-element", func() (*NetworkPool, error) {
+		return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, "", types.BackingUseFirstAvailable)
 	}, nil, check)
 }
 
@@ -271,14 +284,22 @@ func (vcd *TestVCD) Test_CreateNetworkPoolVlan(check *C) {
 
 		runTestCreateNetworkPool("vlan-names-("+sw.BackingRef.Name+")",
 			func() (*NetworkPool, error) {
-				return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN", vCenter.VSphereVCenter.Name, sw.BackingRef.Name, ranges)
+				return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN", vCenter.VSphereVCenter.Name, sw.BackingRef.Name, ranges, types.BackingUseExplicit)
 			},
 			updateWithRanges,
 			check)
 	}
+	if len(switches) == 1 {
+		// When no switch name is provided, and only one is available, we ask to use that (unnamed) one
+		runTestCreateNetworkPool("vlan-names-no-sw-name-only-element", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN", vCenter.VSphereVCenter.Name, "", ranges, types.BackingUseWhenOnlyOne)
+		},
+			updateWithRanges,
+			check)
+	}
 	// When no switch name is provided, the first one available will be used
-	runTestCreateNetworkPool("vlan-names-no-sw-name", func() (*NetworkPool, error) {
-		return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN", vCenter.VSphereVCenter.Name, "", ranges)
+	runTestCreateNetworkPool("vlan-names-no-sw-name-first-element", func() (*NetworkPool, error) {
+		return vcd.client.CreateNetworkPoolVlan(networkPoolName, "test network pool VLAN", vCenter.VSphereVCenter.Name, "", ranges, types.BackingUseFirstAvailable)
 	},
 		updateWithRanges,
 		check)

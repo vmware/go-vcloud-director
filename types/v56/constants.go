@@ -700,3 +700,12 @@ const (
 	NetworkPoolGeneveType    = "GENEVE"
 	NetworkPoolPortGroupType = "PORTGROUP_BACKED"
 )
+
+// BackingUseConstraint is a constraint about the use of a backing in a network pool
+type BackingUseConstraint string
+
+const (
+	BackingUseExplicit       BackingUseConstraint = "use-explicit-name"   // use explicitly named backing
+	BackingUseWhenOnlyOne    BackingUseConstraint = "use-when-only-one"   // use automatically when only one was found
+	BackingUseFirstAvailable BackingUseConstraint = "use-first-available" // use the first available backing with no conditions
+)
