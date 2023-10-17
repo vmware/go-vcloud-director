@@ -310,7 +310,7 @@ func (vAppTemplate *VAppTemplate) RenewLease(storageLeaseInSeconds int) error {
 	}
 
 	if href == "" {
-		return fmt.Errorf("link to update lease sttings not found for vAppTemplate %s", vAppTemplate.VAppTemplate.Name)
+		return fmt.Errorf("link to update lease settings not found for vAppTemplate %s", vAppTemplate.VAppTemplate.Name)
 	}
 
 	var leaseSettings = types.UpdateLeaseSettingsSection{
