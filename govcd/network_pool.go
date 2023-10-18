@@ -334,7 +334,7 @@ func (vcdClient *VCDClient) CreateNetworkPoolGeneve(name, description, nsxtManag
 // CreateNetworkPoolPortGroup creates a network pool of PORTGROUP_BACKED type
 // The function retrieves the given vCenter and corresponding port group names
 // If the port group name is empty, the first available will be used
-func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCenterName, portgroupName string, constraint types.BackingUseConstraint) (*NetworkPool, error) {
+func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCenterName string, portgroupNames []string, constraint types.BackingUseConstraint) (*NetworkPool, error) {
 	vCenter, err := vcdClient.GetVCenterByName(vCenterName)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving vCenter '%s': %s", vCenterName, err)
@@ -346,19 +346,38 @@ func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCente
 		return nil, fmt.Errorf("error retrieving portgroups for vCenter '%s': %s", vCenterName, err)
 	}
 
-	portGroup, err := chooseBackingElement[VcenterImportableDvpg](
-		constraint,
-		portgroupName,
-		portgroups,
-		func(v *VcenterImportableDvpg) string {
-			return v.VcenterImportableDvpg.BackingRef.Name
-		},
-		nil,
-	)
+	var chosenPortgroups []*VcenterImportableDvpg
+	var chosenReferences []types.OpenApiReference
+	for _, portgroupName := range portgroupNames {
+		portGroup, err := chooseBackingElement[VcenterImportableDvpg](
+			constraint,
+			portgroupName,
+			portgroups,
+			func(v *VcenterImportableDvpg) string {
+				return v.VcenterImportableDvpg.BackingRef.Name
+			},
+			nil,
+		)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+		chosenPortgroups = append(chosenPortgroups, portGroup)
+		chosenReferences = append(chosenReferences, types.OpenApiReference{
+			Name: portGroup.VcenterImportableDvpg.BackingRef.Name,
+			ID:   portGroup.VcenterImportableDvpg.BackingRef.ID,
+		})
 	}
+
+	if len(chosenPortgroups) == 0 {
+		return nil, fmt.Errorf("no suitable portgroups found for names %v", portgroupNames)
+	}
+	if len(chosenPortgroups) > 1 {
+		if !chosenPortgroups[0].UsableWith(chosenPortgroups...) {
+			return nil, fmt.Errorf("portgroups %v should all belong to the same host", portgroupNames)
+		}
+	}
+
 	// Note: in this type of network pool, the managing owner is the vCenter
 	managingOwner := types.OpenApiReference{
 		Name: vCenter.VSphereVCenter.Name,
@@ -370,13 +389,8 @@ func (vcdClient *VCDClient) CreateNetworkPoolPortGroup(name, description, vCente
 		PoolType:         types.NetworkPoolPortGroupType,
 		ManagingOwnerRef: managingOwner,
 		Backing: types.NetworkPoolBacking{
-			PortGroupRefs: []types.OpenApiReference{
-				{
-					ID:   portGroup.VcenterImportableDvpg.BackingRef.ID,
-					Name: portGroup.VcenterImportableDvpg.BackingRef.Name,
-				},
-			},
-			ProviderRef: managingOwner,
+			PortGroupRefs: chosenReferences,
+			ProviderRef:   managingOwner,
 		},
 	}
 	return vcdClient.CreateNetworkPool(&config)
