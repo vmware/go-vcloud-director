@@ -156,8 +156,22 @@ func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(portgroups) > 0, Equals, true)
 
+	var sameHost []*VcenterImportableDvpg
 	for _, pg := range portgroups {
 
+		for _, other := range portgroups {
+			if len(sameHost) > 0 {
+				break
+			}
+			if other.VcenterImportableDvpg.BackingRef.ID == pg.VcenterImportableDvpg.BackingRef.ID {
+				continue
+			}
+			if other.Parent().ID == pg.Parent().ID {
+				sameHost = append(sameHost, pg)
+				sameHost = append(sameHost, other)
+				break
+			}
+		}
 		config := types.NetworkPool{
 			Name:        networkPoolName,
 			Description: "test network pool port group",
@@ -184,18 +198,29 @@ func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
 			return vcd.client.CreateNetworkPool(&config)
 		}, nil, check)
 		runTestCreateNetworkPool("port-group-names-("+pg.VcenterImportableDvpg.BackingRef.Name+")", func() (*NetworkPool, error) {
-			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, pg.VcenterImportableDvpg.BackingRef.Name, types.BackingUseExplicit)
+			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name,
+				[]string{pg.VcenterImportableDvpg.BackingRef.Name}, types.BackingUseExplicit)
+		}, nil, check)
+	}
+	if len(sameHost) == 2 {
+		names := []string{
+			sameHost[0].VcenterImportableDvpg.BackingRef.Name,
+			sameHost[1].VcenterImportableDvpg.BackingRef.Name,
+		}
+		runTestCreateNetworkPool("port-group-multi-names", func() (*NetworkPool, error) {
+			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group",
+				vCenter.VSphereVCenter.Name, names, types.BackingUseExplicit)
 		}, nil, check)
 	}
 	if len(portgroups) == 1 {
 		// When no port group name is provided, and only one is available, we ask for that (unnamed) one to be used
 		runTestCreateNetworkPool("port-group-names-no-pg-name-only-element", func() (*NetworkPool, error) {
-			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, "", types.BackingUseWhenOnlyOne)
+			return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, []string{""}, types.BackingUseWhenOnlyOne)
 		}, nil, check)
 	}
 	// When no port group name is provided, the first one available will be used
 	runTestCreateNetworkPool("port-group-names-no-pg-name-first-element", func() (*NetworkPool, error) {
-		return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, "", types.BackingUseFirstAvailable)
+		return vcd.client.CreateNetworkPoolPortGroup(networkPoolName, "test network pool port group", vCenter.VSphereVCenter.Name, []string{""}, types.BackingUseFirstAvailable)
 	}, nil, check)
 }
 
