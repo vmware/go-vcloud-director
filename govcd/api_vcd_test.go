@@ -110,10 +110,12 @@ type Tenant struct {
 // specifies
 type TestConfig struct {
 	Provider struct {
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		Token    string `yaml:"token"`
-		ApiToken string `yaml:"api_token"`
+		User       string `yaml:"user"`
+		Password   string `yaml:"password"`
+		Token      string `yaml:"token"`
+		ApiToken   string `yaml:"api_token"`
+		VcdVersion string `yaml:"vcdVersion,omitempty"`
+		ApiVersion string `yaml:"apiVersion,omitempty"`
 
 		// UseSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
 		// The above `User` and `Password` will be used to authenticate against ADFS IdP when true.
