@@ -247,20 +247,20 @@ func chooseBackingElement[B any](constraint types.BackingUseConstraint, wantedNa
 			// When asking for a specific element explicitly, we return it only if the name matches the request)
 			if wantedName == elementName {
 				searchedElement = element
-				break
 			}
 		case types.BackingUseWhenOnlyOne:
 			// With BackingUseWhenOnlyOne, we return the element only if there is a single *valid* element in the list
 			if wantedName == "" && numberOfValidElements == 1 {
 				searchedElement = element
-				break
 			}
 		case types.BackingUseFirstAvailable:
 			// This is the most permissive constraint: we get the first available element
 			if wantedName == "" {
 				searchedElement = element
-				break
 			}
+		}
+		if searchedElement != nil {
+			break
 		}
 	}
 	// If no item was retrieved, we build an error message appropriate for the current constraint, and add
