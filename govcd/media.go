@@ -747,3 +747,99 @@ func (vdc *Vdc) QueryAllMedia(mediaName string) ([]*MediaRecord, error) {
 	util.Logger.Printf("[TRACE] Found media records by name: %#v \n", mediaResults)
 	return newMediaRecords, nil
 }
+
+// enableDownload prepares a media item for download and returns a download link
+// Note: depending on the size of the item, it may take a long time.
+func (media *Media) enableDownload() (string, error) {
+	downloadUrl := getUrlFromLink(media.Media.Link, "enable", "")
+	if downloadUrl == "" {
+		return "", fmt.Errorf("no enable URL found")
+	}
+	// The result of this operation is the creation of an entry in the 'Files' field of the media structure
+	// Inside that field, there will be a Link entry with the URL for the download
+	// e.g.
+	//<Files>
+	//    <File size="25434" name="file">
+	//        <Link rel="download:default" href="https://example.com/transfer/1638969a-06da-4f6c-b097-7796c1556c54/file"/>
+	//    </File>
+	//</Files>
+	task, err := media.client.executeTaskRequest(
+		downloadUrl,
+		http.MethodPost,
+		types.MimeTask,
+		"error enabling download: %s",
+		nil,
+		media.client.APIVersion)
+	if err != nil {
+		return "", err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return "", err
+	}
+
+	err = media.Refresh()
+	if err != nil {
+		return "", err
+	}
+
+	if media.Media.Files == nil || len(media.Media.Files.File) == 0 {
+		return "", fmt.Errorf("no downloadable file info found")
+	}
+	downloadHref := ""
+	for _, f := range media.Media.Files.File {
+		for _, l := range f.Link {
+			if l.Rel == "download:default" {
+				downloadHref = l.HREF
+				break
+			}
+			if downloadHref != "" {
+				break
+			}
+		}
+	}
+
+	if downloadHref == "" {
+		return "", fmt.Errorf("no download URL found")
+	}
+
+	return downloadHref, nil
+}
+
+// Download gets the contents of a media item as a byte stream
+// NOTE: the whole item will be saved in local memory. Do not attempt this operation for very large items
+func (media *Media) Download() ([]byte, error) {
+
+	downloadHref, err := media.enableDownload()
+	if err != nil {
+		return nil, err
+	}
+
+	downloadUrl, err := url.ParseRequestURI(downloadHref)
+	if err != nil {
+		return nil, fmt.Errorf("error getting download URL: %s", err)
+	}
+
+	request := media.client.NewRequest(map[string]string{}, http.MethodGet, *downloadUrl, nil)
+	resp, err := media.client.Http.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error getting media download: %s", err)
+	}
+
+	if !isSuccessStatus(resp.StatusCode) {
+		return nil, fmt.Errorf("error downloading media: %s", resp.Status)
+	}
+	body, err := io.ReadAll(resp.Body)
+
+	defer func() {
+		err = resp.Body.Close()
+		if err != nil {
+			panic(fmt.Sprintf("error closing body: %s", err))
+		}
+	}()
+
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
+}
