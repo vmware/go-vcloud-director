@@ -35,6 +35,7 @@ func (vcdClient *VCDClient) GetAllIpDiscoveryProfiles(queryParameters url.Values
 	return typeResponses, nil
 }
 
+// GetIpDiscoveryProfileByName retrieves an NSX-T Segment IP Discovery Profile by given name
 func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileIpDiscovery, error) {
 	apiFilteredEntities, err := vcdClient.GetAllIpDiscoveryProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
@@ -76,6 +77,7 @@ func (vcdClient *VCDClient) GetAllMacDiscoveryProfiles(queryParameters url.Value
 	return typeResponses, nil
 }
 
+// GetMacDiscoveryProfileByName retrieves an NSX-T Segment MAC Discovery Profile by given name
 func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileMacDiscovery, error) {
 	apiFilteredEntities, err := vcdClient.GetAllMacDiscoveryProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
@@ -117,6 +119,7 @@ func (vcdClient *VCDClient) GetAllSpoofGuardProfiles(queryParameters url.Values)
 	return typeResponses, nil
 }
 
+// GetSpoofGuardProfileByName retrieves an NSX-T Segment Spoof Guard Profile by given name
 func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentSpoofGuard, error) {
 	apiFilteredEntities, err := vcdClient.GetAllSpoofGuardProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
@@ -158,6 +161,7 @@ func (vcdClient *VCDClient) GetAllQoSProfiles(queryParameters url.Values) ([]*ty
 	return typeResponses, nil
 }
 
+// GetQoSProfileByName retrieves an NSX-T Segment QoS Profile by given name
 func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentQosProfile, error) {
 	apiFilteredEntities, err := vcdClient.GetAllQoSProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {
@@ -199,6 +203,7 @@ func (vcdClient *VCDClient) GetAllSegmentSecurityProfiles(queryParameters url.Va
 	return typeResponses, nil
 }
 
+// GetSegmentSecurityProfileByName retrieves an NSX-T Segment Security Profile by given name
 func (vcdClient *VCDClient) GetSegmentSecurityProfileByName(name string, queryParameters url.Values) (*types.NsxtSegmentProfileSegmentSecurity, error) {
 	apiFilteredEntities, err := vcdClient.GetAllSegmentSecurityProfiles(queryParameters) // API filtering by 'displayName' field is not supported
 	if err != nil {

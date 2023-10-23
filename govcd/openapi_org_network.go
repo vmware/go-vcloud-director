@@ -398,7 +398,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetSegmentProfile() (*types.OrgVdcNetwork
 	return typeResponse, nil
 }
 
-// UpdateSegmentProfile with a given configuration
+// UpdateSegmentProfile updates a Segment Profile with a given configuration
 func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.OrgVdcNetworkSegmentProfiles) (*types.OrgVdcNetworkSegmentProfiles, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
 	apiVersion, err := orgVdcNet.client.getOpenApiHighestElevatedVersion(endpoint)
