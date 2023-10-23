@@ -436,13 +436,13 @@ const (
 	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 
-	OpenApiEndpointNsxtSegmentProfileTemplates        = "segmentProfileTemplates/"
-	OpenApiEndpointNsxtSegmentProfileTemplatesDefault = "segmentProfileTemplates/default"
-	OpenApiEndpointNsxtSegmentIpDiscoveryProfiles     = "nsxTResources/segmentIpDiscoveryProfiles"
-	OpenApiEndpointNsxtSegmentMacDiscoveryProfiles    = "nsxTResources/segmentMacDiscoveryProfiles"
-	OpenApiEndpointNsxtSegmentSpoofGuardProfiles      = "nsxTResources/segmentSpoofGuardProfiles"
-	OpenApiEndpointNsxtSegmentQosProfiles             = "nsxTResources/segmentQoSProfiles"
-	OpenApiEndpointNsxtSegmentSecurityProfiles        = "nsxTResources/segmentSecurityProfiles"
+	OpenApiEndpointNsxtSegmentProfileTemplates              = "segmentProfileTemplates/"
+	OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates = "segmentProfileTemplates/default"
+	OpenApiEndpointNsxtSegmentIpDiscoveryProfiles           = "nsxTResources/segmentIpDiscoveryProfiles"
+	OpenApiEndpointNsxtSegmentMacDiscoveryProfiles          = "nsxTResources/segmentMacDiscoveryProfiles"
+	OpenApiEndpointNsxtSegmentSpoofGuardProfiles            = "nsxTResources/segmentSpoofGuardProfiles"
+	OpenApiEndpointNsxtSegmentQosProfiles                   = "nsxTResources/segmentQoSProfiles"
+	OpenApiEndpointNsxtSegmentSecurityProfiles              = "nsxTResources/segmentSecurityProfiles"
 
 	// IP Spaces
 	OpenApiEndpointIpSpaces               = "ipSpaces/"

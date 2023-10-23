@@ -1164,7 +1164,7 @@ func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryRe
 
 // GetGlobalDefaultSegmentProfileTemplates retrieves VCD global configuration for Segment Profile Templates
 func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates
 	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -1186,7 +1186,7 @@ func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.Ns
 
 // UpdateGlobalDefaultSegmentProfileTemplates updates VCD global configuration for Segment Profile Templates
 func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtGlobalDefaultSegmentProfileTemplate) (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates
 	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err

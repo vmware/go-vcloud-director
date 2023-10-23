@@ -815,7 +815,7 @@ func (vcd *TestVCD) Test_NsxtGlobalDefaultSegmentProfileTemplate(check *C) {
 	check.Assert(updatedDefaults.VappNetworkSegmentProfileTemplateRef.ID, Equals, createdSegmentProfileTemplate.NsxtSegmentProfileTemplate.ID)
 	check.Assert(updatedDefaults.VdcNetworkSegmentProfileTemplateRef.ID, Equals, createdSegmentProfileTemplate.NsxtSegmentProfileTemplate.ID)
 
-	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplatesDefault
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates
 	PrependToCleanupList(openApiEndpoint, "OpenApiEntityGlobalDefaultSegmentProfileTemplate", "", check.TestName())
 
 	// Cleanup
