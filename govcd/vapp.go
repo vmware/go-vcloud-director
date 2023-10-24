@@ -1542,7 +1542,7 @@ func (vapp *VApp) RenewLease(deploymentLeaseInSeconds, storageLeaseInSeconds int
 		}
 	}
 	if href == "" {
-		return fmt.Errorf("link to update lease sttings not found for vApp %s", vapp.VApp.Name)
+		return fmt.Errorf("link to update lease settings not found for vApp %s", vapp.VApp.Name)
 	}
 
 	var leaseSettings = types.UpdateLeaseSettingsSection{
