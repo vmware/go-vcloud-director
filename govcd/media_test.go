@@ -8,8 +8,10 @@ package govcd
 
 import (
 	"fmt"
-
 	. "gopkg.in/check.v1"
+	"os"
+	"path"
+	"runtime"
 )
 
 // Tests System function Delete by creating media item and
@@ -46,6 +48,73 @@ func (vcd *TestVCD) Test_DeleteMedia(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(media, NotNil)
 	check.Assert(media.Media.Name, Equals, itemName)
+
+	task, err := media.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	_, err = catalog.GetMediaByName(itemName, true)
+	check.Assert(err, NotNil)
+	check.Assert(IsNotFound(err), Equals, true)
+}
+
+func (vcd *TestVCD) Test_UploadAnyMediaFile(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_UploadAnyMediaFile: Org name not given")
+		return
+	}
+	if vcd.config.VCD.Catalog.Name == "" {
+		check.Skip("Test_UploadAnyMediaFile: Catalog name not given")
+		return
+	}
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.Name, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+
+	_, sourceFile, _, _ := runtime.Caller(0)
+	sourceFile = path.Clean(sourceFile)
+	itemName := check.TestName()
+	itemPath := sourceFile
+
+	// Upload the source file of the current test as a media item
+	uploadTask, err := catalog.UploadMediaFile(itemName, "Text file uploaded from test", itemPath, 1024, false)
+	check.Assert(err, IsNil)
+	err = uploadTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(itemName, "mediaCatalogImage", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.Name, check.TestName())
+
+	// Retrieve the media item
+	media, err := catalog.GetMediaByName(itemName, true)
+	check.Assert(err, IsNil)
+	check.Assert(media, NotNil)
+	check.Assert(media.Media.Name, Equals, itemName)
+
+	// Repeat the download a few times. Make sure that a repeated download works as well as the first one
+	for i := 0; i < 2; i++ {
+		// Download the media item from VCD as a byte slice
+		contents, err := media.Download()
+		check.Assert(err, IsNil)
+		check.Assert(len(contents), Not(Equals), 0)
+		check.Assert(media.Media.Files, NotNil)
+		check.Assert(media.Media.Files.File, NotNil)
+		check.Assert(media.Media.Files.File[0].Name, Not(Equals), "")
+		check.Assert(len(media.Media.Files.File[0].Link), Not(Equals), 0)
+
+		// Read the source file from disk
+		fromFile, err := os.ReadFile(path.Clean(sourceFile))
+		check.Assert(err, IsNil)
+		// Make sure that what we downloaded from VCD corresponds to the file contents.
+		check.Assert(len(fromFile), Equals, len(contents))
+		check.Assert(fromFile, DeepEquals, contents)
+	}
 
 	task, err := media.Delete()
 	check.Assert(err, IsNil)

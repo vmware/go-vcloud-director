@@ -830,7 +830,14 @@ func removeCatalogItemOnError(client *Client, vappTemplateLink *url.URL, itemNam
 	}
 }
 
+// UploadMediaImage uploads a media image to the catalog
 func (cat *Catalog) UploadMediaImage(mediaName, mediaDescription, filePath string, uploadPieceSize int64) (UploadTask, error) {
+	return cat.UploadMediaFile(mediaName, mediaDescription, filePath, uploadPieceSize, true)
+}
+
+// UploadMediaFile uploads any file to the catalog.
+// However, if checkFileIsIso is true, only .ISO are allowed.
+func (cat *Catalog) UploadMediaFile(fileName, mediaDescription, filePath string, uploadPieceSize int64, checkFileIsIso bool) (UploadTask, error) {
 
 	if *cat == (Catalog{}) {
 		return UploadTask{}, errors.New("catalog can not be empty or nil")
@@ -841,9 +848,11 @@ func (cat *Catalog) UploadMediaImage(mediaName, mediaDescription, filePath strin
 		return UploadTask{}, err
 	}
 
-	isISOGood, err := verifyIso(mediaFilePath)
-	if err != nil || !isISOGood {
-		return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %#v", mediaFilePath, err)
+	if checkFileIsIso {
+		isISOGood, err := verifyIso(mediaFilePath)
+		if err != nil || !isISOGood {
+			return UploadTask{}, fmt.Errorf("[ERROR] File %s isn't correct iso file: %#v", mediaFilePath, err)
+		}
 	}
 
 	file, e := os.Stat(mediaFilePath)
@@ -853,8 +862,8 @@ func (cat *Catalog) UploadMediaImage(mediaName, mediaDescription, filePath strin
 	fileSize := file.Size()
 
 	for _, catalogItemName := range getExistingCatalogItems(cat) {
-		if catalogItemName == mediaName {
-			return UploadTask{}, fmt.Errorf("media item '%s' already exists. Upload with different name", mediaName)
+		if catalogItemName == fileName {
+			return UploadTask{}, fmt.Errorf("media item '%s' already exists. Upload with different name", fileName)
 		}
 	}
 
@@ -863,17 +872,17 @@ func (cat *Catalog) UploadMediaImage(mediaName, mediaDescription, filePath strin
 		return UploadTask{}, err
 	}
 
-	media, err := createMedia(cat.client, catalogItemUploadURL.String(), mediaName, mediaDescription, fileSize)
+	media, err := createMedia(cat.client, catalogItemUploadURL.String(), fileName, mediaDescription, fileSize)
 	if err != nil {
 		return UploadTask{}, fmt.Errorf("[ERROR] Issue creating media: %#v", err)
 	}
 
-	createdMedia, err := queryMedia(cat.client, media.Entity.HREF, mediaName)
+	createdMedia, err := queryMedia(cat.client, media.Entity.HREF, fileName)
 	if err != nil {
 		return UploadTask{}, err
 	}
 
-	return executeUpload(cat.client, createdMedia, mediaFilePath, mediaName, fileSize, uploadPieceSize)
+	return executeUpload(cat.client, createdMedia, mediaFilePath, fileName, fileSize, uploadPieceSize)
 }
 
 // Refresh gets a fresh copy of the catalog from vCD
