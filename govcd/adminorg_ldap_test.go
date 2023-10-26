@@ -67,6 +67,48 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	vcd.test_GroupUserListIsPopulated(check)
 }
 
+func (vcd *TestVCD) Test_LDAPSystem(check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
+	}
+	vcd.checkSkipWhenApiToken(check)
+
+	// Due to a bug in VCD, when configuring LDAP service, Org publishing catalog settings `Publish external catalogs` and
+	// `Subscribe to external catalogs ` gets disabled. For that reason we are getting the current values from those vars
+	// to set them at the end of the test, to avoid interference with other tests.
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	publishExternalCatalogs := adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally
+	subscribeToExternalCatalogs := adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe
+	ldapSettings := types.OrgLdapSettingsType{
+		OrgLdapMode:   "SYSTEM",
+		CustomUsersOu: "ou=Foo,dc=domain,dc=local base DN",
+	}
+
+	_, err = adminOrg.LdapConfigure(&ldapSettings)
+	check.Assert(err, IsNil)
+	defer func() {
+		fmt.Println("Unconfiguring LDAP")
+		// Clear LDAP configuration
+		err = adminOrg.LdapDisable()
+		check.Assert(err, IsNil)
+
+		// Due to the VCD bug mentioned above, we need to set the previous state from the publishing settings vars
+		check.Assert(adminOrg.Refresh(), IsNil)
+
+		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanPublishExternally = publishExternalCatalogs
+		adminOrg.AdminOrg.OrgSettings.OrgGeneralSettings.CanSubscribe = subscribeToExternalCatalogs
+
+		task, err := adminOrg.Update()
+		check.Assert(err, IsNil)
+
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}()
+}
+
 // configureLdapForOrg sets up LDAP configuration in vCD org
 func configureLdapForOrg(vcd *TestVCD, adminOrg *AdminOrg, ldapHostIp, testName string) error {
 	fmt.Printf("# Configuring LDAP settings for Org '%s'", vcd.config.VCD.Org)
