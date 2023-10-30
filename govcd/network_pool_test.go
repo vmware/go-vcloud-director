@@ -151,7 +151,7 @@ func (vcd *TestVCD) Test_CreateNetworkPoolPortgroup(check *C) {
 	networkPoolName := check.TestName()
 
 	var params = make(url.Values)
-	params.Set("virtualCenter.id", vCenter.VSphereVCenter.VcId)
+	params.Set("filter", "virtualCenter.id=="+vCenter.VSphereVCenter.VcId)
 	portgroups, err := vcd.client.GetAllVcenterImportableDvpgs(params)
 	check.Assert(err, IsNil)
 	check.Assert(len(portgroups) > 0, Equals, true)
