@@ -37,6 +37,7 @@ type (
 	QueryOrgVdc        types.QueryResultOrgVdcRecordType
 	QueryTask          types.QueryResultTaskRecordType
 	QueryAdminTask     types.QueryResultTaskRecordType
+	QueryOrg           types.QueryResultOrgRecordType
 )
 
 // getMetadataValue is a generic metadata lookup for all query items
@@ -231,6 +232,20 @@ func (vm QueryVm) GetMetadataValue(key string) string {
 }
 
 // --------------------------------------------------------------
+// Organization
+// --------------------------------------------------------------
+func (org QueryOrg) GetHref() string       { return org.HREF }
+func (org QueryOrg) GetName() string       { return org.Name }
+func (org QueryOrg) GetType() string       { return "organization" }
+func (org QueryOrg) GetDate() string       { return "" }
+func (org QueryOrg) GetIp() string         { return "" }
+func (org QueryOrg) GetParentId() string   { return "" }
+func (org QueryOrg) GetParentName() string { return "" }
+func (org QueryOrg) GetMetadataValue(key string) string {
+	return getMetadataValue(org.Metadata, key)
+}
+
+// --------------------------------------------------------------
 // result conversion
 // --------------------------------------------------------------
 // resultToQueryItems converts a set of query results into a list of query items
@@ -272,6 +287,10 @@ func resultToQueryItems(queryType string, results Results) ([]QueryItem, error) 
 	case types.QtOrgVdcNetwork:
 		for i, item := range results.Results.OrgVdcNetworkRecord {
 			items[i] = QueryOrgVdcNetwork(*item)
+		}
+	case types.QtOrg:
+		for i, item := range results.Results.OrgRecord {
+			items[i] = QueryOrg(*item)
 		}
 	case types.QtCatalog:
 		for i, item := range results.Results.CatalogRecord {
