@@ -53,7 +53,7 @@ func (dns *NsxtEdgeGatewayDns) Update(updatedConfig *types.NsxtEdgeGatewayDns) (
 		return nil, err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, dns.EdgeGatewayId)
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dns.EdgeGatewayId))
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (dns *NsxtEdgeGatewayDns) Refresh() error {
 		return err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, dns.EdgeGatewayId)
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dns.EdgeGatewayId))
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (dns *NsxtEdgeGatewayDns) Delete() error {
 		return err
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, dns.EdgeGatewayId)
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dns.EdgeGatewayId))
 	if err != nil {
 		return err
 	}

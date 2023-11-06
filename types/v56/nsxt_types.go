@@ -1806,28 +1806,28 @@ type NsxtEdgeGatewayDns struct {
 	// routed environments, an SNAT rule is required for the Edge DNS forwarder
 	// to send traffic to an upstream server. In fully routed environments,
 	// this is not needed if the listener IP is on an advertised subnet.
-	SnatRuleEnabled bool `json:"snatRuleEnabled"`
+	SnatRuleEnabled bool `json:"snatRuleEnabled,omitempty"`
 	// The external IP address of the SNAT rule. This property only applies if the
 	// Edge Gateway is connected to a Provider Gateway using IP Space.
-	SnatRuleExternalIpAddress string `json:"snatRuleExternalIpAddress"`
+	SnatRuleExternalIpAddress string `json:"snatRuleExternalIpAddress,omitempty"`
 	// The default forwarder zone to use if there’s no matching domain in the conditional forwarder zone.
-	DefaultForwarderZone *NsxtDnsForwarderZoneConfig `json:"DefaultForwarderZone"`
+	DefaultForwarderZone *NsxtDnsForwarderZoneConfig `json:"defaultForwarderZone,omitempty"`
 	// The list of forwarder zones with its matching DNS domains.
-	ConditionalForwarderZones []*NsxtDnsForwarderZoneConfig `json:"conditionalForwarderZones"`
-	Version                   VersionField
+	ConditionalForwarderZones []*NsxtDnsForwarderZoneConfig `json:"conditionalForwarderZones,omitempty"`
+	Version                   *VersionField                 `json:"version,omitempty"`
 }
 
 type NsxtDnsForwarderZoneConfig struct {
 	// The unique id of the DNS forwarder zone. If value is unset,
 	// a new zone is created. If value is set, an update is done on the zone.
-	Id string `json:"id"`
+	Id string `json:"id,omitempty"`
 	// User friendly name for the zone
-	DisplayName string `json:"displayName"`
+	DisplayName string `json:"displayName,omitempty"`
 	// DNS servers to which the DNS request needs to be forwarded.
-	UpstreamServers []string `json:"upstreamServers"`
+	UpstreamServers []string `json:"upstreamServers,omitempty"`
 	// List of domain names on which conditional forwarding is based. This
 	// field is required if the DNS Zone is being used for a conditional forwarder.
 	// This field will also be used for conditional reverse lookup. This field should
 	// not be set if the zone is used as default forwarder zone.
-	DnsDomainNames []string `json:"dnsDomainNames"`
+	DnsDomainNames []string `json:"dnsDomainNames,omitempty"`
 }

@@ -23,8 +23,54 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayDns(check *C) {
 	check.Assert(err, IsNil)
 	AddToCleanupList(vcd.config.VCD.Nsxt.EdgeGateway, "nsxtEdgeGatewayDns", vcd.config.VCD.Org, check.TestName())
 
-	dnsConfig, err := edge.GetNsxtEdgeGatewayDns()
+	disabledDns, err := edge.GetNsxtEdgeGatewayDns()
 	check.Assert(err, IsNil)
-	check.Assert(dnsConfig.NsxtEdgeGatewayDns.Enabled, Equals, false)
-	check.Assert(dnsConfig.NsxtEdgeGatewayDns.Version.Version, Equals, 0)
+	check.Assert(disabledDns.NsxtEdgeGatewayDns.Enabled, Equals, false)
+
+	enabledDnsConfig := &types.NsxtEdgeGatewayDns{
+		Enabled: true,
+		DefaultForwarderZone: &types.NsxtDnsForwarderZoneConfig{
+			DisplayName: "test",
+			UpstreamServers: []string{
+				"1.2.3.4",
+				"2.3.4.5",
+			},
+		},
+		ConditionalForwarderZones: []*types.NsxtDnsForwarderZoneConfig{
+			{
+				DisplayName: "test-conditional",
+				UpstreamServers: []string{
+					"5.5.5.5",
+					"2.3.4.1",
+				},
+				DnsDomainNames: []string{
+					"test.com",
+					"abc.com",
+					"example.org",
+				},
+			},
+		},
+	}
+
+	enabledDns, err := disabledDns.Update(enabledDnsConfig)
+	enabledDnsConfig = enabledDns.NsxtEdgeGatewayDns
+	check.Assert(err, IsNil)
+	check.Assert(enabledDnsConfig.Enabled, Equals, true)
+	check.Assert(enabledDnsConfig.DefaultForwarderZone.DisplayName, Equals, "test")
+	check.Assert(len(enabledDnsConfig.DefaultForwarderZone.UpstreamServers), Equals, 2)
+	check.Assert(len(enabledDnsConfig.ConditionalForwarderZones), Equals, 1)
+	check.Assert(enabledDnsConfig.ConditionalForwarderZones[0].DisplayName, Equals, "test-conditional")
+
+	err = enabledDns.Delete()
+	check.Assert(err, IsNil)
+
+	deletedDns, err := edge.GetNsxtEdgeGatewayDns()
+	check.Assert(err, IsNil)
+	check.Assert(deletedDns.NsxtEdgeGatewayDns.Enabled, Equals, false)
+	extNet := createExternalNetwork(vcd, check)
+	ipSpacesEnabledEgw := createNsxtEdgeGateway(vcd, check, extNet.ExternalNetwork.ID)
+	ipSpacesDns, err := ipSpacesEnabledEgw.GetNsxtEdgeGatewayDns()
+	check.Assert(err, IsNil)
+	check.Assert(ipSpacesDns.NsxtEdgeGatewayDns, Equals, true)
+
 }
