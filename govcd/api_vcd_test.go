@@ -979,22 +979,16 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
 			return
 		}
-		for _, catalogItems := range catalog.Catalog.CatalogItems {
-			for _, catalogItem := range catalogItems.CatalogItem {
-				if catalogItem.Name == entity.Name {
-					catalogItemApi, err := catalog.GetCatalogItemByName(catalogItem.Name, false)
-					if catalogItemApi == nil || err != nil {
-						vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
-						return
-					}
-					err = catalogItemApi.Delete()
-					vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
-					if err != nil {
-						vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
-					}
-				}
-			}
+		catalogItem, err := catalog.GetCatalogItemByName(entity.Name, false)
+		if err != nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
 		}
+		err = catalogItem.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
 	case "edgegateway":
 		_, vdc, err := vcd.getAdminOrgAndVdcFromCleanupEntity(entity)
