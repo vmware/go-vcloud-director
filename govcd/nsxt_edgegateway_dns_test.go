@@ -53,13 +53,60 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayDns(check *C) {
 	}
 
 	enabledDns, err := disabledDns.Update(enabledDnsConfig)
-	enabledDnsConfig = enabledDns.NsxtEdgeGatewayDns
 	check.Assert(err, IsNil)
-	check.Assert(enabledDnsConfig.Enabled, Equals, true)
-	check.Assert(enabledDnsConfig.DefaultForwarderZone.DisplayName, Equals, "test")
-	check.Assert(len(enabledDnsConfig.DefaultForwarderZone.UpstreamServers), Equals, 2)
-	check.Assert(len(enabledDnsConfig.ConditionalForwarderZones), Equals, 1)
-	check.Assert(enabledDnsConfig.ConditionalForwarderZones[0].DisplayName, Equals, "test-conditional")
+	dnsConfig := enabledDns.NsxtEdgeGatewayDns
+	check.Assert(dnsConfig.Enabled, Equals, true)
+	check.Assert(dnsConfig.DefaultForwarderZone.DisplayName, Equals, "test")
+	check.Assert(len(dnsConfig.DefaultForwarderZone.UpstreamServers), Equals, 2)
+	check.Assert(len(dnsConfig.ConditionalForwarderZones), Equals, 1)
+	check.Assert(dnsConfig.ConditionalForwarderZones[0].DisplayName, Equals, "test-conditional")
+
+	updatedDnsConfig := &types.NsxtEdgeGatewayDns{
+		Enabled: true,
+		DefaultForwarderZone: &types.NsxtDnsForwarderZoneConfig{
+			DisplayName: "test",
+			UpstreamServers: []string{
+				"1.2.3.5",
+				"2.3.4.6",
+				"2.3.4.5",
+			},
+		},
+		ConditionalForwarderZones: []*types.NsxtDnsForwarderZoneConfig{
+			{
+				DisplayName: "test-conditional",
+				UpstreamServers: []string{
+					"5.5.5.5",
+					"2.3.4.1",
+				},
+				DnsDomainNames: []string{
+					"test.com",
+					"abc.com",
+					"example.org",
+				},
+			},
+			{
+				DisplayName: "test-conditional-2",
+				UpstreamServers: []string{
+					"1.2.3.4",
+					"4.3.2.1",
+				},
+				DnsDomainNames: []string{
+					"example.com",
+				},
+			},
+		},
+	}
+	updatedDns, err := enabledDns.Update(updatedDnsConfig)
+	updatedDnsConfig = updatedDns.NsxtEdgeGatewayDns
+	check.Assert(err, IsNil)
+	check.Assert(updatedDnsConfig.Enabled, Equals, true)
+	check.Assert(updatedDnsConfig.DefaultForwarderZone.DisplayName, Equals, "test")
+	check.Assert(len(updatedDnsConfig.DefaultForwarderZone.UpstreamServers), Equals, 3)
+	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones), Equals, 2)
+	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones[0].UpstreamServers), Equals, 2)
+	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones[0].DnsDomainNames), Equals, 3)
+	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones[1].UpstreamServers), Equals, 2)
+	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones[1].DnsDomainNames), Equals, 1)
 
 	err = enabledDns.Delete()
 	check.Assert(err, IsNil)
@@ -67,10 +114,4 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayDns(check *C) {
 	deletedDns, err := edge.GetNsxtEdgeGatewayDns()
 	check.Assert(err, IsNil)
 	check.Assert(deletedDns.NsxtEdgeGatewayDns.Enabled, Equals, false)
-	extNet := createExternalNetwork(vcd, check)
-	ipSpacesEnabledEgw := createNsxtEdgeGateway(vcd, check, extNet.ExternalNetwork.ID)
-	ipSpacesDns, err := ipSpacesEnabledEgw.GetNsxtEdgeGatewayDns()
-	check.Assert(err, IsNil)
-	check.Assert(ipSpacesDns.NsxtEdgeGatewayDns, Equals, true)
-
 }
