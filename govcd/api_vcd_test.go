@@ -201,6 +201,11 @@ type TestConfig struct {
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
 			NsxtAlbImportableCloud    string `yaml:"nsxtAlbImportableCloud"`
 			NsxtAlbServiceEngineGroup string `yaml:"nsxtAlbServiceEngineGroup"`
+			IpDiscoveryProfile        string `yaml:"ipDiscoveryProfile"`
+			MacDiscoveryProfile       string `yaml:"macDiscoveryProfile"`
+			SpoofGuardProfile         string `yaml:"spoofGuardProfile"`
+			QosProfile                string `yaml:"qosProfile"`
+			SegmentSecurityProfile    string `yaml:"segmentSecurityProfile"`
 		} `yaml:"nsxt"`
 	} `yaml:"vcd"`
 	Vsphere struct {
@@ -839,6 +844,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		// Attempt to use supplied path in entity.Parent for element deletion
 		err = vcd.client.Client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+	case "OpenApiEntityGlobalDefaultSegmentProfileTemplate":
+		// Check if any default settings are applied
+		gdSpt, err := vcd.client.GetGlobalDefaultSegmentProfileTemplates()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		if gdSpt.VappNetworkSegmentProfileTemplateRef == nil && gdSpt.VdcNetworkSegmentProfileTemplateRef == nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		_, err = vcd.client.UpdateGlobalDefaultSegmentProfileTemplates(&types.NsxtGlobalDefaultSegmentProfileTemplate{})
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
@@ -1934,6 +1959,14 @@ func skipNoNsxtConfiguration(vcd *TestVCD, check *C) {
 
 	if vcd.config.VCD.Nsxt.EdgeGateway == "" {
 		check.Skip(generalMessage + "No NSX-T Edge Gateway specified in configuration")
+	}
+
+	if vcd.config.VCD.Nsxt.IpDiscoveryProfile == "" ||
+		vcd.config.VCD.Nsxt.MacDiscoveryProfile == "" ||
+		vcd.config.VCD.Nsxt.SpoofGuardProfile == "" ||
+		vcd.config.VCD.Nsxt.QosProfile == "" ||
+		vcd.config.VCD.Nsxt.SegmentSecurityProfile == "" {
+		check.Skip(generalMessage + "NSX-T Segment Profiles are not specified in configuration")
 	}
 }
 
