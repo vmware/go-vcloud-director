@@ -44,7 +44,31 @@ func (egw *NsxtEdgeGateway) GetDnsConfig() (*NsxtEdgeGatewayDns, error) {
 	return dnsConfig, nil
 }
 
-// Update updates the DNS configuration for the Edge Gateway
+// UpdateDnsConfig updates the DNS configuration for the Edge Gateway
+func (egw *NsxtEdgeGateway) UpdateDnsConfig(updatedConfig *types.NsxtEdgeGatewayDns) (*types.NsxtEdgeGatewayDns, error) {
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	dnsConfig := &types.NsxtEdgeGatewayDns{}
+
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, updatedConfig, dnsConfig, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return dnsConfig, nil
+}
+
+// Update updates the DNS configuration for the underlying Edge Gateway
 func (dns *NsxtEdgeGatewayDns) Update(updatedConfig *types.NsxtEdgeGatewayDns) (*NsxtEdgeGatewayDns, error) {
 	client := dns.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
