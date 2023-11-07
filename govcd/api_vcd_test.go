@@ -1680,7 +1680,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}
 
-		dns, err := edge.GetNsxtEdgeGatewayDns()
+		dns, err := edge.GetDnsConfig()
 		if err != nil {
 			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
 		}

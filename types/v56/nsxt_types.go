@@ -1902,7 +1902,7 @@ type NsxtEdgeGatewayDns struct {
 type NsxtDnsForwarderZoneConfig struct {
 	// The unique id of the DNS forwarder zone. If value is unset,
 	// a new zone is created. If value is set, an update is done on the zone.
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// User friendly name for the zone
 	DisplayName string `json:"displayName,omitempty"`
 	// DNS servers to which the DNS request needs to be forwarded.

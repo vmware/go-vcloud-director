@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayDns(check *C) {
 	check.Assert(err, IsNil)
 	AddToCleanupList(vcd.config.VCD.Nsxt.EdgeGateway, "nsxtEdgeGatewayDns", vcd.config.VCD.Org, check.TestName())
 
-	disabledDns, err := edge.GetNsxtEdgeGatewayDns()
+	disabledDns, err := edge.GetDnsConfig()
 	check.Assert(err, IsNil)
 	check.Assert(disabledDns.NsxtEdgeGatewayDns.Enabled, Equals, false)
 
@@ -111,7 +111,7 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayDns(check *C) {
 	err = enabledDns.Delete()
 	check.Assert(err, IsNil)
 
-	deletedDns, err := edge.GetNsxtEdgeGatewayDns()
+	deletedDns, err := edge.GetDnsConfig()
 	check.Assert(err, IsNil)
 	check.Assert(deletedDns.NsxtEdgeGatewayDns.Enabled, Equals, false)
 }

@@ -18,8 +18,8 @@ type NsxtEdgeGatewayDns struct {
 	EdgeGatewayId string
 }
 
-// GetNsxtEdgeGatewayDns retrieves the DNS configuration for the underlying edge gateway
-func (egw *NsxtEdgeGateway) GetNsxtEdgeGatewayDns() (*NsxtEdgeGatewayDns, error) {
+// GetDnsConfig retrieves the DNS configuration for the underlying edge gateway
+func (egw *NsxtEdgeGateway) GetDnsConfig() (*NsxtEdgeGatewayDns, error) {
 	client := egw.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
