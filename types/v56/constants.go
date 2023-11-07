@@ -393,6 +393,7 @@ const (
 	OpenApiEndpointEdgeGatewayL2VpnTunnelStatus       = "edgeGateways/%s/l2vpn/tunnels/%s/status"
 	OpenApiEndpointFirewallGroups                     = "firewallGroups/"
 	OpenApiEndpointOrgVdcNetworks                     = "orgVdcNetworks/"
+	OpenApiEndpointOrgVdcNetworkSegmentProfiles       = "orgVdcNetworks/%s/segmentProfiles"
 	OpenApiEndpointOrgVdcNetworksDhcp                 = "orgVdcNetworks/%s/dhcp"
 	OpenApiEndpointOrgVdcNetworksDhcpBindings         = "orgVdcNetworks/%s/dhcp/bindings/"
 	OpenApiEndpointNsxtNatRules                       = "edgeGateways/%s/nat/rules/"
@@ -439,6 +440,14 @@ const (
 	OpenApiEndpointExtensionsUiTenantsPublish         = "extensions/ui/%s/tenants/publish"
 	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
+
+	OpenApiEndpointNsxtSegmentProfileTemplates              = "segmentProfileTemplates/"
+	OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates = "segmentProfileTemplates/default"
+	OpenApiEndpointNsxtSegmentIpDiscoveryProfiles           = "nsxTResources/segmentIpDiscoveryProfiles"
+	OpenApiEndpointNsxtSegmentMacDiscoveryProfiles          = "nsxTResources/segmentMacDiscoveryProfiles"
+	OpenApiEndpointNsxtSegmentSpoofGuardProfiles            = "nsxTResources/segmentSpoofGuardProfiles"
+	OpenApiEndpointNsxtSegmentQosProfiles                   = "nsxTResources/segmentQoSProfiles"
+	OpenApiEndpointNsxtSegmentSecurityProfiles              = "nsxTResources/segmentSecurityProfiles"
 
 	// IP Spaces
 	OpenApiEndpointIpSpaces               = "ipSpaces/"
