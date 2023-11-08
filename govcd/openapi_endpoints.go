@@ -207,6 +207,10 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"37.1", // Introduced support
 		"37.2", // Adds 'value' field
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces: {
+		//"37.1", // Introduced support
+		"38.0", // Adds 'DefaultGatewayServiceConfig' structure for firewall and NAT rule creation
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with

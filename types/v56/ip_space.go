@@ -69,8 +69,32 @@ type IpSpace struct {
 	// if the associated Provider Gateway is owned by the Organization.
 	RouteAdvertisementEnabled bool `json:"routeAdvertisementEnabled"`
 
+	// DefaultGatewayServiceConfig specifies default gateway services configurations such as NAT and
+	// Firewall rules that a user can apply on either the Provider Gateway or Edge Gateway depending
+	// on the network topology. Note that re-applying the default services on the Provider Gateway
+	// or Edge Gateway may delete/update/create services that are managed/created by VCD.
+	//
+	// Requires VCD 10.5.0+ (API v38.0+)
+	DefaultGatewayServiceConfig *IpSpaceDefaultGatewayServiceConfig `json:"defaultGatewayServiceConfig,omitempty"`
+
 	// Status is one of `PENDING`,   `CONFIGURING`,   `REALIZED`,   `REALIZATION_FAILED`,   `UNKNOWN`
 	Status string `json:"status,omitempty"`
+}
+
+// IpSpaceDefaultGatewayServiceConfig specified the default gateway services configurations such as NAT and Firewall rules
+// that a user can apply on either the Provider Gateway or Edge Gateway depending on the network
+// topology. Below is an example of the ordering of NAT rule:
+// * If IP Space's external scope maps to any network such as "0.0.0.0/0", the NO SNAT rules
+// priority is 1001 and the default SNAT rules will have priority 1000
+// * All other default SNAT rules has priority 100
+// * All other default NO SNAT rules has priority 0
+// * User-created NAT rules has default priority 50
+//
+// Requires VCD 10.5.0+ (API v38.0+)
+type IpSpaceDefaultGatewayServiceConfig struct {
+	EnableDefaultFirewallRuleCreation bool `json:"enableDefaultFirewallRuleCreation,omitempty"`
+	EnableDefaultNoSnatRuleCreation   bool `json:"enableDefaultNoSnatRuleCreation,omitempty"`
+	EnableDefaultSnatRuleCreation     bool `json:"enableDefaultSnatRuleCreation,omitempty"`
 }
 
 type FloatingIPs struct {
