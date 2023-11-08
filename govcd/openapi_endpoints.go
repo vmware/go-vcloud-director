@@ -49,6 +49,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules:                       "34.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtFirewallRules:                  "34.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks:                     "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles:       "37.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcp:                 "32.0", // VCD 9.7+ for NSX-V, 10.1+ for NSX-T
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworksDhcpBindings:         "36.1", // VCD 10.3.1+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcCapabilities:                    "32.0",
@@ -106,13 +107,20 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion2_0_0 + types.OpenApiEndpointVdcComputePolicies:         "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile:          "36.0", // VCD 10.3+
 
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters:         "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools:          "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolsBrowseAll: "36.2",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolHardware:   "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools:           "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries:   "36.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointStorageProfiles:        "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters:                           "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePools:                            "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolsBrowseAll:                   "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointResourcePoolHardware:                     "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPools:                             "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkPoolSummaries:                     "36.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointStorageProfiles:                          "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates:              "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates: "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles:           "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles:          "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSpoofGuardProfiles:            "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentQosProfiles:                   "36.2",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSecurityProfiles:              "36.2",
 
 	// Extensions API endpoints. These are not versioned
 	types.OpenApiEndpointExtensionsUi:                    "35.0", // VCD 10.2+
