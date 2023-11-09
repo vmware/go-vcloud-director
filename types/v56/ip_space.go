@@ -92,9 +92,34 @@ type IpSpace struct {
 //
 // Requires VCD 10.5.0+ (API v38.0+)
 type IpSpaceDefaultGatewayServiceConfig struct {
+	// If true, the user can choose to later apply the default firewall rules on either the Provider
+	// Gateway or Edge Gateway. These firewall rules are created only if the corresponding
+	// associated default No SNAT and NAT rules are configured. False means that the default
+	// firewall rules will not be created.
+	// For the associated default SNAT rule, the source is ANY and the destination is the IP Space's
+	// external scope.
+	// For the associated default No SNAT rule, the source is the IP Space's internal scopes and the
+	// destination is the IP Space's external scope.
 	EnableDefaultFirewallRuleCreation bool `json:"enableDefaultFirewallRuleCreation,omitempty"`
-	EnableDefaultNoSnatRuleCreation   bool `json:"enableDefaultNoSnatRuleCreation,omitempty"`
-	EnableDefaultSnatRuleCreation     bool `json:"enableDefaultSnatRuleCreation,omitempty"`
+	// If true, the user can choose to later apply the default No SNAT rules on either the Provider
+	// Gateway or Edge Gateway.
+	// False means that the default No SNAT rule will not be created.
+	// An example of a default No NAT rule is that the source CIDR is the IP Space's internal scope
+	// and the destination CIDR is the IP Space's external scope. This allows traffic to and from
+	// the IP Space's internal and external scope to not be affected by any NAT rule. An example of
+	// such traffic is that an Organization VDC Network within IP Space's internal scope will be
+	// able to route out to the internet. This means that this configuration can allow both
+	// fully-routed topology and also NAT-routed topology.
+	EnableDefaultNoSnatRuleCreation bool `json:"enableDefaultNoSnatRuleCreation,omitempty"`
+	// If true, the user can choose to later apply the default SNAT rules on either the Provider
+	// Gateway or Edge Gateway.
+	// False means that the default SNAT rule will not be created.
+	// An example of a default NAT rule is that the source CIDR is ANY, the destination CIDR is the
+	// IP Space's external scope. This allows all traffic such as from a private network to be able
+	// to access the external destination IPs specified by the IP Space's external scope such as the
+	// internet. Note that the translated external IP will be allocated from this IP Space if there
+	// are no free ones to be used for the SNAT rules.
+	EnableDefaultSnatRuleCreation bool `json:"enableDefaultSnatRuleCreation,omitempty"`
 }
 
 type FloatingIPs struct {
