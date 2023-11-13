@@ -383,7 +383,6 @@ const (
 	OpenApiEndpointEdgeGatewayQos                     = "edgeGateways/%s/qos"
 	OpenApiEndpointEdgeGatewayDhcpForwarder           = "edgeGateways/%s/dhcpForwarder"
 	OpenApiEndpointEdgeGatewaySlaacProfile            = "edgeGateways/%s/slaacProfile"
-	OpenApiEndpointEdgeGatewayIpSpaceDefaultServices  = "edgeGateways/%s/applyIpSpaceDefaultServices"
 	OpenApiEndpointEdgeGatewayStaticRoutes            = "edgeGateways/%s/routing/staticRoutes/"
 	OpenApiEndpointEdgeGatewayUsedIpAddresses         = "edgeGateways/%s/usedIpAddresses"
 	OpenApiEndpointNsxtFirewallRules                  = "edgeGateways/%s/firewall/rules"

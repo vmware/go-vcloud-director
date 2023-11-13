@@ -30,20 +30,19 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTestConnection:                      "34.0",
 	// OpenApiEndpointExternalNetworks endpoint support was introduced with version 32.0 however it was still not stable
 	// enough to be used. (i.e. it did not support update "PUT")
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:                  "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies:                "32.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies:        "33.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSessionCurrent:                    "34.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:                      "34.0", // VCD 10.1+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles:                       "36.2", // VCD 10.3.2+ (NSX-T only)
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQos:                    "36.2", // VCD 10.3.2+ (NSX-T only)
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDhcpForwarder:          "36.1", // VCD 10.3.1+ (NSX-T only)
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayL2VpnTunnel:            "35.0", // VCD 10.2.0+ (NSX-T only)
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewaySlaacProfile:           "35.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayIpSpaceDefaultServices: "38.0", // VCD 10.5.0+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayStaticRoutes:           "37.0", // VCD 10.4.0+ (NSX-T only)
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:                      "34.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayUsedIpAddresses:        "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalNetworks:           "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcComputePolicies:         "32.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcAssignedComputePolicies: "33.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSessionCurrent:             "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeClusters:               "34.0", // VCD 10.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles:                "36.2", // VCD 10.3.2+ (NSX-T only)
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQos:             "36.2", // VCD 10.3.2+ (NSX-T only)
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDhcpForwarder:   "36.1", // VCD 10.3.1+ (NSX-T only)
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayL2VpnTunnel:     "35.0", // VCD 10.2.0+ (NSX-T only)
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewaySlaacProfile:    "35.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayStaticRoutes:    "37.0", // VCD 10.4.0+ (NSX-T only)
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways:               "34.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayUsedIpAddresses: "34.0",
 
 	// Static security groups and IP sets in VCD 10.2, Dynamic security groups in VCD 10.3+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups:                     "34.0",
