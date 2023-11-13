@@ -890,6 +890,36 @@ func (egw *NsxtEdgeGateway) UpdateSlaacProfile(slaacProfileConfig *types.NsxtEdg
 	return updatedSlaacProfile, nil
 }
 
+func (egw *NsxtEdgeGateway) ApplyIpSpaceDefaultServices() error {
+	if egw.EdgeGateway == nil || egw.client == nil || egw.EdgeGateway.ID == "" {
+		return fmt.Errorf("cannot Apply default IP Space Services for NSX-T Edge Gateway without ID")
+	}
+
+	client := egw.client
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayIpSpaceDefaultServices
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
+	if err != nil {
+		return err
+	}
+
+	task, err := client.OpenApiPostItemAsync(apiVersion, urlRef, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error in task when applying default IP Space Services for Edge Gateway '%s': %s", egw.EdgeGateway.ID, err)
+	}
+
+	return nil
+}
+
 func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
 	// 1. Flatten all IP ranges in Edge Gateway using Go's native 'netip.Addr' IP container instead
 	// of plain strings because it is more robust (supports IPv4 and IPv6 and also comparison
