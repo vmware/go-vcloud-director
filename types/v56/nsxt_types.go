@@ -216,6 +216,19 @@ type OpenApiOrgVdcNetwork struct {
 	// EnableDualSubnetNetwork defines whether or not this network will support two subnets (IPv4
 	// and IPv6)
 	EnableDualSubnetNetwork *bool `json:"enableDualSubnetNetwork,omitempty"`
+
+	// SegmentProfileTemplate reference to the Segment Profile Template that is to be used when
+	// creating/updating this network. Setting this will override any Org VDC Network Segment
+	// Profile Template defined at global level or an Org VDC level.
+	//
+	// Notes:
+	// * This field is only relevant during network create/update operation and will not be returned
+	// on GETs. To retrieve currently set Segment Profile Template one can use different endpoint
+	// and function `vdc.GetVdcNetworkProfile()`
+	// * For specific profile types where there are no corresponding profiles defined in the
+	// template, VCD will use the default NSX-T profile.
+	// * This field is only applicable for NSX-T Org VDC Networks.
+	SegmentProfileTemplate *OpenApiReference `json:"segmentProfileTemplateRef,omitempty"`
 }
 
 // OrgVdcNetworkSubnetIPRanges is a type alias to reuse the same definitions with appropriate names
@@ -1875,6 +1888,33 @@ type NsxtEdgeGatewayStaticRouteNextHopScope struct {
 	// * NETWORK
 	// * SYSTEM_OWNED
 	ScopeType string `json:"scopeType"`
+}
+
+// NsxtManager structure for reading NSX-T Manager
+type NsxtManager struct {
+	OtherAttributes struct {
+	} `json:"otherAttributes"`
+	Link                        LinkList      `json:"link"`
+	Href                        string        `json:"href"`
+	Type                        string        `json:"type"`
+	ID                          string        `json:"id"`
+	OperationKey                interface{}   `json:"operationKey"`
+	Description                 string        `json:"description"`
+	Tasks                       interface{}   `json:"tasks"`
+	Name                        string        `json:"name"`
+	Username                    string        `json:"username"`
+	Password                    interface{}   `json:"password"`
+	URL                         string        `json:"url"`
+	DeploymentType              string        `json:"deploymentType"`
+	VirtualCenterReference      interface{}   `json:"virtualCenterReference"`
+	ServiceAppReference         interface{}   `json:"serviceAppReference"`
+	NetworkProviderScope        interface{}   `json:"networkProviderScope"`
+	Version                     string        `json:"version"`
+	ProxyConfigurationReference interface{}   `json:"proxyConfigurationReference"`
+	GlobalManager               bool          `json:"globalManager"`
+	LocalNsxTManagerRef         []interface{} `json:"localNsxTManagerRef"`
+	LocalManagerLocationName    interface{}   `json:"localManagerLocationName"`
+	VCloudExtension             []interface{} `json:"vCloudExtension"`
 }
 
 // NsxtEdgeGatewayDns is used for configuring the DNS forwarder for a specific Edge Gateway

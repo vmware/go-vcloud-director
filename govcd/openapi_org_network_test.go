@@ -51,6 +51,8 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkIsolated(check *C) {
 		},
 	}
 
+	runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplateEndpoint(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated)
+	runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplate(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated)
 	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, []dhcpConfigFunc{nsxtDhcpConfigNetworkMode})
 	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeIsolated, []dhcpConfigFunc{nsxtDhcpConfigNetworkMode})
 }
@@ -110,6 +112,8 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRouted(check *C) {
 		},
 	}
 
+	runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplateEndpoint(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted)
+	runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplate(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted)
 	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, []dhcpConfigFunc{nsxtRoutedDhcpConfigEdgeMode, nsxtDhcpConfigNetworkMode})
 	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeRouted, []dhcpConfigFunc{nsxtRoutedDhcpConfigEdgeMode, nsxtDhcpConfigNetworkMode})
 }
@@ -163,6 +167,8 @@ func (vcd *TestVCD) Test_NsxtOrgVdcNetworkImportedNsxtLogicalSwitch(check *C) {
 		},
 	}
 
+	runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplateEndpoint(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque)
+	runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplate(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque)
 	runOpenApiOrgVdcNetworkTest(check, vcd, vcd.nsxtVdc, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 	runOpenApiOrgVdcNetworkWithVdcGroupTest(check, vcd, orgVdcNetworkConfig, types.OrgVdcNetworkTypeOpaque, nil)
 }
@@ -777,4 +783,176 @@ func testNsxtDhcpBinding(check *C, vcd *TestVCD, orgNet *OpenApiOrgVdcNetwork) {
 	bindingShouldBeNil, err := orgNet.GetOpenApiOrgVdcNetworkDhcpBindingById(createdDhcpBinding.OpenApiOrgVdcNetworkDhcpBinding.ID)
 	check.Assert(err, NotNil)
 	check.Assert(bindingShouldBeNil, IsNil)
+}
+
+func runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplateEndpoint(check *C, vcd *TestVCD, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string) {
+	printVerbose("## Testing Segment Profile assignment in explicit Segment Profile endpoint\n")
+
+	nsxtManager, err := vcd.client.GetNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
+	check.Assert(err, IsNil)
+	check.Assert(nsxtManager, NotNil)
+	nsxtManagerUrn, err := nsxtManager.Urn()
+	check.Assert(err, IsNil)
+
+	// Filter by NSX-T Manager
+	queryParams := copyOrNewUrlValues(nil)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("nsxTManagerRef.id==%s", nsxtManagerUrn), queryParams)
+
+	// Lookup prerequisite profiles for Segment Profile template creation
+	ipDiscoveryProfile, err := vcd.client.GetIpDiscoveryProfileByName(vcd.config.VCD.Nsxt.IpDiscoveryProfile, queryParams)
+	check.Assert(err, IsNil)
+	macDiscoveryProfile, err := vcd.client.GetMacDiscoveryProfileByName(vcd.config.VCD.Nsxt.MacDiscoveryProfile, queryParams)
+	check.Assert(err, IsNil)
+	spoofGuardProfile, err := vcd.client.GetSpoofGuardProfileByName(vcd.config.VCD.Nsxt.SpoofGuardProfile, queryParams)
+	check.Assert(err, IsNil)
+	qosProfile, err := vcd.client.GetQoSProfileByName(vcd.config.VCD.Nsxt.QosProfile, queryParams)
+	check.Assert(err, IsNil)
+	segmentSecurityProfile, err := vcd.client.GetSegmentSecurityProfileByName(vcd.config.VCD.Nsxt.SegmentSecurityProfile, queryParams)
+	check.Assert(err, IsNil)
+
+	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
+	check.Assert(err, IsNil)
+
+	// Use generic "OpenApiEntity" resource cleanup type
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
+	AddToCleanupListOpenApi(orgVdcNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
+
+	// Set segment profiles explicitly without using templates
+	entitySegmentProfileCfg := &types.OrgVdcNetworkSegmentProfiles{
+		IPDiscoveryProfile:     &types.Reference{ID: ipDiscoveryProfile.ID},
+		MacDiscoveryProfile:    &types.Reference{ID: macDiscoveryProfile.ID},
+		SpoofGuardProfile:      &types.Reference{ID: spoofGuardProfile.ID},
+		QosProfile:             &types.Reference{ID: qosProfile.ID},
+		SegmentSecurityProfile: &types.Reference{ID: segmentSecurityProfile.ID},
+	}
+
+	updatedSegmentProfiles, err := orgVdcNet.UpdateSegmentProfile(entitySegmentProfileCfg)
+	check.Assert(err, IsNil)
+	check.Assert(updatedSegmentProfiles, NotNil)
+
+	check.Assert(updatedSegmentProfiles.IPDiscoveryProfile.ID, Equals, ipDiscoveryProfile.ID)
+	check.Assert(updatedSegmentProfiles.MacDiscoveryProfile.ID, Equals, macDiscoveryProfile.ID)
+	check.Assert(updatedSegmentProfiles.SpoofGuardProfile.ID, Equals, spoofGuardProfile.ID)
+	check.Assert(updatedSegmentProfiles.QosProfile.ID, Equals, qosProfile.ID)
+	check.Assert(updatedSegmentProfiles.SegmentSecurityProfile.ID, Equals, segmentSecurityProfile.ID)
+
+	retrievedSegmentProfile, err := orgVdcNet.GetSegmentProfile()
+	check.Assert(err, IsNil)
+	check.Assert(retrievedSegmentProfile, NotNil)
+
+	check.Assert(retrievedSegmentProfile.IPDiscoveryProfile.ID, Equals, ipDiscoveryProfile.ID)
+	check.Assert(retrievedSegmentProfile.MacDiscoveryProfile.ID, Equals, macDiscoveryProfile.ID)
+	check.Assert(retrievedSegmentProfile.SpoofGuardProfile.ID, Equals, spoofGuardProfile.ID)
+	check.Assert(retrievedSegmentProfile.QosProfile.ID, Equals, qosProfile.ID)
+	check.Assert(retrievedSegmentProfile.SegmentSecurityProfile.ID, Equals, segmentSecurityProfile.ID)
+
+	// Delete
+	err = orgVdcNet.Delete()
+	check.Assert(err, IsNil)
+}
+
+func runOpenApiOrgVdcNetworkTestWithSegmentProfileTemplate(check *C, vcd *TestVCD, vdc *Vdc, orgVdcNetworkConfig *types.OpenApiOrgVdcNetwork, expectNetworkType string) {
+	printVerbose("## Testing Segment Profile Template assignment in Org VDC Network Structure\n")
+	// Precreate two segment profile templates
+	spt1 := preCreateSegmentProfileTemplate(vcd, check, "1")
+	spt2 := preCreateSegmentProfileTemplate(vcd, check, "2")
+	orgVdcNetworkConfig.SegmentProfileTemplate = &types.OpenApiReference{ID: spt1.NsxtSegmentProfileTemplate.ID}
+	defer func() { // Cleanup Segment Profile Template configuration to prevent altering other tests
+		orgVdcNetworkConfig.SegmentProfileTemplate = nil
+	}()
+
+	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
+	check.Assert(err, IsNil)
+
+	// Use generic "OpenApiEntity" resource cleanup type
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
+	AddToCleanupListOpenApi(orgVdcNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
+
+	// Segment Profile Templates are not returned in GET by API definition which is not convenient,
+	// but this check will work as a fuse to detect if anything changes in that regard in future
+	check.Assert(orgVdcNet.OpenApiOrgVdcNetwork.SegmentProfileTemplate, IsNil)
+
+	// Retrieve Segment Profile Template using its dedicated endpoint
+	segmentProfileConfig, err := orgVdcNet.GetSegmentProfile()
+	check.Assert(err, IsNil)
+	check.Assert(segmentProfileConfig, NotNil)
+	check.Assert(segmentProfileConfig.SegmentProfileTemplate.TemplateRef.ID, Equals, spt1.NsxtSegmentProfileTemplate.ID)
+
+	// Update Segment Profile Template
+	orgVdcNet.OpenApiOrgVdcNetwork.SegmentProfileTemplate = &types.OpenApiReference{ID: spt2.NsxtSegmentProfileTemplate.ID}
+
+	updatedOrgVdcNet, err := orgVdcNet.Update(orgVdcNet.OpenApiOrgVdcNetwork)
+	check.Assert(err, IsNil)
+
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Name, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Description, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Description)
+
+	// Segment Profile Templates are not returned in GET by API definition which is not convenient,
+	// but this check will work as a fuse to detect if anything changes in that regard in future
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.SegmentProfileTemplate, IsNil)
+	// Retrieve Segment Profile Template using its dedicated endpoint
+	segmentProfileConfig, err = orgVdcNet.GetSegmentProfile()
+	check.Assert(err, IsNil)
+	check.Assert(segmentProfileConfig, NotNil)
+	check.Assert(segmentProfileConfig.SegmentProfileTemplate.TemplateRef.ID, Equals, spt2.NsxtSegmentProfileTemplate.ID)
+
+	// Delete
+	err = orgVdcNet.Delete()
+	check.Assert(err, IsNil)
+
+	// Delete Segment Profile Templates
+
+	err = spt1.Delete()
+	check.Assert(err, IsNil)
+	err = spt2.Delete()
+	check.Assert(err, IsNil)
+}
+
+func preCreateSegmentProfileTemplate(vcd *TestVCD, check *C, sptNameSuffix string) *NsxtSegmentProfileTemplate {
+	skipNoNsxtConfiguration(vcd, check)
+	vcd.skipIfNotSysAdmin(check)
+
+	nsxtManager, err := vcd.client.GetNsxtManagerByName(vcd.config.VCD.Nsxt.Manager)
+	check.Assert(err, IsNil)
+	check.Assert(nsxtManager, NotNil)
+	nsxtManagerUrn, err := nsxtManager.Urn()
+	check.Assert(err, IsNil)
+
+	// Filter by NSX-T Manager
+	queryParams := copyOrNewUrlValues(nil)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("nsxTManagerRef.id==%s", nsxtManagerUrn), queryParams)
+
+	// Lookup prerequisite profiles for Segment Profile template creation
+	ipDiscoveryProfile, err := vcd.client.GetIpDiscoveryProfileByName(vcd.config.VCD.Nsxt.IpDiscoveryProfile, queryParams)
+	check.Assert(err, IsNil)
+	macDiscoveryProfile, err := vcd.client.GetMacDiscoveryProfileByName(vcd.config.VCD.Nsxt.MacDiscoveryProfile, queryParams)
+	check.Assert(err, IsNil)
+	spoofGuardProfile, err := vcd.client.GetSpoofGuardProfileByName(vcd.config.VCD.Nsxt.SpoofGuardProfile, queryParams)
+	check.Assert(err, IsNil)
+	qosProfile, err := vcd.client.GetQoSProfileByName(vcd.config.VCD.Nsxt.QosProfile, queryParams)
+	check.Assert(err, IsNil)
+	segmentSecurityProfile, err := vcd.client.GetSegmentSecurityProfileByName(vcd.config.VCD.Nsxt.SegmentSecurityProfile, queryParams)
+	check.Assert(err, IsNil)
+
+	config := &types.NsxtSegmentProfileTemplate{
+		Name:                   check.TestName() + "-" + sptNameSuffix,
+		Description:            check.TestName() + "-description",
+		IPDiscoveryProfile:     &types.Reference{ID: ipDiscoveryProfile.ID},
+		MacDiscoveryProfile:    &types.Reference{ID: macDiscoveryProfile.ID},
+		QosProfile:             &types.Reference{ID: qosProfile.ID},
+		SegmentSecurityProfile: &types.Reference{ID: segmentSecurityProfile.ID},
+		SpoofGuardProfile:      &types.Reference{ID: spoofGuardProfile.ID},
+		SourceNsxTManagerRef:   &types.OpenApiReference{ID: nsxtManager.NsxtManager.ID},
+	}
+
+	createdSegmentProfileTemplate, err := vcd.client.CreateSegmentProfileTemplate(config)
+	check.Assert(err, IsNil)
+	check.Assert(createdSegmentProfileTemplate, NotNil)
+
+	// Add to cleanup list
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates + createdSegmentProfileTemplate.NsxtSegmentProfileTemplate.ID
+	AddToCleanupListOpenApi(config.Name, check.TestName(), openApiEndpoint)
+
+	return createdSegmentProfileTemplate
 }
