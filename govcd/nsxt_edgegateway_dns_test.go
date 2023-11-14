@@ -102,11 +102,20 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayDns(check *C) {
 	check.Assert(updatedDnsConfig.Enabled, Equals, true)
 	check.Assert(updatedDnsConfig.DefaultForwarderZone.DisplayName, Equals, "test")
 	check.Assert(len(updatedDnsConfig.DefaultForwarderZone.UpstreamServers), Equals, 3)
-	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones), Equals, 2)
-	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones[0].UpstreamServers), Equals, 2)
-	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones[0].DnsDomainNames), Equals, 3)
-	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones[1].UpstreamServers), Equals, 2)
-	check.Assert(len(updatedDnsConfig.ConditionalForwarderZones[1].DnsDomainNames), Equals, 1)
+	conditionalZones := updatedDnsConfig.ConditionalForwarderZones
+	check.Assert(len(conditionalZones), Equals, 2)
+	// Flip the asserts in both cases of conditional zones arrays returned
+	if conditionalZones[0].DisplayName == "test-conditional" {
+		check.Assert(len(conditionalZones[0].UpstreamServers), Equals, 2)
+		check.Assert(len(conditionalZones[0].DnsDomainNames), Equals, 3)
+		check.Assert(len(conditionalZones[1].UpstreamServers), Equals, 2)
+		check.Assert(len(conditionalZones[1].DnsDomainNames), Equals, 1)
+	} else {
+		check.Assert(len(conditionalZones[1].UpstreamServers), Equals, 2)
+		check.Assert(len(conditionalZones[1].DnsDomainNames), Equals, 3)
+		check.Assert(len(conditionalZones[0].UpstreamServers), Equals, 2)
+		check.Assert(len(conditionalZones[0].DnsDomainNames), Equals, 1)
+	}
 
 	err = enabledDns.Delete()
 	check.Assert(err, IsNil)
