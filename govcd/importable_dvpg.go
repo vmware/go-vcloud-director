@@ -120,3 +120,29 @@ func filterVcImportableDvpgsByName(name string, allNVcImportableDvpgs []*Vcenter
 
 	return filteredVcImportableDvpgs
 }
+
+// Parent returns the port group parent switch
+func (dvpg *VcenterImportableDvpg) Parent() *types.OpenApiReference {
+	return dvpg.VcenterImportableDvpg.DvSwitch.BackingRef
+}
+
+// UsableWith tells whether a given port group can be used with others to create a network pool
+func (dvpg *VcenterImportableDvpg) UsableWith(others ...*VcenterImportableDvpg) bool {
+	// No items provided: assume false
+	if len(others) == 0 {
+		return false
+	}
+	// Only one item provided, and it is the same as the current port group: assume false
+	if len(others) == 1 && dvpg.VcenterImportableDvpg.BackingRef.ID == others[0].VcenterImportableDvpg.BackingRef.ID {
+		return false
+	}
+	for _, other := range others {
+		if dvpg.VcenterImportableDvpg.BackingRef.ID == others[0].VcenterImportableDvpg.BackingRef.ID {
+			continue
+		}
+		if dvpg.Parent().ID != other.Parent().ID {
+			return false
+		}
+	}
+	return true
+}
