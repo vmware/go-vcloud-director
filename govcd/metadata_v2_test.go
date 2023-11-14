@@ -261,6 +261,11 @@ func (vcd *TestVCD) TestDiskMetadata(check *C) {
 
 	vcd.testMetadataCRUDActions(disk, check, nil)
 	vcd.testMetadataIgnore(disk, "disk", disk.Disk.Name, check)
+
+	task, err = disk.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) TestOrgVDCNetworkMetadata(check *C) {

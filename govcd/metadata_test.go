@@ -442,6 +442,11 @@ func (vcd *TestVCD) Test_MetadataOnIndependentDiskCRUD(check *C) {
 	check.Assert(err, IsNil)
 
 	testMetadataCRUDActionsDeprecated(disk, check, nil)
+
+	task, err = disk.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_MetadataOnVdcNetworkCRUD(check *C) {
