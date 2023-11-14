@@ -370,6 +370,8 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 	previousIgnoredMetadata := vcd.client.SetMetadataToIgnore(nil)
 	check.Assert(vcd.client.Client.IgnoredMetadata, IsNil)
 	check.Assert(len(previousIgnoredMetadata) > 0, Equals, true)
+	allMetadataWithoutFiltering, err := resource.GetMetadata()
+	check.Assert(err, IsNil)
 	previousIgnoredMetadata = vcd.client.SetMetadataToIgnore(previousIgnoredMetadata)
 	check.Assert(previousIgnoredMetadata, IsNil)
 	check.Assert(len(vcd.client.Client.IgnoredMetadata) > 0, Equals, true)
@@ -382,7 +384,7 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 	allMetadata, err := resource.GetMetadata()
 	check.Assert(err, IsNil)
 	check.Assert(allMetadata, NotNil)
-	check.Assert(len(allMetadata.MetadataEntry), Equals, 1) // There are 2 entries, but one should be filtered out
+	check.Assert(len(allMetadata.MetadataEntry), Equals, len(allMetadataWithoutFiltering.MetadataEntry)-1) // There are N entries, but one should be filtered out
 	check.Assert(allMetadata.MetadataEntry[0], NotNil)
 	check.Assert(allMetadata.MetadataEntry[0].Key, Equals, "test")
 
