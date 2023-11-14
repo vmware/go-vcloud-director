@@ -344,6 +344,22 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 			metadataIsIgnored: false,
 		},
 		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, KeyRegex: regexp.MustCompile(`^foo$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, ValueRegex: regexp.MustCompile(`^bar$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, KeyRegex: regexp.MustCompile(`^fizz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, ValueRegex: regexp.MustCompile(`^buzz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
 			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, ObjectName: &objectName, KeyRegex: regexp.MustCompile(`foo`), ValueRegex: regexp.MustCompile(`bar`)}},
 			metadataIsIgnored: true,
 		},
