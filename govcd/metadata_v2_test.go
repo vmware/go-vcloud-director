@@ -388,11 +388,11 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 			check.Assert(singleMetadata.TypedValue.Value, Equals, "bar")
 		}
 
-		// We add a new entry that won't be filtered out
+		// Add a new entry that won't be filtered out
 		err = resource.AddMetadataEntryWithVisibility("test", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
 		check.Assert(err, IsNil)
 
-		// We retrieve all metadata
+		// Retrieve all metadata
 		allMetadata, err := resource.GetMetadata()
 		check.Assert(err, IsNil)
 		check.Assert(allMetadata, NotNil)
