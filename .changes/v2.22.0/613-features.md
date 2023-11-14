@@ -1,0 +1,5 @@
+* Added `VCDClient` methods `CreateNetworkPool`, `CreateStandaloneVmAsync`, `CreateNetworkPoolGeneve`, `CreateNetworkPoolVlan`, `CreateNetworkPoolPortGroup` to create a network pool [GH-613]
+* Added method `VCDClient.GetAllNsxtTransportZones` to retrieve all NSX-T transport zones [GH-613]
+* Added method `VCDClient.GetAllVcenterDistributedSwitches` to retrieve all distributed switches [GH-613]
+* Added method `VCDClient.QueryNsxtManagers` to retrieve all NSX-T managers [GH-613]
+* Added `NetworkPool` methods `Update`, `Delete`, `GetOpenApiUrl` to manage a network pool [GH-613]

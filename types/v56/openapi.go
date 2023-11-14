@@ -573,24 +573,24 @@ type OpenApiSupportedHardwareVersions struct {
 
 // NetworkPool is the full data retrieved for a provider network pool
 type NetworkPool struct {
-	Status             string             `json:"status"`
-	Id                 string             `json:"id"`
+	Status             string             `json:"status,omitempty"`
+	Id                 string             `json:"id,omitempty"`
 	Name               string             `json:"name"`
 	Description        string             `json:"description"`
 	PoolType           string             `json:"poolType"`
-	PromiscuousMode    bool               `json:"promiscuousMode"`
-	TotalBackingsCount int                `json:"totalBackingsCount"`
-	UsedBackingsCount  int                `json:"usedBackingsCount"`
+	PromiscuousMode    bool               `json:"promiscuousMode,omitempty"`
+	TotalBackingsCount int                `json:"totalBackingsCount,omitempty"`
+	UsedBackingsCount  int                `json:"usedBackingsCount,omitempty"`
 	ManagingOwnerRef   OpenApiReference   `json:"managingOwnerRef"`
 	Backing            NetworkPoolBacking `json:"backing"`
 }
 
 // NetworkPoolBacking is the definition of the objects supporting the network pool
 type NetworkPoolBacking struct {
-	VlanIdRanges     VlanIdRanges       `json:"vlanIdRanges"`
-	VdsRefs          []OpenApiReference `json:"vdsRefs"`
-	PortGroupRefs    []OpenApiReference `json:"portGroupRefs"`
-	TransportZoneRef OpenApiReference   `json:"transportZoneRef"`
+	VlanIdRanges     VlanIdRanges       `json:"vlanIdRanges,omitempty"`
+	VdsRefs          []OpenApiReference `json:"vdsRefs,omitempty"`
+	PortGroupRefs    []OpenApiReference `json:"portGroupRefs,omitempty"`
+	TransportZoneRef OpenApiReference   `json:"transportZoneRef,omitempty"`
 	ProviderRef      OpenApiReference   `json:"providerRef"`
 }
 
@@ -598,6 +598,7 @@ type VlanIdRanges struct {
 	Values []VlanIdRange `json:"values"`
 }
 
+// VlanIdRange is a component of a network pool of type VLAN
 type VlanIdRange struct {
 	StartId int `json:"startId"`
 	EndId   int `json:"endId"`
@@ -630,4 +631,22 @@ type UploadSpec struct {
 	Size         int64  `json:"size,omitempty"`
 	Checksum     string `json:"checksum,omitempty"`
 	ChecksumAlgo string `json:"checksumAlgo,omitempty"`
+}
+
+type TransportZones struct {
+	Values []*TransportZone `json:"values"`
+}
+
+// TransportZone is a backing component of a network pool of type 'GENEVE' (NSX-T backed)
+type TransportZone struct {
+	Id              string `json:"id"`
+	Name            string `json:"name"`
+	Type            string `json:"type,omitempty"`
+	AlreadyImported bool   `json:"alreadyImported"`
+}
+
+// VcenterDistributedSwitch is a backing component of a network pool of type VLAN
+type VcenterDistributedSwitch struct {
+	BackingRef    OpenApiReference `json:"backingRef"`
+	VirtualCenter OpenApiReference `json:"virtualCenter"`
 }

@@ -440,6 +440,8 @@ const (
 	OpenApiEndpointExtensionsUiTenantsPublish         = "extensions/ui/%s/tenants/publish"
 	OpenApiEndpointExtensionsUiTenantsUnpublishAll    = "extensions/ui/%s/tenants/unpublishAll"
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
+	OpenApiEndpointImportableTransportZones           = "nsxTResources/importableTransportZones"
+	OpenApiEndpointVCenterDistributedSwitch           = "virtualCenters/resources/dvSwitches"
 
 	OpenApiEndpointNsxtSegmentProfileTemplates              = "segmentProfileTemplates/"
 	OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates = "segmentProfileTemplates/default"
@@ -703,4 +705,21 @@ const (
 	SamlNamespaceMd     = "urn:oasis:names:tc:SAML:2.0:metadata"
 	SamlNamespaceDs     = "http://www.w3.org/2000/09/xmldsig#"
 	SamlNamespaceHoksso = "urn:oasis:names:tc:SAML:2.0:profiles:holder-of-key:SSO:browser"
+)
+
+// Values used to identify the type of network pool
+const (
+	NetworkPoolVxlanType     = "VXLAN" // NSX-V backed network pool. Only used as read-only
+	NetworkPoolVlanType      = "VLAN"
+	NetworkPoolGeneveType    = "GENEVE"
+	NetworkPoolPortGroupType = "PORTGROUP_BACKED"
+)
+
+// BackingUseConstraint is a constraint about the use of a backing in a network pool
+type BackingUseConstraint string
+
+const (
+	BackingUseExplicit       BackingUseConstraint = "use-explicit-name"   // use explicitly named backing
+	BackingUseWhenOnlyOne    BackingUseConstraint = "use-when-only-one"   // use automatically when only one was found
+	BackingUseFirstAvailable BackingUseConstraint = "use-first-available" // use the first available backing with no conditions
 )
