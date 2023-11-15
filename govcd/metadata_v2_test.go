@@ -411,7 +411,7 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 				}
 			}
 		} else {
-			// If metadata is NOT ignored, there should be an offset of 2 entry (with key "foo" and "test")
+			// If metadata is NOT ignored, there should be an offset of 2 entries (with key "foo" and "test")
 			check.Assert(len(allMetadata.MetadataEntry), Equals, len(existingMetadata.MetadataEntry)+2)
 		}
 	}
