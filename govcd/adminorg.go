@@ -55,6 +55,10 @@ func (adminOrg *AdminOrg) CreateCatalog(name, description string) (AdminCatalog,
 	if err != nil {
 		return AdminCatalog{}, err
 	}
+	err = adminCatalog.WaitForTasks()
+	if err != nil {
+		return AdminCatalog{}, err
+	}
 	return *adminCatalog, nil
 }
 
