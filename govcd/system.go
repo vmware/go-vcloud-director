@@ -428,8 +428,9 @@ func getOrgHREFById(vcdClient *VCDClient, orgId string) (string, error) {
 // E.g. filter could look like: name==vC1
 func QueryVirtualCenters(vcdClient *VCDClient, filter string) ([]*types.QueryResultVirtualCenterRecordType, error) {
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":   "virtualCenter",
-		"filter": filter,
+		"type":         "virtualCenter",
+		"filter":       filter,
+		"filterEncode": "true",
 	})
 	if err != nil {
 		return nil, err
@@ -939,6 +940,18 @@ func (vcdClient *VCDClient) QueryNsxtManagerByName(name string) ([]*types.QueryR
 	return results.Results.NsxtManagerRecord, nil
 }
 
+// QueryNsxtManagers retrieves all NSX-T managers available in VCD
+func (vcdClient *VCDClient) QueryNsxtManagers() ([]*types.QueryResultNsxtManagerRecordType, error) {
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type": "nsxTManager",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return results.Results.NsxtManagerRecord, nil
+}
+
 // QueryNsxtManagerByHref searches for NSX-T managers available in VCD
 func (vcdClient *VCDClient) QueryNsxtManagerByHref(href string) ([]*types.QueryResultNsxtManagerRecordType, error) {
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
@@ -1160,4 +1173,48 @@ func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryRe
 		return nil, fmt.Errorf("more than one Storage Profile found with ID %s", id)
 	}
 	return results.Results.OrgVdcStorageProfileRecord[0], nil
+}
+
+// GetGlobalDefaultSegmentProfileTemplates retrieves VCD global configuration for Segment Profile Templates
+func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	typeResponse := &types.NsxtGlobalDefaultSegmentProfileTemplate{}
+	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, typeResponse, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return typeResponse, nil
+}
+
+// UpdateGlobalDefaultSegmentProfileTemplates updates VCD global configuration for Segment Profile Templates
+func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtGlobalDefaultSegmentProfileTemplate) (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates
+	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedDefaultNetworkSegmentProfile := &types.NsxtGlobalDefaultSegmentProfileTemplate{}
+	err = vcdClient.Client.OpenApiPutItem(apiVersion, urlRef, nil, entityConfig, updatedDefaultNetworkSegmentProfile, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedDefaultNetworkSegmentProfile, nil
 }

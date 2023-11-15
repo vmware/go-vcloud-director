@@ -941,8 +941,8 @@ type OrgLdapSettingsType struct {
 	Type    string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	Link    LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
-	CustomUsersOu         string                 `xml:"CustomUsersOu,omitempty"`         // If OrgLdapMode is SYSTEM, specifies an LDAP attribute=value pair to use for OU (organizational unit).
 	OrgLdapMode           string                 `xml:"OrgLdapMode,omitempty"`           // LDAP mode you want
+	CustomUsersOu         string                 `xml:"CustomUsersOu,omitempty"`         // If OrgLdapMode is SYSTEM, specifies an LDAP attribute=value pair to use for OU (organizational unit).
 	CustomOrgLdapSettings *CustomOrgLdapSettings `xml:"CustomOrgLdapSettings,omitempty"` // Needs to be set if user chooses custom mode
 }
 
@@ -1132,6 +1132,14 @@ type PublishExternalCatalogParams struct {
 	Password                 string `xml:"Password,omitempty"`                 // Password required when connecting to the endpoint.
 	IsCachedEnabled          *bool  `xml:"IsCacheEnabled,omitempty"`           // True enables content caching for this catalog. All items in the catalog are created and stored in transfer storage. If false, items are not placed in transfer storage until they are requested by a subscriber. Note that access to this attribute is reserved to users with role that includes the right 'Catalog: VCSP Publish Subscribe Caching'.
 	PreserveIdentityInfoFlag *bool  `xml:"PreserveIdentityInfoFlag,omitempty"` // True includes BIOS UUIDs and MAC addresses in the downloaded OVF package. If false, those information will be excluded.
+}
+
+// PublishCatalogParams represents the configuration parameters of a catalog published to other orgs.
+// It is used in conjunction with the "IsPublished" state of the catalog itself
+type PublishCatalogParams struct {
+	XMLName     xml.Name `xml:"PublishCatalogParams"`
+	Xmlns       string   `xml:"xmlns,attr,omitempty"`
+	IsPublished *bool    `xml:"IsPublished,omitempty"` // True enables  publication (read-only access)
 }
 
 // ExternalCatalogSubscription represents the configuration parameters for a catalog that has an external subscription
