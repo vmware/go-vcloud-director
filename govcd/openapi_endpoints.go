@@ -208,7 +208,7 @@ var endpointElevatedApiVersions = map[string][]string{
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns: {
 		"37.0", // Introduced support
-		"38.1", // New field SnatRuleExternalIpAddress
+		"38.0", // New field SnatRuleExternalIpAddress
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinksAllocate: {
 		//"37.1", // Introduced support
