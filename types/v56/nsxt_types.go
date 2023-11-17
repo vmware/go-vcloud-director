@@ -1919,18 +1919,18 @@ type NsxtManager struct {
 
 // NsxtEdgeGatewayDns is used for configuring the DNS forwarder for a specific Edge Gateway
 type NsxtEdgeGatewayDns struct {
-	// Status of the DNS fowarder
+	// Status of the DNS forwarder
 	Enabled bool `json:"enabled"`
 	// The IP on which the DNS forwarder listens. If the Edge Gateway has a dedicated
 	// external network, this can be changed.
 	ListenerIp string `json:"listenerIp,omitempty"`
-	// Whether there is an SNAT rule exists for the DNS forwarder or not. In NAT
+	// Whether an SNAT rule exists for the DNS forwarder or not. In NAT
 	// routed environments, an SNAT rule is required for the Edge DNS forwarder
 	// to send traffic to an upstream server. In fully routed environments,
 	// this is not needed if the listener IP is on an advertised subnet.
 	SnatRuleEnabled bool `json:"snatRuleEnabled,omitempty"`
 	// The external IP address of the SNAT rule. This property only applies if the
-	// Edge Gateway is connected to a Provider Gateway using IP Space.
+	// Edge Gateway is connected to a Provider Gateway using IP Spaces.
 	SnatRuleExternalIpAddress string `json:"snatRuleExternalIpAddress,omitempty"`
 	// The default forwarder zone to use if there’s no matching domain in the conditional forwarder zone.
 	DefaultForwarderZone *NsxtDnsForwarderZoneConfig `json:"defaultForwarderZone,omitempty"`
@@ -1940,8 +1940,8 @@ type NsxtEdgeGatewayDns struct {
 }
 
 type NsxtDnsForwarderZoneConfig struct {
-	// The unique id of the DNS forwarder zone. If value is unset,
-	// a new zone is created. If value is set, an update is done on the zone.
+	// The unique id of the DNS forwarder zone. If value is set,
+	// the zone is updated; if not, a new zone is created.
 	ID string `json:"id,omitempty"`
 	// User friendly name for the zone
 	DisplayName string `json:"displayName,omitempty"`
