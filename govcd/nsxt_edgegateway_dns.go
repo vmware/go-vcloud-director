@@ -14,100 +14,31 @@ import (
 type NsxtEdgeGatewayDns struct {
 	NsxtEdgeGatewayDns *types.NsxtEdgeGatewayDns
 	client             *Client
-
-	EdgeGatewayId string
+	EdgeGatewayId      string
 }
 
 // GetDnsConfig retrieves the DNS configuration for the underlying edge gateway
 func (egw *NsxtEdgeGateway) GetDnsConfig() (*NsxtEdgeGatewayDns, error) {
-	client := egw.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	dnsConfig := &NsxtEdgeGatewayDns{
-		client:        client,
-		EdgeGatewayId: egw.EdgeGateway.ID,
-	}
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, &dnsConfig.NsxtEdgeGatewayDns, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return dnsConfig, nil
+	return getDnsConfig(egw.client, egw.EdgeGateway.ID)
 }
 
 // UpdateDnsConfig updates the DNS configuration for the Edge Gateway
-func (egw *NsxtEdgeGateway) UpdateDnsConfig(updatedConfig *types.NsxtEdgeGatewayDns) (*types.NsxtEdgeGatewayDns, error) {
-	client := egw.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, egw.EdgeGateway.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	dnsConfig := &types.NsxtEdgeGatewayDns{}
-
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, updatedConfig, dnsConfig, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return dnsConfig, nil
+func (egw *NsxtEdgeGateway) UpdateDnsConfig(updatedConfig *types.NsxtEdgeGatewayDns) (*NsxtEdgeGatewayDns, error) {
+	return updateDnsConfig(updatedConfig, egw.client, egw.EdgeGateway.ID)
 }
 
 // Update updates the DNS configuration for the underlying Edge Gateway
 func (dns *NsxtEdgeGatewayDns) Update(updatedConfig *types.NsxtEdgeGatewayDns) (*NsxtEdgeGatewayDns, error) {
-	client := dns.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dns.EdgeGatewayId))
-	if err != nil {
-		return nil, err
-	}
-
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, updatedConfig, &dns.NsxtEdgeGatewayDns, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return dns, nil
+	return updateDnsConfig(updatedConfig, dns.client, dns.EdgeGatewayId)
 }
 
 // Refresh refreshes the DNS configuration for the Edge Gateway
 func (dns *NsxtEdgeGatewayDns) Refresh() error {
-	client := dns.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	updatedDns, err := getDnsConfig(dns.client, dns.EdgeGatewayId)
 	if err != nil {
 		return err
 	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dns.EdgeGatewayId))
-	if err != nil {
-		return err
-	}
-
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, &dns.NsxtEdgeGatewayDns, nil)
-	if err != nil {
-		return err
-	}
+	dns.NsxtEdgeGatewayDns = updatedDns.NsxtEdgeGatewayDns
 
 	return nil
 }
@@ -132,4 +63,53 @@ func (dns *NsxtEdgeGatewayDns) Delete() error {
 	}
 
 	return nil
+}
+
+func getDnsConfig(client *Client, edgeGatewayId string) (*NsxtEdgeGatewayDns, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, edgeGatewayId))
+	if err != nil {
+		return nil, err
+	}
+
+	dnsConfig := &NsxtEdgeGatewayDns{
+		client:        client,
+		EdgeGatewayId: edgeGatewayId,
+	}
+	err = client.OpenApiGetItem(apiVersion, urlRef, nil, &dnsConfig.NsxtEdgeGatewayDns, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return dnsConfig, nil
+
+}
+
+func updateDnsConfig(updatedConfig *types.NsxtEdgeGatewayDns, client *Client, edgeGatewayId string) (*NsxtEdgeGatewayDns, error) {
+	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, edgeGatewayId))
+	if err != nil {
+		return nil, err
+	}
+
+	dns := &NsxtEdgeGatewayDns{
+		client:        client,
+		EdgeGatewayId: edgeGatewayId,
+	}
+	err = client.OpenApiPutItem(apiVersion, urlRef, nil, updatedConfig, &dns.NsxtEdgeGatewayDns, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return dns, nil
 }
