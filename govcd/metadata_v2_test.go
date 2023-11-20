@@ -261,6 +261,11 @@ func (vcd *TestVCD) TestDiskMetadata(check *C) {
 
 	vcd.testMetadataCRUDActions(disk, check, nil)
 	vcd.testMetadataIgnore(disk, "disk", disk.Disk.Name, check)
+
+	task, err = disk.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) TestOrgVDCNetworkMetadata(check *C) {
@@ -293,7 +298,10 @@ func (vcd *TestVCD) TestCatalogItemMetadata(check *C) {
 }
 
 func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, objectName string, check *C) {
-	err := resource.AddMetadataEntryWithVisibility("foo", "bar", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
+	existingMetadata, err := resource.GetMetadata()
+	check.Assert(err, IsNil)
+
+	err = resource.AddMetadataEntryWithVisibility("foo", "bar", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
 	check.Assert(err, IsNil)
 
 	cleanup := func() {
@@ -301,13 +309,22 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 		metadata, err := resource.GetMetadata()
 		check.Assert(err, IsNil)
 		for _, entry := range metadata.MetadataEntry {
-			err = resource.DeleteMetadataEntryWithDomain(entry.Key, entry.Domain != nil && entry.Domain.Domain == "SYSTEM")
-			check.Assert(err, IsNil)
+			itWasAlreadyPresent := false
+			for _, existingEntry := range existingMetadata.MetadataEntry {
+				if existingEntry.Key == entry.Key && existingEntry.TypedValue.Value == entry.TypedValue.Value &&
+					existingEntry.Type == entry.Type {
+					itWasAlreadyPresent = true
+				}
+			}
+			if !itWasAlreadyPresent {
+				err = resource.DeleteMetadataEntryWithDomain(entry.Key, entry.Domain != nil && entry.Domain.Domain == "SYSTEM")
+				check.Assert(err, IsNil)
+			}
 		}
 		metadata, err = resource.GetMetadata()
 		check.Assert(err, IsNil)
 		check.Assert(metadata, NotNil)
-		check.Assert(len(metadata.MetadataEntry), Equals, 0)
+		check.Assert(len(metadata.MetadataEntry), Equals, len(existingMetadata.MetadataEntry))
 	}
 	defer cleanup()
 
@@ -353,8 +370,19 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 		},
 	}
 
+	// Tests that the ignored metadata setter works as expected
+	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{ObjectType: &objectType, ValueRegex: regexp.MustCompile(`dummy`)}}
+	previousIgnoredMetadata := vcd.client.SetMetadataToIgnore(nil)
+	check.Assert(vcd.client.Client.IgnoredMetadata, IsNil)
+	check.Assert(len(previousIgnoredMetadata) > 0, Equals, true)
+	previousIgnoredMetadata = vcd.client.SetMetadataToIgnore(previousIgnoredMetadata)
+	check.Assert(previousIgnoredMetadata, IsNil)
+	check.Assert(len(vcd.client.Client.IgnoredMetadata) > 0, Equals, true)
+
 	for _, tt := range tests {
 		vcd.client.Client.IgnoredMetadata = tt.ignoredMetadata
+
+		// Tests getting a simple metadata entry by its key
 		singleMetadata, err := resource.GetMetadataByKey("foo", false)
 		if tt.metadataIsIgnored {
 			check.Assert(err, NotNil)
@@ -364,27 +392,29 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 			check.Assert(singleMetadata, NotNil)
 			check.Assert(singleMetadata.TypedValue.Value, Equals, "bar")
 		}
+
+		// Add a new entry that won't be filtered out
+		err = resource.AddMetadataEntryWithVisibility("test", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
+		check.Assert(err, IsNil)
+
+		// Retrieve all metadata
+		allMetadata, err := resource.GetMetadata()
+		check.Assert(err, IsNil)
+		check.Assert(allMetadata, NotNil)
+		if tt.metadataIsIgnored {
+			// If metadata is ignored, there should be an offset of 1 entry (with key "test")
+			check.Assert(len(allMetadata.MetadataEntry), Equals, len(existingMetadata.MetadataEntry)+1)
+			for _, entry := range allMetadata.MetadataEntry {
+				if tt.metadataIsIgnored {
+					check.Assert(entry.Key, Not(Equals), "foo")
+					check.Assert(entry.TypedValue.Value, Not(Equals), "bar")
+				}
+			}
+		} else {
+			// If metadata is NOT ignored, there should be an offset of 2 entries (with key "foo" and "test")
+			check.Assert(len(allMetadata.MetadataEntry), Equals, len(existingMetadata.MetadataEntry)+2)
+		}
 	}
-
-	// Test setter
-	previousIgnoredMetadata := vcd.client.SetMetadataToIgnore(nil)
-	check.Assert(vcd.client.Client.IgnoredMetadata, IsNil)
-	check.Assert(len(previousIgnoredMetadata) > 0, Equals, true)
-	previousIgnoredMetadata = vcd.client.SetMetadataToIgnore(previousIgnoredMetadata)
-	check.Assert(previousIgnoredMetadata, IsNil)
-	check.Assert(len(vcd.client.Client.IgnoredMetadata) > 0, Equals, true)
-
-	// We add another entry and retrieve all metadata, then it should return the one that is not filtered out
-	err = resource.AddMetadataEntryWithVisibility("test", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
-	check.Assert(err, IsNil)
-
-	vcd.client.Client.IgnoredMetadata = []IgnoredMetadata{{KeyRegex: regexp.MustCompile(`^fo[a-z]$`)}}
-	allMetadata, err := resource.GetMetadata()
-	check.Assert(err, IsNil)
-	check.Assert(allMetadata, NotNil)
-	check.Assert(len(allMetadata.MetadataEntry), Equals, 1) // There are 2 entries, but one should be filtered out
-	check.Assert(allMetadata.MetadataEntry[0], NotNil)
-	check.Assert(allMetadata.MetadataEntry[0].Key, Equals, "test")
 
 	// Tries to delete a metadata entry that is ignored, it should hence fail
 	err = resource.DeleteMetadataEntryWithDomain("foo", false)
