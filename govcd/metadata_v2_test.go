@@ -297,6 +297,33 @@ func (vcd *TestVCD) TestCatalogItemMetadata(check *C) {
 	vcd.testMetadataIgnore(catalogItem, "catalogItem", catalogItem.CatalogItem.Name, check)
 }
 
+func (vcd *TestVCD) TestRdeMetadata(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	// This RDE type comes out of the box in VCD
+	rdeType, err := vcd.client.GetRdeType("vmware", "tkgcluster", "1.0.0")
+	check.Assert(err, IsNil)
+	check.Assert(rdeType, NotNil)
+
+	rde, err := rdeType.CreateRde(types.DefinedEntity{
+		Name:   check.TestName(),
+		Entity: map[string]interface{}{"foo": "bar"}, // We don't care about schema correctness here
+	}, nil)
+	check.Assert(err, IsNil)
+	check.Assert(rde, NotNil)
+
+	err = rde.Resolve() // State will be RESOLUTION_ERROR but we don't care. We resolve to be able to delete it later.
+	check.Assert(err, IsNil)
+
+	// The RDE can't be deleted until rde.Resolve() is called
+	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntities+rde.DefinedEntity.ID)
+
+	testOpenApiMetadataCRUDActions(rde, check)
+
+	err = rde.Delete()
+	check.Assert(err, IsNil)
+}
+
 func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, objectName string, check *C) {
 	existingMetadata, err := resource.GetMetadata()
 	check.Assert(err, IsNil)
@@ -680,5 +707,169 @@ func assertMetadata(check *C, given *types.Metadata, expected metadataTest, expe
 			check.Assert(foundEntry.Domain.Domain, Equals, "GENERAL")
 			check.Assert(foundEntry.Domain.Visibility, Equals, expected.Visibility)
 		}
+	}
+}
+
+// openApiMetadataCompatible allows centralizing and generalizing the tests for OpenAPI metadata compatible resources.
+type openApiMetadataCompatible interface {
+	GetMetadata() ([]*types.OpenApiMetadataEntry, error)
+	GetMetadataByKey(key string) (*types.OpenApiMetadataEntry, error)
+	AddMetadata(metadataEntry types.OpenApiMetadataEntry) (*types.OpenApiMetadataEntry, error)
+	UpdateMetadata(key string, value interface{}) (*types.OpenApiMetadataEntry, error)
+	DeleteMetadata(key string) error
+}
+
+type openApiMetadataTest struct {
+	Key                   string
+	Value                 interface{} // The type depends on the Type attribute
+	UpdateValue           interface{}
+	Type                  string
+	IsReadOnly            bool
+	Domain                string
+	ExpectErrorOnFirstAdd bool
+}
+
+// testOpenApiMetadataCRUDActions performs a complete test of all use cases that metadata in OpenAPI can have,
+// for an OpenAPI metadata compatible resource.
+func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C) {
+	// Check how much metadata exists
+	metadata, err := resource.GetMetadata()
+	check.Assert(err, IsNil)
+	check.Assert(metadata, NotNil)
+	existingMetaDataCount := len(metadata)
+
+	var testCases = []openApiMetadataTest{
+		{
+			Key:                   "stringKey",
+			Value:                 "stringValue",
+			UpdateValue:           "stringValueUpdated",
+			Type:                  types.OpenApiMetadataStringEntry,
+			IsReadOnly:            false,
+			Domain:                "TENANT",
+			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:                   "numberKey",
+			Value:                 "notANumber",
+			Type:                  types.OpenApiMetadataNumberEntry,
+			IsReadOnly:            false,
+			Domain:                "TENANT",
+			ExpectErrorOnFirstAdd: true,
+		},
+		{
+			Key:                   "numberKey",
+			Value:                 float64(1),
+			UpdateValue:           float64(42),
+			Type:                  types.OpenApiMetadataNumberEntry,
+			IsReadOnly:            false,
+			Domain:                "TENANT",
+			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:                   "negativeNumberKey",
+			Value:                 float64(-1),
+			UpdateValue:           float64(-42),
+			Type:                  types.OpenApiMetadataNumberEntry,
+			IsReadOnly:            false,
+			Domain:                "TENANT",
+			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:                   "boolKey",
+			Value:                 "notABool",
+			Type:                  types.OpenApiMetadataBooleanEntry,
+			IsReadOnly:            false,
+			Domain:                "TENANT",
+			ExpectErrorOnFirstAdd: true,
+		},
+		{
+			Key:                   "boolKey",
+			Value:                 true,
+			UpdateValue:           false,
+			Type:                  types.OpenApiMetadataBooleanEntry,
+			IsReadOnly:            false,
+			Domain:                "TENANT",
+			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:                   "providerKey",
+			Value:                 "providerValue",
+			UpdateValue:           "providerValueUpdated",
+			Type:                  types.OpenApiMetadataStringEntry,
+			IsReadOnly:            false,
+			Domain:                "PROVIDER",
+			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:                   "readOnlyProviderKey",
+			Value:                 "readOnlyProviderValue",
+			Type:                  types.OpenApiMetadataStringEntry,
+			IsReadOnly:            true,
+			Domain:                "PROVIDER",
+			ExpectErrorOnFirstAdd: false,
+		},
+		{
+			Key:                   "readOnlyTenantKey",
+			Value:                 "readOnlyTenantValue",
+			Type:                  types.OpenApiMetadataStringEntry,
+			IsReadOnly:            true,
+			Domain:                "TENANT",
+			ExpectErrorOnFirstAdd: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+
+		var createdEntry *types.OpenApiMetadataEntry
+		createdEntry, err = resource.AddMetadata(types.OpenApiMetadataEntry{
+			KeyValue: types.OpenApiMetadataKeyValue{
+				Domain: testCase.Domain,
+				Key:    testCase.Key,
+				Value: types.OpenApiMetadataTypedValue{
+					Type:  testCase.Type,
+					Value: testCase.Value,
+				},
+			},
+		})
+		if testCase.ExpectErrorOnFirstAdd {
+			check.Assert(err, NotNil)
+			continue
+		}
+		check.Assert(err, IsNil)
+		check.Assert(createdEntry, NotNil)
+		check.Assert(createdEntry.ID, Not(Equals), "")
+		check.Assert(createdEntry.KeyValue.Key, Not(Equals), "")
+
+		// Check if metadata was added correctly
+		metadata, err = resource.GetMetadata()
+		check.Assert(err, IsNil)
+		check.Assert(len(metadata), Equals, existingMetaDataCount+1)
+
+		metadataValue, err := resource.GetMetadataByKey(createdEntry.KeyValue.Key)
+		check.Assert(err, IsNil)
+		check.Assert(metadataValue, NotNil)
+		check.Assert(metadataValue.KeyValue, NotNil)
+		check.Assert(metadataValue.KeyValue.Value, NotNil)
+		check.Assert(metadataValue.KeyValue.Value.Value, Equals, testCase.Value)
+		check.Assert(metadataValue.KeyValue.Key, Equals, testCase.Key)
+		check.Assert(metadataValue.KeyValue.Domain, Equals, testCase.Domain)
+
+		if testCase.UpdateValue != nil {
+			updatedMetadata, err := resource.UpdateMetadata(testCase.Key, testCase.UpdateValue)
+			check.Assert(err, IsNil)
+			check.Assert(updatedMetadata, NotNil)
+			check.Assert(updatedMetadata.KeyValue.Key, Equals, testCase.Key)
+			check.Assert(updatedMetadata.KeyValue.Value.Type, Equals, testCase.Type)
+			check.Assert(updatedMetadata.KeyValue.Value.Value, Equals, testCase.UpdateValue)
+		}
+
+		err = resource.DeleteMetadata(metadataValue.KeyValue.Key)
+		check.Assert(err, IsNil)
+
+		// Check if metadata was deleted correctly
+		metadataValue, err = resource.GetMetadataByKey(metadataValue.KeyValue.Key)
+		check.Assert(err, NotNil)
+		check.Assert(metadataValue, IsNil)
+		check.Assert(true, Equals, ContainsNotFound(err))
 	}
 }

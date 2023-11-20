@@ -604,6 +604,10 @@ const (
 	MetadataReadOnlyVisibility  string = "READONLY"
 	MetadataHiddenVisibility    string = "PRIVATE"
 	MetadataReadWriteVisibility string = "READWRITE"
+
+	OpenApiMetadataStringEntry  string = "StringEntry"
+	OpenApiMetadataNumberEntry  string = "NumberEntry"
+	OpenApiMetadataBooleanEntry string = "BoolEntry"
 )
 
 const (

@@ -650,3 +650,25 @@ type VcenterDistributedSwitch struct {
 	BackingRef    OpenApiReference `json:"backingRef"`
 	VirtualCenter OpenApiReference `json:"virtualCenter"`
 }
+
+// OpenApiMetadataEntry represents a metadata entry in VCD.
+type OpenApiMetadataEntry struct {
+	ID           string                  `json:"id,omitempty"`         // UUID for OpenApiMetadataEntry. This is immutable
+	IsPersistent bool                    `json:"persistent,omitempty"` // Persistent entries can be copied over on some entity operation, for example: | Creating a copy of an Org VDC | Capturing a vApp to a template | Instantiating a catalog item as a VM
+	IsReadOnly   bool                    `json:"readOnly,omitempty"`   // The kind of level of access organizations of the entry’s domain have
+	KeyValue     OpenApiMetadataKeyValue `json:"keyValue,omitempty"`   // Contains core metadata entry data
+}
+
+// OpenApiMetadataKeyValue contains core metadata entry data.
+type OpenApiMetadataKeyValue struct {
+	Domain    string                    `json:"domain,omitempty"`    // Only meaningful for providers. Allows them to share entries with their tenants. Currently, accepted values are: `TENANT`, `PROVIDER`, where that is the ascending sort order of the enumeration.
+	Key       string                    `json:"key,omitempty"`       // Key of the metadata entry
+	Value     OpenApiMetadataTypedValue `json:"value,omitempty"`     // Value of the metadata entry
+	Namespace string                    `json:"namespace,omitempty"` // Namespace of the metadata entry
+}
+
+// OpenApiMetadataTypedValue asd
+type OpenApiMetadataTypedValue struct {
+	Value interface{} `json:"value,omitempty"` // The type is any because it depends on the Type field.
+	Type  string      `json:"type,omitempty"`
+}
