@@ -588,6 +588,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadataWithMetadataValue
 }
 
 // UpdateMetadata updates the DefinedEntity metadata corresponding to the given key with the given value.
+// Only the value of the entry can be updated. Re-create the entry in case you want to modify any of the other fields.
 func (rde *DefinedEntity) UpdateMetadata(key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	return updateOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, key, value)
