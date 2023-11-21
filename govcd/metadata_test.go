@@ -85,7 +85,7 @@ func (vcd *TestVCD) Test_AddAndDeleteMetadataOnVm(check *C) {
 	fmt.Printf("Running: %s\n", check.TestName())
 
 	if vcd.skipVappTests {
-		check.Skip("Skipping test because vapp was not successfully created at setup")
+		check.Skip("Skipping test because vApp was not successfully created at setup")
 	}
 
 	// Find VApp
@@ -102,6 +102,9 @@ func (vcd *TestVCD) Test_AddAndDeleteMetadataOnVm(check *C) {
 	vm := NewVM(&vcd.client.Client)
 	vm.VM = &vmType
 
+	existingMetadata, err := vm.GetMetadata()
+	check.Assert(err, IsNil)
+
 	// Add metadata
 	task, err := vm.AddMetadata("key", "value")
 	check.Assert(err, IsNil)
@@ -112,9 +115,14 @@ func (vcd *TestVCD) Test_AddAndDeleteMetadataOnVm(check *C) {
 	// Check if metadata was added correctly
 	metadata, err := vm.GetMetadata()
 	check.Assert(err, IsNil)
-	check.Assert(len(metadata.MetadataEntry), Equals, 1)
-	check.Assert(metadata.MetadataEntry[0].Key, Equals, "key")
-	check.Assert(metadata.MetadataEntry[0].TypedValue.Value, Equals, "value")
+	check.Assert(len(metadata.MetadataEntry), Equals, len(existingMetadata.MetadataEntry)+1)
+	found := false
+	for _, entry := range metadata.MetadataEntry {
+		if entry.Key == "key" && entry.TypedValue.Value == "value" {
+			found = true
+		}
+	}
+	check.Assert(found, Equals, true)
 
 	// Remove metadata
 	task, err = vm.DeleteMetadata("key")
@@ -124,7 +132,7 @@ func (vcd *TestVCD) Test_AddAndDeleteMetadataOnVm(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 	metadata, err = vm.GetMetadata()
 	check.Assert(err, IsNil)
-	check.Assert(len(metadata.MetadataEntry), Equals, 0)
+	check.Assert(len(metadata.MetadataEntry), Equals, len(existingMetadata.MetadataEntry))
 }
 
 func (vcd *TestVCD) Test_AddAndDeleteMetadataOnVAppTemplate(check *C) {
