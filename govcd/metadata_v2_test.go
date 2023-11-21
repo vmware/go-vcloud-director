@@ -720,13 +720,15 @@ type openApiMetadataCompatible interface {
 }
 
 type openApiMetadataTest struct {
-	Key                   string
-	Value                 interface{} // The type depends on the Type attribute
-	UpdateValue           interface{}
-	Type                  string
-	IsReadOnly            bool
-	Domain                string
-	ExpectErrorOnFirstAdd bool
+	Key                               string
+	Value                             interface{} // The type depends on the Type attribute
+	UpdateValue                       interface{}
+	Namespace                         string
+	Type                              string
+	IsReadOnly                        bool
+	IsPersistent                      bool
+	Domain                            string
+	ExpectErrorOnFirstAddMatchesRegex string
 }
 
 // testOpenApiMetadataCRUDActions performs a complete test of all use cases that metadata in OpenAPI can have,
@@ -740,81 +742,93 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 
 	var testCases = []openApiMetadataTest{
 		{
-			Key:                   "stringKey",
-			Value:                 "stringValue",
-			UpdateValue:           "stringValueUpdated",
-			Type:                  types.OpenApiMetadataStringEntry,
-			IsReadOnly:            false,
-			Domain:                "TENANT",
-			ExpectErrorOnFirstAdd: false,
+			Key:         "stringKey",
+			Value:       "stringValue",
+			UpdateValue: "stringValueUpdated",
+			Type:        types.OpenApiMetadataStringEntry,
+			IsReadOnly:  false,
+			Domain:      "TENANT",
+			Namespace:   "foo",
 		},
 		{
-			Key:                   "numberKey",
-			Value:                 "notANumber",
-			Type:                  types.OpenApiMetadataNumberEntry,
-			IsReadOnly:            false,
-			Domain:                "TENANT",
-			ExpectErrorOnFirstAdd: true,
+			Key:                               "numberKey",
+			Value:                             "notANumber",
+			Type:                              types.OpenApiMetadataNumberEntry,
+			IsReadOnly:                        false,
+			Domain:                            "TENANT",
+			Namespace:                         "foo",
+			ExpectErrorOnFirstAddMatchesRegex: "notANumber",
 		},
 		{
-			Key:                   "numberKey",
-			Value:                 float64(1),
-			UpdateValue:           float64(42),
-			Type:                  types.OpenApiMetadataNumberEntry,
-			IsReadOnly:            false,
-			Domain:                "TENANT",
-			ExpectErrorOnFirstAdd: false,
+			Key:         "numberKey",
+			Value:       float64(1),
+			UpdateValue: float64(42),
+			Type:        types.OpenApiMetadataNumberEntry,
+			IsReadOnly:  false,
+			Domain:      "TENANT",
+			Namespace:   "foo",
 		},
 		{
-			Key:                   "negativeNumberKey",
-			Value:                 float64(-1),
-			UpdateValue:           float64(-42),
-			Type:                  types.OpenApiMetadataNumberEntry,
-			IsReadOnly:            false,
-			Domain:                "TENANT",
-			ExpectErrorOnFirstAdd: false,
+			Key:         "negativeNumberKey",
+			Value:       float64(-1),
+			UpdateValue: float64(-42),
+			Type:        types.OpenApiMetadataNumberEntry,
+			IsReadOnly:  false,
+			Domain:      "TENANT",
+			Namespace:   "foo",
 		},
 		{
-			Key:                   "boolKey",
-			Value:                 "notABool",
-			Type:                  types.OpenApiMetadataBooleanEntry,
-			IsReadOnly:            false,
-			Domain:                "TENANT",
-			ExpectErrorOnFirstAdd: true,
+			Key:                               "boolKey",
+			Value:                             "notABool",
+			Type:                              types.OpenApiMetadataBooleanEntry,
+			IsReadOnly:                        false,
+			Domain:                            "TENANT",
+			Namespace:                         "foo",
+			ExpectErrorOnFirstAddMatchesRegex: "notABool",
 		},
 		{
-			Key:                   "boolKey",
-			Value:                 true,
-			UpdateValue:           false,
-			Type:                  types.OpenApiMetadataBooleanEntry,
-			IsReadOnly:            false,
-			Domain:                "TENANT",
-			ExpectErrorOnFirstAdd: false,
+			Key:         "boolKey",
+			Value:       true,
+			UpdateValue: false,
+			Type:        types.OpenApiMetadataBooleanEntry,
+			IsReadOnly:  false,
+			Domain:      "TENANT",
+			Namespace:   "foo",
 		},
 		{
-			Key:                   "providerKey",
-			Value:                 "providerValue",
-			UpdateValue:           "providerValueUpdated",
-			Type:                  types.OpenApiMetadataStringEntry,
-			IsReadOnly:            false,
-			Domain:                "PROVIDER",
-			ExpectErrorOnFirstAdd: false,
+			Key:         "providerKey",
+			Value:       "providerValue",
+			UpdateValue: "providerValueUpdated",
+			Type:        types.OpenApiMetadataStringEntry,
+			IsReadOnly:  false,
+			Domain:      "PROVIDER",
+			Namespace:   "foo",
 		},
 		{
-			Key:                   "readOnlyProviderKey",
-			Value:                 "readOnlyProviderValue",
-			Type:                  types.OpenApiMetadataStringEntry,
-			IsReadOnly:            true,
-			Domain:                "PROVIDER",
-			ExpectErrorOnFirstAdd: false,
+			Key:                               "readOnlyProviderKey",
+			Value:                             "readOnlyProviderValue",
+			Type:                              types.OpenApiMetadataStringEntry,
+			IsReadOnly:                        true,
+			Domain:                            "PROVIDER",
+			Namespace:                         "foo",
+			ExpectErrorOnFirstAddMatchesRegex: "VCD_META_CRUD_INVALID_FLAG",
 		},
 		{
-			Key:                   "readOnlyTenantKey",
-			Value:                 "readOnlyTenantValue",
-			Type:                  types.OpenApiMetadataStringEntry,
-			IsReadOnly:            true,
-			Domain:                "TENANT",
-			ExpectErrorOnFirstAdd: false,
+			Key:        "readOnlyTenantKey",
+			Value:      "readOnlyTenantValue",
+			Type:       types.OpenApiMetadataStringEntry,
+			IsReadOnly: true,
+			Domain:     "TENANT",
+			Namespace:  "foo",
+		},
+		{
+			Key:          "persistentKey",
+			Value:        "persistentValue",
+			Type:         types.OpenApiMetadataStringEntry,
+			IsReadOnly:   false,
+			IsPersistent: true,
+			Domain:       "TENANT",
+			Namespace:    "foo",
 		},
 	}
 
@@ -823,16 +837,20 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 		var createdEntry *types.OpenApiMetadataEntry
 		createdEntry, err = resource.AddMetadata(types.OpenApiMetadataEntry{
 			KeyValue: types.OpenApiMetadataKeyValue{
-				Domain: testCase.Domain,
-				Key:    testCase.Key,
+				Domain:    testCase.Domain,
+				Key:       testCase.Key,
+				Namespace: testCase.Namespace,
 				Value: types.OpenApiMetadataTypedValue{
 					Type:  testCase.Type,
 					Value: testCase.Value,
 				},
 			},
+			IsPersistent: testCase.IsPersistent,
+			IsReadOnly:   testCase.IsReadOnly,
 		})
-		if testCase.ExpectErrorOnFirstAdd {
-			check.Assert(err, NotNil)
+		if testCase.ExpectErrorOnFirstAddMatchesRegex != "" {
+			p := regexp.MustCompile("(?s)" + testCase.ExpectErrorOnFirstAddMatchesRegex)
+			check.Assert(p.MatchString(err.Error()), Equals, true)
 			continue
 		}
 		check.Assert(err, IsNil)
@@ -853,6 +871,9 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 		check.Assert(metadataValue.KeyValue.Value.Value, Equals, testCase.Value)
 		check.Assert(metadataValue.KeyValue.Key, Equals, testCase.Key)
 		check.Assert(metadataValue.KeyValue.Domain, Equals, testCase.Domain)
+		check.Assert(metadataValue.IsReadOnly, Equals, testCase.IsReadOnly)
+		check.Assert(metadataValue.IsPersistent, Equals, testCase.IsPersistent)
+		check.Assert(metadataValue.KeyValue.Namespace, Equals, testCase.Namespace)
 
 		if testCase.UpdateValue != nil {
 			updatedMetadata, err := resource.UpdateMetadata(testCase.Key, testCase.UpdateValue)
