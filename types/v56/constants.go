@@ -481,6 +481,9 @@ const (
 	OpenApiEndpointServiceAccountGrant = "deviceLookup/grant"
 	OpenApiEndpointTokens              = "tokens/"
 	OpenApiEndpointServiceAccounts     = "serviceAccounts/"
+
+	// OpenApiEndpointVgpuProfile is used to query vGPU profiles
+	OpenApiEndpointVgpuProfile = "vgpuProfiles"
 )
 
 // Header keys to run operations in tenant context

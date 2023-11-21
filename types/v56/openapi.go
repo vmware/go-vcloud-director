@@ -650,3 +650,13 @@ type VcenterDistributedSwitch struct {
 	BackingRef    OpenApiReference `json:"backingRef"`
 	VirtualCenter OpenApiReference `json:"virtualCenter"`
 }
+
+// VgpuProfile uniquely represents a type of vGPU
+// vGPU Profiles are fetched from your NVIDIA GRID GPU enabled Clusters in vCenter.
+type VgpuProfile struct {
+	Id                 string `json:"id"`
+	Name               string `json:"name"`
+	TenantFacingName   string `json:"tenantFacingName"`
+	Instructions       string `json:"instructions"`
+	AllowMultiplePerVm bool   `json:"allowMultiplePerVm"`
+}
