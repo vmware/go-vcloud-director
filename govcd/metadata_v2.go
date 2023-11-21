@@ -974,6 +974,7 @@ func mergeMetadataAndWait(client *Client, requestUri, name string, metadata map[
 }
 
 // updateOpenApiMetadata updates the metadata value from the given object.
+// Only the value of the entry can be updated. Re-create the entry in case you want to modify any of the other fields.
 func updateOpenApiMetadata(client *Client, endpoint, objectId, key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
 	result, err := getOpenApiMetadataByKey(client, endpoint, objectId, key)
 	if err != nil {
