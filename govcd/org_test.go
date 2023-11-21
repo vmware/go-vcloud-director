@@ -536,9 +536,7 @@ func (vcd *TestVCD) Test_OrgCreateCatalogWithStorageProfile(check *C) {
 	AddToCleanupList(check.TestName(), "catalog", vcd.org.Org.Name, check.TestName())
 	check.Assert(catalog.Catalog.Name, Equals, check.TestName())
 	check.Assert(catalog.Catalog.Description, Equals, TestCreateCatalogDesc)
-	task := NewTask(&vcd.client.Client)
-	task.Task = catalog.Catalog.Tasks.Task[0]
-	err = task.WaitTaskCompletion()
+	err = catalog.WaitForTasks()
 	check.Assert(err, IsNil)
 	org, err = vcd.client.GetOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)

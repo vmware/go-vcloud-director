@@ -200,6 +200,8 @@ func (vcd *TestVCD) Test_ComposeVApp(check *C) {
 	// Compose VApp
 	task, err := vcd.vdc.ComposeVApp(networks, vapptemplate, storageprofileref, TestComposeVapp, TestComposeVappDesc, true)
 	check.Assert(err, IsNil)
+	check.Assert(task.Task.Tasks, NotNil)
+	check.Assert(len(task.Task.Tasks.Task) > 0, Equals, true)
 	check.Assert(task.Task.Tasks.Task[0].OperationName, Equals, "vdcComposeVapp")
 	// Get VApp
 	vapp, err := vcd.vdc.GetVAppByName(TestComposeVapp, true)

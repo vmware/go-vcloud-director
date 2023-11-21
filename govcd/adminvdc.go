@@ -173,6 +173,9 @@ func (adminOrg *AdminOrg) CreateVdc(vdcConfiguration *types.VdcConfiguration) (T
 
 	// Return the task
 	task := NewTask(adminOrg.client)
+	if adminVdc.AdminVdc.Tasks == nil || len(adminVdc.AdminVdc.Tasks.Task) == 0 {
+		return Task{}, fmt.Errorf("no task found after VDC %s creation", vdcConfiguration.Name)
+	}
 	task.Task = adminVdc.AdminVdc.Tasks.Task[0]
 	return *task, nil
 }
@@ -376,6 +379,9 @@ func createVdcAsyncV97(adminOrg *AdminOrg, vdcConfiguration *types.VdcConfigurat
 
 	// Return the task
 	task := NewTask(adminOrg.client)
+	if adminVdc.AdminVdc.Tasks == nil || len(adminVdc.AdminVdc.Tasks.Task) == 0 {
+		return Task{}, fmt.Errorf("no task found after VDC %s creation", vdcConfiguration.Name)
+	}
 	task.Task = adminVdc.AdminVdc.Tasks.Task[0]
 	return *task, nil
 }
