@@ -654,7 +654,7 @@ type VcenterDistributedSwitch struct {
 // OpenApiMetadataEntry represents a metadata entry in VCD.
 type OpenApiMetadataEntry struct {
 	ID           string                  `json:"id,omitempty"`         // UUID for OpenApiMetadataEntry. This is immutable
-	IsPersistent bool                    `json:"persistent,omitempty"` // Persistent entries can be copied over on some entity operation, for example: Creating a copy of an Org VDC, capturing a vApp to a template, instantiating a catalog item as a VM, etc
+	IsPersistent bool                    `json:"persistent,omitempty"` // Persistent entries can be copied over on some entity operation, for example: Creating a copy of an Org VDC, capturing a vApp to a template, instantiating a catalog item as a VM, etc.
 	IsReadOnly   bool                    `json:"readOnly,omitempty"`   // The kind of level of access organizations of the entry’s domain have
 	KeyValue     OpenApiMetadataKeyValue `json:"keyValue,omitempty"`   // Contains core metadata entry data
 }
