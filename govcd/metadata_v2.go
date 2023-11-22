@@ -216,6 +216,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() (*types.Metadata
 	return getMetadata(openApiOrgVdcNetwork.client, href, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.Name)
 }
 
+// GetMetadata returns all the metadata from a DefinedEntity.
 func (rde *DefinedEntity) GetMetadata() ([]*types.OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	return getAllOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, nil)
