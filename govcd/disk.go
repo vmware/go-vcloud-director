@@ -94,6 +94,9 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 		return Task{}, errors.New("error cannot find disk creation task in API response")
 	}
 	task := NewTask(vdc.client)
+	if disk.Disk.Tasks == nil || len(disk.Disk.Tasks.Task) == 0 {
+		return Task{}, fmt.Errorf("no task found after disk %s creation", diskCreateParams.Disk.Name)
+	}
 	task.Task = disk.Disk.Tasks.Task[0]
 
 	util.Logger.Printf("[TRACE] AFTER CREATE DISK\n %s\n", prettyDisk(*disk.Disk))
