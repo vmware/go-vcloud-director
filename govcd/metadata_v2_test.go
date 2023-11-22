@@ -312,7 +312,7 @@ func (vcd *TestVCD) TestRdeMetadata(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(rde, NotNil)
 
-	err = rde.Resolve() // State will be RESOLUTION_ERROR but we don't care. We resolve to be able to delete it later.
+	err = rde.Resolve() // State will be RESOLUTION_ERROR, but we don't care. We resolve to be able to delete it later.
 	check.Assert(err, IsNil)
 
 	// The RDE can't be deleted until rde.Resolve() is called
@@ -713,10 +713,10 @@ func assertMetadata(check *C, given *types.Metadata, expected metadataTest, expe
 // openApiMetadataCompatible allows centralizing and generalizing the tests for OpenAPI metadata compatible resources.
 type openApiMetadataCompatible interface {
 	GetMetadata() ([]*types.OpenApiMetadataEntry, error)
-	GetMetadataByKey(key string) (*types.OpenApiMetadataEntry, error)
+	GetMetadataByKey(namespace, key string) (*types.OpenApiMetadataEntry, error)
 	AddMetadata(metadataEntry types.OpenApiMetadataEntry) (*types.OpenApiMetadataEntry, error)
-	UpdateMetadata(key string, value interface{}) (*types.OpenApiMetadataEntry, error)
-	DeleteMetadata(key string) error
+	UpdateMetadata(namespace, key string, value interface{}) (*types.OpenApiMetadataEntry, error)
+	DeleteMetadata(namespace, key string) error
 }
 
 type openApiMetadataTest struct {
@@ -863,7 +863,7 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 		check.Assert(err, IsNil)
 		check.Assert(len(metadata), Equals, existingMetaDataCount+1)
 
-		metadataValue, err := resource.GetMetadataByKey(createdEntry.KeyValue.Key)
+		metadataValue, err := resource.GetMetadataByKey(createdEntry.KeyValue.Namespace, createdEntry.KeyValue.Key)
 		check.Assert(err, IsNil)
 		check.Assert(metadataValue, NotNil)
 		check.Assert(metadataValue.KeyValue, NotNil)
@@ -876,7 +876,7 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 		check.Assert(metadataValue.KeyValue.Namespace, Equals, testCase.Namespace)
 
 		if testCase.UpdateValue != nil {
-			updatedMetadata, err := resource.UpdateMetadata(testCase.Key, testCase.UpdateValue)
+			updatedMetadata, err := resource.UpdateMetadata(testCase.Namespace, testCase.Key, testCase.UpdateValue)
 			check.Assert(err, IsNil)
 			check.Assert(updatedMetadata, NotNil)
 			check.Assert(updatedMetadata.KeyValue.Key, Equals, testCase.Key)
@@ -884,11 +884,11 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 			check.Assert(updatedMetadata.KeyValue.Value.Value, Equals, testCase.UpdateValue)
 		}
 
-		err = resource.DeleteMetadata(metadataValue.KeyValue.Key)
+		err = resource.DeleteMetadata(metadataValue.KeyValue.Namespace, metadataValue.KeyValue.Key)
 		check.Assert(err, IsNil)
 
 		// Check if metadata was deleted correctly
-		metadataValue, err = resource.GetMetadataByKey(metadataValue.KeyValue.Key)
+		metadataValue, err = resource.GetMetadataByKey(metadataValue.KeyValue.Namespace, metadataValue.KeyValue.Key)
 		check.Assert(err, NotNil)
 		check.Assert(metadataValue, IsNil)
 		check.Assert(true, Equals, ContainsNotFound(err))

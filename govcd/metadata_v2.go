@@ -117,10 +117,11 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadataByKey(key string, i
 	return getMetadataByKey(openApiOrgVdcNetwork.client, href, openApiOrgVdcNetwork.OpenApiOrgVdcNetwork.Name, key, isSystem)
 }
 
-// GetMetadataByKey returns DefinedEntity metadata corresponding to the given key and domain.
-func (rde *DefinedEntity) GetMetadataByKey(key string) (*types.OpenApiMetadataEntry, error) {
+// GetMetadataByKey returns DefinedEntity metadata corresponding to the given namespace and key.
+// The namespace is only needed when there's more than one entry with the same key.
+func (rde *DefinedEntity) GetMetadataByKey(namespace, key string) (*types.OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return getOpenApiMetadataByKey(rde.client, endpoint, rde.DefinedEntity.ID, key)
+	return getOpenApiMetadataByKey(rde.client, endpoint, rde.DefinedEntity.ID, namespace, key)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -588,11 +589,12 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadataWithMetadataValue
 	return task.WaitTaskCompletion()
 }
 
-// UpdateMetadata updates the DefinedEntity metadata corresponding to the given key with the given value.
+// UpdateMetadata updates the DefinedEntity metadata corresponding to the given namespace and key with the given value.
+// The namespace is only needed when there's more than one entry with the same key.
 // Only the value of the entry can be updated. Re-create the entry in case you want to modify any of the other fields.
-func (rde *DefinedEntity) UpdateMetadata(key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
+func (rde *DefinedEntity) UpdateMetadata(namespace, key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return updateOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, key, value)
+	return updateOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, namespace, key, value)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -756,10 +758,11 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntryWithDomain(
 	return task.WaitTaskCompletion()
 }
 
-// DeleteMetadata deletes metadata from the receiver DefinedEntity with the given key.
-func (rde *DefinedEntity) DeleteMetadata(key string) error {
+// DeleteMetadata deletes metadata from the receiver DefinedEntity with the given namespace and key.
+// The namespace is only needed when there's more than one entry with the same key.
+func (rde *DefinedEntity) DeleteMetadata(namespace, key string) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return deleteOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, key)
+	return deleteOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, namespace, key)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -796,7 +799,7 @@ func getMetadataByKey(client *Client, requestUri, name, key string, isSystem boo
 
 // getOpenApiMetadataByKey is a generic function to retrieve a unique metadata entry from any VCD object using its ID,
 // the metadata key and the given OpenAPI endpoint.
-func getOpenApiMetadataByKey(client *Client, endpoint, objectId string, key string) (*types.OpenApiMetadataEntry, error) {
+func getOpenApiMetadataByKey(client *Client, endpoint, objectId string, namespace, key string) (*types.OpenApiMetadataEntry, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("keyValue.key==%s", key))
 	metadata, err := getAllOpenApiMetadata(client, endpoint, objectId, queryParameters)
@@ -808,8 +811,18 @@ func getOpenApiMetadataByKey(client *Client, endpoint, objectId string, key stri
 		return nil, fmt.Errorf("%s could not find the metadata associated to object %s", ErrorEntityNotFound, objectId)
 	}
 
+	// There's more than one entry with same key, the namespace needs to be compared to filter.
 	if len(metadata) > 1 {
-		return nil, fmt.Errorf("found more than 1 metadata entries associated to object %s", objectId)
+		var filteredMetadata []*types.OpenApiMetadataEntry
+		for _, entry := range metadata {
+			if entry.KeyValue.Namespace == namespace {
+				filteredMetadata = append(filteredMetadata, entry)
+			}
+		}
+		if len(filteredMetadata) > 1 {
+			return nil, fmt.Errorf("found more than 1 metadata entries associated to object %s", objectId)
+		}
+		return filteredMetadata[0], nil
 	}
 
 	return metadata[0], nil
@@ -977,8 +990,8 @@ func mergeMetadataAndWait(client *Client, requestUri, name string, metadata map[
 
 // updateOpenApiMetadata updates the metadata value from the given object.
 // Only the value of the entry can be updated. Re-create the entry in case you want to modify any of the other fields.
-func updateOpenApiMetadata(client *Client, endpoint, objectId, key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
-	result, err := getOpenApiMetadataByKey(client, endpoint, objectId, key)
+func updateOpenApiMetadata(client *Client, endpoint, objectId, namespace, key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
+	result, err := getOpenApiMetadataByKey(client, endpoint, objectId, namespace, key)
 	if err != nil {
 		return nil, err
 	}
@@ -1034,8 +1047,8 @@ func deleteMetadataAndWait(client *Client, requestUri, name, key string, isSyste
 }
 
 // deleteOpenApiMetadata deletes one metadata entry with the given key from the VCD object with given ID.
-func deleteOpenApiMetadata(client *Client, endpoint, objectId, key string) error {
-	metadataEntry, err := getOpenApiMetadataByKey(client, endpoint, objectId, key)
+func deleteOpenApiMetadata(client *Client, endpoint, objectId, namespace, key string) error {
+	metadataEntry, err := getOpenApiMetadataByKey(client, endpoint, objectId, namespace, key)
 	if err != nil {
 		return err
 	}
