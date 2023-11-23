@@ -667,8 +667,8 @@ type OpenApiMetadataKeyValue struct {
 	Namespace string                    `json:"namespace,omitempty"` // Namespace of the metadata entry
 }
 
-// OpenApiMetadataTypedValue asd
+// OpenApiMetadataTypedValue the type and value of the metadata entry.
 type OpenApiMetadataTypedValue struct {
-	Value interface{} `json:"value,omitempty"` // The type is any because it depends on the Type field.
+	Value interface{} `json:"value,omitempty"` // The Value is anything because it depends on the Type field.
 	Type  string      `json:"type,omitempty"`
 }
