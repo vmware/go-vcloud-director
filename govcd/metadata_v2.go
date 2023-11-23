@@ -121,7 +121,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadataByKey(key string, i
 // The namespace is only needed when there's more than one entry with the same key.
 func (rde *DefinedEntity) GetMetadataByKey(namespace, key string) (*types.OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return getOpenApiMetadataByKey(rde.client, endpoint, rde.DefinedEntity.ID, namespace, key)
+	return getOpenApiMetadataByKey(rde.client, endpoint, rde.DefinedEntity.ID, rde.DefinedEntity.Name, "entity", namespace, key)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) GetMetadata() (*types.Metadata
 // GetMetadata returns all the metadata from a DefinedEntity.
 func (rde *DefinedEntity) GetMetadata() ([]*types.OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return getAllOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, nil)
+	return getAllOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, rde.DefinedEntity.Name, "entity", nil)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -398,7 +398,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) AddMetadataEntryWithVisibility
 // AddMetadata adds metadata to the receiver DefinedEntity.
 func (rde *DefinedEntity) AddMetadata(metadataEntry types.OpenApiMetadataEntry) (*types.OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return addOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, metadataEntry)
+	return addOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, rde.DefinedEntity.Name, "entity", metadataEntry)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -594,7 +594,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) MergeMetadataWithMetadataValue
 // Only the value of the entry can be updated. Re-create the entry in case you want to modify any of the other fields.
 func (rde *DefinedEntity) UpdateMetadata(namespace, key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return updateOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, namespace, key, value)
+	return updateOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, rde.DefinedEntity.Name, "entity", namespace, key, value)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -762,7 +762,7 @@ func (openApiOrgVdcNetwork *OpenApiOrgVdcNetwork) DeleteMetadataEntryWithDomain(
 // The namespace is only needed when there's more than one entry with the same key.
 func (rde *DefinedEntity) DeleteMetadata(namespace, key string) error {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return deleteOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, namespace, key)
+	return deleteOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, rde.DefinedEntity.Name, "entity", namespace, key)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -794,15 +794,15 @@ func getMetadataByKey(client *Client, requestUri, name, key string, isSystem boo
 	if err != nil {
 		return nil, err
 	}
-	return filterSingleMetadataEntry(key, requestUri, name, metadata, client.IgnoredMetadata)
+	return filterSingleXmlMetadataEntry(key, requestUri, name, metadata, client.IgnoredMetadata)
 }
 
 // getOpenApiMetadataByKey is a generic function to retrieve a unique metadata entry from any VCD object using its ID,
 // the metadata key and the given OpenAPI endpoint.
-func getOpenApiMetadataByKey(client *Client, endpoint, objectId string, namespace, key string) (*types.OpenApiMetadataEntry, error) {
+func getOpenApiMetadataByKey(client *Client, endpoint, objectId, objectName, objectType, namespace, key string) (*types.OpenApiMetadataEntry, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("keyValue.key==%s", key))
-	metadata, err := getAllOpenApiMetadata(client, endpoint, objectId, queryParameters)
+	metadata, err := getAllOpenApiMetadata(client, endpoint, objectId, objectName, objectType, queryParameters)
 	if err != nil {
 		return nil, err
 	}
@@ -822,10 +822,10 @@ func getOpenApiMetadataByKey(client *Client, endpoint, objectId string, namespac
 		if len(filteredMetadata) > 1 {
 			return nil, fmt.Errorf("found more than 1 metadata entries associated to object %s", objectId)
 		}
-		return filteredMetadata[0], nil
+		return filterSingleOpenApiMetadataEntry(objectType, objectName, filteredMetadata[0], client.IgnoredMetadata)
 	}
 
-	return metadata[0], nil
+	return filterSingleOpenApiMetadataEntry(objectType, objectName, metadata[0], client.IgnoredMetadata)
 }
 
 // getMetadata is a generic function to retrieve metadata from VCD
@@ -836,12 +836,12 @@ func getMetadata(client *Client, requestUri, name string) (*types.Metadata, erro
 	if err != nil {
 		return nil, err
 	}
-	return filterMetadata(metadata, requestUri, name, client.IgnoredMetadata)
+	return filterXmlMetadata(metadata, requestUri, name, client.IgnoredMetadata)
 }
 
 // getAllOpenApiMetadata is a generic function to retrieve all metadata from any VCD object using its ID and the given OpenAPI endpoint.
 // It supports query parameters to input, for example, filtering options.
-func getAllOpenApiMetadata(client *Client, endpoint, objectId string, queryParameters url.Values) ([]*types.OpenApiMetadataEntry, error) {
+func getAllOpenApiMetadata(client *Client, endpoint, objectId, objectName, objectType string, queryParameters url.Values) ([]*types.OpenApiMetadataEntry, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -858,7 +858,18 @@ func getAllOpenApiMetadata(client *Client, endpoint, objectId string, queryParam
 		return nil, err
 	}
 
-	return allMetadata, nil
+	var filteredMetadata []*types.OpenApiMetadataEntry
+	for _, entry := range allMetadata {
+		_, err = filterSingleOpenApiMetadataEntry(objectType, objectName, entry, client.IgnoredMetadata)
+		if err != nil {
+			if strings.Contains(err.Error(), "ignored") {
+				continue
+			}
+			return nil, err
+		}
+		filteredMetadata = append(filteredMetadata, entry)
+	}
+	return filteredMetadata, nil
 }
 
 // addMetadata adds metadata to an entity.
@@ -892,7 +903,7 @@ func addMetadata(client *Client, requestUri, name, key, value, typedValue, visib
 		}
 	}
 
-	_, err := filterSingleMetadataEntry(key, requestUri, name, newMetadata, client.IgnoredMetadata)
+	_, err := filterSingleXmlMetadataEntry(key, requestUri, name, newMetadata, client.IgnoredMetadata)
 	if err != nil {
 		return Task{}, err
 	}
@@ -921,7 +932,12 @@ func addMetadataAndWait(client *Client, requestUri, name, key, value, typedValue
 }
 
 // addOpenApiMetadata adds one metadata entry to the VCD object with given ID
-func addOpenApiMetadata(client *Client, endpoint, objectId string, metadataEntry types.OpenApiMetadataEntry) (*types.OpenApiMetadataEntry, error) {
+func addOpenApiMetadata(client *Client, endpoint, objectId, objectName, objectType string, metadataEntry types.OpenApiMetadataEntry) (*types.OpenApiMetadataEntry, error) {
+	_, err := filterSingleOpenApiMetadataEntry(objectType, objectName, &metadataEntry, client.IgnoredMetadata)
+	if err != nil {
+		return nil, err
+	}
+
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -965,7 +981,7 @@ func mergeAllMetadata(client *Client, requestUri, name string, metadata map[stri
 	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata"
 
-	filteredMetadata, err := filterMetadata(newMetadata, requestUri, name, client.IgnoredMetadata)
+	filteredMetadata, err := filterXmlMetadata(newMetadata, requestUri, name, client.IgnoredMetadata)
 	if err != nil {
 		return Task{}, err
 	}
@@ -990,8 +1006,8 @@ func mergeMetadataAndWait(client *Client, requestUri, name string, metadata map[
 
 // updateOpenApiMetadata updates the metadata value from the given object.
 // Only the value of the entry can be updated. Re-create the entry in case you want to modify any of the other fields.
-func updateOpenApiMetadata(client *Client, endpoint, objectId, namespace, key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
-	result, err := getOpenApiMetadataByKey(client, endpoint, objectId, namespace, key)
+func updateOpenApiMetadata(client *Client, endpoint, objectId, objectName, objectType, namespace, key string, value interface{}) (*types.OpenApiMetadataEntry, error) {
+	result, err := getOpenApiMetadataByKey(client, endpoint, objectId, objectName, objectType, namespace, key)
 	if err != nil {
 		return nil, err
 	}
@@ -1047,8 +1063,8 @@ func deleteMetadataAndWait(client *Client, requestUri, name, key string, isSyste
 }
 
 // deleteOpenApiMetadata deletes one metadata entry with the given key from the VCD object with given ID.
-func deleteOpenApiMetadata(client *Client, endpoint, objectId, namespace, key string) error {
-	metadataEntry, err := getOpenApiMetadataByKey(client, endpoint, objectId, namespace, key)
+func deleteOpenApiMetadata(client *Client, endpoint, objectId, objectName, objectType, namespace, key string) error {
+	metadataEntry, err := getOpenApiMetadataByKey(client, endpoint, objectId, objectName, objectType, namespace, key)
 	if err != nil {
 		return err
 	}
@@ -1102,9 +1118,39 @@ func (im IgnoredMetadata) String() string {
 	return fmt.Sprintf("IgnoredMetadata(ObjectType=%v, ObjectName=%v, KeyRegex=%v, ValueRegex=%v)", objectType, objectName, im.KeyRegex, im.ValueRegex)
 }
 
-// filterMetadata filters all metadata entries, given a slice of metadata that needs to be ignored. It doesn't
+type normalisedMetadata struct {
+	ObjectType string
+	ObjectName string
+	Key        string
+	Value      string
+}
+
+func normaliseXmlMetadata(key, href, objectName string, metadataEntry *types.MetadataValue) (*normalisedMetadata, error) {
+	objectType, err := getMetadataObjectTypeFromHref(href)
+	if err != nil {
+		return nil, err
+	}
+
+	return &normalisedMetadata{
+		ObjectType: objectType,
+		ObjectName: objectName,
+		Key:        key,
+		Value:      metadataEntry.TypedValue.Value,
+	}, nil
+}
+
+func normaliseOpenApiMetadata(objectType, name string, metadataEntry *types.OpenApiMetadataEntry) (*normalisedMetadata, error) {
+	return &normalisedMetadata{
+		ObjectType: objectType,
+		ObjectName: name,
+		Key:        metadataEntry.KeyValue.Key,
+		Value:      fmt.Sprintf("%v", metadataEntry.KeyValue.Value.Value),
+	}, nil
+}
+
+// filterXmlMetadata filters all metadata entries, given a slice of metadata that needs to be ignored. It doesn't
 // alter the input metadata, but returns a copy of the filtered metadata.
-func filterMetadata(allMetadata *types.Metadata, href, objectName string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
+func filterXmlMetadata(allMetadata *types.Metadata, href, objectName string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
 	if len(metadataToIgnore) == 0 {
 		return allMetadata, nil
 	}
@@ -1121,43 +1167,67 @@ func filterMetadata(allMetadata *types.Metadata, href, objectName string, metada
 
 	var filteredMetadata []*types.MetadataEntry
 	for _, originalEntry := range allMetadata.MetadataEntry {
-		_, err := filterSingleMetadataEntry(originalEntry.Key, href, objectName, &types.MetadataValue{Domain: originalEntry.Domain, TypedValue: originalEntry.TypedValue}, metadataToIgnore)
-		if err == nil || !strings.Contains(err.Error(), "ignored") {
-			filteredMetadata = append(filteredMetadata, originalEntry)
+		_, err := filterSingleXmlMetadataEntry(originalEntry.Key, href, objectName, &types.MetadataValue{Domain: originalEntry.Domain, TypedValue: originalEntry.TypedValue}, metadataToIgnore)
+		if err != nil {
+			if strings.Contains(err.Error(), "ignored") {
+				continue
+			}
+			return nil, err
 		}
+		filteredMetadata = append(filteredMetadata, originalEntry)
 	}
 	result.MetadataEntry = filteredMetadata
 	return result, nil
 }
 
-// filterSingleMetadataEntry filters a single metadata entry given a slice of metadata that needs to be ignored. It doesn't
-// alter the input metadata, but returns a copy of the filtered metadata.
-func filterSingleMetadataEntry(key, href, objectName string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
-	if len(metadataToIgnore) == 0 {
-		return metadataEntry, nil
-	}
-
-	objectType, err := getMetadataObjectTypeFromHref(href)
+func filterSingleXmlMetadataEntry(key, href, objectName string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
+	normalisedEntry, err := normaliseXmlMetadata(key, href, objectName, metadataEntry)
 	if err != nil {
 		return nil, err
 	}
+	isFiltered := filterSingleGenericMetadataEntry(normalisedEntry, metadataToIgnore)
+	if isFiltered {
+		return nil, fmt.Errorf("the metadata entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
+	}
+	return metadataEntry, nil
+}
+
+func filterSingleOpenApiMetadataEntry(objectType, objectName string, metadataEntry *types.OpenApiMetadataEntry, metadataToIgnore []IgnoredMetadata) (*types.OpenApiMetadataEntry, error) {
+	normalisedEntry, err := normaliseOpenApiMetadata(objectType, objectName, metadataEntry)
+	if err != nil {
+		return nil, err
+	}
+	isFiltered := filterSingleGenericMetadataEntry(normalisedEntry, metadataToIgnore)
+	if isFiltered {
+		return nil, fmt.Errorf("the metadata entry with key '%s' and value '%v' is being ignored", metadataEntry.KeyValue.Key, metadataEntry.KeyValue.Value.Value)
+	}
+	return metadataEntry, nil
+}
+
+// filterSingleGenericMetadataEntry filters a single metadata entry given a slice of metadata that needs to be ignored. It doesn't
+// alter the input metadata, but returns a copy of the filtered metadata.
+func filterSingleGenericMetadataEntry(normalisedMetadataEntry *normalisedMetadata, metadataToIgnore []IgnoredMetadata) bool {
+	if len(metadataToIgnore) == 0 {
+		return false
+	}
+
 	for _, entryToIgnore := range metadataToIgnore {
 		if entryToIgnore.ObjectType == nil && entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil {
 			continue
 		}
-		util.Logger.Printf("[DEBUG] Comparing metadata with key '%s' with ignored metadata filter '%s'", key, entryToIgnore)
+		util.Logger.Printf("[DEBUG] Comparing metadata with key '%s' with ignored metadata filter '%s'", normalisedMetadataEntry.Key, entryToIgnore)
 		// We apply an optimistic approach here to simplify the conditions, so the metadata entry will always be ignored unless the filters
 		// tell otherwise, that is, if they are nil (not all of them as per the condition above), if they're empty or if they don't match.
 		// All the filtering options (type, name, keyRegex and valueRegex) must compute to true for the metadata to be ignored.
-		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == objectType) &&
-			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(objectName) == "" || *entryToIgnore.ObjectName == objectName) &&
-			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) &&
-			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) {
-			util.Logger.Printf("[DEBUG] the metadata entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
-			return nil, fmt.Errorf("the metadata entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
+		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == normalisedMetadataEntry.ObjectType) &&
+			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(normalisedMetadataEntry.ObjectName) == "" || *entryToIgnore.ObjectName == normalisedMetadataEntry.ObjectName) &&
+			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(normalisedMetadataEntry.Key)) &&
+			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(normalisedMetadataEntry.Value)) {
+			util.Logger.Printf("[DEBUG] the metadata entry with key '%s' and value '%v' is being ignored", normalisedMetadataEntry.ObjectType, normalisedMetadataEntry.Value)
+			return true
 		}
 	}
-	return metadataEntry, nil
+	return false
 }
 
 // filterMetadataToDelete filters a metadata entry that is going to be deleted, given a slice of metadata that needs to be ignored.
