@@ -19,16 +19,16 @@ type OpenApiMetadataEntry struct {
 	parentEndpoint string // This is the endpoint of the object that has the metadata entries
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Specific objects compatible with metadata
+// ---------------------------------------------------------------------------------------------------------------------
+
 // GetMetadata returns all the metadata from a DefinedEntity.
 // NOTE: The obtained metadata doesn't have ETags, use GetMetadataById or GetMetadataByKey to obtain a ETag for a specific entry.
 func (rde *DefinedEntity) GetMetadata() ([]*OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
 	return getAllOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, nil)
 }
-
-// ---------------------------------------------------------------------------------------------------------------------
-// Specific objects compatible with metadata
-// ---------------------------------------------------------------------------------------------------------------------
 
 // GetMetadataByKey returns a unique DefinedEntity metadata entry corresponding to the given domain, namespace and key.
 // The domain and namespace are only needed when there's more than one entry with the same key.
@@ -118,6 +118,7 @@ func (entry *OpenApiMetadataEntry) Delete() error {
 
 	entry.Etag = ""
 	entry.parentEndpoint = ""
+	entry.href = ""
 	entry.MetadataEntry = &types.OpenApiMetadataEntry{}
 	return nil
 }

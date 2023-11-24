@@ -197,7 +197,7 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 		found := false
 		for _, entry := range metadata {
 			if entry.MetadataEntry.ID == createdEntry.MetadataEntry.ID {
-				check.Assert(entry.MetadataEntry, DeepEquals, createdEntry.MetadataEntry)
+				check.Assert(*entry.MetadataEntry, DeepEquals, *createdEntry.MetadataEntry)
 				found = true
 				break
 			}
@@ -208,7 +208,7 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 		check.Assert(err, IsNil)
 		check.Assert(metadataByKey, NotNil)
 		check.Assert(metadataByKey.MetadataEntry, NotNil)
-		check.Assert(metadataByKey.MetadataEntry, DeepEquals, createdEntry.MetadataEntry)
+		check.Assert(*metadataByKey.MetadataEntry, DeepEquals, *createdEntry.MetadataEntry)
 		check.Assert(metadataByKey.Etag, Equals, createdEntry.Etag)
 		check.Assert(metadataByKey.parentEndpoint, Equals, createdEntry.parentEndpoint)
 		check.Assert(metadataByKey.href, Equals, createdEntry.href)
@@ -217,7 +217,7 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 		check.Assert(err, IsNil)
 		check.Assert(metadataById, NotNil)
 		check.Assert(metadataById.MetadataEntry, NotNil)
-		check.Assert(metadataById.MetadataEntry, DeepEquals, metadataById.MetadataEntry)
+		check.Assert(*metadataById.MetadataEntry, DeepEquals, *metadataById.MetadataEntry)
 		check.Assert(metadataById.Etag, Equals, metadataByKey.Etag)
 		check.Assert(metadataById.parentEndpoint, Equals, metadataByKey.parentEndpoint)
 		check.Assert(metadataById.href, Equals, metadataByKey.href)
@@ -243,6 +243,10 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 
 		err = metadataById.Delete()
 		check.Assert(err, IsNil)
+		check.Assert(*metadataById.MetadataEntry, DeepEquals, types.OpenApiMetadataEntry{})
+		check.Assert(metadataById.Etag, Equals, "")
+		check.Assert(metadataById.href, Equals, "")
+		check.Assert(metadataById.parentEndpoint, Equals, "")
 
 		// Check if metadata was deleted correctly
 		deletedMetadata, err := resource.GetMetadataById(metadataByKey.MetadataEntry.ID)
