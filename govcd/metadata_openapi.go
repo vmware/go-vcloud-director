@@ -59,7 +59,7 @@ func (rde *DefinedEntity) AddMetadata(metadataEntry types.OpenApiMetadataEntry) 
 // Only the value and persistence of the entry can be updated. Re-create the entry in case you want to modify any of the other fields.
 func (entry *OpenApiMetadataEntry) Update(value interface{}, persistent bool) error {
 	if entry.MetadataEntry.ID == "" {
-		return fmt.Errorf("ID of the receiver Metadata entry is empty")
+		return fmt.Errorf("ID of the receiver metadata entry is empty")
 	}
 
 	payload := types.OpenApiMetadataEntry{
@@ -98,7 +98,7 @@ func (entry *OpenApiMetadataEntry) Update(value interface{}, persistent bool) er
 // Delete deletes the receiver metadata entry.
 func (entry *OpenApiMetadataEntry) Delete() error {
 	if entry.MetadataEntry.ID == "" {
-		return fmt.Errorf("ID of the receiver Metadata entry is empty")
+		return fmt.Errorf("ID of the receiver metadata entry is empty")
 	}
 
 	apiVersion, err := entry.client.getOpenApiHighestElevatedVersion(entry.parentEndpoint)
@@ -196,6 +196,10 @@ func getOpenApiMetadataByKey(client *Client, endpoint, objectId string, domain, 
 
 // getOpenApiMetadataById is a generic function to retrieve a unique metadata entry from any VCD object using its unique ID.
 func getOpenApiMetadataById(client *Client, endpoint, objectId, metadataId string) (*OpenApiMetadataEntry, error) {
+	if metadataId == "" {
+		return nil, fmt.Errorf("input metadata entry ID is empty")
+	}
+
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
