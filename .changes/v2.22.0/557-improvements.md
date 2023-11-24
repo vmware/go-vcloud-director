@@ -1,2 +1,2 @@
-* Added metadata support to Runtime Defined Entities with methods `rde.GetMetadataByKey`, `rde.GetMetadata`, `rde.AddMetadata`,
-  `rde.UpdateMetadata` and `rde.DeleteMetadata` [GH-557]
+* Added metadata support to Runtime Defined Entities with methods `rde.GetMetadataByKey`, `rde.GetMetadataById` `rde.GetMetadata`,
+  `rde.AddMetadata` and generic metadata methods `openApiMetadataEntry.Update` and `openApiMetadataEntry.Delete` [GH-557]
