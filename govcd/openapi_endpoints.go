@@ -38,6 +38,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointQosProfiles:                "36.2", // VCD 10.3.2+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayQos:             "36.2", // VCD 10.3.2+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDhcpForwarder:   "36.1", // VCD 10.3.1+ (NSX-T only)
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns:             "37.0", // VCD 10.4.0+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayL2VpnTunnel:     "35.0", // VCD 10.2.0+ (NSX-T only)
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewaySlaacProfile:    "35.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayStaticRoutes:    "37.0", // VCD 10.4.0+ (NSX-T only)
@@ -208,9 +209,17 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"35.0", // Introduced support
 		"37.1", // Exposes computed field `UsingIpSpace` in `types.EdgeGatewayUplinks`
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns: {
+		"37.0", // Introduced support
+		"38.0", // New field SnatRuleExternalIpAddress
+	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinksAllocate: {
 		//"37.1", // Introduced support
 		"37.2", // Adds 'value' field
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces: {
+		//"37.1", // Introduced support
+		"38.0", // Adds 'DefaultGatewayServiceConfig' structure for firewall and NAT rule creation
 	},
 }
 
