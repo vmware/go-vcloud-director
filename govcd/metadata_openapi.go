@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -52,7 +52,7 @@ func (rde *DefinedEntity) AddMetadata(metadataEntry types.OpenApiMetadataEntry) 
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Generic methods for OpenAPI metadata
+// Metadata Entry methods for OpenAPI metadata
 // ---------------------------------------------------------------------------------------------------------------------
 
 // Update updates the metadata value from the receiver entry.
@@ -124,7 +124,7 @@ func (entry *OpenApiMetadataEntry) Delete() error {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Generic private functions
+// OpenAPI Metadata private functions
 // ---------------------------------------------------------------------------------------------------------------------
 
 // getAllOpenApiMetadata is a generic function to retrieve all metadata from any VCD object using its ID and the given OpenAPI endpoint.
