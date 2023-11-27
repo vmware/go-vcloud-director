@@ -39,27 +39,31 @@ func (client *VCDClient) GetVgpuProfileByTenantFacingName(tenantFacingName strin
 	return getVgpuProfileByFilter("tenantFacingName", tenantFacingName, &client.Client)
 }
 
-func (profile *VgpuProfile) Update(newTenantFacingName string, newInstructions string) (*VgpuProfile, error) {
+func (profile *VgpuProfile) Update(newProfile *types.VgpuProfile) error {
 	client := profile.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVgpuProfile
 	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, "/", profile.VgpuProfile.Id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	profile.VgpuProfile.TenantFacingName = newTenantFacingName
-	profile.VgpuProfile.Instructions = newInstructions
-	err = client.OpenApiPutItem(minimumApiVersion, urlRef, nil, profile.VgpuProfile, &profile.VgpuProfile, nil)
+	err = client.OpenApiPutItemSync(minimumApiVersion, urlRef, nil, newProfile, nil, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return profile, nil
+	// We need to refresh here, as PUT returns the original struct instead of the updated one
+	err = profile.Refresh()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (profile *VgpuProfile) Refresh() error {
