@@ -1701,6 +1701,29 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
+	case "nsxtEdgeGatewayDns":
+		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		dns, err := edge.GetDnsConfig()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] %s \n", err)
+		}
+
+		if dns.NsxtEdgeGatewayDns.Enabled == false && dns.NsxtEdgeGatewayDns.DefaultForwarderZone == nil {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		err = dns.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+		return
 	case "slaacProfile":
 		edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(entity.Name)
 		if err != nil {

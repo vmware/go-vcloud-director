@@ -112,7 +112,6 @@ func (vcd *TestVCD) Test_IpSpaceShared(check *C) {
 		},
 	}
 	ipSpaceChecks(vcd, check, ipSpaceConfig)
-
 }
 
 func (vcd *TestVCD) Test_IpSpacePrivate(check *C) {
@@ -216,6 +215,20 @@ func ipSpaceChecks(vcd *TestVCD, check *C, ipSpaceConfig *types.IpSpace) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedIpSpace, NotNil)
 	check.Assert(len(ipSpaceConfig.IPSpaceInternalScope), Equals, len(updatedIpSpace.IpSpace.IPSpaceInternalScope))
+
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.0") {
+		fmt.Println("# Testing NAT and Firewall rule autocreation flags for VCD 10.5.0+")
+		ipSpaceConfig.Name = check.TestName() + "-GatewayServiceConfig"
+		ipSpaceConfig.DefaultGatewayServiceConfig = &types.IpSpaceDefaultGatewayServiceConfig{
+			EnableDefaultFirewallRuleCreation: true,
+			EnableDefaultNoSnatRuleCreation:   true,
+			EnableDefaultSnatRuleCreation:     true,
+		}
+
+		updatedIpSpace, err = updatedIpSpace.Update(ipSpaceConfig)
+		check.Assert(err, IsNil)
+		check.Assert(updatedIpSpace.IpSpace.DefaultGatewayServiceConfig, DeepEquals, ipSpaceConfig.DefaultGatewayServiceConfig)
+	}
 
 	err = createdIpSpace.Delete()
 	check.Assert(err, IsNil)
