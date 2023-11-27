@@ -147,20 +147,9 @@ func getAllOpenApiMetadata(client *Client, endpoint, objectId, objectName, objec
 		return nil, err
 	}
 
-	// Wrap all type.OpenApiMetadataEntry into OpenApiMetadataEntry types with client
-	results := make([]*OpenApiMetadataEntry, len(allMetadata))
-	for i := range allMetadata {
-		results[i] = &OpenApiMetadataEntry{
-			MetadataEntry:  allMetadata[i],
-			client:         client,
-			href:           fmt.Sprintf("%s/%s", urlRef.String(), allMetadata[i].ID),
-			parentEndpoint: endpoint,
-		}
-	}
-
-	var filteredMetadata []*OpenApiMetadataEntry
-	for _, entry := range results {
-		_, err = filterSingleOpenApiMetadataEntry(objectType, objectName, entry.MetadataEntry, client.IgnoredMetadata)
+	var filteredMetadata []*types.OpenApiMetadataEntry
+	for _, entry := range allMetadata {
+		_, err = filterSingleOpenApiMetadataEntry(objectType, objectName, entry, client.IgnoredMetadata)
 		if err != nil {
 			if strings.Contains(err.Error(), "is being ignored") {
 				continue
@@ -169,7 +158,19 @@ func getAllOpenApiMetadata(client *Client, endpoint, objectId, objectName, objec
 		}
 		filteredMetadata = append(filteredMetadata, entry)
 	}
-	return filteredMetadata, nil
+
+	// Wrap all type.OpenApiMetadataEntry into OpenApiMetadataEntry types with client
+	results := make([]*OpenApiMetadataEntry, len(filteredMetadata))
+	for i := range filteredMetadata {
+		results[i] = &OpenApiMetadataEntry{
+			MetadataEntry:  filteredMetadata[i],
+			client:         client,
+			href:           fmt.Sprintf("%s/%s", urlRef.String(), filteredMetadata[i].ID),
+			parentEndpoint: endpoint,
+		}
+	}
+
+	return results, nil
 }
 
 // getOpenApiMetadataByKey is a generic function to retrieve a unique metadata entry from any VCD object using its domain, namespace and key.
