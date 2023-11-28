@@ -21,5 +21,3 @@ replace (
 	gopkg.in/check.v1 => github.com/go-check/check v0.0.0-20201130134442-10cb98267c6c
 	gopkg.in/yaml.v2 => github.com/go-yaml/yaml/v2 v2.2.2
 )
-
-replace github.com/vmware/go-vcloud-director/v2 => github.com/adambarreiro/go-vcloud-director/v2 v2.17.0-alpha.1.0.20231127110230-c9e0b466ad01

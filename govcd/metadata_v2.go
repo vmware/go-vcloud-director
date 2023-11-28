@@ -935,6 +935,8 @@ func (im IgnoredMetadata) String() string {
 	return fmt.Sprintf("IgnoredMetadata(ObjectType=%v, ObjectName=%v, KeyRegex=%v, ValueRegex=%v)", objectType, objectName, im.KeyRegex, im.ValueRegex)
 }
 
+// normalisedMetadata is an auxiliary type that allows to transform XML and OpenAPI metadata into a common structure
+// for operations that are executed the same way in both flavors.
 type normalisedMetadata struct {
 	ObjectType string
 	ObjectName string
@@ -942,6 +944,7 @@ type normalisedMetadata struct {
 	Value      string
 }
 
+// normaliseXmlMetadata transforms XML metadata into a normalised structure
 func normaliseXmlMetadata(key, href, objectName string, metadataEntry *types.MetadataValue) (*normalisedMetadata, error) {
 	objectType, err := getMetadataObjectTypeFromHref(href)
 	if err != nil {

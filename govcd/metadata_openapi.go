@@ -273,6 +273,8 @@ func addOpenApiMetadata(client *Client, endpoint, objectId string, metadataEntry
 // ---------------------------------------------------------------------------------------------------------------------
 // Ignore OpenAPI Metadata feature
 // ---------------------------------------------------------------------------------------------------------------------
+
+// normaliseOpenApiMetadata transforms OpenAPI metadata into a normalised structure
 func normaliseOpenApiMetadata(objectType, name string, metadataEntry *types.OpenApiMetadataEntry) (*normalisedMetadata, error) {
 	return &normalisedMetadata{
 		ObjectType: objectType,
@@ -282,6 +284,7 @@ func normaliseOpenApiMetadata(objectType, name string, metadataEntry *types.Open
 	}, nil
 }
 
+// filterSingleOpenApiMetadataEntry filters a single OpenAPI metadata entry depending on the contents of the input ignored metadata slice.
 func filterSingleOpenApiMetadataEntry(objectType, objectName string, metadataEntry *types.OpenApiMetadataEntry, metadataToIgnore []IgnoredMetadata) (*types.OpenApiMetadataEntry, error) {
 	normalisedEntry, err := normaliseOpenApiMetadata(objectType, objectName, metadataEntry)
 	if err != nil {
