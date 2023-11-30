@@ -1004,7 +1004,7 @@ func filterSingleXmlMetadataEntry(key, href, objectName string, metadataEntry *t
 }
 
 // filterSingleGenericMetadataEntry filters a single metadata entry given a slice of metadata that needs to be ignored. It doesn't
-// alter the input metadata, but returns a copy of the filtered metadata.
+// alter the input metadata, but returns a bool that indicates whether the entry should be ignored or not.
 func filterSingleGenericMetadataEntry(normalisedMetadataEntry *normalisedMetadata, metadataToIgnore []IgnoredMetadata) bool {
 	if len(metadataToIgnore) == 0 {
 		return false
