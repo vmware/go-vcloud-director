@@ -138,6 +138,9 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointServiceAccountGrant:      "37.0", // VCD 10.4.0+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTransportZones: "33.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVCenterDistributedSwitch: "33.0",
+
+	// Endpoint for managing vGPU profiles
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVgpuProfile: "36.2",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions

@@ -221,6 +221,8 @@ type VdcComputePolicyV2 struct {
 	IsVgpuPolicy           bool                     `json:"isVgpuPolicy,omitempty"`
 	PvdcNamedVmGroupsMap   []PvdcNamedVmGroupsMap   `json:"pvdcNamedVmGroupsMap,omitempty"`
 	PvdcLogicalVmGroupsMap []PvdcLogicalVmGroupsMap `json:"pvdcLogicalVmGroupsMap,omitempty"`
+	PvdcVgpuClustersMap    []PvdcVgpuClustersMap    `json:"pvdcVgpuClustersMap,omitempty"`
+	VgpuProfiles           []VgpuProfile            `json:"vgpuProfiles,omitempty"`
 }
 
 // PvdcNamedVmGroupsMap is a combination of a reference to a Provider VDC and a list of references to Named VM Groups.
@@ -235,6 +237,11 @@ type PvdcNamedVmGroupsMap struct {
 type PvdcLogicalVmGroupsMap struct {
 	LogicalVmGroups OpenApiReferences `json:"logicalVmGroups,omitempty"`
 	Pvdc            OpenApiReference  `json:"pvdc,omitempty"`
+}
+
+type PvdcVgpuClustersMap struct {
+	Clusters []string         `json:"clusters,omitempty"`
+	Pvdc     OpenApiReference `json:"pvdc,omitempty"`
 }
 
 // OpenApiReference is a generic reference type commonly used throughout OpenAPI endpoints
@@ -671,4 +678,15 @@ type OpenApiMetadataKeyValue struct {
 type OpenApiMetadataTypedValue struct {
 	Value interface{} `json:"value,omitempty"` // The Value is anything because it depends on the Type field.
 	Type  string      `json:"type,omitempty"`
+}
+
+// VgpuProfile uniquely represents a type of vGPU
+// vGPU Profiles are fetched from your NVIDIA GRID GPU enabled Clusters in vCenter.
+type VgpuProfile struct {
+	Id                 string `json:"id"`
+	Name               string `json:"name"`
+	TenantFacingName   string `json:"tenantFacingName"`
+	Instructions       string `json:"instructions,omitempty"`
+	AllowMultiplePerVm bool   `json:"allowMultiplePerVm"`
+	Count              int    `json:"count,omitempty"`
 }
