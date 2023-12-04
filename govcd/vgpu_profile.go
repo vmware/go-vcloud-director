@@ -11,34 +11,40 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// VdcComputePolicyV2 defines a VDC Compute Policy, which can be a VM Sizing Policy, a VM Placement Policy or a vGPU Policy.
+// VgpuProfile defines a vGPU profile which is fetched from vCenter
 type VgpuProfile struct {
 	VgpuProfile *types.VgpuProfile
 	client      *Client
 }
 
+// GetAllVgpuProfiles gets all vGPU profiles that are available to VCD
 func (client *VCDClient) GetAllVgpuProfiles(queryParameters url.Values) ([]*VgpuProfile, error) {
 	return getAllVgpuProfiles(queryParameters, &client.Client)
 }
 
+// GetVgpuProfilesByProviderVdc gets all vGPU profiles that are available to a specific provider VDC
 func (client *VCDClient) GetVgpuProfilesByProviderVdc(providerVdcUrn string) ([]*VgpuProfile, error) {
 	queryParameters := url.Values{}
 	queryParameters = queryParameterFilterAnd(fmt.Sprintf("pvdcId==%s", providerVdcUrn), queryParameters)
 	return client.GetAllVgpuProfiles(queryParameters)
 }
 
+// GetVgpuProfileById gets a vGPU profile by ID
 func (client *VCDClient) GetVgpuProfileById(vgpuProfileId string) (*VgpuProfile, error) {
 	return getVgpuProfileById(vgpuProfileId, &client.Client)
 }
 
+// GetVgpuProfileByName gets a vGPU profile by name
 func (client *VCDClient) GetVgpuProfileByName(vgpuProfileName string) (*VgpuProfile, error) {
 	return getVgpuProfileByFilter("name", vgpuProfileName, &client.Client)
 }
 
+// GetVgpuProfileByTenantFacingName gets a vGPU profile by its tenant facing name
 func (client *VCDClient) GetVgpuProfileByTenantFacingName(tenantFacingName string) (*VgpuProfile, error) {
 	return getVgpuProfileByFilter("tenantFacingName", tenantFacingName, &client.Client)
 }
 
+// Update updates a vGPU profile with new parameters
 func (profile *VgpuProfile) Update(newProfile *types.VgpuProfile) error {
 	client := profile.client
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVgpuProfile
@@ -66,6 +72,7 @@ func (profile *VgpuProfile) Update(newProfile *types.VgpuProfile) error {
 	return nil
 }
 
+// Refresh updates the current state of the vGPU profile
 func (profile *VgpuProfile) Refresh() error {
 	var err error
 	newProfile, err := getVgpuProfileById(profile.VgpuProfile.Id, profile.client)
