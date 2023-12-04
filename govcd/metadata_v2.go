@@ -759,7 +759,7 @@ func getMetadataByKey(client *Client, requestUri, name, key string, isSystem boo
 	if err != nil {
 		return nil, err
 	}
-	return filterSingleMetadataEntry(key, requestUri, name, metadata, client.IgnoredMetadata)
+	return filterSingleXmlMetadataEntry(key, requestUri, name, metadata, client.IgnoredMetadata)
 }
 
 // getMetadata is a generic function to retrieve metadata from VCD
@@ -770,7 +770,7 @@ func getMetadata(client *Client, requestUri, name string) (*types.Metadata, erro
 	if err != nil {
 		return nil, err
 	}
-	return filterMetadata(metadata, requestUri, name, client.IgnoredMetadata)
+	return filterXmlMetadata(metadata, requestUri, name, client.IgnoredMetadata)
 }
 
 // addMetadata adds metadata to an entity.
@@ -804,7 +804,7 @@ func addMetadata(client *Client, requestUri, name, key, value, typedValue, visib
 		}
 	}
 
-	_, err := filterSingleMetadataEntry(key, requestUri, name, newMetadata, client.IgnoredMetadata)
+	_, err := filterSingleXmlMetadataEntry(key, requestUri, name, newMetadata, client.IgnoredMetadata)
 	if err != nil {
 		return Task{}, err
 	}
@@ -856,7 +856,7 @@ func mergeAllMetadata(client *Client, requestUri, name string, metadata map[stri
 	apiEndpoint := urlParseRequestURI(requestUri)
 	apiEndpoint.Path += "/metadata"
 
-	filteredMetadata, err := filterMetadata(newMetadata, requestUri, name, client.IgnoredMetadata)
+	filteredMetadata, err := filterXmlMetadata(newMetadata, requestUri, name, client.IgnoredMetadata)
 	if err != nil {
 		return Task{}, err
 	}
@@ -935,9 +935,33 @@ func (im IgnoredMetadata) String() string {
 	return fmt.Sprintf("IgnoredMetadata(ObjectType=%v, ObjectName=%v, KeyRegex=%v, ValueRegex=%v)", objectType, objectName, im.KeyRegex, im.ValueRegex)
 }
 
-// filterMetadata filters all metadata entries, given a slice of metadata that needs to be ignored. It doesn't
+// normalisedMetadata is an auxiliary type that allows to transform XML and OpenAPI metadata into a common structure
+// for operations that are executed the same way in both flavors.
+type normalisedMetadata struct {
+	ObjectType string
+	ObjectName string
+	Key        string
+	Value      string
+}
+
+// normaliseXmlMetadata transforms XML metadata into a normalised structure
+func normaliseXmlMetadata(key, href, objectName string, metadataEntry *types.MetadataValue) (*normalisedMetadata, error) {
+	objectType, err := getMetadataObjectTypeFromHref(href)
+	if err != nil {
+		return nil, err
+	}
+
+	return &normalisedMetadata{
+		ObjectType: objectType,
+		ObjectName: objectName,
+		Key:        key,
+		Value:      metadataEntry.TypedValue.Value,
+	}, nil
+}
+
+// filterXmlMetadata filters all metadata entries, given a slice of metadata that needs to be ignored. It doesn't
 // alter the input metadata, but returns a copy of the filtered metadata.
-func filterMetadata(allMetadata *types.Metadata, href, objectName string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
+func filterXmlMetadata(allMetadata *types.Metadata, href, objectName string, metadataToIgnore []IgnoredMetadata) (*types.Metadata, error) {
 	if len(metadataToIgnore) == 0 {
 		return allMetadata, nil
 	}
@@ -954,43 +978,55 @@ func filterMetadata(allMetadata *types.Metadata, href, objectName string, metada
 
 	var filteredMetadata []*types.MetadataEntry
 	for _, originalEntry := range allMetadata.MetadataEntry {
-		_, err := filterSingleMetadataEntry(originalEntry.Key, href, objectName, &types.MetadataValue{Domain: originalEntry.Domain, TypedValue: originalEntry.TypedValue}, metadataToIgnore)
-		if err == nil || !strings.Contains(err.Error(), "ignored") {
-			filteredMetadata = append(filteredMetadata, originalEntry)
+		_, err := filterSingleXmlMetadataEntry(originalEntry.Key, href, objectName, &types.MetadataValue{Domain: originalEntry.Domain, TypedValue: originalEntry.TypedValue}, metadataToIgnore)
+		if err != nil {
+			if strings.Contains(err.Error(), "ignored") {
+				continue
+			}
+			return nil, err
 		}
+		filteredMetadata = append(filteredMetadata, originalEntry)
 	}
 	result.MetadataEntry = filteredMetadata
 	return result, nil
 }
 
-// filterSingleMetadataEntry filters a single metadata entry given a slice of metadata that needs to be ignored. It doesn't
-// alter the input metadata, but returns a copy of the filtered metadata.
-func filterSingleMetadataEntry(key, href, objectName string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
-	if len(metadataToIgnore) == 0 {
-		return metadataEntry, nil
-	}
-
-	objectType, err := getMetadataObjectTypeFromHref(href)
+func filterSingleXmlMetadataEntry(key, href, objectName string, metadataEntry *types.MetadataValue, metadataToIgnore []IgnoredMetadata) (*types.MetadataValue, error) {
+	normalisedEntry, err := normaliseXmlMetadata(key, href, objectName, metadataEntry)
 	if err != nil {
 		return nil, err
 	}
+	isFiltered := filterSingleGenericMetadataEntry(normalisedEntry, metadataToIgnore)
+	if isFiltered {
+		return nil, fmt.Errorf("the metadata entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
+	}
+	return metadataEntry, nil
+}
+
+// filterSingleGenericMetadataEntry filters a single metadata entry given a slice of metadata that needs to be ignored. It doesn't
+// alter the input metadata, but returns a bool that indicates whether the entry should be ignored or not.
+func filterSingleGenericMetadataEntry(normalisedMetadataEntry *normalisedMetadata, metadataToIgnore []IgnoredMetadata) bool {
+	if len(metadataToIgnore) == 0 {
+		return false
+	}
+
 	for _, entryToIgnore := range metadataToIgnore {
 		if entryToIgnore.ObjectType == nil && entryToIgnore.ObjectName == nil && entryToIgnore.KeyRegex == nil && entryToIgnore.ValueRegex == nil {
 			continue
 		}
-		util.Logger.Printf("[DEBUG] Comparing metadata with key '%s' with ignored metadata filter '%s'", key, entryToIgnore)
+		util.Logger.Printf("[DEBUG] Comparing metadata with key '%s' with ignored metadata filter '%s'", normalisedMetadataEntry.Key, entryToIgnore)
 		// We apply an optimistic approach here to simplify the conditions, so the metadata entry will always be ignored unless the filters
 		// tell otherwise, that is, if they are nil (not all of them as per the condition above), if they're empty or if they don't match.
 		// All the filtering options (type, name, keyRegex and valueRegex) must compute to true for the metadata to be ignored.
-		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == objectType) &&
-			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(objectName) == "" || *entryToIgnore.ObjectName == objectName) &&
-			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(key)) &&
-			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(metadataEntry.TypedValue.Value)) {
-			util.Logger.Printf("[DEBUG] the metadata entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
-			return nil, fmt.Errorf("the metadata entry with key '%s' and value '%v' is being ignored", key, metadataEntry.TypedValue.Value)
+		if (entryToIgnore.ObjectType == nil || strings.TrimSpace(*entryToIgnore.ObjectType) == "" || *entryToIgnore.ObjectType == normalisedMetadataEntry.ObjectType) &&
+			(entryToIgnore.ObjectName == nil || strings.TrimSpace(*entryToIgnore.ObjectName) == "" || strings.TrimSpace(normalisedMetadataEntry.ObjectName) == "" || *entryToIgnore.ObjectName == normalisedMetadataEntry.ObjectName) &&
+			(entryToIgnore.KeyRegex == nil || entryToIgnore.KeyRegex.MatchString(normalisedMetadataEntry.Key)) &&
+			(entryToIgnore.ValueRegex == nil || entryToIgnore.ValueRegex.MatchString(normalisedMetadataEntry.Value)) {
+			util.Logger.Printf("[DEBUG] the metadata entry with key '%s' and value '%v' is being ignored", normalisedMetadataEntry.ObjectType, normalisedMetadataEntry.Value)
+			return true
 		}
 	}
-	return metadataEntry, nil
+	return false
 }
 
 // filterMetadataToDelete filters a metadata entry that is going to be deleted, given a slice of metadata that needs to be ignored.

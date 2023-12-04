@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
+	"strings"
 )
 
 // OpenApiMetadataEntry is a wrapper object for types.OpenApiMetadataEntry
@@ -27,7 +28,7 @@ type OpenApiMetadataEntry struct {
 // NOTE: The obtained metadata doesn't have ETags, use GetMetadataById or GetMetadataByKey to obtain a ETag for a specific entry.
 func (rde *DefinedEntity) GetMetadata() ([]*OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return getAllOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, nil)
+	return getAllOpenApiMetadata(rde.client, endpoint, rde.DefinedEntity.ID, rde.DefinedEntity.Name, "entity", nil)
 }
 
 // GetMetadataByKey returns a unique DefinedEntity metadata entry corresponding to the given domain, namespace and key.
@@ -35,14 +36,14 @@ func (rde *DefinedEntity) GetMetadata() ([]*OpenApiMetadataEntry, error) {
 // This is a more costly operation than GetMetadataById due to ETags, so use that preferred option whenever possible.
 func (rde *DefinedEntity) GetMetadataByKey(domain, namespace, key string) (*OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return getOpenApiMetadataByKey(rde.client, endpoint, rde.DefinedEntity.ID, domain, namespace, key)
+	return getOpenApiMetadataByKey(rde.client, endpoint, rde.DefinedEntity.ID, rde.DefinedEntity.Name, "entity", domain, namespace, key)
 }
 
 // GetMetadataById returns a unique DefinedEntity metadata entry corresponding to the given domain, namespace and key.
 // The domain and namespace are only needed when there's more than one entry with the same key.
 func (rde *DefinedEntity) GetMetadataById(id string) (*OpenApiMetadataEntry, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	return getOpenApiMetadataById(rde.client, endpoint, rde.DefinedEntity.ID, id)
+	return getOpenApiMetadataById(rde.client, endpoint, rde.DefinedEntity.ID, rde.DefinedEntity.Name, "entity", id)
 }
 
 // AddMetadata adds metadata to the receiver DefinedEntity.
@@ -129,7 +130,7 @@ func (entry *OpenApiMetadataEntry) Delete() error {
 
 // getAllOpenApiMetadata is a generic function to retrieve all metadata from any VCD object using its ID and the given OpenAPI endpoint.
 // It supports query parameters to input, for example, filtering options.
-func getAllOpenApiMetadata(client *Client, endpoint, objectId string, queryParameters url.Values) ([]*OpenApiMetadataEntry, error) {
+func getAllOpenApiMetadata(client *Client, endpoint, objectId, objectName, objectType string, queryParameters url.Values) ([]*OpenApiMetadataEntry, error) {
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
 		return nil, err
@@ -146,13 +147,25 @@ func getAllOpenApiMetadata(client *Client, endpoint, objectId string, queryParam
 		return nil, err
 	}
 
+	var filteredMetadata []*types.OpenApiMetadataEntry
+	for _, entry := range allMetadata {
+		_, err = filterSingleOpenApiMetadataEntry(objectType, objectName, entry, client.IgnoredMetadata)
+		if err != nil {
+			if strings.Contains(err.Error(), "is being ignored") {
+				continue
+			}
+			return nil, err
+		}
+		filteredMetadata = append(filteredMetadata, entry)
+	}
+
 	// Wrap all type.OpenApiMetadataEntry into OpenApiMetadataEntry types with client
-	results := make([]*OpenApiMetadataEntry, len(allMetadata))
-	for i := range allMetadata {
+	results := make([]*OpenApiMetadataEntry, len(filteredMetadata))
+	for i := range filteredMetadata {
 		results[i] = &OpenApiMetadataEntry{
-			MetadataEntry:  allMetadata[i],
+			MetadataEntry:  filteredMetadata[i],
 			client:         client,
-			href:           fmt.Sprintf("%s/%s", urlRef.String(), allMetadata[i].ID),
+			href:           fmt.Sprintf("%s/%s", urlRef.String(), filteredMetadata[i].ID),
 			parentEndpoint: endpoint,
 		}
 	}
@@ -162,11 +175,11 @@ func getAllOpenApiMetadata(client *Client, endpoint, objectId string, queryParam
 
 // getOpenApiMetadataByKey is a generic function to retrieve a unique metadata entry from any VCD object using its domain, namespace and key.
 // The domain and namespace are only needed when there's more than one entry with the same key.
-func getOpenApiMetadataByKey(client *Client, endpoint, objectId string, domain, namespace, key string) (*OpenApiMetadataEntry, error) {
+func getOpenApiMetadataByKey(client *Client, endpoint, objectId, objectName, objectType string, domain, namespace, key string) (*OpenApiMetadataEntry, error) {
 	queryParameters := url.Values{}
 	// As for now, the filter only supports filtering by key
 	queryParameters.Add("filter", fmt.Sprintf("keyValue.key==%s", key))
-	metadata, err := getAllOpenApiMetadata(client, endpoint, objectId, queryParameters)
+	metadata, err := getAllOpenApiMetadata(client, endpoint, objectId, objectName, objectType, queryParameters)
 	if err != nil {
 		return nil, err
 	}
@@ -187,15 +200,15 @@ func getOpenApiMetadataByKey(client *Client, endpoint, objectId string, domain, 
 			return nil, fmt.Errorf("found %d metadata entries associated to object %s", len(filteredMetadata), objectId)
 		}
 		// Required to retrieve an ETag
-		return getOpenApiMetadataById(client, endpoint, objectId, filteredMetadata[0].MetadataEntry.ID)
+		return getOpenApiMetadataById(client, endpoint, objectId, objectName, objectType, filteredMetadata[0].MetadataEntry.ID)
 	}
 
 	// Required to retrieve an ETag
-	return getOpenApiMetadataById(client, endpoint, objectId, metadata[0].MetadataEntry.ID)
+	return getOpenApiMetadataById(client, endpoint, objectId, objectName, objectType, metadata[0].MetadataEntry.ID)
 }
 
 // getOpenApiMetadataById is a generic function to retrieve a unique metadata entry from any VCD object using its unique ID.
-func getOpenApiMetadataById(client *Client, endpoint, objectId, metadataId string) (*OpenApiMetadataEntry, error) {
+func getOpenApiMetadataById(client *Client, endpoint, objectId, objectName, objectType, metadataId string) (*OpenApiMetadataEntry, error) {
 	if metadataId == "" {
 		return nil, fmt.Errorf("input metadata entry ID is empty")
 	}
@@ -221,6 +234,12 @@ func getOpenApiMetadataById(client *Client, endpoint, objectId, metadataId strin
 	if err != nil {
 		return nil, err
 	}
+
+	_, err = filterSingleOpenApiMetadataEntry(objectType, objectName, response.MetadataEntry, client.IgnoredMetadata)
+	if err != nil {
+		return nil, err
+	}
+
 	response.Etag = headers.Get("Etag")
 	return response, nil
 }
@@ -249,4 +268,31 @@ func addOpenApiMetadata(client *Client, endpoint, objectId string, metadataEntry
 	response.Etag = headers.Get("Etag")
 	response.href = fmt.Sprintf("%s/%s", urlRef.String(), response.MetadataEntry.ID)
 	return response, nil
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Ignore OpenAPI Metadata feature
+// ---------------------------------------------------------------------------------------------------------------------
+
+// normaliseOpenApiMetadata transforms OpenAPI metadata into a normalised structure
+func normaliseOpenApiMetadata(objectType, name string, metadataEntry *types.OpenApiMetadataEntry) (*normalisedMetadata, error) {
+	return &normalisedMetadata{
+		ObjectType: objectType,
+		ObjectName: name,
+		Key:        metadataEntry.KeyValue.Key,
+		Value:      fmt.Sprintf("%v", metadataEntry.KeyValue.Value.Value),
+	}, nil
+}
+
+// filterSingleOpenApiMetadataEntry filters a single OpenAPI metadata entry depending on the contents of the input ignored metadata slice.
+func filterSingleOpenApiMetadataEntry(objectType, objectName string, metadataEntry *types.OpenApiMetadataEntry, metadataToIgnore []IgnoredMetadata) (*types.OpenApiMetadataEntry, error) {
+	normalisedEntry, err := normaliseOpenApiMetadata(objectType, objectName, metadataEntry)
+	if err != nil {
+		return nil, err
+	}
+	isFiltered := filterSingleGenericMetadataEntry(normalisedEntry, metadataToIgnore)
+	if isFiltered {
+		return nil, fmt.Errorf("the metadata entry with key '%s' and value '%v' is being ignored", metadataEntry.KeyValue.Key, metadataEntry.KeyValue.Value.Value)
+	}
+	return metadataEntry, nil
 }

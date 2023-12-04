@@ -11,6 +11,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"regexp"
+	"strings"
 )
 
 func (vcd *TestVCD) TestRdeMetadata(check *C) {
@@ -35,6 +36,7 @@ func (vcd *TestVCD) TestRdeMetadata(check *C) {
 	AddToCleanupListOpenApi(rde.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntities+rde.DefinedEntity.ID)
 
 	testOpenApiMetadataCRUDActions(rde, check)
+	vcd.testOpenApiMetadataIgnore(rde, "entity", rde.DefinedEntity.Name, check)
 
 	err = rde.Delete()
 	check.Assert(err, IsNil)
@@ -253,5 +255,141 @@ func testOpenApiMetadataCRUDActions(resource openApiMetadataCompatible, check *C
 		check.Assert(err, NotNil)
 		check.Assert(deletedMetadata, IsNil)
 		check.Assert(true, Equals, ContainsNotFound(err))
+	}
+}
+
+func (vcd *TestVCD) testOpenApiMetadataIgnore(resource openApiMetadataCompatible, objectType, objectName string, check *C) {
+	existingMetadata, err := resource.GetMetadata()
+	check.Assert(err, IsNil)
+
+	_, err = resource.AddMetadata(types.OpenApiMetadataEntry{
+		IsPersistent: false,
+		IsReadOnly:   false,
+		KeyValue: types.OpenApiMetadataKeyValue{
+			Domain: "TENANT",
+			Key:    "foo",
+			Value: types.OpenApiMetadataTypedValue{
+				Value: "bar",
+				Type:  types.OpenApiMetadataStringEntry,
+			},
+			Namespace: "",
+		},
+	})
+	check.Assert(err, IsNil)
+	_, err = resource.AddMetadata(types.OpenApiMetadataEntry{
+		IsPersistent: false,
+		IsReadOnly:   false,
+		KeyValue: types.OpenApiMetadataKeyValue{
+			Domain: "TENANT",
+			Key:    "not_ignored",
+			Value: types.OpenApiMetadataTypedValue{
+				Value: "bar2",
+				Type:  types.OpenApiMetadataStringEntry,
+			},
+			Namespace: "",
+		},
+	})
+	check.Assert(err, IsNil)
+
+	cleanup := func() {
+		vcd.client.Client.IgnoredMetadata = nil
+		metadata, err := resource.GetMetadata()
+		check.Assert(err, IsNil)
+		for _, entry := range metadata {
+			itWasAlreadyPresent := false
+			for _, existingEntry := range existingMetadata {
+				if existingEntry.MetadataEntry.KeyValue.Namespace == entry.MetadataEntry.KeyValue.Namespace &&
+					existingEntry.MetadataEntry.KeyValue.Key == entry.MetadataEntry.KeyValue.Key &&
+					existingEntry.MetadataEntry.KeyValue.Value.Value == entry.MetadataEntry.KeyValue.Value.Value &&
+					existingEntry.MetadataEntry.KeyValue.Value.Type == entry.MetadataEntry.KeyValue.Value.Type {
+					itWasAlreadyPresent = true
+				}
+			}
+			if !itWasAlreadyPresent {
+				toDelete, err := resource.GetMetadataById(entry.MetadataEntry.ID)
+				check.Assert(err, IsNil)
+				err = toDelete.Delete()
+				check.Assert(err, IsNil)
+			}
+		}
+		metadata, err = resource.GetMetadata()
+		check.Assert(err, IsNil)
+		check.Assert(len(metadata), Equals, len(existingMetadata))
+	}
+	defer cleanup()
+
+	tests := []struct {
+		ignoredMetadata   []IgnoredMetadata
+		metadataIsIgnored bool
+	}{
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, KeyRegex: regexp.MustCompile(`^foo$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, ValueRegex: regexp.MustCompile(`^bar$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, KeyRegex: regexp.MustCompile(`^fizz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, ValueRegex: regexp.MustCompile(`^buzz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, KeyRegex: regexp.MustCompile(`^foo$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, ValueRegex: regexp.MustCompile(`^bar$`)}},
+			metadataIsIgnored: true,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, KeyRegex: regexp.MustCompile(`^fizz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectName: &objectName, ValueRegex: regexp.MustCompile(`^buzz$`)}},
+			metadataIsIgnored: false,
+		},
+		{
+			ignoredMetadata:   []IgnoredMetadata{{ObjectType: &objectType, ObjectName: &objectName, KeyRegex: regexp.MustCompile(`foo`), ValueRegex: regexp.MustCompile(`bar`)}},
+			metadataIsIgnored: true,
+		},
+	}
+
+	for _, tt := range tests {
+		vcd.client.Client.IgnoredMetadata = tt.ignoredMetadata
+
+		// Tests getting a simple metadata entry by its key
+		singleMetadata, err := resource.GetMetadataByKey("", "", "foo")
+		if tt.metadataIsIgnored {
+			check.Assert(err, NotNil)
+			check.Assert(true, Equals, strings.Contains(err.Error(), "could not find the metadata associated to object"))
+		} else {
+			check.Assert(err, IsNil)
+			check.Assert(singleMetadata, NotNil)
+			check.Assert(singleMetadata.MetadataEntry.KeyValue.Value.Value, Equals, "bar")
+		}
+
+		// Retrieve all metadata
+		allMetadata, err := resource.GetMetadata()
+		check.Assert(err, IsNil)
+		check.Assert(allMetadata, NotNil)
+		if tt.metadataIsIgnored {
+			// If metadata is ignored, there should be an offset of 1 entry (with key "test")
+			check.Assert(len(allMetadata), Equals, len(existingMetadata)+1)
+			for _, entry := range allMetadata {
+				if tt.metadataIsIgnored {
+					check.Assert(entry.MetadataEntry.KeyValue.Key, Not(Equals), "foo")
+					check.Assert(entry.MetadataEntry.KeyValue.Value.Value, Not(Equals), "bar")
+				}
+			}
+		} else {
+			// If metadata is NOT ignored, there should be an offset of 2 entries (with key "foo" and "test")
+			check.Assert(len(allMetadata), Equals, len(existingMetadata)+2)
+		}
 	}
 }
