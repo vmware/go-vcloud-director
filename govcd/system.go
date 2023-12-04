@@ -737,8 +737,8 @@ func (client *Client) GetStorageProfileByHref(url string) (*types.VdcStorageProf
 
 	vdcStorageProfile := &types.VdcStorageProfile{}
 
-	_, err := client.ExecuteRequestWithApiVersion(url, http.MethodGet,
-		"", "error retrieving storage profile: %s", nil, vdcStorageProfile, client.APIVersion)
+	_, err := client.ExecuteRequest(url, http.MethodGet,
+		"", "error retrieving storage profile: %s", nil, vdcStorageProfile)
 	if err != nil {
 		return nil, err
 	}
