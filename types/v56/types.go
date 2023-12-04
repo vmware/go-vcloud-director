@@ -2597,7 +2597,7 @@ type QueryResultVMRecordType struct {
 	HostName                 string    `xml:"hostName,attr,omitempty"` // HostName=Hypervisor of virtual machine
 	Link                     []*Link   `xml:"Link,omitempty"`
 	MetaData                 *Metadata `xml:"Metadata,omitempty"`
-	VmNameInVc               string    `xml:"vmNameInVc,omitempty"`
+	VmNameInVc               string    `xml:"vmNameInVc,attr,omitempty"`
 }
 
 // QueryResultVAppRecordType represents a VM record as query result.
