@@ -304,6 +304,10 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 	err = resource.AddMetadataEntryWithVisibility("foo", "bar", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
 	check.Assert(err, IsNil)
 
+	// Add a new entry that won't be filtered out
+	err = resource.AddMetadataEntryWithVisibility("not_ignored", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
+	check.Assert(err, IsNil)
+
 	cleanup := func() {
 		vcd.client.Client.IgnoredMetadata = nil
 		metadata, err := resource.GetMetadata()
@@ -393,10 +397,6 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 			check.Assert(singleMetadata.TypedValue.Value, Equals, "bar")
 		}
 
-		// Add a new entry that won't be filtered out
-		err = resource.AddMetadataEntryWithVisibility("test", "bar2", types.MetadataStringValue, types.MetadataReadWriteVisibility, false)
-		check.Assert(err, IsNil)
-
 		// Retrieve all metadata
 		allMetadata, err := resource.GetMetadata()
 		check.Assert(err, IsNil)
@@ -441,7 +441,7 @@ func (vcd *TestVCD) testMetadataIgnore(resource metadataCompatible, objectType, 
 				Value:   "bar3",
 			},
 		},
-		"test": {
+		"not_ignored": {
 			TypedValue: &types.MetadataTypedValue{
 				XsiType: types.MetadataStringValue,
 				Value:   "bar",
