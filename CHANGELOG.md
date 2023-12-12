@@ -1,6 +1,96 @@
-## 2.22.0 (Unreleased)
+## 2.22.0 (December 12, 2023)
 
-Changes in progress for v2.22.0 are available at [.changes/v2.22.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.22.0) until the release.
+### FEATURES
+* Added support for VMware Cloud Director **10.5.1**
+* Added metadata support to Runtime Defined Entities with methods `rde.GetMetadataByKey`, `rde.GetMetadataById` `rde.GetMetadata`,
+  `rde.AddMetadata` and generic metadata methods `openApiMetadataEntry.Update` and `openApiMetadataEntry.Delete` ([#557](https://github.com/vmware/go-vcloud-director/pull/557), [#632](https://github.com/vmware/go-vcloud-director/pull/632))
+* Added methods `SetReadOnlyAccessControl` and `IsSharedReadOnly` for `Catalog` and `AdminCatalog`, to handle read-only catalog sharing ([#559](https://github.com/vmware/go-vcloud-director/pull/559))
+* Added `Firmware` field to `VmSpecSection` type and `BootOptions` to `Vm` type ([#607](https://github.com/vmware/go-vcloud-director/pull/607))
+* Added `Vdc` methods `GetHardwareVersion`, `GetHighestHardwareVersion`,
+  `FindOsFromId` ([#607](https://github.com/vmware/go-vcloud-director/pull/607))
+* Added `VM` methods `UpdateBootOptions`, `UpdateBootOptionsAsync` ([#607](https://github.com/vmware/go-vcloud-director/pull/607))
+* API calls for `AddRawVM`, `CreateStandaloneVmAsync`, `VM.Refresh`,
+  `VM.UpdateVmSpecSectionAsync`, `addEmptyVmAsyncV10`, `getVMByHrefV10`
+  and `UpdateBootOptionsAsync` get elevated to API version `37.1` if available, for `VmSpecSection.Firmware` and `BootOptions` support ([#607](https://github.com/vmware/go-vcloud-director/pull/607))
+* Added `VCDClient` methods `CreateNetworkPool`, `CreateStandaloneVmAsync`, `CreateNetworkPoolGeneve`, `CreateNetworkPoolVlan`, `CreateNetworkPoolPortGroup` to create a network pool ([#613](https://github.com/vmware/go-vcloud-director/pull/613))
+* Added method `VCDClient.GetAllNsxtTransportZones` to retrieve all NSX-T transport zones ([#613](https://github.com/vmware/go-vcloud-director/pull/613))
+* Added method `VCDClient.GetAllVcenterDistributedSwitches` to retrieve all distributed switches ([#613](https://github.com/vmware/go-vcloud-director/pull/613))
+* Added method `VCDClient.QueryNsxtManagers` to retrieve all NSX-T managers ([#613](https://github.com/vmware/go-vcloud-director/pull/613))
+* Added `NetworkPool` methods `Update`, `Delete`, `GetOpenApiUrl` to manage a network pool ([#613](https://github.com/vmware/go-vcloud-director/pull/613))
+* Added `NsxtManager` type and function `VCDClient.GetNsxtManagerByName` ([#618](https://github.com/vmware/go-vcloud-director/pull/618))
+* Added support for Segment Profile Template management using new types `NsxtSegmentProfileTemplate` and `types.NsxtSegmentProfileTemplate` ([#618](https://github.com/vmware/go-vcloud-director/pull/618))
+* Added support for reading Segment Profiles provided by NSX-T via functions
+  `GetAllIpDiscoveryProfiles`, `GetIpDiscoveryProfileByName`, `GetAllMacDiscoveryProfiles`,
+  `GetMacDiscoveryProfileByName`, `GetAllSpoofGuardProfiles`, `GetSpoofGuardProfileByName`,
+  `GetAllQoSProfiles`, `GetQoSProfileByName`, `GetAllSegmentSecurityProfiles`,
+  `GetSegmentSecurityProfileByName` ([#618](https://github.com/vmware/go-vcloud-director/pull/618))
+* Added support for setting default Segment Profiles for NSX-T Org VDC Networks
+  `OpenApiOrgVdcNetwork.GetSegmentProfile()`, `OpenApiOrgVdcNetwork.UpdateSegmentProfile()` ([#618](https://github.com/vmware/go-vcloud-director/pull/618))
+* Added support for setting global default Segment Profiles
+  `VCDClient.GetGlobalDefaultSegmentProfileTemplates()`,
+  `VCDClient.UpdateGlobalDefaultSegmentProfileTemplates()` ([#618](https://github.com/vmware/go-vcloud-director/pull/618))
+* Added new `types` for NSX-T L2 VPN Tunnel session management `NsxtL2VpnTunnel`, `EdgeL2VpnStretchedNetwork`, `types.EdgeL2VpnTunnelStatistics`, `types.EdgeL2VpnTunnelStatus` ([#619](https://github.com/vmware/go-vcloud-director/pull/619))
+* Added new `NsxtEdgeGateway` methods `CreateL2VpnTunnel`, `GetAllL2VpnTunnels`, `GetL2VpnTunnelByName`, `GetL2VpnTunnelById` for creation and retrieval of NSX-T L2 VPN Tunnel sessions ([#619](https://github.com/vmware/go-vcloud-director/pull/619))
+* Added `NsxtL2VpnTunnel` methods `Refresh`, `Update`, `Statistics`, `Status`, `Delete` ([#619](https://github.com/vmware/go-vcloud-director/pull/619))
+* Added method `Catalog.UploadMediaFile` to upload any file as catalog Media ([#621](https://github.com/vmware/go-vcloud-director/pull/621),[#622](https://github.com/vmware/go-vcloud-director/pull/622))
+* Added method `Media.Download` to download a Media item as a byte stream ([#622](https://github.com/vmware/go-vcloud-director/pull/622))
+* Added `VAppTemplate` methods `GetLease` and `RenewLease` to retrieve and change storage lease  ([#623](https://github.com/vmware/go-vcloud-director/pull/623))
+* Added `NsxtEdgeGateway` methods `GetDnsConfig` and `UpdateDnsConfig` ([#627](https://github.com/vmware/go-vcloud-director/pull/627))
+* Added types `types.NsxtEdgeGatewayDns`, `types.NsxtDnsForwarderZoneConfig`
+  for creation and management of DNS forwarder configuration ([#627](https://github.com/vmware/go-vcloud-director/pull/627))
+* Added `NsxtEdgeGatewayDns` methods `Refresh`, `Update` and `Delete` ([#627](https://github.com/vmware/go-vcloud-director/pull/627))
+* Add type `VgpuProfile` and its methods `GetAllVgpuProfiles`, `GetVgpuProfilesByProviderVdc`, `GetVgpuProfileById`, `GetVgpuProfileByName`, `GetVgpuProfileByTenantFacingName`, `Update` and `Refresh` for managing vGPU profiles ([#633](https://github.com/vmware/go-vcloud-director/pull/633))
+* Update `ComputePolicyV2` type with new fields for managing vGPU policies ([#633](https://github.com/vmware/go-vcloud-director/pull/633))
+
+### IMPROVEMENTS
+* Added catalog parent retrieval to `client.GetCatalogByHref` and `client.GetAdminCatalogByHref` to facilitate tenant context handling ([#559](https://github.com/vmware/go-vcloud-director/pull/559))
+* Add `VdcGroup.ForceDelete` function to optionally force VDC Group removal, which can be used for
+  removing VDC Group with child elements ([#597](https://github.com/vmware/go-vcloud-director/pull/597))
+* Bumped up minimal API version to 37.0 (drops support for VCD 10.3.x) ([#609](https://github.com/vmware/go-vcloud-director/pull/609))
+* Add struct `IopsResource` to `types.DiskSettings` (in replacement of dropped field `iops`) initially supported in API 37.0 ([#609](https://github.com/vmware/go-vcloud-director/pull/609))
+* Add field `SslEnabled` to struct `types.NsxtAlbPool` initially supported in API 37.0 ([#609](https://github.com/vmware/go-vcloud-director/pull/609))
+* New method `NsxtEdgeGateway.GetAllocatedIpCountByUplinkType` complementing existing
+  `NsxtEdgeGateway.GetAllocatedIpCount`. It will return allocated IP counts by uplink types (works
+  with VCD 10.4.1+) ([#610](https://github.com/vmware/go-vcloud-director/pull/610))
+* New method `NsxtEdgeGateway.GetPrimaryNetworkAllocatedIpCount` that will return total allocated IP
+  count for primary uplink (T0 or T0 VRF) ([#610](https://github.com/vmware/go-vcloud-director/pull/610))
+* New field `types.EdgeGatewayUplinks.BackingType` that defines backing type of NSX-T Edge Gateway
+  Uplink ([#610](https://github.com/vmware/go-vcloud-director/pull/610))
+* NSX-T Edge Gateway functions `GetNsxtEdgeGatewayById`, `GetNsxtEdgeGatewayByName`,
+  `GetNsxtEdgeGatewayByNameAndOwnerId`, `GetAllNsxtEdgeGateways`, `CreateNsxtEdgeGateway`,
+  `Refresh`, `Update` will additionally sort uplinks to ensure that element 0 contains primary
+  network (T0 or T0 VRF) ([#610](https://github.com/vmware/go-vcloud-director/pull/610))
+* Makes `DefinedEntityType` method `SetBehaviorAccessControls` more robust to avoid NullPointerException errors in VCD
+  when the input is a nil slice ([#615](https://github.com/vmware/go-vcloud-director/pull/615))
+* `types.IpSpace` support Firewall and NAT rule autocreation configuration using
+  `types.DefaultGatewayServiceConfig` on VCD 10.5.0+ ([#628](https://github.com/vmware/go-vcloud-director/pull/628))
+* Added metadata ignore support for Runtime Defined Entity metadata methods `rde.GetMetadataByKey`, `rde.GetMetadata`, `rde.AddMetadata`,
+  `rde.UpdateMetadata` and `rde.DeleteMetadata` ([#632](https://github.com/vmware/go-vcloud-director/pull/632))
+
+### BUG FIXES
+* Added handling of catalog creation task, which was leaving the catalog not ready for action in some cases ([#590](https://github.com/vmware/go-vcloud-director/pull/590), [#602](https://github.com/vmware/go-vcloud-director/pull/602))
+* Fix nil pointer dereference bug while fetching a NSX-V Backed Edge Gateway ([#594](https://github.com/vmware/go-vcloud-director/pull/594))
+* Fix vApp network related tests ([#595](https://github.com/vmware/go-vcloud-director/pull/595))
+* Fixed [Issue #1098](https://github.com/vmware/terraform-provider-vcd/issues/1098) crash in VDC creation ([#598](https://github.com/vmware/go-vcloud-director/pull/598))
+* Addressed Issue [1134](https://github.com/vmware/terraform-provider-vcd/issues/1134): Can't use SYSTEM `ldap_mode` ([#625](https://github.com/vmware/go-vcloud-director/pull/625))
+
+### DEPRECATIONS
+* Deprecated `UpdateInternalDisksAsync` in favor of `UpdateVmSpecSectionAsync` ([#607](https://github.com/vmware/go-vcloud-director/pull/607))
+
+### NOTES
+* Improved the testing configuration to allow customizing the UI Plugin path ([#599](https://github.com/vmware/go-vcloud-director/pull/599))
+* Added a configurable timeout to the testing options available in the Makefile ([#600](https://github.com/vmware/go-vcloud-director/pull/600))
+* Improved test `Test_NsxtApplicationPortProfileTenant` ([#601](https://github.com/vmware/go-vcloud-director/pull/601))
+* Added explicit removal for many resources in tests ([#605](https://github.com/vmware/go-vcloud-director/pull/605))
+* Improved test `Test_InsertOrEjectMedia` ([#608](https://github.com/vmware/go-vcloud-director/pull/608))
+* Addressed `gosec` 2.17.0 errors ([#608](https://github.com/vmware/go-vcloud-director/pull/608))
+
+* Changed `Test_AddNewVMFromMultiVmTemplate` to use preloaded vApp template ([#609](https://github.com/vmware/go-vcloud-director/pull/609))
+* Amended `testMetadataIgnore`, used by all metadata tests, to be compatible with VCD 10.5.1 ([#629](https://github.com/vmware/go-vcloud-director/pull/629))
+
+### REMOVALS
+* Removed field `iops` from `types.DiskSettings` (dropped in API version 37.0) ([#609](https://github.com/vmware/go-vcloud-director/pull/609))
+
 
 ## 2.21.0 (July 20, 2023)
 
