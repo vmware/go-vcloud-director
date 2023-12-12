@@ -1,6 +1,7 @@
 ## 2.22.0 (December 12, 2023)
 
 ### FEATURES
+* Added support for VMware Cloud Director **10.5.1**
 * Added metadata support to Runtime Defined Entities with methods `rde.GetMetadataByKey`, `rde.GetMetadataById` `rde.GetMetadata`,
   `rde.AddMetadata` and generic metadata methods `openApiMetadataEntry.Update` and `openApiMetadataEntry.Delete` ([#557](https://github.com/vmware/go-vcloud-director/pull/557), [#632](https://github.com/vmware/go-vcloud-director/pull/632))
 * Added methods `SetReadOnlyAccessControl` and `IsSharedReadOnly` for `Catalog` and `AdminCatalog`, to handle read-only catalog sharing ([#559](https://github.com/vmware/go-vcloud-director/pull/559))
