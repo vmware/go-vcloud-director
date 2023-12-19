@@ -737,9 +737,7 @@ func (client *Client) GetStorageProfileByHref(url string) (*types.VdcStorageProf
 
 	vdcStorageProfile := &types.VdcStorageProfile{}
 
-	// only from 35.0 API version IOPS settings are added to response
-	_, err := client.ExecuteRequestWithApiVersion(url, http.MethodGet,
-		"", "error retrieving storage profile: %s", nil, vdcStorageProfile, client.GetSpecificApiVersionOnCondition(">= 35.0", "35.0"))
+	_, err := client.ExecuteRequest(url, http.MethodGet, "", "error retrieving storage profile: %s", nil, vdcStorageProfile)
 	if err != nil {
 		return nil, err
 	}
