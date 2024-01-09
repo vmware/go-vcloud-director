@@ -676,8 +676,8 @@ func (vcd *TestVCD) Test_QueryNetworkPoolByName(check *C) {
 
 }
 
-// Test getting storage profile by href and vdc client
-func (vcd *TestVCD) Test_GetStorageProfileByHref(check *C) {
+// Test_GetStorageProfile tests all the getters of Storage Profile
+func (vcd *TestVCD) Test_GetStorageProfile(check *C) {
 	if vcd.config.VCD.ProviderVdc.StorageProfile == "" {
 		check.Skip("Skipping test because storage profile is not configured")
 	}
@@ -699,6 +699,11 @@ func (vcd *TestVCD) Test_GetStorageProfileByHref(check *C) {
 	check.Assert(foundStorageProfile.IopsSettings, NotNil)
 	check.Assert(foundStorageProfile, Not(Equals), types.VdcStorageProfile{})
 	check.Assert(foundStorageProfile.IopsSettings, Not(Equals), types.VdcStorageProfileIopsSettings{})
+
+	// Get storage profile by ID
+	foundStorageProfile2, err := vcd.client.GetStorageProfileById(foundStorageProfile.ID)
+	check.Assert(err, IsNil)
+	check.Assert(foundStorageProfile, DeepEquals, foundStorageProfile2)
 }
 
 func (vcd *TestVCD) Test_GetOrgList(check *C) {

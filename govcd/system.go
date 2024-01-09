@@ -721,6 +721,21 @@ func getExtension(client *Client) (*types.Extension, error) {
 	return extensions, err
 }
 
+// GetStorageProfileById fetches a storage profile using its ID.
+func (vcdClient *VCDClient) GetStorageProfileById(id string) (*types.VdcStorageProfile, error) {
+	storageProfileHref := vcdClient.Client.VCDHREF
+	storageProfileHref.Path += "/admin/vdcStorageProfile/" + extractUuid(id)
+
+	vdcStorageProfile := &types.VdcStorageProfile{}
+
+	_, err := vcdClient.Client.ExecuteRequest(storageProfileHref.String(), http.MethodGet, "", "error retrieving storage profile: %s", nil, vdcStorageProfile)
+	if err != nil {
+		return nil, err
+	}
+
+	return vdcStorageProfile, nil
+}
+
 // GetStorageProfileByHref fetches storage profile using provided HREF.
 // Deprecated: use client.GetStorageProfileByHref or vcdClient.GetStorageProfileByHref
 func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorageProfile, error) {
