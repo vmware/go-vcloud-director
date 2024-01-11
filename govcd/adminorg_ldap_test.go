@@ -62,7 +62,7 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 		check.Assert(err, IsNil)
 	}()
 
-	sleepTime := 7 * time.Second
+	sleepTime := 10 * time.Second
 	fmt.Printf("# Sleeping %s to prevent 'LDAP context not initialized' errors\n", sleepTime.String())
 	time.Sleep(sleepTime)
 
