@@ -63,7 +63,7 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 	}()
 
 	sleepTime := 7 * time.Second
-	fmt.Printf("Sleeping %s to prevent 'LDAP context not initialized' errors\n", sleepTime.String())
+	fmt.Printf("# Sleeping %s to prevent 'LDAP context not initialized' errors\n", sleepTime.String())
 	time.Sleep(sleepTime)
 
 	// Run tests requiring LDAP from here.
