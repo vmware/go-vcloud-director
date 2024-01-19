@@ -2,6 +2,7 @@ package govcd
 
 import (
 	"fmt"
+	"reflect"
 )
 
 // oneOrError is used to cover up a common pattern in this codebase which is usually used in
@@ -26,7 +27,7 @@ import (
 //	        return nil, fmt.Errorf("more than one (%d) NSX-T Edge Cluster with name '%s' for Org VDC with id '%s' found",
 //	                len(nsxtEdgeClusters), name, vdc.Vdc.ID)
 //	}
-func oneOrError[T any](key, name string, entitySlice []*T) (*T, error) {
+func oneOrError[E any](key, name string, entitySlice []*E) (*E, error) {
 	if len(entitySlice) > 1 {
 		return nil, fmt.Errorf("got more than one entity by %s '%s' %d", key, name, len(entitySlice))
 	}
@@ -37,4 +38,62 @@ func oneOrError[T any](key, name string, entitySlice []*T) (*T, error) {
 	}
 
 	return entitySlice[0], nil
+}
+
+// genericLocalFilter performs filtering of a type E based on a field name `fieldName` and its
+// expected string value `expectedFieldValue`. Common use case for GetAllX methods where API does
+// not support filtering and it must be done on client side.
+//
+// Note. The field name `fieldName` must be present in a given type E (letter casing is important)
+func genericLocalFilter[E any](entities []*E, fieldName, expectedFieldValue string, entityName string) ([]*E, error) {
+	if len(entities) == 0 {
+		return nil, fmt.Errorf("zero entities provided for filtering")
+	}
+
+	filteredValues := make([]*E, 0)
+
+	for _, entity := range entities {
+
+		// Need to deference pointer because `reflect` package requires to work with types and not
+		// pointers to types
+		var entityValue E
+		if entity != nil {
+			entityValue = *entity
+		} else {
+			return nil, fmt.Errorf("given entity for %s is a nil pointer", entityName)
+		}
+
+		value := reflect.ValueOf(entityValue)
+		field := value.FieldByName(fieldName)
+
+		if !field.IsValid() {
+			return nil, fmt.Errorf("the struct for %s does not have the field '%s'", entityName, fieldName)
+		}
+
+		if field.Type().Name() != "string" {
+			return nil, fmt.Errorf("field '%s' is not string type, it has type '%s'", fieldName, field.Type().Name())
+		}
+
+		if field.String() == expectedFieldValue {
+			filteredValues = append(filteredValues, entity)
+		}
+	}
+
+	return filteredValues, nil
+}
+
+// genericLocalFilterOneOrError performs local filtering using `genericLocalFilter()` and
+// additionally verifies that only a single result is present using `oneOrError()`. Common use case
+// for GetXByName methods where API does not support filtering and it must be done on client side.
+func genericLocalFilterOneOrError[E any](entities []*E, fieldName, expectedFieldValue string, entityName string) (*E, error) {
+	if fieldName == "" || expectedFieldValue == "" {
+		return nil, fmt.Errorf("expected field name and value must be specified to filter %s", entityName)
+	}
+
+	filteredValues, err := genericLocalFilter(entities, fieldName, expectedFieldValue, entityName)
+	if err != nil {
+		return nil, err
+	}
+
+	return oneOrError(fieldName, expectedFieldValue, filteredValues)
 }
