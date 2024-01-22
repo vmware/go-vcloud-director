@@ -53,7 +53,8 @@ func (c crudConfig) validate() error {
 	// If the user specified empty `vdcId` - we'd validate this
 	for _, paramValue := range c.endpointParams {
 		if paramValue == "" {
-			return fmt.Errorf(`endpointParams were specified but they contain empty value "" for %s`, c.entityName)
+			return fmt.Errorf(`endpointParams were specified but they contain empty value "" for %s. %#v`,
+				c.entityName, c.endpointParams)
 		}
 	}
 

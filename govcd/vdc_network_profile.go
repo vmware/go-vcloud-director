@@ -75,72 +75,28 @@ func (adminVdc *AdminVdc) DeleteVdcNetworkProfile() error {
 }
 
 func getVdcNetworkProfile(client *Client, vdcId string) (*types.VdcNetworkProfile, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
+		endpointParams: []string{vdcId},
+		entityName:     "VDC Network Profile",
 	}
-
-	if vdcId == "" {
-		return nil, fmt.Errorf("cannot lookup VDC Network Profile configuration without VDC ID")
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcId))
-	if err != nil {
-		return nil, err
-	}
-
-	returnObject := &types.VdcNetworkProfile{}
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, returnObject, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return returnObject, nil
+	return getInnerEntity[types.VdcNetworkProfile](client, c)
 }
 
 func updateVdcNetworkProfile(client *Client, vdcId string, vdcNetworkProfileConfig *types.VdcNetworkProfile) (*types.VdcNetworkProfile, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
+		endpointParams: []string{vdcId},
+		entityName:     "VDC Network Profile",
 	}
-
-	if vdcId == "" {
-		return nil, fmt.Errorf("cannot update VDC Network Profile configuration without ID")
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcId))
-	if err != nil {
-		return nil, err
-	}
-
-	returnObject := &types.VdcNetworkProfile{}
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, vdcNetworkProfileConfig, returnObject, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error updating VDC Network Profile configuration: %s", err)
-	}
-
-	return returnObject, nil
+	return updateInnerEntity(client, c, vdcNetworkProfileConfig)
 }
 
 func deleteVdcNetworkProfile(client *Client, vdcId string) error {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
+		endpointParams: []string{vdcId},
+		entityName:     "VDC Network Profile",
 	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcId))
-	if err != nil {
-		return err
-	}
-
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-
-	if err != nil {
-		return fmt.Errorf("error deleting VDC Network Profile configuration: %s", err)
-	}
-
-	return nil
+	return deleteEntityById(client, c)
 }

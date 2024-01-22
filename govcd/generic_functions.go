@@ -40,18 +40,17 @@ func oneOrError[E any](key, name string, entitySlice []*E) (*E, error) {
 	return entitySlice[0], nil
 }
 
-// genericLocalFilter performs filtering of a type E based on a field name `fieldName` and its
+// localFilter performs filtering of a type E based on a field name `fieldName` and its
 // expected string value `expectedFieldValue`. Common use case for GetAllX methods where API does
 // not support filtering and it must be done on client side.
 //
 // Note. The field name `fieldName` must be present in a given type E (letter casing is important)
-func genericLocalFilter[E any](entities []*E, fieldName, expectedFieldValue string, entityName string) ([]*E, error) {
+func localFilter[E any](entities []*E, fieldName, expectedFieldValue string, entityName string) ([]*E, error) {
 	if len(entities) == 0 {
 		return nil, fmt.Errorf("zero entities provided for filtering")
 	}
 
 	filteredValues := make([]*E, 0)
-
 	for _, entity := range entities {
 
 		// Need to deference pointer because `reflect` package requires to work with types and not
@@ -82,15 +81,15 @@ func genericLocalFilter[E any](entities []*E, fieldName, expectedFieldValue stri
 	return filteredValues, nil
 }
 
-// genericLocalFilterOneOrError performs local filtering using `genericLocalFilter()` and
+// localFilterOneOrError performs local filtering using `genericLocalFilter()` and
 // additionally verifies that only a single result is present using `oneOrError()`. Common use case
 // for GetXByName methods where API does not support filtering and it must be done on client side.
-func genericLocalFilterOneOrError[E any](entities []*E, fieldName, expectedFieldValue string, entityName string) (*E, error) {
+func localFilterOneOrError[E any](entities []*E, fieldName, expectedFieldValue string, entityName string) (*E, error) {
 	if fieldName == "" || expectedFieldValue == "" {
 		return nil, fmt.Errorf("expected field name and value must be specified to filter %s", entityName)
 	}
 
-	filteredValues, err := genericLocalFilter(entities, fieldName, expectedFieldValue, entityName)
+	filteredValues, err := localFilter(entities, fieldName, expectedFieldValue, entityName)
 	if err != nil {
 		return nil, err
 	}

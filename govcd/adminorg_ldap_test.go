@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -61,10 +60,6 @@ func (vcd *TestVCD) Test_LDAP(check *C) {
 		err = task.WaitTaskCompletion()
 		check.Assert(err, IsNil)
 	}()
-
-	sleepTime := 10 * time.Second
-	fmt.Printf("# Sleeping %s to prevent 'LDAP context not initialized' errors\n", sleepTime.String())
-	time.Sleep(sleepTime)
 
 	// Run tests requiring LDAP from here.
 	vcd.test_GroupCRUD(check)
