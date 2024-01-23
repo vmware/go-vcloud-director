@@ -18,7 +18,7 @@ func (vcdClient *VCDClient) GetAllIpDiscoveryProfiles(queryParameters url.Values
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles,
 		queryParameters: queryParameters,
-		entityName:      "IP Discovery Profiles",
+		entityLabel:     "IP Discovery Profiles",
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileIpDiscovery](&vcdClient.Client, c)
 }
@@ -40,7 +40,7 @@ func (vcdClient *VCDClient) GetAllMacDiscoveryProfiles(queryParameters url.Value
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles,
 		queryParameters: queryParameters,
-		entityName:      "MAC Discovery Profiles",
+		entityLabel:     "MAC Discovery Profiles",
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileMacDiscovery](&vcdClient.Client, c)
 }
@@ -62,7 +62,7 @@ func (vcdClient *VCDClient) GetAllSpoofGuardProfiles(queryParameters url.Values)
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSpoofGuardProfiles,
 		queryParameters: queryParameters,
-		entityName:      "Spoof Guard Profiles",
+		entityLabel:     "Spoof Guard Profiles",
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileSegmentSpoofGuard](&vcdClient.Client, c)
 }
@@ -84,7 +84,7 @@ func (vcdClient *VCDClient) GetAllQoSProfiles(queryParameters url.Values) ([]*ty
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentQosProfiles,
 		queryParameters: queryParameters,
-		entityName:      "QoS Profiles",
+		entityLabel:     "QoS Profiles",
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileSegmentQosProfile](&vcdClient.Client, c)
 }
@@ -106,7 +106,7 @@ func (vcdClient *VCDClient) GetAllSegmentSecurityProfiles(queryParameters url.Va
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSecurityProfiles,
 		queryParameters: queryParameters,
-		entityName:      "Segment Security Profiles",
+		entityLabel:     "Segment Security Profiles",
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileSegmentSecurity](&vcdClient.Client, c)
 }

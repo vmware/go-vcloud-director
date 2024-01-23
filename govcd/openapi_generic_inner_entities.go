@@ -11,15 +11,15 @@ import (
 type crudConfig struct {
 	// Mandatory parameters
 
-	// entityName contains friendly entity name that is used for logging meaningful errors
-	entityName string
+	// entityLabel contains friendly entity name that is used for logging meaningful errors
+	entityLabel string
 
 	// endpoint in the usual format (e.g. types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles)
 	endpoint string
 
 	// Optional parameters
 
-	// endpointParams contains a slice of strings that will be used to contruct request URL. It will
+	// endpointParams contains a slice of strings that will be used to construct request URL. It will
 	// initially replace '%s' placeholders in the `endpoint` (if any) and will add them as suffix
 	// afterwards
 	endpointParams []string
@@ -36,7 +36,7 @@ type crudConfig struct {
 func (c crudConfig) validate() error {
 	// crudConfig misconfiguration - we can panic so that developer catches the problem during
 	// development of this SDK
-	if c.entityName == "" {
+	if c.entityLabel == "" {
 		panic("'entityName' must always be specified when initializing crudConfig")
 	}
 
@@ -54,7 +54,7 @@ func (c crudConfig) validate() error {
 	for _, paramValue := range c.endpointParams {
 		if paramValue == "" {
 			return fmt.Errorf(`endpointParams were specified but they contain empty value "" for %s. %#v`,
-				c.entityName, c.endpointParams)
+				c.entityLabel, c.endpointParams)
 		}
 	}
 
@@ -73,23 +73,23 @@ func createInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I,
 
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityLabel, err)
 	}
 
 	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", c.entityName, err)
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", c.entityLabel, err)
 	}
 
 	createdInnerEntityConfig := new(I)
 	err = client.OpenApiPostItem(apiVersion, urlRef, c.queryParameters, innerConfig, createdInnerEntityConfig, c.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error creating entity of type '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error creating entity of type '%s': %s", c.entityLabel, err)
 	}
 
 	return createdInnerEntityConfig, nil
@@ -107,23 +107,23 @@ func updateInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I,
 
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityLabel, err)
 	}
 
 	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", c.entityName, err)
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", c.entityLabel, err)
 	}
 
 	updatedInnerEntityConfig := new(I)
 	err = client.OpenApiPutItem(apiVersion, urlRef, c.queryParameters, innerConfig, updatedInnerEntityConfig, c.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error updating entity of type '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error updating entity of type '%s': %s", c.entityLabel, err)
 	}
 
 	return updatedInnerEntityConfig, nil
@@ -141,23 +141,23 @@ func getInnerEntity[I any](client *Client, c crudConfig) (*I, error) {
 
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityLabel, err)
 	}
 
 	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityLabel, err)
 	}
 
 	typeResponse := new(I)
 	err = client.OpenApiGetItem(apiVersion, urlRef, c.queryParameters, typeResponse, c.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", c.entityLabel, err)
 	}
 
 	return typeResponse, nil
@@ -176,23 +176,23 @@ func getAllInnerEntities[I any](client *Client, c crudConfig) ([]*I, error) {
 
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityLabel, err)
 	}
 
 	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityLabel, err)
 	}
 
 	typeResponses := make([]*I, 0)
 	err = client.OpenApiGetAllItems(apiVersion, urlRef, c.queryParameters, &typeResponses, c.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", c.entityName, err)
+		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", c.entityLabel, err)
 	}
 
 	return typeResponses, nil
@@ -216,7 +216,7 @@ func deleteEntityById(client *Client, c crudConfig) error {
 
 	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
 	if err != nil {
-		return fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityName, err)
+		return fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
@@ -227,7 +227,7 @@ func deleteEntityById(client *Client, c crudConfig) error {
 	err = client.OpenApiDeleteItem(apiVersion, urlRef, c.queryParameters, c.additionalHeader)
 
 	if err != nil {
-		return fmt.Errorf("error deleting %s: %s", c.entityName, err)
+		return fmt.Errorf("error deleting %s: %s", c.entityLabel, err)
 	}
 
 	return nil

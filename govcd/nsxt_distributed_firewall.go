@@ -47,7 +47,7 @@ func (d DistributedFirewallRule) wrap(inner *types.DistributedFirewallRule) *Dis
 // functions was created
 func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error) {
 	c := crudConfig{
-		entityName:     "NSX-T Distributed Firewall",
+		entityLabel:    "NSX-T Distributed Firewall",
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
 		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault},
 	}
@@ -62,7 +62,7 @@ func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error)
 // functions was created
 func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedFirewallRules) (*DistributedFirewall, error) {
 	c := crudConfig{
-		entityName:     "NSX-T Distributed Firewall",
+		entityLabel:    "NSX-T Distributed Firewall",
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
 		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault},
 	}
@@ -95,7 +95,7 @@ func (firewall *DistributedFirewall) DeleteAllRules() error {
 // GetDistributedFirewallRuleById retrieves single Distributed Firewall Rule by ID
 func (vdcGroup *VdcGroup) GetDistributedFirewallRuleById(id string) (*DistributedFirewallRule, error) {
 	c := crudConfig{
-		entityName:     "NSX-T Distributed Firewall Rule",
+		entityLabel:    "NSX-T Distributed Firewall Rule",
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
 		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault, "/", id},
 	}
@@ -153,7 +153,7 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 	// schema in future VCD versions)
 
 	c := crudConfig{
-		entityName:     "NSX-T Distributed Firewall Rule",
+		entityLabel:    "NSX-T Distributed Firewall Rule",
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
 		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault},
 	}
@@ -212,7 +212,7 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 	}
 
 	c2 := crudConfig{
-		entityName:     "NSX-T Distributed Firewall Rule",
+		entityLabel:    "NSX-T Distributed Firewall Rule",
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
 		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault},
 	}
@@ -247,7 +247,7 @@ func (dfwRule *DistributedFirewallRule) Update(rule *types.DistributedFirewallRu
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
 		endpointParams: []string{dfwRule.VdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault, "/", dfwRule.Rule.ID},
-		entityName:     "NSX-T Distribute Firewall Rule",
+		entityLabel:    "NSX-T Distribute Firewall Rule",
 	}
 	outerType := DistributedFirewallRule{client: dfwRule.client, VdcGroup: dfwRule.VdcGroup}
 	return updateOuterEntity(dfwRule.client, outerType, c, rule)
@@ -256,7 +256,7 @@ func (dfwRule *DistributedFirewallRule) Update(rule *types.DistributedFirewallRu
 // Delete a single Distributed Firewall Rule
 func (dfwRule *DistributedFirewallRule) Delete() error {
 	c := crudConfig{
-		entityName:     "NSX-T Distribute Firewall Rule",
+		entityLabel:    "NSX-T Distribute Firewall Rule",
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
 		endpointParams: []string{dfwRule.VdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault, "/", dfwRule.Rule.ID},
 	}

@@ -29,8 +29,8 @@ func (i IpSpaceUplink) wrap(inner *types.IpSpaceUplink) *IpSpaceUplink {
 // CreateIpSpaceUplink creates an IP Space Uplink with a given configuration
 func (vcdClient *VCDClient) CreateIpSpaceUplink(ipSpaceUplinkConfig *types.IpSpaceUplink) (*IpSpaceUplink, error) {
 	c := crudConfig{
-		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
-		entityName: "IP Space Uplink",
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
+		entityLabel: "IP Space Uplink",
 	}
 
 	outerType := IpSpaceUplink{vcdClient: vcdClient}
@@ -48,7 +48,7 @@ func (vcdClient *VCDClient) GetAllIpSpaceUplinks(externalNetworkId string, query
 	queryparams := queryParameterFilterAnd(fmt.Sprintf("externalNetworkRef.id==%s", externalNetworkId), queryParameters)
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
-		entityName:      "IP Space Uplink",
+		entityLabel:     "IP Space Uplink",
 		queryParameters: queryparams,
 	}
 
@@ -72,7 +72,7 @@ func (vcdClient *VCDClient) GetIpSpaceUplinkById(id string) (*IpSpaceUplink, err
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
 		endpointParams: []string{id},
-		entityName:     "IP Space Uplink",
+		entityLabel:    "IP Space Uplink",
 	}
 
 	outerType := IpSpaceUplink{vcdClient: vcdClient}
@@ -84,7 +84,7 @@ func (ipSpaceUplink *IpSpaceUplink) Update(ipSpaceUplinkConfig *types.IpSpaceUpl
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
 		endpointParams: []string{ipSpaceUplink.IpSpaceUplink.ID},
-		entityName:     "IP Space Uplink",
+		entityLabel:    "IP Space Uplink",
 	}
 
 	outerType := IpSpaceUplink{vcdClient: ipSpaceUplink.vcdClient}
@@ -100,7 +100,7 @@ func (ipSpaceUplink *IpSpaceUplink) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
 		endpointParams: []string{ipSpaceUplink.IpSpaceUplink.ID},
-		entityName:     "IP Space Uplink",
+		entityLabel:    "IP Space Uplink",
 	}
 
 	return deleteEntityById(&ipSpaceUplink.vcdClient.Client, c)

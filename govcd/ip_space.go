@@ -38,8 +38,8 @@ func (g IpSpace) wrap(inner *types.IpSpace) *IpSpace {
 // CreateIpSpace creates IP Space with desired configuration
 func (vcdClient *VCDClient) CreateIpSpace(ipSpaceConfig *types.IpSpace) (*IpSpace, error) {
 	c := crudConfig{
-		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
-		entityName: "IP Space",
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
+		entityLabel: "IP Space",
 	}
 	outerType := IpSpace{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, ipSpaceConfig)
@@ -52,7 +52,7 @@ func (vcdClient *VCDClient) CreateIpSpace(ipSpaceConfig *types.IpSpace) (*IpSpac
 func (vcdClient *VCDClient) GetAllIpSpaceSummaries(queryParameters url.Values) ([]*IpSpace, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries,
-		entityName:      "IP Space",
+		entityLabel:     "IP Space",
 		queryParameters: queryParameters,
 	}
 
@@ -85,7 +85,7 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 
 func (vcdClient *VCDClient) GetIpSpaceById(id string) (*IpSpace, error) {
 	c := crudConfig{
-		entityName:     "IP Space",
+		entityLabel:    "IP Space",
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{id},
 	}
@@ -123,7 +123,7 @@ func (ipSpace *IpSpace) Update(ipSpaceConfig *types.IpSpace) (*IpSpace, error) {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{ipSpace.IpSpace.ID},
-		entityName:     "IP Space",
+		entityLabel:    "IP Space",
 	}
 	outerType := IpSpace{vcdClient: ipSpace.vcdClient}
 	return updateOuterEntity(&ipSpace.vcdClient.Client, outerType, c, ipSpaceConfig)
@@ -134,7 +134,7 @@ func (ipSpace *IpSpace) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{ipSpace.IpSpace.ID},
-		entityName:     "IP Space",
+		entityLabel:    "IP Space",
 	}
 	return deleteEntityById(&ipSpace.vcdClient.Client, c)
 }

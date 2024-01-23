@@ -18,7 +18,7 @@ type outerEntityWrapper[O any, I any] interface {
 // createOuterEntity creates an outer entity with given inner entity config
 func createOuterEntity[O outerEntityWrapper[O, I], I any](client *Client, outerEntity O, c crudConfig, innerEntityConfig *I) (*O, error) {
 	if innerEntityConfig == nil {
-		return nil, fmt.Errorf("entity config '%s' cannot be empty for create operation", c.entityName)
+		return nil, fmt.Errorf("entity config '%s' cannot be empty for create operation", c.entityLabel)
 	}
 
 	createdInnerEntity, err := createInnerEntity(client, c, innerEntityConfig)
@@ -32,7 +32,7 @@ func createOuterEntity[O outerEntityWrapper[O, I], I any](client *Client, outerE
 // updateOuterEntity updates an outer entity with given inner entity config
 func updateOuterEntity[O outerEntityWrapper[O, I], I any](client *Client, outerEntity O, c crudConfig, innerEntityConfig *I) (*O, error) {
 	if innerEntityConfig == nil {
-		return nil, fmt.Errorf("entity config '%s' cannot be empty for update operation", c.entityName)
+		return nil, fmt.Errorf("entity config '%s' cannot be empty for update operation", c.entityLabel)
 	}
 
 	updatedInnerEntity, err := updateInnerEntity(client, c, innerEntityConfig)

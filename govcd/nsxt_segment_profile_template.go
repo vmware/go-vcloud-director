@@ -29,8 +29,8 @@ func (n NsxtSegmentProfileTemplate) wrap(inner *types.NsxtSegmentProfileTemplate
 // global VCD configuration, Org VDC or Org VDC Network
 func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *types.NsxtSegmentProfileTemplate) (*NsxtSegmentProfileTemplate, error) {
 	c := crudConfig{
-		endpoint:   types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
-		entityName: "NSX-T Segment Profile Template",
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
+		entityLabel: "NSX-T Segment Profile Template",
 	}
 	outerType := NsxtSegmentProfileTemplate{VCDClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, segmentProfileConfig)
@@ -40,7 +40,7 @@ func (vcdClient *VCDClient) CreateSegmentProfileTemplate(segmentProfileConfig *t
 func (vcdClient *VCDClient) GetAllSegmentProfileTemplates(queryFilter url.Values) ([]*NsxtSegmentProfileTemplate, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
-		entityName:      "NSX-T Segment Profile Template",
+		entityLabel:     "NSX-T Segment Profile Template",
 		queryParameters: queryFilter,
 	}
 
@@ -53,7 +53,7 @@ func (vcdClient *VCDClient) GetSegmentProfileTemplateById(id string) (*NsxtSegme
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
 		endpointParams: []string{id},
-		entityName:     "IP Space",
+		entityLabel:    "IP Space",
 	}
 
 	outerType := NsxtSegmentProfileTemplate{VCDClient: vcdClient}
@@ -83,7 +83,7 @@ func (spt *NsxtSegmentProfileTemplate) Update(nsxtSegmentProfileTemplateConfig *
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
 		endpointParams: []string{nsxtSegmentProfileTemplateConfig.ID},
-		entityName:     "IP Space",
+		entityLabel:    "IP Space",
 	}
 	outerType := NsxtSegmentProfileTemplate{VCDClient: spt.VCDClient}
 	return updateOuterEntity(&spt.VCDClient.Client, outerType, c, nsxtSegmentProfileTemplateConfig)
@@ -94,7 +94,7 @@ func (spt *NsxtSegmentProfileTemplate) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentProfileTemplates,
 		endpointParams: []string{spt.NsxtSegmentProfileTemplate.ID},
-		entityName:     "IP Space",
+		entityLabel:    "IP Space",
 	}
 	return deleteEntityById(&spt.VCDClient.Client, c)
 }

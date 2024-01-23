@@ -381,7 +381,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetSegmentProfile() (*types.OrgVdcNetwork
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles,
 		endpointParams: []string{orgVdcNet.OpenApiOrgVdcNetwork.ID},
-		entityName:     "Org VDC Network Segment Profile",
+		entityLabel:    "Org VDC Network Segment Profile",
 	}
 	return getInnerEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, c)
 }
@@ -391,7 +391,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles,
 		endpointParams: []string{orgVdcNet.OpenApiOrgVdcNetwork.ID},
-		entityName:     "Org VDC Network Segment Profile",
+		entityLabel:    "Org VDC Network Segment Profile",
 	}
 	return updateInnerEntity(orgVdcNet.client, c, entityConfig)
 }

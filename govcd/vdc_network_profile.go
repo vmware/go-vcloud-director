@@ -78,7 +78,7 @@ func getVdcNetworkProfile(client *Client, vdcId string) (*types.VdcNetworkProfil
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
 		endpointParams: []string{vdcId},
-		entityName:     "VDC Network Profile",
+		entityLabel:    "VDC Network Profile",
 	}
 	return getInnerEntity[types.VdcNetworkProfile](client, c)
 }
@@ -87,7 +87,7 @@ func updateVdcNetworkProfile(client *Client, vdcId string, vdcNetworkProfileConf
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
 		endpointParams: []string{vdcId},
-		entityName:     "VDC Network Profile",
+		entityLabel:    "VDC Network Profile",
 	}
 	return updateInnerEntity(client, c, vdcNetworkProfileConfig)
 }
@@ -96,7 +96,7 @@ func deleteVdcNetworkProfile(client *Client, vdcId string) error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
 		endpointParams: []string{vdcId},
-		entityName:     "VDC Network Profile",
+		entityLabel:    "VDC Network Profile",
 	}
 	return deleteEntityById(client, c)
 }
