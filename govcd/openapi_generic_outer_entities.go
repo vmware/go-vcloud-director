@@ -1,6 +1,9 @@
 package govcd
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+)
 
 // Generic type explanations
 // Common generic parameter names seen in this code
@@ -51,6 +54,16 @@ func getOuterEntity[O outerEntityWrapper[O, I], I any](client *Client, outerEnti
 	}
 
 	return outerEntity.wrap(retrievedInnerEntity), nil
+}
+
+// getOuterEntity retrieves a single outer entity
+func getOuterEntityWithHeaders[O outerEntityWrapper[O, I], I any](client *Client, outerEntity O, c crudConfig) (*O, http.Header, error) {
+	retrievedInnerEntity, headers, err := getInnerEntityWithHeaders[I](client, c)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return outerEntity.wrap(retrievedInnerEntity), headers, nil
 }
 
 // getAllOuterEntities retrieves all outer entities

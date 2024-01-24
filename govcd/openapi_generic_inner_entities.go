@@ -2,6 +2,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 )
@@ -101,32 +102,43 @@ func createInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I,
 // * `c` holds settings for performing API call
 // * `innerConfig` is the new entity type
 func updateInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I, error) {
+	// Discarding returned headers to better match return signature for most common cases
+	updatedInnerEntity, _, err := updateInnerEntityWithHeaders(client, c, innerConfig)
+	return updatedInnerEntity, err
+}
+
+// updateInnerEntityWithHeaders implements a common pattern for updating entity throughout codebase
+// Parameters:
+// * `client` is a *Client
+// * `c` holds settings for performing API call
+// * `innerConfig` is the new entity type
+func updateInnerEntityWithHeaders[I any](client *Client, c crudConfig, innerConfig *I) (*I, http.Header, error) {
 	if err := c.validate(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityLabel, err)
 	}
 
 	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", c.entityLabel, err)
 	}
 
 	updatedInnerEntityConfig := new(I)
-	err = client.OpenApiPutItem(apiVersion, urlRef, c.queryParameters, innerConfig, updatedInnerEntityConfig, c.additionalHeader)
+	headers, err := client.OpenApiPutItemAndGetHeaders(apiVersion, urlRef, c.queryParameters, innerConfig, updatedInnerEntityConfig, c.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error updating entity of type '%s': %s", c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error updating entity of type '%s': %s", c.entityLabel, err)
 	}
 
-	return updatedInnerEntityConfig, nil
+	return updatedInnerEntityConfig, headers, nil
 }
 
 // getInnerEntity is an implementation for a common pattern in our code where we have to retrieve
@@ -135,32 +147,43 @@ func updateInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I,
 // * `client` is a *Client
 // * `c` holds settings for performing API call
 func getInnerEntity[I any](client *Client, c crudConfig) (*I, error) {
+	// Discarding returned headers to better match return signature for most common cases
+	innerEntity, _, err := getInnerEntityWithHeaders[I](client, c)
+	return innerEntity, err
+}
+
+// getInnerEntityWithHeaders is an implementation for a common pattern in our code where we have to retrieve
+// outer entity (usually *types.XXXX) and does not need to be wrapped in an inner container entity.
+// Parameters:
+// * `client` is a *Client
+// * `c` holds settings for performing API call
+func getInnerEntityWithHeaders[I any](client *Client, c crudConfig) (*I, http.Header, error) {
 	if err := c.validate(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityLabel, err)
 	}
 
 	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
 	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityLabel, err)
 	}
 
 	typeResponse := new(I)
-	err = client.OpenApiGetItem(apiVersion, urlRef, c.queryParameters, typeResponse, c.additionalHeader)
+	headers, err := client.OpenApiGetItemAndHeaders(apiVersion, urlRef, c.queryParameters, typeResponse, c.additionalHeader)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving entity of type '%s': %s", c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error retrieving entity of type '%s': %s", c.entityLabel, err)
 	}
 
-	return typeResponse, nil
+	return typeResponse, headers, nil
 }
 
 // getAllInnerEntities can be used to retrieve a slice of any inner entities in the OpenAPI

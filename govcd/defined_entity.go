@@ -7,9 +7,10 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
 	"time"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // DefinedEntityType is a type for handling Runtime Defined Entity (RDE) Type definitions.
@@ -19,6 +20,14 @@ type DefinedEntityType struct {
 	client            *Client
 }
 
+// wrap is a hidden helper that helps to facilitate usage of generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (d DefinedEntityType) wrap(inner *types.DefinedEntityType) *DefinedEntityType {
+	d.DefinedEntityType = inner
+	return &d
+}
+
 // DefinedEntity represents an instance of a Runtime Defined Entity (RDE)
 type DefinedEntity struct {
 	DefinedEntity *types.DefinedEntity
@@ -26,65 +35,35 @@ type DefinedEntity struct {
 	client        *Client
 }
 
+// wrap is a hidden helper that helps to facilitate usage of generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (d DefinedEntity) wrap(inner *types.DefinedEntity) *DefinedEntity {
+	d.DefinedEntity = inner
+	return &d
+}
+
 // CreateRdeType creates a Runtime Defined Entity Type.
 // Only a System administrator can create RDE Types.
 func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*DefinedEntityType, error) {
-	client := vcdClient.Client
-
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
+		entityLabel: "RDE Type",
 	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &DefinedEntityType{
-		DefinedEntityType: &types.DefinedEntityType{},
-		client:            &vcdClient.Client,
-	}
-
-	err = client.OpenApiPostItem(apiVersion, urlRef, nil, rde, result.DefinedEntityType, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	outerType := DefinedEntityType{client: &vcdClient.Client}
+	return createOuterEntity(&vcdClient.Client, outerType, c, rde)
 }
 
 // GetAllRdeTypes retrieves all Runtime Defined Entity Types. Query parameters can be supplied to perform additional filtering.
 func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*DefinedEntityType, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
+		entityLabel:     "RDE Type",
+		queryParameters: queryParameters,
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponses := []*types.DefinedEntityType{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Wrap all typeResponses into DefinedEntityType types with client
-	returnRDEs := make([]*DefinedEntityType, len(typeResponses))
-	for sliceIndex := range typeResponses {
-		returnRDEs[sliceIndex] = &DefinedEntityType{
-			DefinedEntityType: typeResponses[sliceIndex],
-			client:            &vcdClient.Client,
-		}
-	}
-
-	return returnRDEs, nil
+	outerType := DefinedEntityType{client: &vcdClient.Client}
+	return getAllOuterEntities[DefinedEntityType, types.DefinedEntityType](&vcdClient.Client, outerType, c)
 }
 
 // GetRdeType gets a Runtime Defined Entity Type by its unique combination of vendor, nss and version.
@@ -109,35 +88,19 @@ func (vcdClient *VCDClient) GetRdeType(vendor, nss, version string) (*DefinedEnt
 
 // GetRdeTypeById gets a Runtime Defined Entity Type by its ID.
 func (vcdClient *VCDClient) GetRdeTypeById(id string) (*DefinedEntityType, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		entityLabel:    "RDE Type",
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
+		endpointParams: []string{id},
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &DefinedEntityType{
-		DefinedEntityType: &types.DefinedEntityType{},
-		client:            &vcdClient.Client,
-	}
-
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, result.DefinedEntityType, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	outerType := DefinedEntityType{client: &vcdClient.Client}
+	return getOuterEntity[DefinedEntityType, types.DefinedEntityType](&vcdClient.Client, outerType, c)
 }
 
 // Update updates the receiver Runtime Defined Entity Type with the values given by the input.
 // Only a System administrator can create RDE Types.
 func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType) error {
-	client := rdeType.client
 	if rdeType.DefinedEntityType.ID == "" {
 		return fmt.Errorf("ID of the receiver Runtime Defined Entity Type is empty")
 	}
@@ -158,21 +121,19 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 	rdeTypeToUpdate.Nss = rdeType.DefinedEntityType.Nss
 	rdeTypeToUpdate.Vendor = rdeType.DefinedEntityType.Vendor
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
+		endpointParams: []string{rdeType.DefinedEntityType.ID},
+		entityLabel:    "Runtime Defined Entity Type",
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, rdeType.DefinedEntityType.ID)
+	resultDefinedEntityType, err := updateInnerEntity(rdeType.client, c, &rdeTypeToUpdate)
 	if err != nil {
 		return err
 	}
-
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, rdeTypeToUpdate, rdeType.DefinedEntityType, nil)
-	if err != nil {
-		return err
-	}
+	// Only if there was no error in request we overwrite pointer receiver as otherwise it would
+	// wipe out existing data
+	rdeType.DefinedEntityType = resultDefinedEntityType
 
 	return nil
 }
@@ -180,24 +141,13 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 // Delete deletes the receiver Runtime Defined Entity Type.
 // Only a System administrator can delete RDE Types.
 func (rdeType *DefinedEntityType) Delete() error {
-	client := rdeType.client
-	if rdeType.DefinedEntityType.ID == "" {
-		return fmt.Errorf("ID of the receiver Runtime Defined Entity Type is empty")
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
+		endpointParams: []string{rdeType.DefinedEntityType.ID},
+		entityLabel:    "RDE Type",
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, rdeType.DefinedEntityType.ID)
-	if err != nil {
-		return err
-	}
-
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
+	if err := deleteEntityById(rdeType.client, c); err != nil {
 		return err
 	}
 
@@ -216,24 +166,12 @@ func (rdeType *DefinedEntityType) GetAllBehaviors(queryParameters url.Values) ([
 // GetBehaviorById retrieves a unique Behavior that belongs to the receiver RDE Type and is determined by the
 // input ID. The ID can be a RDE Interface Behavior ID or a RDE Type overridden Behavior ID.
 func (rdeType *DefinedEntityType) GetBehaviorById(id string) (*types.Behavior, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
-	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors,
+		endpointParams: []string{rdeType.DefinedEntityType.ID, id},
+		entityLabel:    "RDE Behavior",
 	}
-
-	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), id)
-	if err != nil {
-		return nil, err
-	}
-
-	response := types.Behavior{}
-	err = rdeType.client.OpenApiGetItem(apiVersion, urlRef, nil, &response, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
+	return getInnerEntity[types.Behavior](rdeType.client, c)
 }
 
 // GetBehaviorByName retrieves a unique Behavior that belongs to the receiver RDE Type and is named after
@@ -243,12 +181,8 @@ func (rdeType *DefinedEntityType) GetBehaviorByName(name string) (*types.Behavio
 	if err != nil {
 		return nil, fmt.Errorf("could not get the Behaviors of the Defined Entity Type with ID '%s': %s", rdeType.DefinedEntityType.ID, err)
 	}
-	for _, b := range behaviors {
-		if b.Name == name {
-			return b, nil
-		}
-	}
-	return nil, fmt.Errorf("could not find any Behavior with name '%s' in Defined Entity Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
+	infoMessage := fmt.Sprintf("Defined Entity Behavior with name '%s' in Defined Entity Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
+	return localFilterOneOrError(behaviors, "Name", name, infoMessage)
 }
 
 // UpdateBehaviorOverride overrides an Interface Behavior. Only Behavior description and execution can be overridden.
@@ -261,23 +195,12 @@ func (rdeType *DefinedEntityType) UpdateBehaviorOverride(behavior types.Behavior
 		return nil, fmt.Errorf("ID of the Behavior to override is empty")
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
-	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors,
+		endpointParams: []string{rdeType.DefinedEntityType.ID, behavior.ID},
+		entityLabel:    "Behavior override",
 	}
-
-	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), behavior.ID)
-	if err != nil {
-		return nil, err
-	}
-	response := types.Behavior{}
-	err = rdeType.client.OpenApiPutItem(apiVersion, urlRef, nil, behavior, &response, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
+	return updateInnerEntity(rdeType.client, c, &behavior)
 }
 
 // DeleteBehaviorOverride removes a Behavior specified by its ID from the receiver Defined Entity Type.
@@ -287,22 +210,12 @@ func (rdeType *DefinedEntityType) DeleteBehaviorOverride(behaviorId string) erro
 		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors
-	apiVersion, err := rdeType.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors,
+		endpointParams: []string{rdeType.DefinedEntityType.ID, behaviorId},
+		entityLabel:    "Behavior override",
 	}
-
-	urlRef, err := rdeType.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, rdeType.DefinedEntityType.ID), behaviorId)
-	if err != nil {
-		return err
-	}
-	err = rdeType.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return deleteEntityById(rdeType.client, c)
 }
 
 // SetBehaviorAccessControls sets the given slice of BehaviorAccess to the receiver Defined Entity Type.
@@ -310,17 +223,6 @@ func (rdeType *DefinedEntityType) DeleteBehaviorOverride(behaviorId string) erro
 func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAccess) error {
 	if det.DefinedEntityType.ID == "" {
 		return fmt.Errorf("ID of the receiver Defined Entity Type is empty")
-	}
-
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls
-	apiVersion, err := det.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
-	}
-
-	urlRef, err := det.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, det.DefinedEntityType.ID))
-	if err != nil {
-		return err
 	}
 
 	sanitizedAcls := acls
@@ -337,7 +239,12 @@ func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAc
 		Values: rawMessage,
 	}
 
-	err = det.client.OpenApiPutItem(apiVersion, urlRef, nil, payload, nil, nil)
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls,
+		endpointParams: []string{det.DefinedEntityType.ID},
+		entityLabel:    "RDE Behavior Access Controls",
+	}
+	_, err = updateInnerEntity(det.client, c, &payload)
 	if err != nil {
 		return err
 	}
@@ -348,24 +255,13 @@ func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAc
 // GetAllBehaviorsAccessControls gets all the Behaviors Access Controls from the receiver DefinedEntityType.
 // Query parameters can be supplied to modify pagination.
 func (det *DefinedEntityType) GetAllBehaviorsAccessControls(queryParameters url.Values) ([]*types.BehaviorAccess, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls
-	apiVersion, err := det.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls,
+		queryParameters: queryParameters,
+		endpointParams:  []string{det.DefinedEntityType.ID},
+		entityLabel:     "Behavior Access Controls",
 	}
-
-	urlRef, err := det.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, det.DefinedEntityType.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponses := []*types.BehaviorAccess{{}}
-	err = det.client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return typeResponses, nil
+	return getAllInnerEntities[types.BehaviorAccess](det.client, c)
 }
 
 // GetAllRdes gets all the RDE instances of the given vendor, nss and version.
@@ -381,33 +277,15 @@ func (rdeType *DefinedEntityType) GetAllRdes(queryParameters url.Values) ([]*Def
 // getAllRdes gets all the RDE instances of the given vendor, nss and version.
 // Supports filtering with the given queryParameters.
 func getAllRdes(client *Client, vendor, nss, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes,
+		entityLabel:     "RDE",
+		queryParameters: queryParameters,
+		endpointParams:  []string{vendor, "/", nss, "/", version},
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, fmt.Sprintf("%s/%s/%s", vendor, nss, version))
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponses := []*types.DefinedEntity{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Wrap all typeResponses into DefinedEntityType types with client
-	returnRDEs := make([]*DefinedEntity, len(typeResponses))
-	for sliceIndex := range typeResponses {
-		returnRDEs[sliceIndex] = &DefinedEntity{
-			DefinedEntity: typeResponses[sliceIndex],
-			client:        client,
-		}
-	}
-
-	return returnRDEs, nil
+	outerType := DefinedEntity{client: client}
+	return getAllOuterEntities[DefinedEntity, types.DefinedEntity](client, outerType, c)
 }
 
 // GetRdesByName gets RDE instances with the given name that belongs to the receiver type.
@@ -454,28 +332,18 @@ func (vcdClient *VCDClient) GetRdeById(id string) (*DefinedEntity, error) {
 // getRdeById gets a Runtime Defined Entity by its ID.
 // Getting a RDE by ID populates the ETag field in the returned object.
 func getRdeById(client *Client, id string) (*DefinedEntity, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	c := crudConfig{
+		entityLabel:    "RDE",
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities,
+		endpointParams: []string{id},
+	}
+
+	outerType := DefinedEntity{client: client}
+	result, headers, err := getOuterEntityWithHeaders(client, outerType, c)
 	if err != nil {
 		return nil, err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &DefinedEntity{
-		DefinedEntity: &types.DefinedEntity{},
-		client:        client,
-	}
-
-	headers, err := client.OpenApiGetItemAndHeaders(apiVersion, urlRef, nil, result.DefinedEntity, nil)
-	if err != nil {
-		return nil, amendRdeApiError(client, err)
 	}
 	result.Etag = headers.Get("Etag")
-
 	return result, nil
 }
 
@@ -590,8 +458,6 @@ func (rde *DefinedEntity) Resolve() error {
 // if rde.Resolve() failed and a JSON entity change is needed.
 // Updating a RDE populates the ETag field in the receiver object.
 func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
-	client := rde.client
-
 	if rde.DefinedEntity.ID == "" {
 		return fmt.Errorf("ID of the receiver Runtime Defined Entity is empty")
 	}
@@ -614,21 +480,20 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 		rde.Etag = retrievedRde.Etag
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	c := crudConfig{
+		entityLabel:      "RDE",
+		endpoint:         types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities,
+		endpointParams:   []string{rde.DefinedEntity.ID},
+		additionalHeader: map[string]string{"If-Match": rde.Etag},
+	}
+
+	resultDefinedEntity, headers, err := updateInnerEntityWithHeaders(rde.client, c, &rdeToUpdate)
 	if err != nil {
 		return err
 	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, rde.DefinedEntity.ID)
-	if err != nil {
-		return amendRdeApiError(client, err)
-	}
-
-	headers, err := client.OpenApiPutItemAndGetHeaders(apiVersion, urlRef, nil, rdeToUpdate, rde.DefinedEntity, map[string]string{"If-Match": rde.Etag})
-	if err != nil {
-		return err
-	}
+	// Only if there was no error in request we overwrite pointer receiver as otherwise it would
+	// wipe out existing data
+	rde.DefinedEntity = resultDefinedEntity
 	rde.Etag = headers.Get("Etag")
 
 	return nil
@@ -636,26 +501,14 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 
 // Delete deletes the receiver Runtime Defined Entity.
 func (rde *DefinedEntity) Delete() error {
-	client := rde.client
-
-	if rde.DefinedEntity.ID == "" {
-		return fmt.Errorf("ID of the receiver Runtime Defined Entity is empty")
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities,
+		endpointParams: []string{rde.DefinedEntity.ID},
+		entityLabel:    "RDE",
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, rde.DefinedEntity.ID)
-	if err != nil {
-		return err
-	}
-
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
-		return amendRdeApiError(client, err)
+	if err := deleteEntityById(rde.client, c); err != nil {
+		return amendRdeApiError(rde.client, err)
 	}
 
 	rde.DefinedEntity = &types.DefinedEntity{}

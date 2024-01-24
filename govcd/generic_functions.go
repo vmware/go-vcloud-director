@@ -27,14 +27,14 @@ import (
 //	        return nil, fmt.Errorf("more than one (%d) NSX-T Edge Cluster with name '%s' for Org VDC with id '%s' found",
 //	                len(nsxtEdgeClusters), name, vdc.Vdc.ID)
 //	}
-func oneOrError[E any](key, name string, entitySlice []*E) (*E, error) {
+func oneOrError[E any](key, value string, entitySlice []*E) (*E, error) {
 	if len(entitySlice) > 1 {
-		return nil, fmt.Errorf("got more than one entity by %s '%s' %d", key, name, len(entitySlice))
+		return nil, fmt.Errorf("got more than one entity by %s '%s' %d", key, value, len(entitySlice))
 	}
 
 	if len(entitySlice) == 0 {
 		// No entity found - returning ErrorEntityNotFound as it must be wrapped in the returned error
-		return nil, fmt.Errorf("%s: got zero entities by %s '%s'", ErrorEntityNotFound, key, name)
+		return nil, fmt.Errorf("%s: got zero entities by %s '%s'", ErrorEntityNotFound, key, value)
 	}
 
 	return entitySlice[0], nil
@@ -45,7 +45,7 @@ func oneOrError[E any](key, name string, entitySlice []*E) (*E, error) {
 // not support filtering and it must be done on client side.
 //
 // Note. The field name `fieldName` must be present in a given type E (letter casing is important)
-func localFilter[E any](entities []*E, fieldName, expectedFieldValue string, entityName string) ([]*E, error) {
+func localFilter[E any](entities []*E, fieldName, expectedFieldValue string, entityLabel string) ([]*E, error) {
 	if len(entities) == 0 {
 		return nil, fmt.Errorf("zero entities provided for filtering")
 	}
@@ -59,14 +59,14 @@ func localFilter[E any](entities []*E, fieldName, expectedFieldValue string, ent
 		if entity != nil {
 			entityValue = *entity
 		} else {
-			return nil, fmt.Errorf("given entity for %s is a nil pointer", entityName)
+			return nil, fmt.Errorf("given entity for %s is a nil pointer", entityLabel)
 		}
 
 		value := reflect.ValueOf(entityValue)
 		field := value.FieldByName(fieldName)
 
 		if !field.IsValid() {
-			return nil, fmt.Errorf("the struct for %s does not have the field '%s'", entityName, fieldName)
+			return nil, fmt.Errorf("the struct for %s does not have the field '%s'", entityLabel, fieldName)
 		}
 
 		if field.Type().Name() != "string" {
@@ -84,12 +84,12 @@ func localFilter[E any](entities []*E, fieldName, expectedFieldValue string, ent
 // localFilterOneOrError performs local filtering using `genericLocalFilter()` and
 // additionally verifies that only a single result is present using `oneOrError()`. Common use case
 // for GetXByName methods where API does not support filtering and it must be done on client side.
-func localFilterOneOrError[E any](entities []*E, fieldName, expectedFieldValue string, entityName string) (*E, error) {
+func localFilterOneOrError[E any](entities []*E, fieldName, expectedFieldValue string, entityLabel string) (*E, error) {
 	if fieldName == "" || expectedFieldValue == "" {
-		return nil, fmt.Errorf("expected field name and value must be specified to filter %s", entityName)
+		return nil, fmt.Errorf("expected field name and value must be specified to filter %s", entityLabel)
 	}
 
-	filteredValues, err := localFilter(entities, fieldName, expectedFieldValue, entityName)
+	filteredValues, err := localFilter(entities, fieldName, expectedFieldValue, entityLabel)
 	if err != nil {
 		return nil, err
 	}
