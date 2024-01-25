@@ -2160,3 +2160,12 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 	err = deleteNsxtVapp(vcd, check.TestName())
 	check.Assert(err, IsNil)
 }
+
+func (vcd *TestVCD) Test_QueryVMList(check *C) {
+	vmList, err := QueryVmList(types.VmQueryFilterOnlyDeployed, &vcd.client.Client, nil)
+	check.Assert(err, IsNil)
+	for i, vm := range vmList {
+		fmt.Printf("%d %# v\n", i, pretty.Formatter(vm))
+	}
+
+}

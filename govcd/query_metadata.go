@@ -62,7 +62,7 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 		vmFields = []string{"catalogName", "container", "containerName", "datastoreName", "description",
 			"gcStatus", "guestOs", "hardwareVersion", "hostName", "isAutoNature", "isDeleted", "isDeployed", "isPublished",
 			"isVAppTemplate", "isVdcEnabled", "memoryMB", "moref", "name", "numberOfCpus", "org", "status",
-			"storageProfileName", "vc", "vdc", "vmToolsVersion", "containerStatus", "pvdcHighestSupportedHardwareVersion",
+			"storageProfileName", "vc", "vdc", "vdcName", "vmToolsVersion", "containerStatus", "pvdcHighestSupportedHardwareVersion",
 			"isComputePolicyCompliant", "vmSizingPolicyId", "vmPlacementPolicyId", "encrypted", "dateCreated",
 			"totalStorageAllocatedMb", "isExpired"}
 		vappFields = []string{"creationDate", "isBusy", "isDeployed", "isEnabled", "isExpired", "isInMaintenanceMode", "isPublic",
