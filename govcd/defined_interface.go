@@ -12,6 +12,11 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const (
+	labelDefinedInterface         = "Defined Interface"
+	labelDefinedInterfaceBehavior = "Defined Interface Behavior"
+)
+
 // DefinedInterface is a type for handling Defined Interfaces, from the Runtime Defined Entities framework, in VCD.
 // This is often referred as Runtime Defined Entity Interface or RDE Interface in documentation.
 type DefinedInterface struct {
@@ -32,7 +37,7 @@ func (d DefinedInterface) wrap(inner *types.DefinedInterface) *DefinedInterface 
 func (vcdClient *VCDClient) CreateDefinedInterface(definedInterface *types.DefinedInterface) (*DefinedInterface, error) {
 	c := crudConfig{
 		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
-		entityLabel: "Defined Interface",
+		entityLabel: labelDefinedInterface,
 	}
 	outerType := DefinedInterface{client: &vcdClient.Client}
 	return createOuterEntity(&vcdClient.Client, outerType, c, definedInterface)
@@ -42,7 +47,7 @@ func (vcdClient *VCDClient) CreateDefinedInterface(definedInterface *types.Defin
 func (vcdClient *VCDClient) GetAllDefinedInterfaces(queryParameters url.Values) ([]*DefinedInterface, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
-		entityLabel:     "Defined Interface",
+		entityLabel:     labelDefinedInterface,
 		queryParameters: queryParameters,
 	}
 
@@ -73,7 +78,7 @@ func (vcdClient *VCDClient) GetDefinedInterface(vendor, nss, version string) (*D
 // GetDefinedInterfaceById gets a Defined Interface identified by its unique URN.
 func (vcdClient *VCDClient) GetDefinedInterfaceById(id string) (*DefinedInterface, error) {
 	c := crudConfig{
-		entityLabel:    "Define Interface",
+		entityLabel:    labelDefinedInterface,
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
 		endpointParams: []string{id},
 	}
@@ -101,7 +106,7 @@ func (di *DefinedInterface) Update(definedInterface types.DefinedInterface) erro
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
 		endpointParams: []string{di.DefinedInterface.ID},
-		entityLabel:    "Defined Interface",
+		entityLabel:    labelDefinedInterface,
 	}
 	resultDefinedInterface, err := updateInnerEntity(di.client, c, &definedInterface)
 	if err != nil {
@@ -123,7 +128,7 @@ func (di *DefinedInterface) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
 		endpointParams: []string{di.DefinedInterface.ID},
-		entityLabel:    "Defined Interface",
+		entityLabel:    labelDefinedInterface,
 	}
 
 	err := deleteEntityById(di.client, c)
@@ -145,7 +150,7 @@ func (di *DefinedInterface) AddBehavior(behavior types.Behavior) (*types.Behavio
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors,
 		endpointParams: []string{di.DefinedInterface.ID},
-		entityLabel:    "Defined Interface Behavior",
+		entityLabel:    labelDefinedInterfaceBehavior,
 	}
 	return createInnerEntity(di.client, c, &behavior)
 }
@@ -162,7 +167,7 @@ func (di *DefinedInterface) GetAllBehaviors(queryParameters url.Values) ([]*type
 func getAllBehaviors(client *Client, objectId, openApiEndpoint string, queryParameters url.Values) ([]*types.Behavior, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + openApiEndpoint,
-		entityLabel:     "Defined Entity Behavior",
+		entityLabel:     labelDefinedInterfaceBehavior,
 		endpointParams:  []string{objectId},
 		queryParameters: queryParameters,
 	}
@@ -175,7 +180,7 @@ func (di *DefinedInterface) GetBehaviorById(id string) (*types.Behavior, error) 
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors,
 		endpointParams: []string{di.DefinedInterface.ID, id},
-		entityLabel:    "Defined Interface Behavior",
+		entityLabel:    labelDefinedInterfaceBehavior,
 	}
 	return getInnerEntity[types.Behavior](di.client, c)
 }
@@ -203,7 +208,7 @@ func (di *DefinedInterface) UpdateBehavior(behavior types.Behavior) (*types.Beha
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors,
 		endpointParams: []string{di.DefinedInterface.ID, behavior.ID},
-		entityLabel:    "Defined Interface Behavior",
+		entityLabel:    labelDefinedInterfaceBehavior,
 	}
 	return updateInnerEntity(di.client, c, &behavior)
 }
@@ -217,7 +222,7 @@ func (di *DefinedInterface) DeleteBehavior(behaviorId string) error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors,
 		endpointParams: []string{di.DefinedInterface.ID, behaviorId},
-		entityLabel:    "Defined Interface Behavior",
+		entityLabel:    labelDefinedInterfaceBehavior,
 	}
 	return deleteEntityById(di.client, c)
 }

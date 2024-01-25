@@ -11,6 +11,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelIpSpace = "IP Space"
+
 // IpSpace provides structured approach to allocating public and private IP addresses by preventing
 // the use of overlapping IP addresses across organizations and organization VDCs.
 //
@@ -39,7 +41,7 @@ func (g IpSpace) wrap(inner *types.IpSpace) *IpSpace {
 func (vcdClient *VCDClient) CreateIpSpace(ipSpaceConfig *types.IpSpace) (*IpSpace, error) {
 	c := crudConfig{
 		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
-		entityLabel: "IP Space",
+		entityLabel: labelIpSpace,
 	}
 	outerType := IpSpace{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, ipSpaceConfig)
@@ -52,7 +54,7 @@ func (vcdClient *VCDClient) CreateIpSpace(ipSpaceConfig *types.IpSpace) (*IpSpac
 func (vcdClient *VCDClient) GetAllIpSpaceSummaries(queryParameters url.Values) ([]*IpSpace, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries,
-		entityLabel:     "IP Space",
+		entityLabel:     labelIpSpace,
 		queryParameters: queryParameters,
 	}
 
@@ -85,7 +87,7 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 
 func (vcdClient *VCDClient) GetIpSpaceById(id string) (*IpSpace, error) {
 	c := crudConfig{
-		entityLabel:    "IP Space",
+		entityLabel:    labelIpSpace,
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{id},
 	}
@@ -123,7 +125,7 @@ func (ipSpace *IpSpace) Update(ipSpaceConfig *types.IpSpace) (*IpSpace, error) {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{ipSpace.IpSpace.ID},
-		entityLabel:    "IP Space",
+		entityLabel:    labelIpSpace,
 	}
 	outerType := IpSpace{vcdClient: ipSpace.vcdClient}
 	return updateOuterEntity(&ipSpace.vcdClient.Client, outerType, c, ipSpaceConfig)
@@ -134,7 +136,7 @@ func (ipSpace *IpSpace) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
 		endpointParams: []string{ipSpace.IpSpace.ID},
-		entityLabel:    "IP Space",
+		entityLabel:    labelIpSpace,
 	}
 	return deleteEntityById(&ipSpace.vcdClient.Client, c)
 }

@@ -12,6 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelOrgVdcNetworkSegmentProfile = "Org VDC Network Segment Profile"
+
 // OpenApiOrgVdcNetwork uses OpenAPI endpoint to operate both - NSX-T and NSX-V Org VDC networks
 type OpenApiOrgVdcNetwork struct {
 	OpenApiOrgVdcNetwork *types.OpenApiOrgVdcNetwork
@@ -381,7 +383,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) GetSegmentProfile() (*types.OrgVdcNetwork
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles,
 		endpointParams: []string{orgVdcNet.OpenApiOrgVdcNetwork.ID},
-		entityLabel:    "Org VDC Network Segment Profile",
+		entityLabel:    labelOrgVdcNetworkSegmentProfile,
 	}
 	return getInnerEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, c)
 }
@@ -391,7 +393,7 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles,
 		endpointParams: []string{orgVdcNet.OpenApiOrgVdcNetwork.ID},
-		entityLabel:    "Org VDC Network Segment Profile",
+		entityLabel:    labelOrgVdcNetworkSegmentProfile,
 	}
 	return updateInnerEntity(orgVdcNet.client, c, entityConfig)
 }

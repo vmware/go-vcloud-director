@@ -10,6 +10,14 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const (
+	labelIpDiscoveryProfiles     = "IP Discovery Profiles"
+	labelMacDiscoveryProfiles    = "MAC Discovery Profiles"
+	labelSpoofGuardProfiles      = "Spoof Guard Profiles"
+	labelQosProfiles             = "QoS Profiles"
+	labelSegmentSecurityProfiles = "Segment Security Profiles"
+)
+
 // GetAllIpDiscoveryProfiles retrieves all IP Discovery Profiles configured in an NSX-T manager.
 // NSX-T manager ID (nsxTManagerRef.id), Org VDC ID (orgVdcId) or VDC Group ID (vdcGroupId) must be
 // supplied as a filter. Results can also be filtered by a single profile ID
@@ -18,7 +26,7 @@ func (vcdClient *VCDClient) GetAllIpDiscoveryProfiles(queryParameters url.Values
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentIpDiscoveryProfiles,
 		queryParameters: queryParameters,
-		entityLabel:     "IP Discovery Profiles",
+		entityLabel:     labelIpDiscoveryProfiles,
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileIpDiscovery](&vcdClient.Client, c)
 }
@@ -29,7 +37,7 @@ func (vcdClient *VCDClient) GetIpDiscoveryProfileByName(name string, queryParame
 		return nil, err
 	}
 
-	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment IP Discovery Profile")
+	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, labelIpDiscoveryProfiles)
 }
 
 // GetAllMacDiscoveryProfiles retrieves all MAC Discovery Profiles configured in an NSX-T manager.
@@ -40,7 +48,7 @@ func (vcdClient *VCDClient) GetAllMacDiscoveryProfiles(queryParameters url.Value
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentMacDiscoveryProfiles,
 		queryParameters: queryParameters,
-		entityLabel:     "MAC Discovery Profiles",
+		entityLabel:     labelMacDiscoveryProfiles,
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileMacDiscovery](&vcdClient.Client, c)
 }
@@ -51,7 +59,7 @@ func (vcdClient *VCDClient) GetMacDiscoveryProfileByName(name string, queryParam
 		return nil, err
 	}
 
-	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment MAC Discovery Profile")
+	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, labelMacDiscoveryProfiles)
 }
 
 // GetAllSpoofGuardProfiles retrieves all Spoof Guard Profiles configured in an NSX-T manager.
@@ -62,7 +70,7 @@ func (vcdClient *VCDClient) GetAllSpoofGuardProfiles(queryParameters url.Values)
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSpoofGuardProfiles,
 		queryParameters: queryParameters,
-		entityLabel:     "Spoof Guard Profiles",
+		entityLabel:     labelSpoofGuardProfiles,
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileSegmentSpoofGuard](&vcdClient.Client, c)
 }
@@ -73,7 +81,7 @@ func (vcdClient *VCDClient) GetSpoofGuardProfileByName(name string, queryParamet
 		return nil, err
 	}
 
-	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment Spoof Guard Profile")
+	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, labelSpoofGuardProfiles)
 }
 
 // GetAllQoSProfiles retrieves all QoS Profiles configured in an NSX-T manager.
@@ -84,7 +92,7 @@ func (vcdClient *VCDClient) GetAllQoSProfiles(queryParameters url.Values) ([]*ty
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentQosProfiles,
 		queryParameters: queryParameters,
-		entityLabel:     "QoS Profiles",
+		entityLabel:     labelQosProfiles,
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileSegmentQosProfile](&vcdClient.Client, c)
 }
@@ -95,7 +103,7 @@ func (vcdClient *VCDClient) GetQoSProfileByName(name string, queryParameters url
 		return nil, err
 	}
 
-	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment QoS Profile")
+	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, labelQosProfiles)
 }
 
 // GetAllSegmentSecurityProfiles retrieves all Segment Security Profiles configured in an NSX-T manager.
@@ -106,7 +114,7 @@ func (vcdClient *VCDClient) GetAllSegmentSecurityProfiles(queryParameters url.Va
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtSegmentSecurityProfiles,
 		queryParameters: queryParameters,
-		entityLabel:     "Segment Security Profiles",
+		entityLabel:     labelSegmentSecurityProfiles,
 	}
 	return getAllInnerEntities[types.NsxtSegmentProfileSegmentSecurity](&vcdClient.Client, c)
 }
@@ -117,5 +125,5 @@ func (vcdClient *VCDClient) GetSegmentSecurityProfileByName(name string, queryPa
 		return nil, err
 	}
 
-	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, "Segment Security Profile")
+	return localFilterOneOrError(apiFilteredEntities, "DisplayName", name, labelSegmentSecurityProfiles)
 }

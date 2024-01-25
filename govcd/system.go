@@ -17,6 +17,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+const labelGlobalDefaultSegmentProfileTemplate = "Global Default Segment Profile Templates"
+
 // Simple structure to pass Edge Gateway creation parameters.
 type EdgeGatewayCreation struct {
 	ExternalNetworks           []string // List of external networks to be linked to this gateway
@@ -1179,7 +1181,7 @@ func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryRe
 func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
 	c := crudConfig{
 		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates,
-		entityLabel: "Global Default Segment Profile Templates",
+		entityLabel: labelGlobalDefaultSegmentProfileTemplate,
 	}
 
 	return getInnerEntity[types.NsxtGlobalDefaultSegmentProfileTemplate](&vcdClient.Client, c)
@@ -1189,7 +1191,7 @@ func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.Ns
 func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtGlobalDefaultSegmentProfileTemplate) (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
 	c := crudConfig{
 		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates,
-		entityLabel: "Global Default Segment Profile Templates",
+		entityLabel: labelGlobalDefaultSegmentProfileTemplate,
 	}
 	return updateInnerEntity(&vcdClient.Client, c, entityConfig)
 }

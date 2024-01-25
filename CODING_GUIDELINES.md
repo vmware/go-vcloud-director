@@ -477,7 +477,10 @@ When the tenant context is not needed (system administration calls), we just pas
 
 ## Generic CRUD functions for OpenAPI entity implementation
 
-Generic CRUD functions are used to minimize boilerplate for entity implementation in the SDK.
+Generic CRUD functions are used to minimize boilerplate for entity implementation in the SDK. They
+might not always be the way to go when there are very specific operation needs as it is not worth
+having a generic function for single use case. In such cases, low level API client function set,
+that is located in `openapi.go` can help to perform such operations.
 
 ### Terminology
 
@@ -551,11 +554,13 @@ The entities that match below criteria are usually going to use `inner` crud fun
 * Read only entities (e.g. NSX-T Segment Profiles `VCDClient.GetAllIpDiscoveryProfiles`)
 
 Inner types are more simple as they can be directly used without any additional overhead. There are
-5 functions that can be used:
+7 functions that can be used:
 
 * `createInnerEntity`
 * `updateInnerEntity`
+* `updateInnerEntityWithHeaders`
 * `getInnerEntity`
+* `getInnerEntityWithHeaders`
 * `deleteEntityById`
 * `getAllInnerEntities`
 
@@ -579,10 +584,11 @@ func (o OuterEntity) wrap(inner *InnerEntity) *OuterEntity {
 	return &o
 }
 ```
-There are 4 functions for handling CRU(D). 
+There are 5 functions for handling CRU(D). 
 * `createOuterEntity`
 * `updateOuterEntity`
 * `getOuterEntity`
+* `getOuterEntityWithHeaders`
 * `getAllOuterEntities`
 
 *Note*: `D` (deletion) in `CRUD` is a simple operation that does not additionally handle data and
@@ -594,6 +600,9 @@ Existing examples of the implementation are:
 * `DistributedFirewall`
 * `DistributedFirewallRule`
 * `NsxtSegmentProfileTemplate`
+* `DefinedEntityType`
+* `DefinedInterface`
+* `DefinedEntity`
 
 ## Testing
 

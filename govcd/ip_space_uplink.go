@@ -11,6 +11,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelIpSpaceUplink = "IP Space Uplink"
+
 // IpSpaceUplink provides the capability to assign one or more IP Spaces as Uplinks to External
 // Networks
 type IpSpaceUplink struct {
@@ -30,7 +32,7 @@ func (i IpSpaceUplink) wrap(inner *types.IpSpaceUplink) *IpSpaceUplink {
 func (vcdClient *VCDClient) CreateIpSpaceUplink(ipSpaceUplinkConfig *types.IpSpaceUplink) (*IpSpaceUplink, error) {
 	c := crudConfig{
 		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
-		entityLabel: "IP Space Uplink",
+		entityLabel: labelIpSpaceUplink,
 	}
 
 	outerType := IpSpaceUplink{vcdClient: vcdClient}
@@ -48,7 +50,7 @@ func (vcdClient *VCDClient) GetAllIpSpaceUplinks(externalNetworkId string, query
 	queryparams := queryParameterFilterAnd(fmt.Sprintf("externalNetworkRef.id==%s", externalNetworkId), queryParameters)
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
-		entityLabel:     "IP Space Uplink",
+		entityLabel:     labelIpSpaceUplink,
 		queryParameters: queryparams,
 	}
 
@@ -72,7 +74,7 @@ func (vcdClient *VCDClient) GetIpSpaceUplinkById(id string) (*IpSpaceUplink, err
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
 		endpointParams: []string{id},
-		entityLabel:    "IP Space Uplink",
+		entityLabel:    labelIpSpaceUplink,
 	}
 
 	outerType := IpSpaceUplink{vcdClient: vcdClient}
@@ -84,7 +86,7 @@ func (ipSpaceUplink *IpSpaceUplink) Update(ipSpaceUplinkConfig *types.IpSpaceUpl
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
 		endpointParams: []string{ipSpaceUplink.IpSpaceUplink.ID},
-		entityLabel:    "IP Space Uplink",
+		entityLabel:    labelIpSpaceUplink,
 	}
 
 	outerType := IpSpaceUplink{vcdClient: ipSpaceUplink.vcdClient}
@@ -100,7 +102,7 @@ func (ipSpaceUplink *IpSpaceUplink) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
 		endpointParams: []string{ipSpaceUplink.IpSpaceUplink.ID},
-		entityLabel:    "IP Space Uplink",
+		entityLabel:    labelIpSpaceUplink,
 	}
 
 	return deleteEntityById(&ipSpaceUplink.vcdClient.Client, c)

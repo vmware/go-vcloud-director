@@ -13,6 +13,14 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const (
+	labelDefinedEntity             = "Defined Entity"
+	labelDefinedEntityType         = "Defined Entity Type"
+	labelRdeBehavior               = "RDE Behavior"
+	labelRdeBehaviorOverride       = "RDE Behavior Override"
+	labelRdeBehaviorAccessControls = "RDE Behavior Access Controls"
+)
+
 // DefinedEntityType is a type for handling Runtime Defined Entity (RDE) Type definitions.
 // Note. Running a few of these operations in parallel may corrupt database in VCD (at least <= 10.4.2)
 type DefinedEntityType struct {
@@ -48,7 +56,7 @@ func (d DefinedEntity) wrap(inner *types.DefinedEntity) *DefinedEntity {
 func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*DefinedEntityType, error) {
 	c := crudConfig{
 		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
-		entityLabel: "RDE Type",
+		entityLabel: labelDefinedEntityType,
 	}
 	outerType := DefinedEntityType{client: &vcdClient.Client}
 	return createOuterEntity(&vcdClient.Client, outerType, c, rde)
@@ -58,7 +66,7 @@ func (vcdClient *VCDClient) CreateRdeType(rde *types.DefinedEntityType) (*Define
 func (vcdClient *VCDClient) GetAllRdeTypes(queryParameters url.Values) ([]*DefinedEntityType, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
-		entityLabel:     "RDE Type",
+		entityLabel:     labelDefinedEntityType,
 		queryParameters: queryParameters,
 	}
 
@@ -89,7 +97,7 @@ func (vcdClient *VCDClient) GetRdeType(vendor, nss, version string) (*DefinedEnt
 // GetRdeTypeById gets a Runtime Defined Entity Type by its ID.
 func (vcdClient *VCDClient) GetRdeTypeById(id string) (*DefinedEntityType, error) {
 	c := crudConfig{
-		entityLabel:    "RDE Type",
+		entityLabel:    labelDefinedEntityType,
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
 		endpointParams: []string{id},
 	}
@@ -124,7 +132,7 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
 		endpointParams: []string{rdeType.DefinedEntityType.ID},
-		entityLabel:    "Runtime Defined Entity Type",
+		entityLabel:    labelDefinedEntityType,
 	}
 
 	resultDefinedEntityType, err := updateInnerEntity(rdeType.client, c, &rdeTypeToUpdate)
@@ -144,7 +152,7 @@ func (rdeType *DefinedEntityType) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes,
 		endpointParams: []string{rdeType.DefinedEntityType.ID},
-		entityLabel:    "RDE Type",
+		entityLabel:    labelDefinedEntityType,
 	}
 
 	if err := deleteEntityById(rdeType.client, c); err != nil {
@@ -169,7 +177,7 @@ func (rdeType *DefinedEntityType) GetBehaviorById(id string) (*types.Behavior, e
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors,
 		endpointParams: []string{rdeType.DefinedEntityType.ID, id},
-		entityLabel:    "RDE Behavior",
+		entityLabel:    labelRdeBehavior,
 	}
 	return getInnerEntity[types.Behavior](rdeType.client, c)
 }
@@ -198,7 +206,7 @@ func (rdeType *DefinedEntityType) UpdateBehaviorOverride(behavior types.Behavior
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors,
 		endpointParams: []string{rdeType.DefinedEntityType.ID, behavior.ID},
-		entityLabel:    "Behavior override",
+		entityLabel:    labelRdeBehaviorOverride,
 	}
 	return updateInnerEntity(rdeType.client, c, &behavior)
 }
@@ -213,7 +221,7 @@ func (rdeType *DefinedEntityType) DeleteBehaviorOverride(behaviorId string) erro
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviors,
 		endpointParams: []string{rdeType.DefinedEntityType.ID, behaviorId},
-		entityLabel:    "Behavior override",
+		entityLabel:    labelRdeBehaviorOverride,
 	}
 	return deleteEntityById(rdeType.client, c)
 }
@@ -242,7 +250,7 @@ func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAc
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls,
 		endpointParams: []string{det.DefinedEntityType.ID},
-		entityLabel:    "RDE Behavior Access Controls",
+		entityLabel:    labelRdeBehaviorAccessControls,
 	}
 	_, err = updateInnerEntity(det.client, c, &payload)
 	if err != nil {
@@ -259,7 +267,7 @@ func (det *DefinedEntityType) GetAllBehaviorsAccessControls(queryParameters url.
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls,
 		queryParameters: queryParameters,
 		endpointParams:  []string{det.DefinedEntityType.ID},
-		entityLabel:     "Behavior Access Controls",
+		entityLabel:     labelRdeBehaviorAccessControls,
 	}
 	return getAllInnerEntities[types.BehaviorAccess](det.client, c)
 }
@@ -279,7 +287,7 @@ func (rdeType *DefinedEntityType) GetAllRdes(queryParameters url.Values) ([]*Def
 func getAllRdes(client *Client, vendor, nss, version string, queryParameters url.Values) ([]*DefinedEntity, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes,
-		entityLabel:     "RDE",
+		entityLabel:     labelDefinedEntityType,
 		queryParameters: queryParameters,
 		endpointParams:  []string{vendor, "/", nss, "/", version},
 	}
@@ -333,7 +341,7 @@ func (vcdClient *VCDClient) GetRdeById(id string) (*DefinedEntity, error) {
 // Getting a RDE by ID populates the ETag field in the returned object.
 func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 	c := crudConfig{
-		entityLabel:    "RDE",
+		entityLabel:    labelDefinedEntityType,
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities,
 		endpointParams: []string{id},
 	}
@@ -481,7 +489,7 @@ func (rde *DefinedEntity) Update(rdeToUpdate types.DefinedEntity) error {
 	}
 
 	c := crudConfig{
-		entityLabel:      "RDE",
+		entityLabel:      labelDefinedEntity,
 		endpoint:         types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities,
 		endpointParams:   []string{rde.DefinedEntity.ID},
 		additionalHeader: map[string]string{"If-Match": rde.Etag},
@@ -504,7 +512,7 @@ func (rde *DefinedEntity) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntities,
 		endpointParams: []string{rde.DefinedEntity.ID},
-		entityLabel:    "RDE",
+		entityLabel:    labelDefinedEntity,
 	}
 
 	if err := deleteEntityById(rde.client, c); err != nil {

@@ -10,6 +10,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelVdcNetworkProfile = "VDC Network Profile"
+
 // VDC Network profiles have 1:1 mapping with VDC - each VDC has an option to configure VDC Network
 // Profiles. types.VdcNetworkProfile holds more information about possible configurations
 
@@ -78,7 +80,7 @@ func getVdcNetworkProfile(client *Client, vdcId string) (*types.VdcNetworkProfil
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
 		endpointParams: []string{vdcId},
-		entityLabel:    "VDC Network Profile",
+		entityLabel:    labelVdcNetworkProfile,
 	}
 	return getInnerEntity[types.VdcNetworkProfile](client, c)
 }
@@ -87,7 +89,7 @@ func updateVdcNetworkProfile(client *Client, vdcId string, vdcNetworkProfileConf
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
 		endpointParams: []string{vdcId},
-		entityLabel:    "VDC Network Profile",
+		entityLabel:    labelVdcNetworkProfile,
 	}
 	return updateInnerEntity(client, c, vdcNetworkProfileConfig)
 }
@@ -96,7 +98,7 @@ func deleteVdcNetworkProfile(client *Client, vdcId string) error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcNetworkProfile,
 		endpointParams: []string{vdcId},
-		entityLabel:    "VDC Network Profile",
+		entityLabel:    labelVdcNetworkProfile,
 	}
 	return deleteEntityById(client, c)
 }
