@@ -192,8 +192,8 @@ func (di *DefinedInterface) GetBehaviorByName(name string) (*types.Behavior, err
 	if err != nil {
 		return nil, fmt.Errorf("could not get the Behaviors of the Defined Interface with ID '%s': %s", di.DefinedInterface.ID, err)
 	}
-	infoMessage := fmt.Sprintf("Defined Interface Behavior with name '%s' in Defined Interface with ID '%s': %s", name, di.DefinedInterface.ID, ErrorEntityNotFound)
-	return localFilterOneOrError(behaviors, "Name", name, infoMessage)
+	label := fmt.Sprintf("Defined Interface Behavior with name '%s' in Defined Interface with ID '%s': %s", name, di.DefinedInterface.ID, ErrorEntityNotFound)
+	return localFilterOneOrError(label, behaviors, "Name", name)
 }
 
 // UpdateBehavior updates a Behavior specified by the input.

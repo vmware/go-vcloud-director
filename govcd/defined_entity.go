@@ -189,8 +189,8 @@ func (rdeType *DefinedEntityType) GetBehaviorByName(name string) (*types.Behavio
 	if err != nil {
 		return nil, fmt.Errorf("could not get the Behaviors of the Defined Entity Type with ID '%s': %s", rdeType.DefinedEntityType.ID, err)
 	}
-	infoMessage := fmt.Sprintf("Defined Entity Behavior with name '%s' in Defined Entity Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
-	return localFilterOneOrError(behaviors, "Name", name, infoMessage)
+	label := fmt.Sprintf("Defined Entity Behavior with name '%s' in Defined Entity Type with ID '%s': %s", name, rdeType.DefinedEntityType.ID, ErrorEntityNotFound)
+	return localFilterOneOrError(label, behaviors, "Name", name)
 }
 
 // UpdateBehaviorOverride overrides an Interface Behavior. Only Behavior description and execution can be overridden.

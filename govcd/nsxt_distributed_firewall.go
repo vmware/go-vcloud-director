@@ -120,7 +120,7 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*Distri
 		return nil, fmt.Errorf("error returning distributed firewall rules: %s", err)
 	}
 
-	singleRuleByName, err := localFilterOneOrError(dfw.DistributedFirewallRuleContainer.Values, "Name", name, labelDistributedFirewallRule)
+	singleRuleByName, err := localFilterOneOrError(labelDistributedFirewallRule, dfw.DistributedFirewallRuleContainer.Values, "Name", name)
 	if err != nil {
 		return nil, err
 	}

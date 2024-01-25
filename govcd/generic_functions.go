@@ -84,7 +84,7 @@ func localFilter[E any](entities []*E, fieldName, expectedFieldValue string, ent
 // localFilterOneOrError performs local filtering using `genericLocalFilter()` and
 // additionally verifies that only a single result is present using `oneOrError()`. Common use case
 // for GetXByName methods where API does not support filtering and it must be done on client side.
-func localFilterOneOrError[E any](entities []*E, fieldName, expectedFieldValue string, entityLabel string) (*E, error) {
+func localFilterOneOrError[E any](entityLabel string, entities []*E, fieldName, expectedFieldValue string) (*E, error) {
 	if fieldName == "" || expectedFieldValue == "" {
 		return nil, fmt.Errorf("expected field name and value must be specified to filter %s", entityLabel)
 	}
