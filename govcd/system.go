@@ -17,7 +17,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-const labelGlobalDefaultSegmentProfileTemplate = "Global Default Segment Profile Templates"
+const labelGlobalDefaultSegmentProfileTemplate = "Global Default Segment Profile Template"
 
 // Simple structure to pass Edge Gateway creation parameters.
 type EdgeGatewayCreation struct {

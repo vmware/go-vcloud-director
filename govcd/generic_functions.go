@@ -45,7 +45,7 @@ func oneOrError[E any](key, value string, entitySlice []*E) (*E, error) {
 // not support filtering and it must be done on client side.
 //
 // Note. The field name `fieldName` must be present in a given type E (letter casing is important)
-func localFilter[E any](entities []*E, fieldName, expectedFieldValue string, entityLabel string) ([]*E, error) {
+func localFilter[E any](entityLabel string, entities []*E, fieldName, expectedFieldValue string) ([]*E, error) {
 	if len(entities) == 0 {
 		return nil, fmt.Errorf("zero entities provided for filtering")
 	}
@@ -89,7 +89,7 @@ func localFilterOneOrError[E any](entityLabel string, entities []*E, fieldName, 
 		return nil, fmt.Errorf("expected field name and value must be specified to filter %s", entityLabel)
 	}
 
-	filteredValues, err := localFilter(entities, fieldName, expectedFieldValue, entityLabel)
+	filteredValues, err := localFilter(entityLabel, entities, fieldName, expectedFieldValue)
 	if err != nil {
 		return nil, err
 	}
