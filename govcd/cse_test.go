@@ -104,6 +104,12 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(cluster.Etag, Not(Equals), "")
 	check.Assert(cluster.Capvcd.Status.VcdKe.State, Equals, "provisioned")
 
+	err = cluster.Refresh()
+	check.Assert(err, IsNil)
+
+	err = cluster.Delete(0)
+	check.Assert(err, IsNil)
+
 	err = token.Delete()
 	check.Assert(err, IsNil)
 

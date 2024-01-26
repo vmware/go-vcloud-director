@@ -153,6 +153,82 @@ func (rde *DefinedEntity) CseConvertToCapvcdCluster() (*CseClusterApiProviderClu
 	return result, nil
 }
 
+// Refresh gets the latest information about the receiver cluster and updates its properties.
+func (cluster *CseClusterApiProviderCluster) Refresh() error {
+	rde, err := getRdeById(cluster.client, cluster.ID)
+	if err != nil {
+		return err
+	}
+	refreshed, err := rde.CseConvertToCapvcdCluster()
+	if err != nil {
+		return err
+	}
+	cluster.Capvcd = refreshed.Capvcd
+	cluster.Etag = refreshed.Etag
+	return nil
+}
+
+// Delete deletes a CSE Kubernetes cluster, waiting the specified amount of minutes. If the timeout is reached, this method
+// returns an error, even if the cluster is already marked for deletion.
+func (cluster *CseClusterApiProviderCluster) Delete(timeoutMinutes time.Duration) error {
+	logHttpResponse := util.LogHttpResponse
+
+	// The following loop is constantly polling VCD to retrieve the RDE, which has a big JSON inside, so we avoid filling
+	// the log with these big payloads. We use defer to be sure that we restore the initial logging state.
+	defer func() {
+		util.LogHttpResponse = logHttpResponse
+	}()
+
+	var elapsed time.Duration
+	start := time.Now()
+	vcdKe := map[string]interface{}{}
+	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
+		util.LogHttpResponse = false
+		rde, err := getRdeById(cluster.client, cluster.ID)
+		util.LogHttpResponse = logHttpResponse
+		if err != nil {
+			if ContainsNotFound(err) {
+				return nil // The RDE is gone, so the process is completed and there's nothing more to do
+			}
+			return fmt.Errorf("could not retrieve the Kubernetes cluster with ID '%s': %s", cluster.ID, err)
+		}
+
+		spec, ok := rde.DefinedEntity.Entity["spec"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("JSON object 'spec' is not correct in the RDE '%s': %s", cluster.ID, err)
+		}
+
+		vcdKe, ok = spec["vcdKe"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("JSON object 'spec.vcdKe' is not correct in the RDE '%s': %s", cluster.ID, err)
+		}
+
+		if !vcdKe["markForDelete"].(bool) || !vcdKe["forceDelete"].(bool) {
+			// Mark the cluster for deletion
+			vcdKe["markForDelete"] = true
+			vcdKe["forceDelete"] = true
+			rde.DefinedEntity.Entity["spec"].(map[string]interface{})["vcdKe"] = vcdKe
+			err = rde.Update(*rde.DefinedEntity)
+			if err != nil {
+				if strings.Contains(strings.ToLower(err.Error()), "etag") {
+					continue // We ignore any ETag error. This just means a clash with the CSE Server, we just try again
+				}
+				return fmt.Errorf("could not mark the Kubernetes cluster with ID '%s' to be deleted: %s", cluster.ID, err)
+			}
+		}
+
+		util.Logger.Printf("[DEBUG] Cluster '%s' is still not deleted, will check again in 10 seconds", cluster.ID)
+		time.Sleep(10 * time.Second)
+		elapsed = time.Since(start)
+	}
+
+	// We give a hint to the user about the deletion process result
+	if len(vcdKe) >= 2 && vcdKe["markForDelete"].(bool) && vcdKe["forceDelete"].(bool) {
+		return fmt.Errorf("timeout of %v minutes reached, the cluster was successfully marked for deletion but was not removed in time", timeoutMinutes)
+	}
+	return fmt.Errorf("timeout of %v minutes reached, the cluster was not marked for deletion, please try again", timeoutMinutes)
+}
+
 // waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if timeoutMinutes = 0)
 // or until this timeout is reached. If the cluster is in "provisioned" state before the given timeout, it returns a CseClusterApiProviderCluster object
 // representing the Kubernetes cluster with all the latest information.
@@ -172,7 +248,7 @@ func waitUntilClusterIsProvisioned(vcdClient *VCDClient, clusterId string, timeo
 
 	start := time.Now()
 	var capvcdCluster *CseClusterApiProviderCluster
-	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies operations_timeout_minutes=0, we wait forever
+	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
 		util.LogHttpResponse = false
 		rde, err := vcdClient.GetRdeById(clusterId)
 		util.LogHttpResponse = logHttpResponse
