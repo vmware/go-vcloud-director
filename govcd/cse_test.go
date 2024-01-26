@@ -8,13 +8,103 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+	"net/url"
+	"os"
 )
+
+const (
+	TestRequiresCseConfiguration = "Test %s requires CSE configuration details"
+)
+
+func skipCseTests(testConfig TestConfig) bool {
+	if cse := os.Getenv("TEST_VCD_CSE"); cse == "" {
+		return true
+	}
+	return testConfig.Cse.SolutionsOrg == "" || testConfig.Cse.TenantOrg == "" || testConfig.Cse.OvaName == "" ||
+		testConfig.Cse.RoutedNetwork == "" || testConfig.Cse.EdgeGateway == "" || testConfig.Cse.OvaCatalog == "" || testConfig.Cse.TenantVdc == "" ||
+		testConfig.VCD.StorageProfile.SP1 == ""
+}
 
 // Test_Cse
 func (vcd *TestVCD) Test_Cse(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
+
+	if skipCseTests(vcd.config) {
+		check.Skip(fmt.Sprintf(TestRequiresCseConfiguration, check.TestName()))
+	}
+
+	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
+	check.Assert(err, IsNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.Cse.TenantOrg, false)
+	check.Assert(err, IsNil)
+
+	net, err := vdc.GetOrgVdcNetworkByName(vcd.config.Cse.RoutedNetwork, false)
+	check.Assert(err, IsNil)
+
+	ova, err := vdc.GetVAppTemplateByName(vcd.config.Cse.OvaName)
+	check.Assert(err, IsNil)
+
+	sp, err := vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	check.Assert(err, IsNil)
+
+	policies, err := vcd.client.GetAllVdcComputePoliciesV2(url.Values{
+		"filter": []string{"name==*TKG%20small*"},
+	})
+	check.Assert(err, IsNil)
+	check.Assert(len(policies), Equals, 1)
+
+	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
+	check.Assert(err, IsNil)
+	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTokens+token.Token.ID)
+
+	apiToken, err := token.GetInitialApiToken()
+	check.Assert(err, IsNil)
+
+	cluster, err := vcd.client.CseCreateKubernetesCluster(CseClusterCreationInput{
+		Name:                    "test-cse",
+		OrganizationId:          org.Org.ID,
+		VdcId:                   vdc.Vdc.ID,
+		NetworkId:               net.OrgVDCNetwork.ID,
+		KubernetesTemplateOvaId: ova.VAppTemplate.ID,
+		CseVersion:              "4.2",
+		ControlPlane: ControlPlaneInput{
+			MachineCount:     1,
+			DiskSizeGi:       20,
+			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
+			StorageProfileId: sp.ID,
+			Ip:               "",
+		},
+		WorkerPools: []WorkerPoolInput{{
+			Name:             "worker-pool-1",
+			MachineCount:     1,
+			DiskSizeGi:       20,
+			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
+			StorageProfileId: sp.ID,
+		}},
+		DefaultStorageClass: &DefaultStorageClassInput{
+			StorageProfileId: sp.ID,
+			Name:             "storage-class-1",
+			ReclaimPolicy:    "delete",
+			Filesystem:       "ext4",
+		},
+		Owner:              vcd.config.Provider.User,
+		ApiToken:           apiToken.RefreshToken,
+		NodeHealthCheck:    true,
+		PodCidr:            "100.96.0.0/11",
+		ServiceCidr:        "100.64.0.0/13",
+		AutoRepairOnErrors: true,
+	}, 0)
+	check.Assert(err, IsNil)
+	check.Assert(cluster.ID, Not(Equals), "")
+	check.Assert(cluster.Etag, Not(Equals), "")
+	check.Assert(cluster.Capvcd.Status.VcdKe.State, Equals, "provisioned")
+
+	err = token.Delete()
+	check.Assert(err, IsNil)
 
 }

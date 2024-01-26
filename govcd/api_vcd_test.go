@@ -1,4 +1,4 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || cse || ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -239,6 +239,15 @@ type TestConfig struct {
 		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 		UiPluginPath     string `yaml:"uiPluginPath,omitempty"`
 	} `yaml:"media"`
+	Cse struct {
+		SolutionsOrg  string `yaml:"solutionsOrg,omitempty"`
+		TenantOrg     string `yaml:"tenantOrg,omitempty"`
+		TenantVdc     string `yaml:"tenantVdc,omitempty"`
+		RoutedNetwork string `yaml:"routedNetwork,omitempty"`
+		EdgeGateway   string `yaml:"edgeGateway,omitempty"`
+		OvaCatalog    string `yaml:"ovaCatalog,omitempty"`
+		OvaName       string `yaml:"ovaName,omitempty"`
+	} `yaml:"cse"`
 }
 
 // Test struct for vcloud-director.

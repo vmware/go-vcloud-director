@@ -17,6 +17,7 @@ import (
 // CseClusterCreationInput object in the CseClusterCreationInput.toCseClusterCreationGoTemplateContents method. These fields are then
 // inserted in Go templates to render a final JSON that is valid to be used as the cluster Runtime Defined Entity (RDE) payload.
 type cseClusterCreationGoTemplateArguments struct {
+	CseVersion                string
 	Name                      string
 	OrganizationId            string
 	OrganizationName          string
@@ -142,6 +143,12 @@ func (ccd *CseClusterCreationInput) validate() error {
 	if ccd.ApiToken == "" {
 		return fmt.Errorf("the API token is required")
 	}
+	if ccd.PodCidr == "" {
+		return fmt.Errorf("the Pod CIDR is required")
+	}
+	if ccd.ServiceCidr == "" {
+		return fmt.Errorf("the Service CIDR is required")
+	}
 
 	return nil
 }
@@ -149,11 +156,12 @@ func (ccd *CseClusterCreationInput) validate() error {
 // toCseClusterCreationGoTemplateContents transforms user input data (receiver CseClusterCreationInput) into the final payload that
 // will be used to render the Go templates that define a Kubernetes cluster creation payload (cseClusterCreationGoTemplateArguments).
 func (input *CseClusterCreationInput) toCseClusterCreationGoTemplateContents(vcdClient *VCDClient) (*cseClusterCreationGoTemplateArguments, error) {
-	output := &cseClusterCreationGoTemplateArguments{}
 	err := input.validate()
 	if err != nil {
 		return nil, err
 	}
+
+	output := &cseClusterCreationGoTemplateArguments{}
 	org, err := vcdClient.GetOrgById(input.OrganizationId)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve the Organization with ID '%s': %s", input.VdcId, err)
@@ -296,7 +304,7 @@ func (input *CseClusterCreationInput) toCseClusterCreationGoTemplateContents(vcd
 	output.SshPublicKey = input.SshPublicKey
 	output.VirtualIpSubnet = input.VirtualIpSubnet
 	output.AutoRepairOnErrors = input.AutoRepairOnErrors
-
+	output.CseVersion = input.CseVersion
 	return output, nil
 }
 
@@ -402,8 +410,13 @@ func getContainerRegistryUrl(vcdClient *VCDClient, cseVersion string) (string, e
 	return fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"].(string)), nil
 }
 
+func getCseTemplate(client *Client, cseVersion, templateName string) (string, error) {
+	return getRemoteFile(client, fmt.Sprintf("https://raw.githubusercontent.com/adambarreiro/go-vcloud-director/new-methods-cse/govcd/cse/%s/%s.tmpl", cseVersion, templateName))
+}
+
 // getRemoteFile gets a Go template file corresponding to the CSE version
 func getRemoteFile(client *Client, url string) (string, error) {
+	//
 	resp, err := client.Http.Get(url)
 	if err != nil {
 		return "", err

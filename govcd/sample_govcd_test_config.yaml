@@ -253,3 +253,18 @@ media:
   nsxtBackedMediaName: nsxtMediaName
   # A valid UI Plugin to use in tests
   uiPluginPath: ../test-resources/ui_plugin.zip
+cse:
+  # The organization where Container Service Extension (CSE) Server is running
+  solutionsOrg: "solutions_org"
+  # The organization where the Kubernetes clusters are created
+  tenantOrg: "tenant_org"
+  # The VDC where the Kubernetes clusters are created
+  tenantVdc: "tenant_vdc"
+  # The network which the Kubernetes clusters use
+  routedNetwork: "tenant_net_routed"
+  # The edge gateway which the Kubernetes clusters use
+  edgeGateway: "tenant_edgegateway"
+  # The catalog which the Kubernetes clusters use
+  ovaCatalog: "tkgm_catalog"
+  # The TKGm OVA which the Kubernetes clusters use
+  ovaName: "ubuntu-2004-kube-v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc"

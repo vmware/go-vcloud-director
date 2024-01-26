@@ -39,7 +39,7 @@ func getCseKubernetesClusterCreationPayload(vcdClient *VCDClient, goTemplateCont
 		args["DefaultStorageClassFileSystem"] = goTemplateContents.DefaultStorageClass.Filesystem
 	}
 
-	rdeTmpl, err := getRemoteFile(&vcdClient.Client, "rde")
+	rdeTmpl, err := getCseTemplate(&vcdClient.Client, goTemplateContents.CseVersion, "rde")
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func getCseKubernetesClusterCreationPayload(vcdClient *VCDClient, goTemplateCont
 
 // generateNodePoolYaml generates YAML blocks corresponding to the Kubernetes node pools.
 func generateNodePoolYaml(vcdClient *VCDClient, clusterDetails *cseClusterCreationGoTemplateArguments) (string, error) {
-	workerPoolTmpl, err := getRemoteFile(&vcdClient.Client, "capiyaml_workerpool")
+	workerPoolTmpl, err := getCseTemplate(&vcdClient.Client, clusterDetails.CseVersion, "capiyaml_workerpool")
 	if err != nil {
 		return "", err
 	}
@@ -110,7 +110,7 @@ func generateMemoryHealthCheckYaml(vcdClient *VCDClient, clusterDetails *cseClus
 		return "", nil
 	}
 
-	mhcTmpl, err := getRemoteFile(&vcdClient.Client, "capiyaml_mhc")
+	mhcTmpl, err := getCseTemplate(&vcdClient.Client, clusterDetails.CseVersion, "capiyaml_mhc")
 	if err != nil {
 		return "", err
 	}
@@ -136,7 +136,7 @@ func generateMemoryHealthCheckYaml(vcdClient *VCDClient, clusterDetails *cseClus
 // in the CAPVCD cluster JSON payload. This function picks data from the Terraform schema and the createClusterDto to
 // populate several Go templates and build a final YAML.
 func generateCapiYaml(vcdClient *VCDClient, clusterDetails *cseClusterCreationGoTemplateArguments) (string, error) {
-	clusterTmpl, err := getRemoteFile(&vcdClient.Client, "capiyaml_cluster")
+	clusterTmpl, err := getCseTemplate(&vcdClient.Client, clusterDetails.CseVersion, "capiyaml_cluster")
 	if err != nil {
 		return "", err
 	}
