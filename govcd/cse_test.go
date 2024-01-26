@@ -65,28 +65,28 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	apiToken, err := token.GetInitialApiToken()
 	check.Assert(err, IsNil)
 
-	cluster, err := vcd.client.CseCreateKubernetesCluster(CseClusterCreationInput{
+	cluster, err := vcd.client.CseCreateKubernetesCluster(CseClusterCreateInput{
 		Name:                    "test-cse",
 		OrganizationId:          org.Org.ID,
 		VdcId:                   vdc.Vdc.ID,
 		NetworkId:               net.OrgVDCNetwork.ID,
 		KubernetesTemplateOvaId: ova.VAppTemplate.ID,
 		CseVersion:              "4.2",
-		ControlPlane: ControlPlaneInput{
+		ControlPlane: ControlPlaneCreateInput{
 			MachineCount:     1,
 			DiskSizeGi:       20,
 			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
 			StorageProfileId: sp.ID,
 			Ip:               "",
 		},
-		WorkerPools: []WorkerPoolInput{{
+		WorkerPools: []WorkerPoolCreateInput{{
 			Name:             "worker-pool-1",
 			MachineCount:     1,
 			DiskSizeGi:       20,
 			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
 			StorageProfileId: sp.ID,
 		}},
-		DefaultStorageClass: &DefaultStorageClassInput{
+		DefaultStorageClass: &DefaultStorageClassCreateInput{
 			StorageProfileId: sp.ID,
 			Name:             "storage-class-1",
 			ReclaimPolicy:    "delete",

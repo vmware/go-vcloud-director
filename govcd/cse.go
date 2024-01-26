@@ -27,23 +27,24 @@ var supportedCseVersions = map[string][]string{
 type CseClusterApiProviderCluster struct {
 	Capvcd *types.Capvcd
 	ID     string
+	Owner  string
 	Etag   string
 	client *Client
 }
 
-// CseClusterCreationInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// CseClusterCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
 // must set in order to create a Kubernetes cluster.
-type CseClusterCreationInput struct {
+type CseClusterCreateInput struct {
 	Name                    string
 	OrganizationId          string
 	VdcId                   string
 	NetworkId               string
 	KubernetesTemplateOvaId string
 	CseVersion              string
-	ControlPlane            ControlPlaneInput
-	WorkerPools             []WorkerPoolInput
-	DefaultStorageClass     *DefaultStorageClassInput // Optional
-	Owner                   string                    // Optional, if not set will pick the current user present in the VCDClient
+	ControlPlane            ControlPlaneCreateInput
+	WorkerPools             []WorkerPoolCreateInput
+	DefaultStorageClass     *DefaultStorageClassCreateInput // Optional
+	Owner                   string                          // Optional, if not set will pick the current user present in the VCDClient
 	ApiToken                string
 	NodeHealthCheck         bool
 	PodCidr                 string
@@ -53,9 +54,9 @@ type CseClusterCreationInput struct {
 	AutoRepairOnErrors      bool
 }
 
-// ControlPlaneInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to specify the Control Plane inside a CseClusterCreationInput object.
-type ControlPlaneInput struct {
+// ControlPlaneCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// must set in order to specify the Control Plane inside a CseClusterCreateInput object.
+type ControlPlaneCreateInput struct {
 	MachineCount      int
 	DiskSizeGi        int
 	SizingPolicyId    string // Optional
@@ -64,9 +65,9 @@ type ControlPlaneInput struct {
 	Ip                string // Optional
 }
 
-// WorkerPoolInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to specify one Worker Pool inside a CseClusterCreationInput object.
-type WorkerPoolInput struct {
+// WorkerPoolCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// must set in order to specify one Worker Pool inside a CseClusterCreateInput object.
+type WorkerPoolCreateInput struct {
 	Name              string
 	MachineCount      int
 	DiskSizeGi        int
@@ -76,31 +77,70 @@ type WorkerPoolInput struct {
 	StorageProfileId  string // Optional
 }
 
-// DefaultStorageClassInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to specify a Default Storage Class inside a CseClusterCreationInput object.
-type DefaultStorageClassInput struct {
+// DefaultStorageClassCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// must set in order to specify a Default Storage Class inside a CseClusterCreateInput object.
+type DefaultStorageClassCreateInput struct {
 	StorageProfileId string
 	Name             string
 	ReclaimPolicy    string
 	Filesystem       string
 }
 
+// CseClusterUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// must set in order to update a Kubernetes cluster.
+type CseClusterUpdateInput struct {
+	KubernetesTemplateOvaId *string
+	ControlPlane            *ControlPlaneUpdateInput
+	WorkerPools             *map[string]WorkerPoolUpdateInput // Maps a node pool name with its contents
+	NodeHealthCheck         *bool
+	AutoRepairOnErrors      *bool
+}
+
+// ControlPlaneUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// must set in order to specify the Control Plane inside a CseClusterUpdateInput object.
+type ControlPlaneUpdateInput struct {
+	MachineCount int
+}
+
+// WorkerPoolUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// must set in order to specify one Worker Pool inside a CseClusterCreateInput object.
+type WorkerPoolUpdateInput struct {
+	MachineCount int
+}
+
 //go:embed cse/tkg_versions.json
 var cseTkgVersionsJson []byte
 
-// CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterCreationInput). If the given
+// CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterCreateInput). If the given
 // timeout is 0, it waits forever for the cluster creation. Otherwise, if the timeout is reached and the cluster is not available,
 // it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster in the returned CseClusterApiProviderCluster.
 // If the cluster is created correctly, returns all the data in CseClusterApiProviderCluster.
-func (vcdClient *VCDClient) CseCreateKubernetesCluster(clusterData CseClusterCreationInput, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
-	goTemplateContents, err := clusterData.toCseClusterCreationGoTemplateContents(vcdClient)
+func (vcdClient *VCDClient) CseCreateKubernetesCluster(clusterData CseClusterCreateInput, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
+	clusterId, err := vcdClient.CseCreateKubernetesClusterAsync(clusterData)
 	if err != nil {
 		return nil, err
 	}
 
+	cluster, err := waitUntilClusterIsProvisioned(vcdClient, clusterId, timeoutMinutes)
+	if err != nil {
+		return cluster, err // Returns the latest status of the cluster
+	}
+
+	return cluster, nil
+}
+
+// CseCreateKubernetesClusterAsync creates a Kubernetes cluster with the data given as input (CseClusterCreateInput), but does not
+// wait for the creation process to finish, so it doesn't monitor for any errors during the process. It returns just the ID of
+// the created cluster. One can manually check the status of the cluster with GetKubernetesClusterById and the result of this method.
+func (vcdClient *VCDClient) CseCreateKubernetesClusterAsync(clusterData CseClusterCreateInput) (string, error) {
+	goTemplateContents, err := clusterData.toCseClusterCreationGoTemplateContents(vcdClient)
+	if err != nil {
+		return "", err
+	}
+
 	rdeContents, err := getCseKubernetesClusterCreationPayload(vcdClient, goTemplateContents)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	rde, err := vcdClient.CreateRde("vmware", "capvcdCluster", supportedCseVersions[clusterData.CseVersion][1], types.DefinedEntity{
@@ -112,45 +152,19 @@ func (vcdClient *VCDClient) CseCreateKubernetesCluster(clusterData CseClusterCre
 		OrgName: goTemplateContents.OrganizationName,
 	})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	cluster, err := waitUntilClusterIsProvisioned(vcdClient, rde.DefinedEntity.ID, timeoutMinutes)
-	if err != nil {
-		return nil, err
-	}
-
-	return cluster, nil
+	return rde.DefinedEntity.ID, nil
 }
 
-// CseConvertToCapvcdCluster takes the receiver, which is a generic RDE that must represent an existing CSE Kubernetes cluster,
-// and transforms it to a specific Container Service Extension CAPVCD object that represents the same cluster, but
-// it is easy to explore and consume. If the receiver object does not contain a CAPVCD object, this method
-// will obviously return an error.
-func (rde *DefinedEntity) CseConvertToCapvcdCluster() (*CseClusterApiProviderCluster, error) {
-	requiredType := "vmware:capvcdCluster"
-
-	if !strings.Contains(rde.DefinedEntity.ID, requiredType) || !strings.Contains(rde.DefinedEntity.EntityType, requiredType) {
-		return nil, fmt.Errorf("the receiver RDE is not a '%s' entity, it is '%s'", requiredType, rde.DefinedEntity.EntityType)
-	}
-
-	entityBytes, err := json.Marshal(rde.DefinedEntity.Entity)
+// GetKubernetesClusterById retrieves a CSE Kubernetes cluster from VCD by its unique ID
+func (vcdClient *VCDClient) GetKubernetesClusterById(id string) (*CseClusterApiProviderCluster, error) {
+	rde, err := vcdClient.GetRdeById(id)
 	if err != nil {
-		return nil, fmt.Errorf("could not marshal the RDE contents to create a Capvcd instance: %s", err)
+		return nil, err
 	}
-
-	result := &CseClusterApiProviderCluster{
-		Capvcd: &types.Capvcd{},
-		ID:     rde.DefinedEntity.ID,
-		Etag:   rde.Etag,
-		client: rde.client,
-	}
-
-	err = json.Unmarshal(entityBytes, result.Capvcd)
-	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal the RDE contents to create a Capvcd instance: %s", err)
-	}
-	return result, nil
+	return rde.cseConvertToCapvcdCluster()
 }
 
 // Refresh gets the latest information about the receiver cluster and updates its properties.
@@ -159,12 +173,59 @@ func (cluster *CseClusterApiProviderCluster) Refresh() error {
 	if err != nil {
 		return err
 	}
-	refreshed, err := rde.CseConvertToCapvcdCluster()
+	refreshed, err := rde.cseConvertToCapvcdCluster()
 	if err != nil {
 		return err
 	}
 	cluster.Capvcd = refreshed.Capvcd
 	cluster.Etag = refreshed.Etag
+	return nil
+}
+
+// Update updates the receiver cluster with the given input.
+func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput) error {
+	if input.NodeHealthCheck != nil {
+		// TODO
+		return fmt.Errorf("not implemented")
+	}
+	if input.AutoRepairOnErrors != nil {
+		cluster.Capvcd.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
+	}
+	if input.KubernetesTemplateOvaId != nil {
+		// TODO: Get YAML, search for machines, change templateName
+		return fmt.Errorf("not implemented")
+	}
+	if input.ControlPlane != nil {
+		// TODO: Get YAML, search for control plane, change replicas
+		return fmt.Errorf("not implemented")
+	}
+	if input.WorkerPools != nil {
+		for name, updateDetails := range *input.WorkerPools {
+			// TODO: Get YAML, search for node pool with name == 'name', if matches, change replicas
+			return fmt.Errorf("not implemented %s, %v", name, updateDetails)
+		}
+
+		return fmt.Errorf("not implemented")
+	}
+
+	marshaledPayload, err := json.Marshal(cluster.Capvcd)
+	if err != nil {
+		return err
+	}
+	entityContent := map[string]interface{}{}
+	err = json.Unmarshal(marshaledPayload, &entityContent)
+	if err != nil {
+		return err
+	}
+	rde, err := getRdeById(cluster.client, cluster.ID)
+	if err != nil {
+		return err
+	}
+	rde.DefinedEntity.Entity = entityContent
+	err = rde.Update(*rde.DefinedEntity)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -229,6 +290,39 @@ func (cluster *CseClusterApiProviderCluster) Delete(timeoutMinutes time.Duration
 	return fmt.Errorf("timeout of %v minutes reached, the cluster was not marked for deletion, please try again", timeoutMinutes)
 }
 
+// cseConvertToCapvcdCluster takes the receiver, which is a generic RDE that must represent an existing CSE Kubernetes cluster,
+// and transforms it to a specific Container Service Extension CAPVCD object that represents the same cluster, but
+// it is easy to explore and consume. If the receiver object does not contain a CAPVCD object, this method
+// will obviously return an error.
+func (rde *DefinedEntity) cseConvertToCapvcdCluster() (*CseClusterApiProviderCluster, error) {
+	requiredType := "vmware:capvcdCluster"
+
+	if !strings.Contains(rde.DefinedEntity.ID, requiredType) || !strings.Contains(rde.DefinedEntity.EntityType, requiredType) {
+		return nil, fmt.Errorf("the receiver RDE is not a '%s' entity, it is '%s'", requiredType, rde.DefinedEntity.EntityType)
+	}
+
+	entityBytes, err := json.Marshal(rde.DefinedEntity.Entity)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal the RDE contents to create a Capvcd instance: %s", err)
+	}
+
+	result := &CseClusterApiProviderCluster{
+		Capvcd: &types.Capvcd{},
+		ID:     rde.DefinedEntity.ID,
+		Etag:   rde.Etag,
+		client: rde.client,
+	}
+	if rde.DefinedEntity.Owner != nil {
+		result.Owner = rde.DefinedEntity.Owner.Name
+	}
+
+	err = json.Unmarshal(entityBytes, result.Capvcd)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal the RDE contents to create a Capvcd instance: %s", err)
+	}
+	return result, nil
+}
+
 // waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if timeoutMinutes = 0)
 // or until this timeout is reached. If the cluster is in "provisioned" state before the given timeout, it returns a CseClusterApiProviderCluster object
 // representing the Kubernetes cluster with all the latest information.
@@ -256,7 +350,7 @@ func waitUntilClusterIsProvisioned(vcdClient *VCDClient, clusterId string, timeo
 			return nil, err
 		}
 
-		capvcdCluster, err = rde.CseConvertToCapvcdCluster()
+		capvcdCluster, err = rde.cseConvertToCapvcdCluster()
 		if err != nil {
 			return nil, err
 		}

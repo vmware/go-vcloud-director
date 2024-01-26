@@ -14,7 +14,7 @@ import (
 
 // cseClusterCreationGoTemplateArguments defines the required arguments that are required by the Go templates used internally to specify
 // a Kubernetes cluster. These are not set by the user, but instead they are computed from a valid
-// CseClusterCreationInput object in the CseClusterCreationInput.toCseClusterCreationGoTemplateContents method. These fields are then
+// CseClusterCreateInput object in the CseClusterCreateInput.toCseClusterCreationGoTemplateContents method. These fields are then
 // inserted in Go templates to render a final JSON that is valid to be used as the cluster Runtime Defined Entity (RDE) payload.
 type cseClusterCreationGoTemplateArguments struct {
 	CseVersion                string
@@ -81,7 +81,7 @@ type machineHealthCheck struct {
 }
 
 // validate validates the CSE Kubernetes cluster creation input data. Returns an error if some of the fields is wrong.
-func (ccd *CseClusterCreationInput) validate() error {
+func (ccd *CseClusterCreateInput) validate() error {
 	cseNamesRegex, err := regexp.Compile(`^[a-z](?:[a-z0-9-]{0,29}[a-z0-9])?$`)
 	if err != nil {
 		return fmt.Errorf("could not compile regular expression '%s'", err)
@@ -153,9 +153,9 @@ func (ccd *CseClusterCreationInput) validate() error {
 	return nil
 }
 
-// toCseClusterCreationGoTemplateContents transforms user input data (receiver CseClusterCreationInput) into the final payload that
+// toCseClusterCreationGoTemplateContents transforms user input data (receiver CseClusterCreateInput) into the final payload that
 // will be used to render the Go templates that define a Kubernetes cluster creation payload (cseClusterCreationGoTemplateArguments).
-func (input *CseClusterCreationInput) toCseClusterCreationGoTemplateContents(vcdClient *VCDClient) (*cseClusterCreationGoTemplateArguments, error) {
+func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdClient *VCDClient) (*cseClusterCreationGoTemplateArguments, error) {
 	err := input.validate()
 	if err != nil {
 		return nil, err
