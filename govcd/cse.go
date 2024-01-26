@@ -46,6 +46,11 @@ type CseClusterCreationInput struct {
 	Owner                   string                    // Optional, if not set will pick the current user present in the VCDClient
 	ApiToken                string
 	NodeHealthCheck         bool
+	PodCidr                 string
+	ServiceCidr             string
+	SshPublicKey            string
+	VirtualIpSubnet         string
+	AutoRepairOnErrors      bool
 }
 
 // ControlPlaneInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
@@ -88,26 +93,34 @@ var cseTkgVersionsJson []byte
 // it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster in the returned CseClusterApiProviderCluster.
 // If the cluster is created correctly, returns all the data in CseClusterApiProviderCluster.
 func (vcdClient *VCDClient) CseCreateKubernetesCluster(clusterData CseClusterCreationInput, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
-	_, err := getRemoteFile(&vcdClient.Client, fmt.Sprintf("%s/capiyaml_cluster.tmpl", clusterData.CseVersion))
+	goTemplateContents, err := clusterData.toCseClusterCreationGoTemplateContents(vcdClient)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = clusterData.toCseClusterCreationPayload(vcdClient)
+	rdeContents, err := getCseKubernetesClusterCreationPayload(vcdClient, goTemplateContents)
 	if err != nil {
 		return nil, err
 	}
 
-	err = waitUntilClusterIsProvisioned(vcdClient, "", timeoutMinutes)
+	rde, err := vcdClient.CreateRde("vmware", "capvcdCluster", supportedCseVersions[clusterData.CseVersion][1], types.DefinedEntity{
+		EntityType: goTemplateContents.RdeType.ID,
+		Name:       goTemplateContents.Name,
+		Entity:     rdeContents,
+	}, &TenantContext{
+		OrgId:   goTemplateContents.OrganizationId,
+		OrgName: goTemplateContents.OrganizationName,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	result := &CseClusterApiProviderCluster{
-		client: &vcdClient.Client,
-		ID:     "",
+	cluster, err := waitUntilClusterIsProvisioned(vcdClient, rde.DefinedEntity.ID, timeoutMinutes)
+	if err != nil {
+		return nil, err
 	}
-	return result, nil
+
+	return cluster, nil
 }
 
 // CseConvertToCapvcdCluster takes the receiver, which is a generic RDE that must represent an existing CSE Kubernetes cluster,
@@ -128,6 +141,7 @@ func (rde *DefinedEntity) CseConvertToCapvcdCluster() (*CseClusterApiProviderClu
 
 	result := &CseClusterApiProviderCluster{
 		Capvcd: &types.Capvcd{},
+		ID:     rde.DefinedEntity.ID,
 		Etag:   rde.Etag,
 		client: rde.client,
 	}
@@ -139,10 +153,13 @@ func (rde *DefinedEntity) CseConvertToCapvcdCluster() (*CseClusterApiProviderClu
 	return result, nil
 }
 
-// waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if "operations_timeout_minutes=0")
-// or until this timeout is reached. If one of the states is "error", this function also checks whether "auto_repair_on_errors=true" to keep
-// waiting.
-func waitUntilClusterIsProvisioned(vcdClient *VCDClient, clusterId string, timeoutMinutes time.Duration) error {
+// waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if timeoutMinutes = 0)
+// or until this timeout is reached. If the cluster is in "provisioned" state before the given timeout, it returns a CseClusterApiProviderCluster object
+// representing the Kubernetes cluster with all the latest information.
+// If one of the states of the cluster at a given point is "error", this function also checks whether the cluster has the "Auto Repair on Errors" flag enabled,
+// so it keeps waiting if it's true.
+// If timeout is reached before the cluster, it returns an error.
+func waitUntilClusterIsProvisioned(vcdClient *VCDClient, clusterId string, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
 	var elapsed time.Duration
 	logHttpResponse := util.LogHttpResponse
 	sleepTime := 30
@@ -154,35 +171,34 @@ func waitUntilClusterIsProvisioned(vcdClient *VCDClient, clusterId string, timeo
 	}()
 
 	start := time.Now()
-	latestState := ""
+	var capvcdCluster *CseClusterApiProviderCluster
 	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies operations_timeout_minutes=0, we wait forever
 		util.LogHttpResponse = false
 		rde, err := vcdClient.GetRdeById(clusterId)
 		util.LogHttpResponse = logHttpResponse
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		capvcdCluster, err := rde.CseConvertToCapvcdCluster()
+		capvcdCluster, err = rde.CseConvertToCapvcdCluster()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		latestState = capvcdCluster.Capvcd.Status.VcdKe.State
-		switch latestState {
+		switch capvcdCluster.Capvcd.Status.VcdKe.State {
 		case "provisioned":
-			return nil
+			return capvcdCluster, nil
 		case "error":
 			// We just finish if auto-recovery is disabled, otherwise we just let CSE fixing things in background
 			if !capvcdCluster.Capvcd.Spec.VcdKe.AutoRepairOnErrors {
 				// Try to give feedback about what went wrong, which is located in a set of events in the RDE payload
-				return fmt.Errorf("got an error and 'auto_repair_on_errors=false', aborting. Errors: %s", capvcdCluster.Capvcd.Status.Capvcd.ErrorSet[len(capvcdCluster.Capvcd.Status.Capvcd.ErrorSet)-1].AdditionalDetails.DetailedError)
+				return capvcdCluster, fmt.Errorf("got an error and 'auto repair on errors' is disabled, aborting. Errors: %s", capvcdCluster.Capvcd.Status.Capvcd.ErrorSet[len(capvcdCluster.Capvcd.Status.Capvcd.ErrorSet)-1].AdditionalDetails.DetailedError)
 			}
 		}
 
-		util.Logger.Printf("[DEBUG] Cluster '%s' is in '%s' state, will check again in %d seconds", capvcdCluster.ID, latestState, sleepTime)
+		util.Logger.Printf("[DEBUG] Cluster '%s' is in '%s' state, will check again in %d seconds", capvcdCluster.ID, capvcdCluster.Capvcd.Status.VcdKe.State, sleepTime)
 		elapsed = time.Since(start)
 		time.Sleep(time.Duration(sleepTime) * time.Second)
 	}
-	return fmt.Errorf("timeout of %d minutes reached, latest cluster state obtained was '%s'", timeoutMinutes, latestState)
+	return capvcdCluster, fmt.Errorf("timeout of %d minutes reached, latest cluster state obtained was '%s'", timeoutMinutes, capvcdCluster.Capvcd.Status.VcdKe.State)
 }

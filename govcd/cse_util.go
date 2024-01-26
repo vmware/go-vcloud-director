@@ -14,10 +14,11 @@ import (
 
 // cseClusterCreationGoTemplateArguments defines the required arguments that are required by the Go templates used internally to specify
 // a Kubernetes cluster. These are not set by the user, but instead they are computed from a valid
-// CseClusterCreationInput object in the CseClusterCreationInput.toCseClusterCreationPayload method. These fields are then
+// CseClusterCreationInput object in the CseClusterCreationInput.toCseClusterCreationGoTemplateContents method. These fields are then
 // inserted in Go templates to render a final JSON that is valid to be used as the cluster Runtime Defined Entity (RDE) payload.
 type cseClusterCreationGoTemplateArguments struct {
 	Name                      string
+	OrganizationId            string
 	OrganizationName          string
 	VdcName                   string
 	NetworkName               string
@@ -28,10 +29,16 @@ type cseClusterCreationGoTemplateArguments struct {
 	ControlPlane              controlPlane
 	WorkerPools               []workerPool
 	DefaultStorageClass       defaultStorageClass
-	VcdKeConfig               *vcdKeConfig
+	MachineHealthCheck        *machineHealthCheck
 	Owner                     string
 	ApiToken                  string
 	VcdUrl                    string
+	ContainerRegistryUrl      string
+	VirtualIpSubnet           string
+	SshPublicKey              string
+	PodCidr                   string
+	ServiceCidr               string
+	AutoRepairOnErrors        bool
 }
 
 // controlPlane defines the Control Plane inside cseClusterCreationGoTemplateArguments
@@ -57,20 +64,19 @@ type workerPool struct {
 
 // defaultStorageClass defines a Default Storage Class inside cseClusterCreationGoTemplateArguments
 type defaultStorageClass struct {
-	StorageProfileName string
-	Name               string
-	ReclaimPolicy      string
-	Filesystem         string
+	StorageProfileName     string
+	Name                   string
+	UseDeleteReclaimPolicy bool
+	Filesystem             string
 }
 
-// vcdKeConfig is a type that contains only the required and relevant fields from the Container Service Extension (CSE) installation configuration,
+// machineHealthCheck is a type that contains only the required and relevant fields from the Container Service Extension (CSE) installation configuration,
 // such as the Machine Health Check settings or the container registry URL.
-type vcdKeConfig struct {
+type machineHealthCheck struct {
 	MaxUnhealthyNodesPercentage float64
 	NodeStartupTimeout          string
 	NodeNotReadyTimeout         string
 	NodeUnknownTimeout          string
-	ContainerRegistryUrl        string
 }
 
 // validate validates the CSE Kubernetes cluster creation input data. Returns an error if some of the fields is wrong.
@@ -140,9 +146,9 @@ func (ccd *CseClusterCreationInput) validate() error {
 	return nil
 }
 
-// toCseClusterCreationPayload transforms user input data (receiver CseClusterCreationInput) into the final payload that
+// toCseClusterCreationGoTemplateContents transforms user input data (receiver CseClusterCreationInput) into the final payload that
 // will be used to render the Go templates that define a Kubernetes cluster creation payload (cseClusterCreationGoTemplateArguments).
-func (input *CseClusterCreationInput) toCseClusterCreationPayload(vcdClient *VCDClient) (*cseClusterCreationGoTemplateArguments, error) {
+func (input *CseClusterCreationInput) toCseClusterCreationGoTemplateContents(vcdClient *VCDClient) (*cseClusterCreationGoTemplateArguments, error) {
 	output := &cseClusterCreationGoTemplateArguments{}
 	err := input.validate()
 	if err != nil {
@@ -152,6 +158,7 @@ func (input *CseClusterCreationInput) toCseClusterCreationPayload(vcdClient *VCD
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve the Organization with ID '%s': %s", input.VdcId, err)
 	}
+	output.OrganizationId = org.Org.ID
 	output.OrganizationName = org.Org.Name
 
 	vdc, err := org.GetVDCById(input.VdcId, true)
@@ -243,22 +250,35 @@ func (input *CseClusterCreationInput) toCseClusterCreationPayload(vcdClient *VCD
 		SizingPolicyName:    idToNameCache[input.ControlPlane.SizingPolicyId],
 		PlacementPolicyName: idToNameCache[input.ControlPlane.PlacementPolicyId],
 		StorageProfileName:  idToNameCache[input.ControlPlane.StorageProfileId],
+		Ip:                  input.ControlPlane.Ip,
 	}
 
 	if input.DefaultStorageClass != nil {
 		output.DefaultStorageClass = defaultStorageClass{
 			StorageProfileName: idToNameCache[input.DefaultStorageClass.StorageProfileId],
 			Name:               input.DefaultStorageClass.Name,
-			ReclaimPolicy:      input.DefaultStorageClass.ReclaimPolicy,
 			Filesystem:         input.DefaultStorageClass.Filesystem,
+		}
+		output.DefaultStorageClass.UseDeleteReclaimPolicy = false
+		if input.DefaultStorageClass.ReclaimPolicy == "delete" {
+			output.DefaultStorageClass.UseDeleteReclaimPolicy = true
 		}
 	}
 
-	vcdKeConfig, err := getVcdKeConfiguration(vcdClient, input.CseVersion, input.NodeHealthCheck)
+	mhc, err := getMachineHealthCheck(vcdClient, input.CseVersion, input.NodeHealthCheck)
 	if err != nil {
 		return nil, err
 	}
-	output.VcdKeConfig = vcdKeConfig
+	if mhc != nil {
+		output.MachineHealthCheck = mhc
+	}
+
+	containerRegistryUrl, err := getContainerRegistryUrl(vcdClient, input.CseVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	output.ContainerRegistryUrl = containerRegistryUrl
 
 	output.Owner = input.Owner
 	if input.Owner == "" {
@@ -269,6 +289,13 @@ func (input *CseClusterCreationInput) toCseClusterCreationPayload(vcdClient *VCD
 		output.Owner = sessionInfo.User.Name
 	}
 	output.VcdUrl = strings.Replace(vcdClient.Client.VCDHREF.String(), "/api", "", 1)
+
+	// These don't change, don't need mapping
+	output.PodCidr = input.PodCidr
+	output.ServiceCidr = input.ServiceCidr
+	output.SshPublicKey = input.SshPublicKey
+	output.VirtualIpSubnet = input.VirtualIpSubnet
+	output.AutoRepairOnErrors = input.AutoRepairOnErrors
 
 	return output, nil
 }
@@ -320,19 +347,19 @@ func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, 
 	return result, nil
 }
 
-// getVcdKeConfiguration gets the required information from the CSE Server configuration RDE
-func getVcdKeConfiguration(vcdClient *VCDClient, cseVersion string, isNodeHealthCheckActive bool) (*vcdKeConfig, error) {
+// getMachineHealthCheck gets the required information from the CSE Server configuration RDE
+func getMachineHealthCheck(vcdClient *VCDClient, cseVersion string, isNodeHealthCheckActive bool) (*machineHealthCheck, error) {
 	currentCseVersion := supportedCseVersions[cseVersion]
-	result := &vcdKeConfig{}
+	result := machineHealthCheck{}
 
-	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "vcdKeConfig")
+	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "machineHealthCheck")
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", currentCseVersion[0], err)
 	}
 	if len(rdes) != 1 {
 		return nil, fmt.Errorf("expected exactly one VCDKEConfig RDE but got %d", len(rdes))
 	}
-
+	// TODO: Get the struct Type for this one
 	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("wrong format of VCDKEConfig, expected a 'profiles' array")
@@ -340,18 +367,39 @@ func getVcdKeConfiguration(vcdClient *VCDClient, cseVersion string, isNodeHealth
 	if len(profiles) != 1 {
 		return nil, fmt.Errorf("wrong format of VCDKEConfig, expected a single 'profiles' element, got %d", len(profiles))
 	}
-	// TODO: Check airgapped environments: https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.1.1a/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.1.1/GUID-F00BE796-B5F2-48F2-A012-546E2E694400.html
-	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"].(string))
 
 	if isNodeHealthCheckActive {
-		// TODO: Get the Type for this one
+		// TODO: Get the struct Type for this one
 		mhc := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"].(map[string]interface{})
 		result.MaxUnhealthyNodesPercentage = mhc["maxUnhealthyNodes"].(float64)
 		result.NodeStartupTimeout = mhc["nodeStartupTimeout"].(string)
 		result.NodeNotReadyTimeout = mhc["nodeUnknownTimeout"].(string)
 		result.NodeUnknownTimeout = mhc["nodeNotReadyTimeout"].(string)
 	}
-	return result, nil
+	return nil, nil
+}
+
+// getContainerRegistryUrl gets the required information from the CSE Server configuration RDE
+func getContainerRegistryUrl(vcdClient *VCDClient, cseVersion string) (string, error) {
+	currentCseVersion := supportedCseVersions[cseVersion]
+
+	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "machineHealthCheck")
+	if err != nil {
+		return "", fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", currentCseVersion[0], err)
+	}
+	if len(rdes) != 1 {
+		return "", fmt.Errorf("expected exactly one VCDKEConfig RDE but got %d", len(rdes))
+	}
+	// TODO: Get the struct Type for this one
+	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]interface{})
+	if !ok {
+		return "", fmt.Errorf("wrong format of VCDKEConfig, expected a 'profiles' array")
+	}
+	if len(profiles) != 1 {
+		return "", fmt.Errorf("wrong format of VCDKEConfig, expected a single 'profiles' element, got %d", len(profiles))
+	}
+	// TODO: Check airgapped environments: https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.1.1a/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.1.1/GUID-F00BE796-B5F2-48F2-A012-546E2E694400.html
+	return fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"].(string)), nil
 }
 
 // getRemoteFile gets a Go template file corresponding to the CSE version
