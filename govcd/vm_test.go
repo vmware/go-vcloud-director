@@ -2162,10 +2162,44 @@ func (vcd *TestVCD) Test_GetOvfEnvironment(check *C) {
 }
 
 func (vcd *TestVCD) Test_QueryVMList(check *C) {
-	vmList, err := QueryVmList(types.VmQueryFilterOnlyDeployed, &vcd.client.Client, nil)
-	check.Assert(err, IsNil)
-	for i, vm := range vmList {
-		fmt.Printf("%d %# v\n", i, pretty.Formatter(vm))
-	}
 
+	uniqueId := "2024-01-27"
+	vappDefinition := map[string][]string{
+		"Test_Vapp1_" + uniqueId: []string{"Test_VmA_" + uniqueId, "Test_VmB_" + uniqueId},
+		"Test_Vapp2_" + uniqueId: []string{"Test_VmA_" + uniqueId, "Test_VmB_" + uniqueId},
+		"Test_Vapp3_" + uniqueId: []string{"Test_VmA_" + uniqueId, "Test_VmB_" + uniqueId},
+	}
+	listVms := func(vms []*types.QueryResultVMRecordType) {
+		if !testVerbose {
+			return
+		}
+		for i, vm := range vms {
+			standalone := ""
+			if vm.AutoNature {
+				standalone = " (standalone)"
+			}
+			fmt.Printf("%d (%s) %s %s\n", i, vm.VdcName, vm.Name, standalone)
+		}
+		fmt.Println()
+	}
+	_, err := makeVappGroup(check.TestName(), vcd.nsxtVdc, vappDefinition)
+	check.Assert(err, IsNil)
+
+	// Retrieves all VMs with name 'Test_VmA_'+uniqueId
+	vmList1, err := QueryVmList(types.VmQueryFilterOnlyDeployed, &vcd.client.Client, map[string]string{"name": "Test_VmA_" + uniqueId})
+	check.Assert(err, IsNil)
+	listVms(vmList1)
+
+	// Retrieves all VMs with name 'Test_VmB_'+uniqueId
+	check.Assert(len(vmList1) == 3, Equals, true)
+	vmList2, err := QueryVmList(types.VmQueryFilterOnlyDeployed, &vcd.client.Client, map[string]string{"name": "Test_VmB_" + uniqueId})
+	check.Assert(err, IsNil)
+	listVms(vmList2)
+
+	// Retrieves all VMs
+	check.Assert(len(vmList2) == 3, Equals, true)
+	vmList3, err := QueryVmList(types.VmQueryFilterOnlyDeployed, &vcd.client.Client, nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(vmList3) >= 6, Equals, true)
+	listVms(vmList3)
 }
