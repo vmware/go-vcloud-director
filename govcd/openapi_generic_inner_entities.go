@@ -20,7 +20,7 @@ type crudConfig struct {
 
 	// Optional parameters
 
-	// endpointParams contains a slice of strings that will be used to construct request URL. It will
+	// endpointParams contains a slice of strings that will be used to construct the request URL. It will
 	// initially replace '%s' placeholders in the `endpoint` (if any) and will add them as suffix
 	// afterwards
 	endpointParams []string

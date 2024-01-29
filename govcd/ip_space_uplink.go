@@ -20,7 +20,7 @@ type IpSpaceUplink struct {
 	vcdClient     *VCDClient
 }
 
-// wrap is a hidden helper that helps to facilitate usage of generic CRUD function
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
 //
 //lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
 func (i IpSpaceUplink) wrap(inner *types.IpSpaceUplink) *IpSpaceUplink {

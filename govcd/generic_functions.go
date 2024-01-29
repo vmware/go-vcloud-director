@@ -42,7 +42,7 @@ func oneOrError[E any](key, value string, entitySlice []*E) (*E, error) {
 
 // localFilter performs filtering of a type E based on a field name `fieldName` and its
 // expected string value `expectedFieldValue`. Common use case for GetAllX methods where API does
-// not support filtering and it must be done on client side.
+// not support filtering and it must be done on the client side.
 //
 // Note. The field name `fieldName` must be present in a given type E (letter casing is important)
 func localFilter[E any](entityLabel string, entities []*E, fieldName, expectedFieldValue string) ([]*E, error) {
