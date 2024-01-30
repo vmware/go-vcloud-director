@@ -475,7 +475,134 @@ the request header.
 
 When the tenant context is not needed (system administration calls), we just pass `nil` as `additionalHeader`.
 
+## Generic CRUD functions for OpenAPI entity implementation
 
+Generic CRUD functions are used to minimize boilerplate for entity implementation in the SDK. They
+might not always be the way to go when there are very specific operation needs as it is not worth
+having a generic function for single use case. In such cases, low level API client function set,
+that is located in `openapi.go` can help to perform such operations.
+
+### Terminology
+
+#### inner vs outer types
+
+For the context of generic CRUD function implementation (mainly in files
+`govcd/openapi_generic_outer_entities.go`, `govcd/openapi_generic_inner_entities.go`), such terms
+are commonly used:
+
+* `inner` type is the type that is responsible for marshaling/unmarshaling API
+  request payload and is usually inside `types` package. (e.g. `types.IpSpace`,
+  `types.NsxtAlbPoolMember`, etc.)
+* `outer` (type) - this is the type that wraps `inner` type and possibly any other entities that are
+  required to perform operations for a particular VCD entity. It will almost always include some
+  reference to client (`VCDClient` or `Client`), which is required to perform API operations. It may
+  contain additional fields.
+
+Here are the entities mapped in the example below: 
+
+* `DistributedFirewall` is the **`outer`** type
+* `types.DistributedFirewallRules` is the **`inner`** type (specified in
+  `DistributedFirewall.DistributedFirewallRuleContainer` field)
+* `client` field contains the client that is required for perfoming API operations
+* `VdcGroup` field contains additional data (VDC Group reference) that is required for
+implementation of this particular entity
+
+```go
+type DistributedFirewall struct {
+	DistributedFirewallRuleContainer *types.DistributedFirewallRules
+	client                           *Client
+	VdcGroup                         *VdcGroup
+}
+```
+
+#### crudConfig
+
+A special type `govcd.crudConfig` is used for passing configuration to both - `inner` and `outer`
+generic CRUD functions. It also has an internal `validate()` method, which is called upon execution
+of any `inner` and `outer` CRUD functions.
+
+See documentation of `govcd.crudConfig` for the options it provides.
+
+### Use cases
+
+The main consideration when to use which functions depends on whether one is dealing with `inner`
+types or `outer` types. Both types can be used for quicker development.
+
+Usually, `outer` type is used for a full featured entity (e.g. `IpSpace`, `NsxtEdgeGateway`), while
+`inner` suits cases where one needs to perform operations on an already existing or a read-only
+entity.
+
+**Hint:** return value of your entity method will always hint whether it is `inner` or `outer` one:
+
+`inner` type function signature example (returns `*types.VdcNetworkProfile`):
+
+```
+func (adminVdc *AdminVdc) UpdateVdcNetworkProfile(vdcNetworkProfileConfig *types.VdcNetworkProfile) (*types.VdcNetworkProfile, error) {
+```
+
+`outer` type function signature example (returns `*IpSpace`):
+
+```
+func (vcdClient *VCDClient) CreateIpSpace(ipSpaceConfig *types.IpSpace) (*IpSpace, error) {
+```
+
+#### inner CRUD functions
+
+The entities that match below criteria are usually going to use `inner` crud functions:
+* API property manipulation with separate API endpoints for an already existing entity (e.g. VDC
+  Network Profiles `Vdc.UpdateVdcNetworkProfile`)
+* Read only entities (e.g. NSX-T Segment Profiles `VCDClient.GetAllIpDiscoveryProfiles`)
+
+Inner types are more simple as they can be directly used without any additional overhead. There are
+7 functions that can be used:
+
+* `createInnerEntity`
+* `updateInnerEntity`
+* `updateInnerEntityWithHeaders`
+* `getInnerEntity`
+* `getInnerEntityWithHeaders`
+* `deleteEntityById`
+* `getAllInnerEntities`
+
+Existing examples of the implementation are:
+
+* `Vdc.GetVdcNetworkProfile`
+* `Vdc.UpdateVdcNetworkProfile`
+* `Vdc.DeleteVdcNetworkProfile`
+* `VCDClient.GetAllIpDiscoveryProfiles`
+
+#### outer CRUD functions
+
+The entities, that implement complete management of a VCD entity will usually rely on `outer` CRUD
+functions. Any `outer` type *must* implement `wrap` method (example signature provided below). It is
+required to satisfy generic interface constraint (so that generic functions are able to wrap `inner`
+type into `outer` type)
+
+```go
+func (o OuterEntity) wrap(inner *InnerEntity) *OuterEntity {
+	o.OuterEntity = inner
+	return &o
+}
+```
+There are 5 functions for handling CRU(D). 
+* `createOuterEntity`
+* `updateOuterEntity`
+* `getOuterEntity`
+* `getOuterEntityWithHeaders`
+* `getAllOuterEntities`
+
+*Note*: `D` (deletion) in `CRUD` is a simple operation that does not additionally handle data and
+`deleteEntityById` is sufficient.
+
+Existing examples of the implementation are:
+* `IpSpace`
+* `IpSpaceUplink`
+* `DistributedFirewall`
+* `DistributedFirewallRule`
+* `NsxtSegmentProfileTemplate`
+* `DefinedEntityType`
+* `DefinedInterface`
+* `DefinedEntity`
 
 ## Testing
 

@@ -11,6 +11,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelIpSpaceUplink = "IP Space Uplink"
+
 // IpSpaceUplink provides the capability to assign one or more IP Spaces as Uplinks to External
 // Networks
 type IpSpaceUplink struct {
@@ -18,31 +20,23 @@ type IpSpaceUplink struct {
 	vcdClient     *VCDClient
 }
 
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (i IpSpaceUplink) wrap(inner *types.IpSpaceUplink) *IpSpaceUplink {
+	i.IpSpaceUplink = inner
+	return &i
+}
+
 // CreateIpSpaceUplink creates an IP Space Uplink with a given configuration
 func (vcdClient *VCDClient) CreateIpSpaceUplink(ipSpaceUplinkConfig *types.IpSpaceUplink) (*IpSpaceUplink, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
+		entityLabel: labelIpSpaceUplink,
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &IpSpaceUplink{
-		IpSpaceUplink: &types.IpSpaceUplink{},
-		vcdClient:     vcdClient,
-	}
-
-	err = client.OpenApiPostItem(apiVersion, urlRef, nil, ipSpaceUplinkConfig, result.IpSpaceUplink, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	outerType := IpSpaceUplink{vcdClient: vcdClient}
+	return createOuterEntity(&vcdClient.Client, outerType, c, ipSpaceUplinkConfig)
 }
 
 // GetAllIpSpaceUplinks retrieves all IP Space Uplinks for a given External Network ID
@@ -54,35 +48,14 @@ func (vcdClient *VCDClient) GetAllIpSpaceUplinks(externalNetworkId string, query
 	}
 
 	queryparams := queryParameterFilterAnd(fmt.Sprintf("externalNetworkRef.id==%s", externalNetworkId), queryParameters)
-
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
+		entityLabel:     labelIpSpaceUplink,
+		queryParameters: queryparams,
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponses := []*types.IpSpaceUplink{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryparams, &typeResponses, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Wrap all typeResponses into IpSpaceUplink types with client
-	results := make([]*IpSpaceUplink, len(typeResponses))
-	for sliceIndex := range typeResponses {
-		results[sliceIndex] = &IpSpaceUplink{
-			IpSpaceUplink: typeResponses[sliceIndex],
-			vcdClient:     vcdClient,
-		}
-	}
-
-	return results, nil
+	outerType := IpSpaceUplink{vcdClient: vcdClient}
+	return getAllOuterEntities[IpSpaceUplink, types.IpSpaceUplink](&vcdClient.Client, outerType, c)
 }
 
 // GetIpSpaceUplinkByName retrieves a single IP Space Uplink by Name in a given External Network
@@ -98,61 +71,26 @@ func (vcdClient *VCDClient) GetIpSpaceUplinkByName(externalNetworkId, name strin
 
 // GetIpSpaceUplinkById retrieves IP Space Uplink with a given ID
 func (vcdClient *VCDClient) GetIpSpaceUplinkById(id string) (*IpSpaceUplink, error) {
-	if id == "" {
-		return nil, fmt.Errorf("IP Space Uplink lookup requires ID")
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
+		endpointParams: []string{id},
+		entityLabel:    labelIpSpaceUplink,
 	}
 
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
-	if err != nil {
-		return nil, err
-	}
-
-	response := &IpSpaceUplink{
-		vcdClient:     vcdClient,
-		IpSpaceUplink: &types.IpSpaceUplink{},
-	}
-
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, response.IpSpaceUplink, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return response, nil
+	outerType := IpSpaceUplink{vcdClient: vcdClient}
+	return getOuterEntity[IpSpaceUplink, types.IpSpaceUplink](&vcdClient.Client, outerType, c)
 }
 
 // Update IP Space Uplink
 func (ipSpaceUplink *IpSpaceUplink) Update(ipSpaceUplinkConfig *types.IpSpaceUplink) (*IpSpaceUplink, error) {
-	client := ipSpaceUplink.vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
+		endpointParams: []string{ipSpaceUplink.IpSpaceUplink.ID},
+		entityLabel:    labelIpSpaceUplink,
 	}
 
-	ipSpaceUplinkConfig.ID = ipSpaceUplink.IpSpaceUplink.ID
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, ipSpaceUplinkConfig.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &IpSpaceUplink{
-		IpSpaceUplink: &types.IpSpaceUplink{},
-		vcdClient:     ipSpaceUplink.vcdClient,
-	}
-
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, ipSpaceUplinkConfig, result.IpSpaceUplink, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error updating IP Space: %s", err)
-	}
-
-	return result, nil
+	outerType := IpSpaceUplink{vcdClient: ipSpaceUplink.vcdClient}
+	return updateOuterEntity(&ipSpaceUplink.vcdClient.Client, outerType, c, ipSpaceUplinkConfig)
 }
 
 // Delete IP Space Uplink
@@ -161,26 +99,11 @@ func (ipSpaceUplink *IpSpaceUplink) Delete() error {
 		return fmt.Errorf("IP Space Uplink must have ID")
 	}
 
-	client := ipSpaceUplink.vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks,
+		endpointParams: []string{ipSpaceUplink.IpSpaceUplink.ID},
+		entityLabel:    labelIpSpaceUplink,
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, ipSpaceUplink.IpSpaceUplink.ID)
-	if err != nil {
-		return err
-	}
-
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	if err != nil {
-		return fmt.Errorf("error deleting IP Space Uplink: %s", err)
-	}
-
-	return nil
+	return deleteEntityById(&ipSpaceUplink.vcdClient.Client, c)
 }

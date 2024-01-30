@@ -12,6 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelOrgVdcNetworkSegmentProfile = "Org VDC Network Segment Profile"
+
 // OpenApiOrgVdcNetwork uses OpenAPI endpoint to operate both - NSX-T and NSX-V Org VDC networks
 type OpenApiOrgVdcNetwork struct {
 	OpenApiOrgVdcNetwork *types.OpenApiOrgVdcNetwork
@@ -378,44 +380,20 @@ func createOpenApiOrgVdcNetwork(client *Client, OrgVdcNetworkConfig *types.OpenA
 
 // GetSegmentProfile retrieves Segment Profile configuration for a single Org VDC Network
 func (orgVdcNet *OpenApiOrgVdcNetwork) GetSegmentProfile() (*types.OrgVdcNetworkSegmentProfiles, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
-	apiVersion, err := orgVdcNet.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles,
+		endpointParams: []string{orgVdcNet.OpenApiOrgVdcNetwork.ID},
+		entityLabel:    labelOrgVdcNetworkSegmentProfile,
 	}
-
-	urlRef, err := orgVdcNet.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponse := &types.OrgVdcNetworkSegmentProfiles{}
-	err = orgVdcNet.client.OpenApiGetItem(apiVersion, urlRef, nil, typeResponse, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return typeResponse, nil
+	return getInnerEntity[types.OrgVdcNetworkSegmentProfiles](orgVdcNet.client, c)
 }
 
 // UpdateSegmentProfile updates a Segment Profile with a given configuration
 func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.OrgVdcNetworkSegmentProfiles) (*types.OrgVdcNetworkSegmentProfiles, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles
-	apiVersion, err := orgVdcNet.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworkSegmentProfiles,
+		endpointParams: []string{orgVdcNet.OpenApiOrgVdcNetwork.ID},
+		entityLabel:    labelOrgVdcNetworkSegmentProfile,
 	}
-
-	urlRef, err := orgVdcNet.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, orgVdcNet.OpenApiOrgVdcNetwork.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	updatedNetworkSegmentProfile := &types.OrgVdcNetworkSegmentProfiles{}
-	err = orgVdcNet.client.OpenApiPutItem(apiVersion, urlRef, nil, entityConfig, updatedNetworkSegmentProfile, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return updatedNetworkSegmentProfile, nil
+	return updateInnerEntity(orgVdcNet.client, c, entityConfig)
 }
