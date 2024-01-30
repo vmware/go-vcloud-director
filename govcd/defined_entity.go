@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	labelDefinedEntity             = "Defined Entity"
-	labelDefinedEntityType         = "Defined Entity Type"
-	labelRdeBehavior               = "RDE Behavior"
-	labelRdeBehaviorOverride       = "RDE Behavior Override"
-	labelRdeBehaviorAccessControls = "RDE Behavior Access Controls"
+	labelDefinedEntity            = "Defined Entity"
+	labelDefinedEntityType        = "Defined Entity Type"
+	labelRdeBehavior              = "RDE Behavior"
+	labelRdeBehaviorOverride      = "RDE Behavior Override"
+	labelRdeBehaviorAccessControl = "RDE Behavior Access Control"
 )
 
 // DefinedEntityType is a type for handling Runtime Defined Entity (RDE) Type definitions.
@@ -250,7 +250,7 @@ func (det *DefinedEntityType) SetBehaviorAccessControls(acls []*types.BehaviorAc
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls,
 		endpointParams: []string{det.DefinedEntityType.ID},
-		entityLabel:    labelRdeBehaviorAccessControls,
+		entityLabel:    labelRdeBehaviorAccessControl,
 	}
 	_, err = updateInnerEntity(det.client, c, &payload)
 	if err != nil {
@@ -267,7 +267,7 @@ func (det *DefinedEntityType) GetAllBehaviorsAccessControls(queryParameters url.
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeTypeBehaviorAccessControls,
 		queryParameters: queryParameters,
 		endpointParams:  []string{det.DefinedEntityType.ID},
-		entityLabel:     labelRdeBehaviorAccessControls,
+		entityLabel:     labelRdeBehaviorAccessControl,
 	}
 	return getAllInnerEntities[types.BehaviorAccess](det.client, c)
 }
