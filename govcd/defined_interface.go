@@ -6,9 +6,15 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+)
+
+const (
+	labelDefinedInterface         = "Defined Interface"
+	labelDefinedInterfaceBehavior = "Defined Interface Behavior"
 )
 
 // DefinedInterface is a type for handling Defined Interfaces, from the Runtime Defined Entities framework, in VCD.
@@ -18,64 +24,35 @@ type DefinedInterface struct {
 	client           *Client
 }
 
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (d DefinedInterface) wrap(inner *types.DefinedInterface) *DefinedInterface {
+	d.DefinedInterface = inner
+	return &d
+}
+
 // CreateDefinedInterface creates a Defined Interface.
 // Only System administrator can create Defined Interfaces.
 func (vcdClient *VCDClient) CreateDefinedInterface(definedInterface *types.DefinedInterface) (*DefinedInterface, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
+		entityLabel: labelDefinedInterface,
 	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &DefinedInterface{
-		DefinedInterface: &types.DefinedInterface{},
-		client:           &vcdClient.Client,
-	}
-
-	err = client.OpenApiPostItem(apiVersion, urlRef, nil, definedInterface, result.DefinedInterface, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	outerType := DefinedInterface{client: &vcdClient.Client}
+	return createOuterEntity(&vcdClient.Client, outerType, c, definedInterface)
 }
 
 // GetAllDefinedInterfaces retrieves all Defined Interfaces. Query parameters can be supplied to perform additional filtering.
 func (vcdClient *VCDClient) GetAllDefinedInterfaces(queryParameters url.Values) ([]*DefinedInterface, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
+		entityLabel:     labelDefinedInterface,
+		queryParameters: queryParameters,
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponses := []*types.DefinedInterface{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
-	if err != nil {
-		return nil, amendRdeApiError(&client, err)
-	}
-
-	// Wrap all typeResponses into DefinedEntityType types with client
-	returnRDEs := make([]*DefinedInterface, len(typeResponses))
-	for sliceIndex := range typeResponses {
-		returnRDEs[sliceIndex] = &DefinedInterface{
-			DefinedInterface: typeResponses[sliceIndex],
-			client:           &vcdClient.Client,
-		}
-	}
-
-	return returnRDEs, nil
+	outerType := DefinedInterface{client: &vcdClient.Client}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
 // GetDefinedInterface retrieves a single Defined Interface defined by its unique combination of vendor, nss and version.
@@ -100,37 +77,19 @@ func (vcdClient *VCDClient) GetDefinedInterface(vendor, nss, version string) (*D
 
 // GetDefinedInterfaceById gets a Defined Interface identified by its unique URN.
 func (vcdClient *VCDClient) GetDefinedInterfaceById(id string) (*DefinedInterface, error) {
-	client := vcdClient.Client
-
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		entityLabel:    labelDefinedInterface,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
+		endpointParams: []string{id},
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &DefinedInterface{
-		DefinedInterface: &types.DefinedInterface{},
-		client:           &vcdClient.Client,
-	}
-
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, result.DefinedInterface, nil)
-	if err != nil {
-		return nil, amendRdeApiError(&client, err)
-	}
-
-	return result, nil
+	outerType := DefinedInterface{client: &vcdClient.Client}
+	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
 // Update updates the receiver Defined Interface with the values given by the input.
 // Only System administrator can update Defined Interfaces.
 func (di *DefinedInterface) Update(definedInterface types.DefinedInterface) error {
-	client := di.client
-
 	if di.DefinedInterface.ID == "" {
 		return fmt.Errorf("ID of the receiver Defined Interface is empty")
 	}
@@ -144,48 +103,37 @@ func (di *DefinedInterface) Update(definedInterface types.DefinedInterface) erro
 	definedInterface.Nss = di.DefinedInterface.Nss
 	definedInterface.Vendor = di.DefinedInterface.Vendor
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
+		endpointParams: []string{di.DefinedInterface.ID},
+		entityLabel:    labelDefinedInterface,
+	}
+	resultDefinedInterface, err := updateInnerEntity(di.client, c, &definedInterface)
 	if err != nil {
 		return err
 	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, di.DefinedInterface.ID)
-	if err != nil {
-		return err
-	}
-
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, definedInterface, di.DefinedInterface, nil)
-	if err != nil {
-		return amendRdeApiError(client, err)
-	}
-
-	return nil
+	// Only if there was no error in request we overwrite pointer receiver as otherwise it would
+	// wipe out existing data
+	di.DefinedInterface = resultDefinedInterface
+	return err
 }
 
 // Delete deletes the receiver Defined Interface.
 // Only System administrator can delete Defined Interfaces.
 func (di *DefinedInterface) Delete() error {
-	client := di.client
-
 	if di.DefinedInterface.ID == "" {
 		return fmt.Errorf("ID of the receiver Defined Interface is empty")
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaces,
+		endpointParams: []string{di.DefinedInterface.ID},
+		entityLabel:    labelDefinedInterface,
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, di.DefinedInterface.ID)
+	err := deleteEntityById(di.client, c)
 	if err != nil {
 		return err
-	}
-
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
-		return amendRdeApiError(client, err)
 	}
 
 	di.DefinedInterface = &types.DefinedInterface{}
@@ -199,24 +147,12 @@ func (di *DefinedInterface) AddBehavior(behavior types.Behavior) (*types.Behavio
 		return nil, fmt.Errorf("ID of the receiver Defined Interface is empty")
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors
-	apiVersion, err := di.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors,
+		endpointParams: []string{di.DefinedInterface.ID},
+		entityLabel:    labelDefinedInterfaceBehavior,
 	}
-
-	urlRef, err := di.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, di.DefinedInterface.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	result := &types.Behavior{}
-	err = di.client.OpenApiPostItem(apiVersion, urlRef, nil, behavior, result, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return createInnerEntity(di.client, c, &behavior)
 }
 
 // GetAllBehaviors retrieves all the Behaviors of the receiver Defined Interface.
@@ -229,47 +165,24 @@ func (di *DefinedInterface) GetAllBehaviors(queryParameters url.Values) ([]*type
 
 // getAllBehaviors gets all the Behaviors from the object referenced by the input Object ID with the given OpenAPI endpoint.
 func getAllBehaviors(client *Client, objectId, openApiEndpoint string, queryParameters url.Values) ([]*types.Behavior, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + openApiEndpoint
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + openApiEndpoint,
+		entityLabel:     labelDefinedInterfaceBehavior,
+		endpointParams:  []string{objectId},
+		queryParameters: queryParameters,
 	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, objectId))
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponses := []*types.Behavior{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return typeResponses, nil
+	return getAllInnerEntities[types.Behavior](client, c)
 }
 
 // GetBehaviorById retrieves a unique Behavior that belongs to the receiver Defined Interface and is determined by the
 // input ID.
 func (di *DefinedInterface) GetBehaviorById(id string) (*types.Behavior, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors
-	apiVersion, err := di.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors,
+		endpointParams: []string{di.DefinedInterface.ID, id},
+		entityLabel:    labelDefinedInterfaceBehavior,
 	}
-
-	urlRef, err := di.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, di.DefinedInterface.ID), id)
-	if err != nil {
-		return nil, err
-	}
-
-	response := types.Behavior{}
-	err = di.client.OpenApiGetItem(apiVersion, urlRef, nil, &response, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
+	return getInnerEntity[types.Behavior](di.client, c)
 }
 
 // GetBehaviorByName retrieves a unique Behavior that belongs to the receiver Defined Interface and is named after
@@ -279,12 +192,8 @@ func (di *DefinedInterface) GetBehaviorByName(name string) (*types.Behavior, err
 	if err != nil {
 		return nil, fmt.Errorf("could not get the Behaviors of the Defined Interface with ID '%s': %s", di.DefinedInterface.ID, err)
 	}
-	for _, b := range behaviors {
-		if b.Name == name {
-			return b, nil
-		}
-	}
-	return nil, fmt.Errorf("could not find any Behavior with name '%s' in Defined Interface with ID '%s': %s", name, di.DefinedInterface.ID, ErrorEntityNotFound)
+	label := fmt.Sprintf("Defined Interface Behavior with name '%s' in Defined Interface with ID '%s': %s", name, di.DefinedInterface.ID, ErrorEntityNotFound)
+	return localFilterOneOrError(label, behaviors, "Name", name)
 }
 
 // UpdateBehavior updates a Behavior specified by the input.
@@ -296,23 +205,12 @@ func (di *DefinedInterface) UpdateBehavior(behavior types.Behavior) (*types.Beha
 		return nil, fmt.Errorf("ID of the Behavior to update is empty")
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors
-	apiVersion, err := di.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors,
+		endpointParams: []string{di.DefinedInterface.ID, behavior.ID},
+		entityLabel:    labelDefinedInterfaceBehavior,
 	}
-
-	urlRef, err := di.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, di.DefinedInterface.ID), behavior.ID)
-	if err != nil {
-		return nil, err
-	}
-	response := types.Behavior{}
-	err = di.client.OpenApiPutItem(apiVersion, urlRef, nil, behavior, &response, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
+	return updateInnerEntity(di.client, c, &behavior)
 }
 
 // DeleteBehavior removes a Behavior specified by its ID from the receiver Defined Interface.
@@ -321,22 +219,12 @@ func (di *DefinedInterface) DeleteBehavior(behaviorId string) error {
 		return fmt.Errorf("ID of the receiver Defined Interface is empty")
 	}
 
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors
-	apiVersion, err := di.client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeInterfaceBehaviors,
+		endpointParams: []string{di.DefinedInterface.ID, behaviorId},
+		entityLabel:    labelDefinedInterfaceBehavior,
 	}
-
-	urlRef, err := di.client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, di.DefinedInterface.ID), behaviorId)
-	if err != nil {
-		return err
-	}
-	err = di.client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return deleteEntityById(di.client, c)
 }
 
 // amendRdeApiError fixes a wrong type of error returned by VCD API <= v36.0 on GET operations

@@ -10,12 +10,25 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+const (
+	labelDistributedFirewall     = "NSX-T Distributed Firewall"
+	labelDistributedFirewallRule = "NSX-T Distributed Firewall Rule"
+)
+
 // DistributedFirewall contains a types.DistributedFirewallRules which handles Distributed Firewall
 // rules in a VDC Group
 type DistributedFirewall struct {
 	DistributedFirewallRuleContainer *types.DistributedFirewallRules
 	client                           *Client
 	VdcGroup                         *VdcGroup
+}
+
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (d DistributedFirewall) wrap(inner *types.DistributedFirewallRules) *DistributedFirewall {
+	d.DistributedFirewallRuleContainer = inner
+	return &d
 }
 
 // DistributedFirewallRule is a representation of a single rule
@@ -25,36 +38,27 @@ type DistributedFirewallRule struct {
 	VdcGroup *VdcGroup
 }
 
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (d DistributedFirewallRule) wrap(inner *types.DistributedFirewallRule) *DistributedFirewallRule {
+	d.Rule = inner
+	return &d
+}
+
 // GetDistributedFirewall retrieves Distributed Firewall in a VDC Group which contains all rules
 //
 // Note. This function works only with `default` policy as this was the only supported when this
 // functions was created
 func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error) {
-	client := vdcGroup.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		entityLabel:    labelDistributedFirewall,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
+		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault},
 	}
 
-	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault))
-	if err != nil {
-		return nil, err
-	}
-
-	returnObject := &DistributedFirewall{
-		DistributedFirewallRuleContainer: &types.DistributedFirewallRules{},
-		client:                           client,
-		VdcGroup:                         vdcGroup,
-	}
-
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, returnObject.DistributedFirewallRuleContainer, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving Distributed Firewall rules: %s", err)
-	}
-
-	return returnObject, nil
+	outerType := DistributedFirewall{client: vdcGroup.client, VdcGroup: vdcGroup}
+	return getOuterEntity[DistributedFirewall, types.DistributedFirewallRules](vdcGroup.client, outerType, c)
 }
 
 // UpdateDistributedFirewall updates Distributed Firewall in a VDC Group
@@ -62,31 +66,14 @@ func (vdcGroup *VdcGroup) GetDistributedFirewall() (*DistributedFirewall, error)
 // Note. This function works only with `default` policy as this was the only supported when this
 // functions was created
 func (vdcGroup *VdcGroup) UpdateDistributedFirewall(dfwRules *types.DistributedFirewallRules) (*DistributedFirewall, error) {
-	client := vdcGroup.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		entityLabel:    labelDistributedFirewall,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
+		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault},
 	}
 
-	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault))
-	if err != nil {
-		return nil, err
-	}
-
-	returnObject := &DistributedFirewall{
-		DistributedFirewallRuleContainer: &types.DistributedFirewallRules{},
-		client:                           client,
-		VdcGroup:                         vdcGroup,
-	}
-
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, dfwRules, returnObject.DistributedFirewallRuleContainer, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error updating Distributed Firewall rules: %s", err)
-	}
-
-	return returnObject, nil
+	outerType := DistributedFirewall{client: vdcGroup.client, VdcGroup: vdcGroup}
+	return updateOuterEntity[DistributedFirewall, types.DistributedFirewallRules](vdcGroup.client, outerType, c, dfwRules)
 }
 
 // DeleteAllDistributedFirewallRules removes all Distributed Firewall rules
@@ -112,35 +99,14 @@ func (firewall *DistributedFirewall) DeleteAllRules() error {
 
 // GetDistributedFirewallRuleById retrieves single Distributed Firewall Rule by ID
 func (vdcGroup *VdcGroup) GetDistributedFirewallRuleById(id string) (*DistributedFirewallRule, error) {
-	if id == "" {
-		return nil, fmt.Errorf("id must be specified")
+	c := crudConfig{
+		entityLabel:    labelDistributedFirewallRule,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
+		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault, "/", id},
 	}
 
-	client := vdcGroup.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault), "/", id)
-	if err != nil {
-		return nil, err
-	}
-
-	returnObject := &DistributedFirewallRule{
-		Rule:     &types.DistributedFirewallRule{},
-		client:   client,
-		VdcGroup: vdcGroup,
-	}
-
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, returnObject.Rule, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving Distributed Firewall rule: %s", err)
-	}
-
-	return returnObject, nil
+	outerType := DistributedFirewallRule{client: vdcGroup.client, VdcGroup: vdcGroup}
+	return getOuterEntity[DistributedFirewallRule, types.DistributedFirewallRule](vdcGroup.client, outerType, c)
 }
 
 // GetDistributedFirewallRuleByName retrieves single firewall rule by name
@@ -154,19 +120,12 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*Distri
 		return nil, fmt.Errorf("error returning distributed firewall rules: %s", err)
 	}
 
-	var filteredByName []*types.DistributedFirewallRule
-	for _, rule := range dfw.DistributedFirewallRuleContainer.Values {
-		if rule.Name == name {
-			filteredByName = append(filteredByName, rule)
-		}
-	}
-
-	oneByName, err := oneOrError("name", name, filteredByName)
+	singleRuleByName, err := localFilterOneOrError(labelDistributedFirewallRule, dfw.DistributedFirewallRuleContainer.Values, "Name", name)
 	if err != nil {
 		return nil, err
 	}
 
-	return vdcGroup.GetDistributedFirewallRuleById(oneByName.ID)
+	return vdcGroup.GetDistributedFirewallRuleById(singleRuleByName.ID)
 }
 
 // CreateDistributedFirewallRule is a non-thread safe wrapper around
@@ -193,27 +152,19 @@ func (vdcGroup *VdcGroup) GetDistributedFirewallRuleByName(name string) (*Distri
 // Note. Running this function concurrently will corrupt firewall rules as it uses an endpoint that
 // manages all rules ("vdcGroups/%s/dfwPolicies/%s/rules")
 func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId string, rule *types.DistributedFirewallRule) (*DistributedFirewall, *DistributedFirewallRule, error) {
-	client := vdcGroup.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault))
-	if err != nil {
-		return nil, nil, err
-	}
-
 	// 1. Getting all Distributed Firewall Rules and storing them in private intermediate
 	// type`distributedFirewallRulesRaw` which holds a []json.RawMessage (text) instead of exact types.
 	// This will prevent altering existing rules in any way (for example if a new field appears in
 	// schema in future VCD versions)
-	rawJsonExistingFirewallRules := &distributedFirewallRulesRaw{}
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, rawJsonExistingFirewallRules, nil)
+
+	c := crudConfig{
+		entityLabel:    labelDistributedFirewallRule,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
+		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault},
+	}
+	rawJsonExistingFirewallRules, err := getInnerEntity[distributedFirewallRulesRaw](vdcGroup.client, c)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error retrieving Distributed Firewall rules in raw format: %s", err)
+		return nil, nil, err
 	}
 
 	// 2. Converting the give `rule` (*types.DistributedFirewallRule) into json.RawMessage so that
@@ -265,22 +216,32 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		Values: dfwRuleUpdatePayload,
 	}
 
-	returnAllFirewallRules := &DistributedFirewall{
-		DistributedFirewallRuleContainer: &types.DistributedFirewallRules{},
-		client:                           client,
-		VdcGroup:                         vdcGroup,
+	c2 := crudConfig{
+		entityLabel:    labelDistributedFirewallRule,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
+		endpointParams: []string{vdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault},
 	}
 
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, updateRequestPayload, returnAllFirewallRules.DistributedFirewallRuleContainer, nil)
+	updatedFirewallRules, err := updateInnerEntity(vdcGroup.client, c2, updateRequestPayload)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error updating Distributed Firewall rules: %s", err)
+		return nil, nil, err
 	}
 
-	// Create an entity for single firewall rule (which can be updated and deleted using their own endpoints)
+	dfwResults, err := convertRawJsonToFirewallRules(updatedFirewallRules)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	returnObjectSingleRule := &DistributedFirewallRule{
-		Rule:     returnAllFirewallRules.DistributedFirewallRuleContainer.Values[newRuleSlicePosition],
-		client:   client,
+		client:   vdcGroup.client,
 		VdcGroup: vdcGroup,
+		Rule:     dfwResults.Values[newRuleSlicePosition],
+	}
+
+	returnAllFirewallRules := &DistributedFirewall{
+		DistributedFirewallRuleContainer: dfwResults,
+		client:                           vdcGroup.client,
+		VdcGroup:                         vdcGroup,
 	}
 
 	return returnAllFirewallRules, returnObjectSingleRule, nil
@@ -288,63 +249,23 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 
 // Update a single Distributed Firewall Rule
 func (dfwRule *DistributedFirewallRule) Update(rule *types.DistributedFirewallRule) (*DistributedFirewallRule, error) {
-	if dfwRule.Rule.ID == "" {
-		return nil, fmt.Errorf("cannot update NSX-T Distribute Firewall Rule without ID")
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
+		endpointParams: []string{dfwRule.VdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault, "/", dfwRule.Rule.ID},
+		entityLabel:    labelDistributedFirewallRule,
 	}
-
-	client := dfwRule.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dfwRule.VdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault), "/", dfwRule.Rule.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	returnObjectSingleRule := &DistributedFirewallRule{
-		Rule:     &types.DistributedFirewallRule{},
-		client:   client,
-		VdcGroup: dfwRule.VdcGroup,
-	}
-
-	rule.ID = dfwRule.Rule.ID
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, rule, returnObjectSingleRule.Rule, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error updating Distributed Firewall rules: %s", err)
-	}
-
-	return returnObjectSingleRule, nil
+	outerType := DistributedFirewallRule{client: dfwRule.client, VdcGroup: dfwRule.VdcGroup}
+	return updateOuterEntity(dfwRule.client, outerType, c, rule)
 }
 
 // Delete a single Distributed Firewall Rule
 func (dfwRule *DistributedFirewallRule) Delete() error {
-	if dfwRule.Rule.ID == "" {
-		return fmt.Errorf("cannot delete NSX-T Distribute Firewall Rule without ID")
+	c := crudConfig{
+		entityLabel:    labelDistributedFirewallRule,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules,
+		endpointParams: []string{dfwRule.VdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault, "/", dfwRule.Rule.ID},
 	}
-
-	client := dfwRule.client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
-	}
-
-	// "default" policy is hardcoded because there is no other policy supported
-	urlRef, err := client.OpenApiBuildEndpoint(fmt.Sprintf(endpoint, dfwRule.VdcGroup.VdcGroup.Id, types.DistributedFirewallPolicyDefault), "/", dfwRule.Rule.ID)
-	if err != nil {
-		return err
-	}
-
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
-		return fmt.Errorf("error deleting NSX-T Distribute Firewall Rule with ID '%s': %s", dfwRule.Rule.ID, err)
-	}
-
-	return nil
+	return deleteEntityById(dfwRule.client, c)
 }
 
 // getFirewallRuleIndexById searches for 'firewallRuleId' going through a list of available firewall

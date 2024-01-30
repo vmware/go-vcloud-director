@@ -17,6 +17,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+const labelGlobalDefaultSegmentProfileTemplate = "Global Default Segment Profile Template"
+
 // Simple structure to pass Edge Gateway creation parameters.
 type EdgeGatewayCreation struct {
 	ExternalNetworks           []string // List of external networks to be linked to this gateway
@@ -723,12 +725,17 @@ func getExtension(client *Client) (*types.Extension, error) {
 
 // GetStorageProfileById fetches a storage profile using its ID.
 func (vcdClient *VCDClient) GetStorageProfileById(id string) (*types.VdcStorageProfile, error) {
-	storageProfileHref := vcdClient.Client.VCDHREF
+	return getStorageProfileById(&vcdClient.Client, id)
+}
+
+// getStorageProfileById fetches a storage profile using its ID.
+func getStorageProfileById(client *Client, id string) (*types.VdcStorageProfile, error) {
+	storageProfileHref := client.VCDHREF
 	storageProfileHref.Path += "/admin/vdcStorageProfile/" + extractUuid(id)
 
 	vdcStorageProfile := &types.VdcStorageProfile{}
 
-	_, err := vcdClient.Client.ExecuteRequest(storageProfileHref.String(), http.MethodGet, "", "error retrieving storage profile: %s", nil, vdcStorageProfile)
+	_, err := client.ExecuteRequest(storageProfileHref.String(), http.MethodGet, "", "error retrieving storage profile: %s", nil, vdcStorageProfile)
 	if err != nil {
 		return nil, err
 	}
@@ -1192,44 +1199,19 @@ func QueryOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.QueryRe
 
 // GetGlobalDefaultSegmentProfileTemplates retrieves VCD global configuration for Segment Profile Templates
 func (vcdClient *VCDClient) GetGlobalDefaultSegmentProfileTemplates() (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates,
+		entityLabel: labelGlobalDefaultSegmentProfileTemplate,
 	}
 
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponse := &types.NsxtGlobalDefaultSegmentProfileTemplate{}
-	err = vcdClient.Client.OpenApiGetItem(apiVersion, urlRef, nil, typeResponse, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return typeResponse, nil
+	return getInnerEntity[types.NsxtGlobalDefaultSegmentProfileTemplate](&vcdClient.Client, c)
 }
 
 // UpdateGlobalDefaultSegmentProfileTemplates updates VCD global configuration for Segment Profile Templates
 func (vcdClient *VCDClient) UpdateGlobalDefaultSegmentProfileTemplates(entityConfig *types.NsxtGlobalDefaultSegmentProfileTemplate) (*types.NsxtGlobalDefaultSegmentProfileTemplate, error) {
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates
-	apiVersion, err := vcdClient.Client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates,
+		entityLabel: labelGlobalDefaultSegmentProfileTemplate,
 	}
-
-	urlRef, err := vcdClient.Client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	updatedDefaultNetworkSegmentProfile := &types.NsxtGlobalDefaultSegmentProfileTemplate{}
-	err = vcdClient.Client.OpenApiPutItem(apiVersion, urlRef, nil, entityConfig, updatedDefaultNetworkSegmentProfile, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return updatedDefaultNetworkSegmentProfile, nil
+	return updateInnerEntity(&vcdClient.Client, c, entityConfig)
 }

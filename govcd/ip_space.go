@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
@@ -10,6 +10,8 @@ import (
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
+
+const labelIpSpace = "IP Space"
 
 // IpSpace provides structured approach to allocating public and private IP addresses by preventing
 // the use of overlapping IP addresses across organizations and organization VDCs.
@@ -27,31 +29,22 @@ type IpSpace struct {
 	vcdClient *VCDClient
 }
 
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (g IpSpace) wrap(inner *types.IpSpace) *IpSpace {
+	g.IpSpace = inner
+	return &g
+}
+
 // CreateIpSpace creates IP Space with desired configuration
 func (vcdClient *VCDClient) CreateIpSpace(ipSpaceConfig *types.IpSpace) (*IpSpace, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
+		entityLabel: labelIpSpace,
 	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	result := &IpSpace{
-		IpSpace:   &types.IpSpace{},
-		vcdClient: vcdClient,
-	}
-
-	err = client.OpenApiPostItem(apiVersion, urlRef, nil, ipSpaceConfig, result.IpSpace, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	outerType := IpSpace{vcdClient: vcdClient}
+	return createOuterEntity(&vcdClient.Client, outerType, c, ipSpaceConfig)
 }
 
 // GetAllIpSpaceSummaries retrieve summaries of all IP Spaces with an optional filter
@@ -59,65 +52,14 @@ func (vcdClient *VCDClient) CreateIpSpace(ipSpaceConfig *types.IpSpace) (*IpSpac
 // "summaries" endpoint exists, but it does not include all fields. To retrieve complete structure
 // one can use `GetIpSpaceById` or `GetIpSpaceByName`
 func (vcdClient *VCDClient) GetAllIpSpaceSummaries(queryParameters url.Values) ([]*IpSpace, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceSummaries,
+		entityLabel:     labelIpSpace,
+		queryParameters: queryParameters,
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	typeResponses := []*types.IpSpace{{}}
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, queryParameters, &typeResponses, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Wrap all typeResponses into IpSpace types with client
-	results := make([]*IpSpace, len(typeResponses))
-	for sliceIndex := range typeResponses {
-		results[sliceIndex] = &IpSpace{
-			IpSpace:   typeResponses[sliceIndex],
-			vcdClient: vcdClient,
-		}
-	}
-
-	return results, nil
-}
-
-// GetIpSpaceById retrieves IP Space with a given ID
-func (vcdClient *VCDClient) GetIpSpaceById(id string) (*IpSpace, error) {
-	if id == "" {
-		return nil, fmt.Errorf("IP Space lookup requires ID")
-	}
-
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, id)
-	if err != nil {
-		return nil, err
-	}
-
-	response := &IpSpace{
-		vcdClient: vcdClient,
-		IpSpace:   &types.IpSpace{},
-	}
-
-	err = client.OpenApiGetItem(apiVersion, urlRef, nil, response.IpSpace, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return response, nil
+	outerType := IpSpace{vcdClient: vcdClient}
+	return getAllOuterEntities[IpSpace, types.IpSpace](&vcdClient.Client, outerType, c)
 }
 
 // GetIpSpaceByName retrieves IP Space with a given name
@@ -127,20 +69,31 @@ func (vcdClient *VCDClient) GetIpSpaceByName(name string) (*IpSpace, error) {
 		return nil, fmt.Errorf("IP Space lookup requires name")
 	}
 
-	queryParameters := url.Values{}
-	queryParameters.Add("filter", "name=="+name)
+	queryParams := url.Values{}
+	queryParams.Add("filter", "name=="+name)
 
-	filteredIpSpaces, err := vcdClient.GetAllIpSpaceSummaries(queryParameters)
+	filteredEntities, err := vcdClient.GetAllIpSpaceSummaries(queryParams)
 	if err != nil {
-		return nil, fmt.Errorf("error getting IP Spaces: %s", err)
+		return nil, err
 	}
 
-	singleIpSpace, err := oneOrError("name", name, filteredIpSpaces)
+	singleIpSpace, err := oneOrError("name", name, filteredEntities)
 	if err != nil {
 		return nil, err
 	}
 
 	return vcdClient.GetIpSpaceById(singleIpSpace.IpSpace.ID)
+}
+
+func (vcdClient *VCDClient) GetIpSpaceById(id string) (*IpSpace, error) {
+	c := crudConfig{
+		entityLabel:    labelIpSpace,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
+		endpointParams: []string{id},
+	}
+
+	outerType := IpSpace{vcdClient: vcdClient}
+	return getOuterEntity[IpSpace, types.IpSpace](&vcdClient.Client, outerType, c)
 }
 
 // GetIpSpaceByNameAndOrgId retrieves IP Space with a given name in a particular Org
@@ -150,16 +103,16 @@ func (vcdClient *VCDClient) GetIpSpaceByNameAndOrgId(name, orgId string) (*IpSpa
 		return nil, fmt.Errorf("IP Space lookup requires name and Org ID")
 	}
 
-	queryParameters := url.Values{}
-	queryParameters.Add("filter", "name=="+name)
-	queryParameters = queryParameterFilterAnd("orgRef.id=="+orgId, queryParameters)
+	queryParams := url.Values{}
+	queryParams.Add("filter", "name=="+name)
+	queryParams = queryParameterFilterAnd("orgRef.id=="+orgId, queryParams)
 
-	filteredIpSpaces, err := vcdClient.GetAllIpSpaceSummaries(queryParameters)
+	filteredEntities, err := vcdClient.GetAllIpSpaceSummaries(queryParams)
 	if err != nil {
-		return nil, fmt.Errorf("error getting IP Spaces: %s", err)
+		return nil, err
 	}
 
-	singleIpSpace, err := oneOrError("name", name, filteredIpSpaces)
+	singleIpSpace, err := oneOrError("name", name, filteredEntities)
 	if err != nil {
 		return nil, err
 	}
@@ -169,58 +122,21 @@ func (vcdClient *VCDClient) GetIpSpaceByNameAndOrgId(name, orgId string) (*IpSpa
 
 // Update updates IP Space with new config
 func (ipSpace *IpSpace) Update(ipSpaceConfig *types.IpSpace) (*IpSpace, error) {
-	client := ipSpace.vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
+		endpointParams: []string{ipSpace.IpSpace.ID},
+		entityLabel:    labelIpSpace,
 	}
-
-	ipSpaceConfig.ID = ipSpace.IpSpace.ID
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, ipSpaceConfig.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	returnIpSpace := &IpSpace{
-		IpSpace:   &types.IpSpace{},
-		vcdClient: ipSpace.vcdClient,
-	}
-
-	err = client.OpenApiPutItem(apiVersion, urlRef, nil, ipSpaceConfig, returnIpSpace.IpSpace, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error updating IP Space: %s", err)
-	}
-
-	return returnIpSpace, nil
+	outerType := IpSpace{vcdClient: ipSpace.vcdClient}
+	return updateOuterEntity(&ipSpace.vcdClient.Client, outerType, c, ipSpaceConfig)
 }
 
 // Delete deletes IP Space
 func (ipSpace *IpSpace) Delete() error {
-	if ipSpace == nil || ipSpace.IpSpace == nil || ipSpace.IpSpace.ID == "" {
-		return fmt.Errorf("IP Space must have ID")
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces,
+		endpointParams: []string{ipSpace.IpSpace.ID},
+		entityLabel:    labelIpSpace,
 	}
-
-	client := ipSpace.vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
-	if err != nil {
-		return err
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint, ipSpace.IpSpace.ID)
-	if err != nil {
-		return err
-	}
-
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	if err != nil {
-		return fmt.Errorf("error deleting IP space: %s", err)
-	}
-
-	return nil
+	return deleteEntityById(&ipSpace.vcdClient.Client, c)
 }

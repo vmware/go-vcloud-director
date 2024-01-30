@@ -57,14 +57,16 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(policies), Equals, 1)
 
-	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName()+"123") // TODO: Remove 123
+	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName()+"124") // TODO: Remove number suffix
 	check.Assert(err, IsNil)
 	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTokens+token.Token.ID)
 
 	apiToken, err := token.GetInitialApiToken()
 	check.Assert(err, IsNil)
 
-	cluster, err := vcd.client.CseCreateKubernetesCluster(CseClusterCreateInput{
+	workerPoolName := "worker-pool-1"
+
+	cluster, err := org.CseCreateKubernetesCluster(CseClusterCreateInput{
 		Name:                    "test-cse",
 		OrganizationId:          org.Org.ID,
 		VdcId:                   vdc.Vdc.ID,
@@ -79,7 +81,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 			Ip:               "",
 		},
 		WorkerPools: []WorkerPoolCreateInput{{
-			Name:             "worker-pool-1",
+			Name:             workerPoolName,
 			MachineCount:     1,
 			DiskSizeGi:       20,
 			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
@@ -105,6 +107,35 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 
 	err = cluster.Refresh()
 	check.Assert(err, IsNil)
+
+	clusterGet, err := org.CseGetKubernetesClusterById(cluster.ID)
+	check.Assert(err, IsNil)
+	check.Assert(cluster.ID, Equals, clusterGet.ID)
+	check.Assert(cluster.Capvcd.Name, Equals, clusterGet.Capvcd.Name)
+	check.Assert(cluster.Owner, Equals, clusterGet.Owner)
+	check.Assert(cluster.Capvcd.Metadata, DeepEquals, clusterGet.Capvcd.Metadata)
+	check.Assert(cluster.Capvcd.Spec.VcdKe, DeepEquals, clusterGet.Capvcd.Spec.VcdKe)
+
+	// Update worker pool from 1 node to 2
+	// Pre-check. This should be 1, as it was created with just 1 pool
+	for _, nodePool := range cluster.Capvcd.Status.Capvcd.NodePool {
+		if nodePool.Name == workerPoolName {
+			check.Assert(nodePool.DesiredReplicas, Equals, 1)
+		}
+	}
+	// Perform the update
+	err = cluster.UpdateWorkerPools(map[string]WorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, 0)
+	check.Assert(err, IsNil)
+
+	// Post-check. This should be 2, as it should have scaled up
+	foundWorkerPool := false
+	for _, nodePool := range cluster.Capvcd.Status.Capvcd.NodePool {
+		if nodePool.Name == workerPoolName {
+			foundWorkerPool = true
+			check.Assert(nodePool.DesiredReplicas, Equals, 2)
+		}
+	}
+	check.Assert(foundWorkerPool, Equals, true)
 
 	err = cluster.Delete(0)
 	check.Assert(err, IsNil)

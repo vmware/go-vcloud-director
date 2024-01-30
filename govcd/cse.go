@@ -115,13 +115,13 @@ var cseFiles embed.FS
 // timeout is 0, it waits forever for the cluster creation. Otherwise, if the timeout is reached and the cluster is not available,
 // it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster in the returned CseClusterApiProviderCluster.
 // If the cluster is created correctly, returns all the data in CseClusterApiProviderCluster.
-func (vcdClient *VCDClient) CseCreateKubernetesCluster(clusterData CseClusterCreateInput, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
-	clusterId, err := vcdClient.CseCreateKubernetesClusterAsync(clusterData)
+func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterCreateInput, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
+	clusterId, err := org.CseCreateKubernetesClusterAsync(clusterData)
 	if err != nil {
 		return nil, err
 	}
 
-	cluster, err := waitUntilClusterIsProvisioned(vcdClient, clusterId, timeoutMinutes)
+	cluster, err := waitUntilClusterIsProvisioned(org.client, clusterId, timeoutMinutes)
 	if err != nil {
 		return cluster, err // Returns the latest status of the cluster
 	}
@@ -132,24 +132,24 @@ func (vcdClient *VCDClient) CseCreateKubernetesCluster(clusterData CseClusterCre
 // CseCreateKubernetesClusterAsync creates a Kubernetes cluster with the data given as input (CseClusterCreateInput), but does not
 // wait for the creation process to finish, so it doesn't monitor for any errors during the process. It returns just the ID of
 // the created cluster. One can manually check the status of the cluster with GetKubernetesClusterById and the result of this method.
-func (vcdClient *VCDClient) CseCreateKubernetesClusterAsync(clusterData CseClusterCreateInput) (string, error) {
-	goTemplateContents, err := clusterData.toCseClusterCreationGoTemplateContents(vcdClient)
+func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterCreateInput) (string, error) {
+	goTemplateContents, err := clusterData.toCseClusterCreationGoTemplateContents(org)
 	if err != nil {
 		return "", err
 	}
 
-	rdeContents, err := getCseKubernetesClusterCreationPayload(vcdClient, goTemplateContents)
+	rdeContents, err := getCseKubernetesClusterCreationPayload(goTemplateContents)
 	if err != nil {
 		return "", err
 	}
 
-	rde, err := vcdClient.CreateRde("vmware", "capvcdCluster", supportedCseVersions[clusterData.CseVersion][1], types.DefinedEntity{
+	rde, err := createRdeAndPoll(org.client, "vmware", "capvcdCluster", supportedCseVersions[clusterData.CseVersion][1], types.DefinedEntity{
 		EntityType: goTemplateContents.RdeType.ID,
 		Name:       goTemplateContents.Name,
 		Entity:     rdeContents,
 	}, &TenantContext{
-		OrgId:   goTemplateContents.OrganizationId,
-		OrgName: goTemplateContents.OrganizationName,
+		OrgId:   org.Org.ID,
+		OrgName: org.Org.Name,
 	})
 	if err != nil {
 		return "", err
@@ -158,11 +158,15 @@ func (vcdClient *VCDClient) CseCreateKubernetesClusterAsync(clusterData CseClust
 	return rde.DefinedEntity.ID, nil
 }
 
-// GetKubernetesClusterById retrieves a CSE Kubernetes cluster from VCD by its unique ID
-func (vcdClient *VCDClient) GetKubernetesClusterById(id string) (*CseClusterApiProviderCluster, error) {
-	rde, err := vcdClient.GetRdeById(id)
+// CseGetKubernetesClusterById retrieves a CSE Kubernetes cluster from VCD by its unique ID
+func (org *Org) CseGetKubernetesClusterById(id string) (*CseClusterApiProviderCluster, error) {
+	rde, err := getRdeById(org.client, id)
 	if err != nil {
 		return nil, err
+	}
+	// This should be guaranteed by the proper rights, but just in case
+	if rde.DefinedEntity.Org.ID != org.Org.ID {
+		return nil, fmt.Errorf("could not find any Kubernetes cluster with ID '%s' in Organization '%s': %s", id, org.Org.Name, ErrorEntityNotFound)
 	}
 	return rde.cseConvertToCapvcdCluster()
 }
@@ -182,8 +186,59 @@ func (cluster *CseClusterApiProviderCluster) Refresh() error {
 	return nil
 }
 
-// Update updates the receiver cluster with the given input.
-func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput) error {
+// UpdateWorkerPools executes a synchronous update on the receiver cluster to change the worker pools. If the given
+// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
+// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
+// receiver CseClusterApiProviderCluster.
+func (cluster *CseClusterApiProviderCluster) UpdateWorkerPools(input map[string]WorkerPoolUpdateInput, timeoutMinutes time.Duration) error {
+	return cluster.Update(CseClusterUpdateInput{
+		WorkerPools: &input,
+	}, timeoutMinutes)
+}
+
+// UpdateControlPlane executes a synchronous update on the receiver cluster to change the control plane. If the given
+// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
+// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
+// receiver CseClusterApiProviderCluster.
+func (cluster *CseClusterApiProviderCluster) UpdateControlPlane(input ControlPlaneUpdateInput, timeoutMinutes time.Duration) error {
+	return cluster.Update(CseClusterUpdateInput{
+		ControlPlane: &input,
+	}, timeoutMinutes)
+}
+
+// ChangeKubernetesTemplate executes a synchronous update on the receiver cluster to change the Kubernetes template of the cluster. If the given
+// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
+// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
+// receiver CseClusterApiProviderCluster.
+func (cluster *CseClusterApiProviderCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string, timeoutMinutes time.Duration) error {
+	return cluster.Update(CseClusterUpdateInput{
+		KubernetesTemplateOvaId: &kubernetesTemplateOvaId,
+	}, timeoutMinutes)
+}
+
+// SetHealthCheck executes a synchronous update on the receiver cluster to enable or disable the machine health check capabilities. If the given
+// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
+// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
+// receiver CseClusterApiProviderCluster.
+func (cluster *CseClusterApiProviderCluster) SetHealthCheck(healthCheckEnabled bool, timeoutMinutes time.Duration) error {
+	return cluster.Update(CseClusterUpdateInput{
+		NodeHealthCheck: &healthCheckEnabled,
+	}, timeoutMinutes)
+}
+
+// SetAutoRepairOnErrors executes a synchronous update on the receiver cluster to change the flag that controls the auto-repair
+// capabilities of CSE.
+func (cluster *CseClusterApiProviderCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool) error {
+	return cluster.Update(CseClusterUpdateInput{
+		AutoRepairOnErrors: &autoRepairOnErrors,
+	}, 0)
+}
+
+// Update executes a synchronous update on the receiver cluster to perform a update on any of the allowed parameters of the cluster. If the given
+// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
+// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
+// receiver CseClusterApiProviderCluster.
+func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput, timeoutMinutes time.Duration) error {
 	if input.NodeHealthCheck != nil {
 		// TODO
 		return fmt.Errorf("not implemented")
@@ -225,6 +280,15 @@ func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput)
 	err = rde.Update(*rde.DefinedEntity)
 	if err != nil {
 		return err
+	}
+
+	_, finalError := waitUntilClusterIsProvisioned(cluster.client, cluster.ID, timeoutMinutes)
+
+	// We do a Refresh() even if the cluster update ended with errors, so the receiver entity gets updated with latest fields.
+	// Then, if the update ended with errors, we return them
+	_ = cluster.Refresh()
+	if finalError != nil {
+		return finalError
 	}
 	return nil
 }
@@ -329,7 +393,7 @@ func (rde *DefinedEntity) cseConvertToCapvcdCluster() (*CseClusterApiProviderClu
 // If one of the states of the cluster at a given point is "error", this function also checks whether the cluster has the "Auto Repair on Errors" flag enabled,
 // so it keeps waiting if it's true.
 // If timeout is reached before the cluster, it returns an error.
-func waitUntilClusterIsProvisioned(vcdClient *VCDClient, clusterId string, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
+func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
 	var elapsed time.Duration
 	logHttpResponse := util.LogHttpResponse
 	sleepTime := 30
@@ -344,7 +408,7 @@ func waitUntilClusterIsProvisioned(vcdClient *VCDClient, clusterId string, timeo
 	var capvcdCluster *CseClusterApiProviderCluster
 	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
 		util.LogHttpResponse = false
-		rde, err := vcdClient.GetRdeById(clusterId)
+		rde, err := getRdeById(client, clusterId)
 		util.LogHttpResponse = logHttpResponse
 		if err != nil {
 			return nil, err

@@ -16,7 +16,6 @@ import (
 type cseClusterCreationGoTemplateArguments struct {
 	CseVersion                string
 	Name                      string
-	OrganizationId            string
 	OrganizationName          string
 	VdcName                   string
 	NetworkName               string
@@ -152,18 +151,17 @@ func (ccd *CseClusterCreateInput) validate() error {
 
 // toCseClusterCreationGoTemplateContents transforms user input data (receiver CseClusterCreateInput) into the final payload that
 // will be used to render the Go templates that define a Kubernetes cluster creation payload (cseClusterCreationGoTemplateArguments).
-func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdClient *VCDClient) (*cseClusterCreationGoTemplateArguments, error) {
+func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(org *Org) (*cseClusterCreationGoTemplateArguments, error) {
 	err := input.validate()
 	if err != nil {
 		return nil, err
 	}
 
-	output := &cseClusterCreationGoTemplateArguments{}
-	org, err := vcdClient.GetOrgById(input.OrganizationId)
-	if err != nil {
-		return nil, fmt.Errorf("could not retrieve the Organization with ID '%s': %s", input.VdcId, err)
+	if org == nil || org.Org == nil {
+		return nil, fmt.Errorf("cannot manipulate the CSE Kubernetes cluster creation input, the Organization is nil")
 	}
-	output.OrganizationId = org.Org.ID
+
+	output := &cseClusterCreationGoTemplateArguments{}
 	output.OrganizationName = org.Org.Name
 
 	vdc, err := org.GetVDCById(input.VdcId, true)
@@ -197,7 +195,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdCl
 	output.NetworkName = network.OrgVDCNetwork.Name
 
 	currentCseVersion := supportedCseVersions[input.CseVersion]
-	rdeType, err := vcdClient.GetRdeType("vmware", "capvcdCluster", currentCseVersion[1])
+	rdeType, err := getRdeType(org.client, "vmware", "capvcdCluster", currentCseVersion[1])
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve RDE Type vmware:capvcdCluster:'%s': %s", currentCseVersion[1], err)
 	}
@@ -219,7 +217,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdCl
 
 	for _, id := range storageProfileIds {
 		if _, alreadyPresent := idToNameCache[id]; !alreadyPresent {
-			storageProfile, err := vcdClient.GetStorageProfileById(id)
+			storageProfile, err := getStorageProfileById(org.client, id)
 			if err != nil {
 				return nil, fmt.Errorf("could not get Storage Profile with ID '%s': %s", id, err)
 			}
@@ -228,7 +226,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdCl
 	}
 	for _, id := range computePolicyIds {
 		if _, alreadyPresent := idToNameCache[id]; !alreadyPresent {
-			computePolicy, err := vcdClient.GetVdcComputePolicyV2ById(id)
+			computePolicy, err := getVdcComputePolicyV2ById(org.client, id)
 			if err != nil {
 				return nil, fmt.Errorf("could not get Compute Policy with ID '%s': %s", id, err)
 			}
@@ -270,7 +268,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdCl
 		}
 	}
 
-	mhc, err := getMachineHealthCheck(vcdClient, input.CseVersion, input.NodeHealthCheck)
+	mhc, err := getMachineHealthCheck(org.client, input.CseVersion, input.NodeHealthCheck)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +276,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdCl
 		output.MachineHealthCheck = mhc
 	}
 
-	containerRegistryUrl, err := getContainerRegistryUrl(vcdClient, input.CseVersion)
+	containerRegistryUrl, err := getContainerRegistryUrl(org.client, input.CseVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -287,13 +285,13 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdCl
 
 	output.Owner = input.Owner
 	if input.Owner == "" {
-		sessionInfo, err := vcdClient.Client.GetSessionInfo()
+		sessionInfo, err := org.client.GetSessionInfo()
 		if err != nil {
 			return nil, fmt.Errorf("error getting the owner of the cluster: %s", err)
 		}
 		output.Owner = sessionInfo.User.Name
 	}
-	output.VcdUrl = strings.Replace(vcdClient.Client.VCDHREF.String(), "/api", "", 1)
+	output.VcdUrl = strings.Replace(org.client.VCDHREF.String(), "/api", "", 1)
 
 	// These don't change, don't need mapping
 	output.ApiToken = input.ApiToken
@@ -361,13 +359,13 @@ func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, 
 }
 
 // getMachineHealthCheck gets the required information from the CSE Server configuration RDE
-func getMachineHealthCheck(vcdClient *VCDClient, cseVersion string, isNodeHealthCheckActive bool) (*machineHealthCheck, error) {
+func getMachineHealthCheck(client *Client, cseVersion string, isNodeHealthCheckActive bool) (*machineHealthCheck, error) {
 	if !isNodeHealthCheckActive {
 		return nil, nil
 	}
 	currentCseVersion := supportedCseVersions[cseVersion]
 
-	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "vcdKeConfig")
+	rdes, err := getRdesByName(client, "vmware", "VCDKEConfig", currentCseVersion[0], "vcdKeConfig")
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", currentCseVersion[0], err)
 	}
@@ -394,10 +392,10 @@ func getMachineHealthCheck(vcdClient *VCDClient, cseVersion string, isNodeHealth
 }
 
 // getContainerRegistryUrl gets the required information from the CSE Server configuration RDE
-func getContainerRegistryUrl(vcdClient *VCDClient, cseVersion string) (string, error) {
+func getContainerRegistryUrl(client *Client, cseVersion string) (string, error) {
 	currentCseVersion := supportedCseVersions[cseVersion]
 
-	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "vcdKeConfig")
+	rdes, err := getRdesByName(client, "vmware", "VCDKEConfig", currentCseVersion[0], "vcdKeConfig")
 	if err != nil {
 		return "", fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", currentCseVersion[0], err)
 	}

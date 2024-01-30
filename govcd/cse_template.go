@@ -14,8 +14,8 @@ import (
 // getCseKubernetesClusterCreationPayload gets the payload for the RDE that will trigger a Kubernetes cluster creation.
 // It generates a valid YAML that is embedded inside the RDE JSON, then it is returned as an unmarshaled
 // generic map, that allows to be sent to VCD as it is.
-func getCseKubernetesClusterCreationPayload(vcdClient *VCDClient, goTemplateContents *cseClusterCreationGoTemplateArguments) (map[string]interface{}, error) {
-	capiYaml, err := generateCapiYaml(vcdClient, goTemplateContents)
+func getCseKubernetesClusterCreationPayload(goTemplateContents *cseClusterCreationGoTemplateArguments) (map[string]interface{}, error) {
+	capiYaml, err := generateCapiYaml(goTemplateContents)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func getCseKubernetesClusterCreationPayload(vcdClient *VCDClient, goTemplateCont
 }
 
 // generateNodePoolYaml generates YAML blocks corresponding to the Kubernetes node pools.
-func generateNodePoolYaml(vcdClient *VCDClient, clusterDetails *cseClusterCreationGoTemplateArguments) (string, error) {
+func generateNodePoolYaml(clusterDetails *cseClusterCreationGoTemplateArguments) (string, error) {
 	workerPoolTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_workerpool")
 	if err != nil {
 		return "", err
@@ -105,7 +105,7 @@ func generateNodePoolYaml(vcdClient *VCDClient, clusterDetails *cseClusterCreati
 }
 
 // generateMemoryHealthCheckYaml generates a YAML block corresponding to the Kubernetes memory health check.
-func generateMemoryHealthCheckYaml(vcdClient *VCDClient, clusterDetails *cseClusterCreationGoTemplateArguments, clusterName string) (string, error) {
+func generateMemoryHealthCheckYaml(clusterDetails *cseClusterCreationGoTemplateArguments, clusterName string) (string, error) {
 	if clusterDetails.MachineHealthCheck == nil {
 		return "", nil
 	}
@@ -135,7 +135,7 @@ func generateMemoryHealthCheckYaml(vcdClient *VCDClient, clusterDetails *cseClus
 // generateCapiYaml generates the YAML string that is required during Kubernetes cluster creation, to be embedded
 // in the CAPVCD cluster JSON payload. This function picks data from the Terraform schema and the createClusterDto to
 // populate several Go templates and build a final YAML.
-func generateCapiYaml(vcdClient *VCDClient, clusterDetails *cseClusterCreationGoTemplateArguments) (string, error) {
+func generateCapiYaml(clusterDetails *cseClusterCreationGoTemplateArguments) (string, error) {
 	clusterTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_cluster")
 	if err != nil {
 		return "", err
@@ -145,12 +145,12 @@ func generateCapiYaml(vcdClient *VCDClient, clusterDetails *cseClusterCreationGo
 	sanitizedTemplate := strings.NewReplacer("%", "%%").Replace(clusterTmpl)
 	capiYamlEmpty := template.Must(template.New(clusterDetails.Name + "-cluster").Parse(sanitizedTemplate))
 
-	nodePoolYaml, err := generateNodePoolYaml(vcdClient, clusterDetails)
+	nodePoolYaml, err := generateNodePoolYaml(clusterDetails)
 	if err != nil {
 		return "", err
 	}
 
-	memoryHealthCheckYaml, err := generateMemoryHealthCheckYaml(vcdClient, clusterDetails, clusterDetails.Name)
+	memoryHealthCheckYaml, err := generateMemoryHealthCheckYaml(clusterDetails, clusterDetails.Name)
 	if err != nil {
 		return "", err
 	}
