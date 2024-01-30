@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
-	"io"
-	"net/http"
 	"regexp"
 	"strings"
 )
@@ -299,12 +296,15 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(vcdCl
 	output.VcdUrl = strings.Replace(vcdClient.Client.VCDHREF.String(), "/api", "", 1)
 
 	// These don't change, don't need mapping
+	output.ApiToken = input.ApiToken
+	output.AutoRepairOnErrors = input.AutoRepairOnErrors
+	output.CseVersion = input.CseVersion
+	output.Name = input.Name
 	output.PodCidr = input.PodCidr
 	output.ServiceCidr = input.ServiceCidr
 	output.SshPublicKey = input.SshPublicKey
 	output.VirtualIpSubnet = input.VirtualIpSubnet
-	output.AutoRepairOnErrors = input.AutoRepairOnErrors
-	output.CseVersion = input.CseVersion
+
 	return output, nil
 }
 
@@ -336,8 +336,13 @@ func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, 
 	}
 	parsedOvaName := strings.ReplaceAll(ovaName, ".ova", "")[cutPosition+len("kube-"):]
 
+	cseTkgVersionsJson, err := cseFiles.ReadFile("cse/tkg_versions.json")
+	if err != nil {
+		return result, err
+	}
+
 	versionsMap := map[string]interface{}{}
-	err := json.Unmarshal(cseTkgVersionsJson, &versionsMap)
+	err = json.Unmarshal(cseTkgVersionsJson, &versionsMap)
 	if err != nil {
 		return result, err
 	}
@@ -357,10 +362,12 @@ func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, 
 
 // getMachineHealthCheck gets the required information from the CSE Server configuration RDE
 func getMachineHealthCheck(vcdClient *VCDClient, cseVersion string, isNodeHealthCheckActive bool) (*machineHealthCheck, error) {
+	if !isNodeHealthCheckActive {
+		return nil, nil
+	}
 	currentCseVersion := supportedCseVersions[cseVersion]
-	result := machineHealthCheck{}
 
-	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "machineHealthCheck")
+	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "vcdKeConfig")
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", currentCseVersion[0], err)
 	}
@@ -376,22 +383,21 @@ func getMachineHealthCheck(vcdClient *VCDClient, cseVersion string, isNodeHealth
 		return nil, fmt.Errorf("wrong format of VCDKEConfig, expected a single 'profiles' element, got %d", len(profiles))
 	}
 
-	if isNodeHealthCheckActive {
-		// TODO: Get the struct Type for this one
-		mhc := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"].(map[string]interface{})
-		result.MaxUnhealthyNodesPercentage = mhc["maxUnhealthyNodes"].(float64)
-		result.NodeStartupTimeout = mhc["nodeStartupTimeout"].(string)
-		result.NodeNotReadyTimeout = mhc["nodeUnknownTimeout"].(string)
-		result.NodeUnknownTimeout = mhc["nodeNotReadyTimeout"].(string)
-	}
-	return nil, nil
+	// TODO: Get the struct Type for this one
+	result := machineHealthCheck{}
+	mhc := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"].(map[string]interface{})
+	result.MaxUnhealthyNodesPercentage = mhc["maxUnhealthyNodes"].(float64)
+	result.NodeStartupTimeout = mhc["nodeStartupTimeout"].(string)
+	result.NodeNotReadyTimeout = mhc["nodeUnknownTimeout"].(string)
+	result.NodeUnknownTimeout = mhc["nodeNotReadyTimeout"].(string)
+	return &result, nil
 }
 
 // getContainerRegistryUrl gets the required information from the CSE Server configuration RDE
 func getContainerRegistryUrl(vcdClient *VCDClient, cseVersion string) (string, error) {
 	currentCseVersion := supportedCseVersions[cseVersion]
 
-	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "machineHealthCheck")
+	rdes, err := vcdClient.GetRdesByName("vmware", "VCDKEConfig", currentCseVersion[0], "vcdKeConfig")
 	if err != nil {
 		return "", fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", currentCseVersion[0], err)
 	}
@@ -410,32 +416,12 @@ func getContainerRegistryUrl(vcdClient *VCDClient, cseVersion string) (string, e
 	return fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"].(string)), nil
 }
 
-func getCseTemplate(client *Client, cseVersion, templateName string) (string, error) {
-	return getRemoteFile(client, fmt.Sprintf("https://raw.githubusercontent.com/adambarreiro/go-vcloud-director/new-methods-cse/govcd/cse/%s/%s.tmpl", cseVersion, templateName))
-}
-
-// getRemoteFile gets a Go template file corresponding to the CSE version
-func getRemoteFile(client *Client, url string) (string, error) {
-	//
-	resp, err := client.Http.Get(url)
+func getCseTemplate(cseVersion, templateName string) (string, error) {
+	result, err := cseFiles.ReadFile(fmt.Sprintf("cse/%s/%s.tmpl", cseVersion, templateName))
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			util.Logger.Printf("[ERROR] getRemoteFile: Could not close HTTP response body: %s", err)
-		}
-	}()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("could not get file from URL %s, got status %s", url, resp.Status)
-	}
-
-	response, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(response), nil
+	return string(result), nil
 }
 
 // getKeys retrieves all the keys from the given map and returns them as a slice

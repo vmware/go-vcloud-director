@@ -1,7 +1,7 @@
 package govcd
 
 import (
-	_ "embed"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -108,8 +108,8 @@ type WorkerPoolUpdateInput struct {
 	MachineCount int
 }
 
-//go:embed cse/tkg_versions.json
-var cseTkgVersionsJson []byte
+//go:embed cse
+var cseFiles embed.FS
 
 // CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterCreateInput). If the given
 // timeout is 0, it waits forever for the cluster creation. Otherwise, if the timeout is reached and the cluster is not available,

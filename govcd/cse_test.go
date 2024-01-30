@@ -29,10 +29,6 @@ func skipCseTests(testConfig TestConfig) bool {
 
 // Test_Cse
 func (vcd *TestVCD) Test_Cse(check *C) {
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
-
 	if skipCseTests(vcd.config) {
 		check.Skip(fmt.Sprintf(TestRequiresCseConfiguration, check.TestName()))
 	}
@@ -40,25 +36,28 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
 	check.Assert(err, IsNil)
 
-	vdc, err := org.GetVDCByName(vcd.config.Cse.TenantOrg, false)
+	catalog, err := org.GetCatalogByName(vcd.config.Cse.OvaCatalog, false)
+	check.Assert(err, IsNil)
+
+	ova, err := catalog.GetVAppTemplateByName(vcd.config.Cse.OvaName)
+	check.Assert(err, IsNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.Cse.TenantVdc, false)
 	check.Assert(err, IsNil)
 
 	net, err := vdc.GetOrgVdcNetworkByName(vcd.config.Cse.RoutedNetwork, false)
-	check.Assert(err, IsNil)
-
-	ova, err := vdc.GetVAppTemplateByName(vcd.config.Cse.OvaName)
 	check.Assert(err, IsNil)
 
 	sp, err := vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
 	check.Assert(err, IsNil)
 
 	policies, err := vcd.client.GetAllVdcComputePoliciesV2(url.Values{
-		"filter": []string{"name==*TKG%20small*"},
+		"filter": []string{"name==TKG small"},
 	})
 	check.Assert(err, IsNil)
 	check.Assert(len(policies), Equals, 1)
 
-	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
+	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName()+"123") // TODO: Remove 123
 	check.Assert(err, IsNil)
 	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTokens+token.Token.ID)
 
