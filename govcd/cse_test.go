@@ -124,7 +124,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		}
 	}
 	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, 0)
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}})
 	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
@@ -152,10 +152,10 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	cluster, err := org.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:e8e82bcc-50a1-484f-9dd0-20965ab3e865")
 	check.Assert(err, IsNil)
 
-	workerPoolName := "worker-node-pool-1"
+	workerPoolName := "cse-test1-worker-node-pool-1"
 
 	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, 0)
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}})
 	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up

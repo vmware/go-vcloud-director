@@ -74,7 +74,27 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[any]any, kubernetesTe
 	return nil
 }
 
-func updateControlPlaneYaml(docs []map[any]any, input CseControlPlaneUpdateInput) error {
+func cseUpdateControlPlaneInYaml(yamlDocuments []map[any]any, input CseControlPlaneUpdateInput) error {
+	if input.MachineCount < 0 {
+		return fmt.Errorf("incorrect machine count for Control Plane: %d. Should be at least 0", input.MachineCount)
+	}
+
+	updated := false
+	for _, d := range yamlDocuments {
+		if d["kind"] != "KubeadmControlPlane" {
+			continue
+		}
+
+		_, err := traverseMapAndGet[int](d, "spec.replicas")
+		if err != nil {
+			return fmt.Errorf("incorrect CAPI YAML: %s", err)
+		}
+		d["spec"].(map[any]any)["replicas"] = input.MachineCount
+		updated = true
+	}
+	if !updated {
+		return fmt.Errorf("could not update the KubeadmControlPlane block in the CAPI YAML")
+	}
 	return nil
 }
 
@@ -101,13 +121,15 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[any]any, workerPools map[str
 			continue
 		}
 
+		if workerPools[workerPoolToUpdate].MachineCount < 0 {
+			return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
+		}
+
 		_, err = traverseMapAndGet[int](d, "spec.replicas")
 		if err != nil {
 			return fmt.Errorf("incorrect CAPI YAML: %s", err)
 		}
-		if workerPools[workerPoolToUpdate].MachineCount < 0 {
-			return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
-		}
+
 		d["spec"].(map[any]any)["replicas"] = workerPools[workerPoolToUpdate].MachineCount
 		updated++
 	}
@@ -157,7 +179,7 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 	}
 
 	if input.ControlPlane != nil {
-		err := updateControlPlaneYaml(yamlDocs, *input.ControlPlane)
+		err := cseUpdateControlPlaneInYaml(yamlDocs, *input.ControlPlane)
 		if err != nil {
 			return capiYaml, err
 		}

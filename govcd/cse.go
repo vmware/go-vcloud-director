@@ -30,6 +30,9 @@ type CseClusterApiProviderCluster struct {
 	Owner  string
 	Etag   string
 	client *Client
+	// TODO: Updated fields are inside the YAML file, like if you update the Control Plane replicas, you need to inspect
+	// the YAML to get the updated value. Inspecting Capvcd fields will do nothing. So I need to put here this information
+	// for convenience.
 }
 
 // CseClusterCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
@@ -187,59 +190,54 @@ func (cluster *CseClusterApiProviderCluster) Refresh() error {
 	return nil
 }
 
-// UpdateWorkerPools executes a synchronous update on the receiver cluster to change the worker pools. If the given
-// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
-// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
-// receiver CseClusterApiProviderCluster.
-func (cluster *CseClusterApiProviderCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput, timeoutMinutes time.Duration) error {
+// UpdateWorkerPools executes an update on the receiver cluster to change the existing worker pools.
+func (cluster *CseClusterApiProviderCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput) error {
 	return cluster.Update(CseClusterUpdateInput{
 		WorkerPools: &input,
-	}, timeoutMinutes)
+	})
 }
 
-// UpdateControlPlane executes a synchronous update on the receiver cluster to change the control plane. If the given
-// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
-// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
-// receiver CseClusterApiProviderCluster.
-func (cluster *CseClusterApiProviderCluster) UpdateControlPlane(input CseControlPlaneUpdateInput, timeoutMinutes time.Duration) error {
+// AddWorkerPools executes an update on the receiver cluster to add new worker pools.
+func (cluster *CseClusterApiProviderCluster) AddWorkerPools(input []CseWorkerPoolCreateInput) error {
+	return cluster.Update(CseClusterUpdateInput{
+		NewWorkerPools: &input,
+	})
+}
+
+// UpdateControlPlane executes an update on the receiver cluster to change the existing control plane.
+func (cluster *CseClusterApiProviderCluster) UpdateControlPlane(input CseControlPlaneUpdateInput) error {
 	return cluster.Update(CseClusterUpdateInput{
 		ControlPlane: &input,
-	}, timeoutMinutes)
+	})
 }
 
-// ChangeKubernetesTemplate executes a synchronous update on the receiver cluster to change the Kubernetes template of the cluster. If the given
-// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
-// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
-// receiver CseClusterApiProviderCluster.
-func (cluster *CseClusterApiProviderCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string, timeoutMinutes time.Duration) error {
+// ChangeKubernetesTemplate executes an update on the receiver cluster to change the Kubernetes template of the cluster.
+func (cluster *CseClusterApiProviderCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string) error {
 	return cluster.Update(CseClusterUpdateInput{
 		KubernetesTemplateOvaId: &kubernetesTemplateOvaId,
-	}, timeoutMinutes)
+	})
 }
 
-// SetHealthCheck executes a synchronous update on the receiver cluster to enable or disable the machine health check capabilities. If the given
-// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
-// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
-// receiver CseClusterApiProviderCluster.
-func (cluster *CseClusterApiProviderCluster) SetHealthCheck(healthCheckEnabled bool, timeoutMinutes time.Duration) error {
+// SetHealthCheck executes an update on the receiver cluster to enable or disable the machine health check capabilities.
+func (cluster *CseClusterApiProviderCluster) SetHealthCheck(healthCheckEnabled bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		NodeHealthCheck: &healthCheckEnabled,
-	}, timeoutMinutes)
+	})
 }
 
-// SetAutoRepairOnErrors executes a synchronous update on the receiver cluster to change the flag that controls the auto-repair
+// SetAutoRepairOnErrors executes an update on the receiver cluster to change the flag that controls the auto-repair
 // capabilities of CSE.
 func (cluster *CseClusterApiProviderCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		AutoRepairOnErrors: &autoRepairOnErrors,
-	}, 0)
+	})
 }
 
 // Update executes a synchronous update on the receiver cluster to perform a update on any of the allowed parameters of the cluster. If the given
 // timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
 // it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
 // receiver CseClusterApiProviderCluster.
-func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput, timeoutMinutes time.Duration) error {
+func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput) error {
 	err := cluster.Refresh()
 	if err != nil {
 		return err
@@ -307,18 +305,10 @@ func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput,
 	}
 
 	if !updated {
-		return fmt.Errorf("could not update the Kubernetes cluster '%s' due to %d ETag locks that blocked the operation", cluster.ID, maxRetries)
+		return fmt.Errorf("could not update the Kubernetes cluster '%s' after %d retries, due to an ETag lock blocking the operations", cluster.ID, maxRetries)
 	}
 
-	_, finalError := waitUntilClusterIsProvisioned(cluster.client, cluster.ID, timeoutMinutes)
-
-	// We do a Refresh() even if the cluster update ended with errors, so the receiver entity gets updated with latest fields.
-	// Then, if the update ended with errors, we return them
-	_ = cluster.Refresh()
-	if finalError != nil {
-		return finalError
-	}
-	return nil
+	return cluster.Refresh()
 }
 
 // Delete deletes a CSE Kubernetes cluster, waiting the specified amount of minutes. If the timeout is reached, this method

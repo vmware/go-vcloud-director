@@ -144,6 +144,73 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 	}
 }
 
+// Test_cseUpdateControlPlaneInYaml tests the update process of the Control Plane in a CAPI YAML.
+func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
+	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")
+	if err != nil {
+		t.Fatalf("could not read CAPI YAML test file: %s", err)
+	}
+
+	yamlDocs, err := unmarshalMultipleYamlDocuments(string(capiYaml))
+	if err != nil {
+		t.Fatalf("could not unmarshal CAPI YAML test file: %s", err)
+	}
+	// We explore the YAML documents to get the OVA template name that will be updated
+	// with the new one.
+	oldControlPlane := CseControlPlaneUpdateInput{}
+	for _, document := range yamlDocs {
+		if document["kind"] != "KubeadmControlPlane" {
+			continue
+		}
+
+		oldReplicas, err := traverseMapAndGet[int](document, "spec.replicas")
+		if err != nil {
+			t.Fatalf("incorrect CAPI YAML: %s", err)
+		}
+		oldControlPlane = CseControlPlaneUpdateInput{
+			MachineCount: oldReplicas,
+		}
+	}
+	if reflect.DeepEqual(oldControlPlane, CseWorkerPoolUpdateInput{}) {
+		t.Fatalf("didn't get any valid Control Plane")
+	}
+
+	// We call the function to update the old pools with the new ones
+	newReplicas := 66
+	newControlPlane := CseControlPlaneUpdateInput{
+		MachineCount: newReplicas,
+	}
+	err = cseUpdateControlPlaneInYaml(yamlDocs, newControlPlane)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	// The worker pools should have now the new details updated
+	for _, document := range yamlDocs {
+		if document["kind"] != "KubeadmControlPlane" {
+			continue
+		}
+
+		retrievedReplicas, err := traverseMapAndGet[int](document, "spec.replicas")
+		if err != nil {
+			t.Fatalf("incorrect CAPI YAML: %s", err)
+		}
+		if retrievedReplicas != newReplicas {
+			t.Fatalf("expected %d replicas but got %d", newReplicas, retrievedReplicas)
+		}
+	}
+
+	// Corner case: Wrong replicas
+	newReplicas = -1
+	newControlPlane = CseControlPlaneUpdateInput{
+		MachineCount: newReplicas,
+	}
+	err = cseUpdateControlPlaneInYaml(yamlDocs, newControlPlane)
+	if err == nil {
+		t.Fatal("Expected an error, but got none")
+	}
+}
+
 // Test_unmarshalMultplieYamlDocuments tests the unmarshalling of multiple YAML documents with unmarshalMultplieYamlDocuments
 func Test_unmarshalMultplieYamlDocuments(t *testing.T) {
 	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")
