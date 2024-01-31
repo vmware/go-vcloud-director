@@ -53,23 +53,15 @@ func traverseMapAndGet[ResultType any](input interface{}, path string) (ResultTy
 	return resultTyped, nil
 }
 
+// cseUpdateKubernetesTemplateInYaml updates the Kubernetes template OVA used by all the VCDMachineTemplate blocks
 func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[any]any, kubernetesTemplateOvaName string) error {
 	updated := false
 	for _, d := range yamlDocuments {
 		if d["kind"] != "VCDMachineTemplate" {
 			continue
 		}
-		// Check that it is a control plane pool by checking the name
-		name, err := traverseMapAndGet[string](d, "metadata.name")
-		if err != nil {
-			return fmt.Errorf("incorrect CAPI YAML: %s", err)
-		}
-		if !strings.Contains(name, "control-plane-node-pool") {
-			continue
-		}
 
-		// Perform the update
-		_, err = traverseMapAndGet[string](d, "spec.template.spec.template")
+		_, err := traverseMapAndGet[string](d, "spec.template.spec.template")
 		if err != nil {
 			return fmt.Errorf("incorrect CAPI YAML: %s", err)
 		}
@@ -77,7 +69,7 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[any]any, kubernetesTe
 		updated = true
 	}
 	if !updated {
-		return fmt.Errorf("could not find any Control Plane pool in the CAPI YAML")
+		return fmt.Errorf("could not find any template inside the VCDMachineTemplate blocks in the CAPI YAML")
 	}
 	return nil
 }
@@ -98,7 +90,7 @@ func updateNodeHealthCheckYaml(docs []map[any]any, b bool) error {
 // and its Node Health Check capabilities, by using the new values provided as input.
 // If some of the values of the input is not provided, it doesn't change them.
 // If none of the values is provided, it just returns the same untouched YAML.
-func cseUpdateCapiYaml(capiYaml string, input CseClusterUpdateInput) (string, error) {
+func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateInput) (string, error) {
 	if input.ControlPlane == nil && input.WorkerPools == nil && input.NodeHealthCheck == nil && input.KubernetesTemplateOvaId == nil {
 		return capiYaml, nil
 	}
@@ -107,17 +99,21 @@ func cseUpdateCapiYaml(capiYaml string, input CseClusterUpdateInput) (string, er
 	// document it finds.
 	yamlDocs, err := unmarshalMultipleYamlDocuments(capiYaml)
 	if err != nil {
-		return "", fmt.Errorf("error unmarshaling CAPI YAML: %s", err)
+		return capiYaml, fmt.Errorf("error unmarshaling CAPI YAML: %s", err)
 	}
 
-	// As a side note, we can't optimize this one with a 'if currentValue equals updatedValue do nothing' because
+	// As a side note, we can't optimize this one with "if <current value> equals <new value> do nothing" because
 	// in order to retrieve the current value we would need to explore the YAML anyway, which is what we also need to do to update it.
 	// So in this special case this "optimization" would optimize nothing. The same happens with other YAML values.
 	if input.KubernetesTemplateOvaId != nil {
-
-		err := cseUpdateKubernetesTemplateInYaml(yamlDocs, *input.KubernetesTemplateOvaId)
+		vAppTemplate, err := getVAppTemplateById(client, *input.KubernetesTemplateOvaId)
 		if err != nil {
-			return "", err
+			return capiYaml, fmt.Errorf("could not retrieve the Kubernetes OVA with ID '%s': %s", *input.KubernetesTemplateOvaId, err)
+		}
+
+		err = cseUpdateKubernetesTemplateInYaml(yamlDocs, vAppTemplate.VAppTemplate.Name)
+		if err != nil {
+			return capiYaml, err
 		}
 	}
 

@@ -3,14 +3,14 @@
 package govcd
 
 import (
-	"gopkg.in/yaml.v2"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 )
 
-func Test_cseUpdateKubernetesTemplateInYaml1(t *testing.T) {
+// Test_cseUpdateKubernetesTemplateInYaml tests the update process of the Kubernetes template OVA in a CAPI YAML.
+func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")
 	if err != nil {
 		t.Fatalf("could not read CAPI YAML test file: %s", err)
@@ -29,17 +29,11 @@ func Test_cseUpdateKubernetesTemplateInYaml1(t *testing.T) {
 			continue
 		}
 
-		name, err := traverseMapAndGet[string](document, "metadata.name")
+		oldOvaName, err = traverseMapAndGet[string](document, "spec.template.spec.template")
 		if err != nil {
-			t.Fatalf("expected to find metadata.name in %v but got an error: %s", document, err)
+			t.Fatalf("expected to find spec.template.spec.template in %v but got an error: %s", document, err)
 		}
-
-		if strings.Contains(name, "control-plane-node-pool") {
-			oldOvaName, err = traverseMapAndGet[string](document, "spec.template.spec.template")
-			if err != nil {
-				t.Fatalf("expected to find spec.template.spec.template in %v but got an error: %s", document, err)
-			}
-		}
+		break
 	}
 	if oldOvaName == "" {
 		t.Fatalf("the OVA that needs to be changed is empty")
@@ -52,31 +46,14 @@ func Test_cseUpdateKubernetesTemplateInYaml1(t *testing.T) {
 		t.Fatalf("%s", err)
 	}
 
-	// We check the status of all the YAML documents. Only the Control Plane template OVA should be changed.
-	for _, document := range yamlDocs {
-		if document["kind"] != "VCDMachineTemplate" {
-			continue
-		}
+	updatedYaml, err := marshalMultipleYamlDocuments(yamlDocs)
+	if err != nil {
+		t.Fatalf("error marshaling %v: %s", yamlDocs, err)
+	}
 
-		name, err := traverseMapAndGet[string](document, "metadata.name")
-		if err != nil {
-			t.Fatalf("expected to find metadata.name in %v but got an error: %s", document, err)
-		}
-		b, err := yaml.Marshal(document)
-		if err != nil {
-			t.Fatalf("error marshaling %v: %s", document, err)
-		}
-		if strings.Contains(name, "control-plane-node-pool") {
-			// If the document is a Control Plane, the old template must not appear, only the new one can be there
-			if !strings.Contains(string(b), newOvaName) && strings.Contains(string(b), oldOvaName) {
-				t.Fatalf("failed updating the Kubernetes OVA template in the Control Plane:\n%s", b)
-			}
-		} else {
-			// If the document is any other pool, the old template should remain untouched
-			if strings.Contains(string(b), newOvaName) && !strings.Contains(string(b), oldOvaName) {
-				t.Fatalf("it updated the Kubernetes OVA template in a wrong YAML document:\n%s", b)
-			}
-		}
+	// No document should have the old OVA
+	if !strings.Contains(updatedYaml, newOvaName) || strings.Contains(updatedYaml, oldOvaName) {
+		t.Fatalf("failed updating the Kubernetes OVA template in the Control Plane:\n%s", updatedYaml)
 	}
 }
 

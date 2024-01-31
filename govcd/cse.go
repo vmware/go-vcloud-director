@@ -253,7 +253,7 @@ func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput,
 	if input.AutoRepairOnErrors != nil {
 		cluster.Capvcd.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
 	}
-	updatedCapiYaml, err := cseUpdateCapiYaml(cluster.Capvcd.Spec.CapiYaml, input)
+	updatedCapiYaml, err := cseUpdateCapiYaml(cluster.client, cluster.Capvcd.Spec.CapiYaml, input)
 	if err != nil {
 		return err
 	}
