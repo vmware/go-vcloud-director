@@ -73,21 +73,21 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		NetworkId:               net.OrgVDCNetwork.ID,
 		KubernetesTemplateOvaId: ova.VAppTemplate.ID,
 		CseVersion:              "4.2",
-		ControlPlane: ControlPlaneCreateInput{
+		ControlPlane: CseControlPlaneCreateInput{
 			MachineCount:     1,
 			DiskSizeGi:       20,
 			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
 			StorageProfileId: sp.ID,
 			Ip:               "",
 		},
-		WorkerPools: []WorkerPoolCreateInput{{
+		WorkerPools: []CseWorkerPoolCreateInput{{
 			Name:             workerPoolName,
 			MachineCount:     1,
 			DiskSizeGi:       20,
 			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
 			StorageProfileId: sp.ID,
 		}},
-		DefaultStorageClass: &DefaultStorageClassCreateInput{
+		DefaultStorageClass: &CseDefaultStorageClassCreateInput{
 			StorageProfileId: sp.ID,
 			Name:             "storage-class-1",
 			ReclaimPolicy:    "delete",
@@ -124,7 +124,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		}
 	}
 	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]WorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, 0)
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, 0)
 	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
@@ -142,5 +142,30 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 
 	err = token.Delete()
 	check.Assert(err, IsNil)
+
+}
+
+func (vcd *TestVCD) Test_Deleteme(check *C) {
+	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
+	check.Assert(err, IsNil)
+
+	cluster, err := org.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:e8e82bcc-50a1-484f-9dd0-20965ab3e865")
+	check.Assert(err, IsNil)
+
+	workerPoolName := "worker-node-pool-1"
+
+	// Perform the update
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, 0)
+	check.Assert(err, IsNil)
+
+	// Post-check. This should be 2, as it should have scaled up
+	foundWorkerPool := false
+	for _, nodePool := range cluster.Capvcd.Status.Capvcd.NodePool {
+		if nodePool.Name == workerPoolName {
+			foundWorkerPool = true
+			check.Assert(nodePool.DesiredReplicas, Equals, 2)
+		}
+	}
+	check.Assert(foundWorkerPool, Equals, true)
 
 }

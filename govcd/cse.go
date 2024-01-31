@@ -41,10 +41,10 @@ type CseClusterCreateInput struct {
 	NetworkId               string
 	KubernetesTemplateOvaId string
 	CseVersion              string
-	ControlPlane            ControlPlaneCreateInput
-	WorkerPools             []WorkerPoolCreateInput
-	DefaultStorageClass     *DefaultStorageClassCreateInput // Optional
-	Owner                   string                          // Optional, if not set will pick the current user present in the VCDClient
+	ControlPlane            CseControlPlaneCreateInput
+	WorkerPools             []CseWorkerPoolCreateInput
+	DefaultStorageClass     *CseDefaultStorageClassCreateInput // Optional
+	Owner                   string                             // Optional, if not set will pick the current user present in the VCDClient
 	ApiToken                string
 	NodeHealthCheck         bool
 	PodCidr                 string
@@ -54,9 +54,9 @@ type CseClusterCreateInput struct {
 	AutoRepairOnErrors      bool
 }
 
-// ControlPlaneCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// CseControlPlaneCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
 // must set in order to specify the Control Plane inside a CseClusterCreateInput object.
-type ControlPlaneCreateInput struct {
+type CseControlPlaneCreateInput struct {
 	MachineCount      int
 	DiskSizeGi        int
 	SizingPolicyId    string // Optional
@@ -65,9 +65,9 @@ type ControlPlaneCreateInput struct {
 	Ip                string // Optional
 }
 
-// WorkerPoolCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// CseWorkerPoolCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
 // must set in order to specify one Worker Pool inside a CseClusterCreateInput object.
-type WorkerPoolCreateInput struct {
+type CseWorkerPoolCreateInput struct {
 	Name              string
 	MachineCount      int
 	DiskSizeGi        int
@@ -77,9 +77,9 @@ type WorkerPoolCreateInput struct {
 	StorageProfileId  string // Optional
 }
 
-// DefaultStorageClassCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// CseDefaultStorageClassCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
 // must set in order to specify a Default Storage Class inside a CseClusterCreateInput object.
-type DefaultStorageClassCreateInput struct {
+type CseDefaultStorageClassCreateInput struct {
 	StorageProfileId string
 	Name             string
 	ReclaimPolicy    string
@@ -90,21 +90,21 @@ type DefaultStorageClassCreateInput struct {
 // must set in order to update a Kubernetes cluster.
 type CseClusterUpdateInput struct {
 	KubernetesTemplateOvaId *string
-	ControlPlane            *ControlPlaneUpdateInput
-	WorkerPools             *map[string]WorkerPoolUpdateInput // Maps a node pool name with its contents
+	ControlPlane            *CseControlPlaneUpdateInput
+	WorkerPools             *map[string]CseWorkerPoolUpdateInput // Maps a node pool name with its contents
 	NodeHealthCheck         *bool
 	AutoRepairOnErrors      *bool
 }
 
-// ControlPlaneUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// CseControlPlaneUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
 // must set in order to specify the Control Plane inside a CseClusterUpdateInput object.
-type ControlPlaneUpdateInput struct {
+type CseControlPlaneUpdateInput struct {
 	MachineCount int
 }
 
-// WorkerPoolUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
+// CseWorkerPoolUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
 // must set in order to specify one Worker Pool inside a CseClusterCreateInput object.
-type WorkerPoolUpdateInput struct {
+type CseWorkerPoolUpdateInput struct {
 	MachineCount int
 }
 
@@ -190,7 +190,7 @@ func (cluster *CseClusterApiProviderCluster) Refresh() error {
 // timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
 // it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
 // receiver CseClusterApiProviderCluster.
-func (cluster *CseClusterApiProviderCluster) UpdateWorkerPools(input map[string]WorkerPoolUpdateInput, timeoutMinutes time.Duration) error {
+func (cluster *CseClusterApiProviderCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput, timeoutMinutes time.Duration) error {
 	return cluster.Update(CseClusterUpdateInput{
 		WorkerPools: &input,
 	}, timeoutMinutes)
@@ -200,7 +200,7 @@ func (cluster *CseClusterApiProviderCluster) UpdateWorkerPools(input map[string]
 // timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
 // it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
 // receiver CseClusterApiProviderCluster.
-func (cluster *CseClusterApiProviderCluster) UpdateControlPlane(input ControlPlaneUpdateInput, timeoutMinutes time.Duration) error {
+func (cluster *CseClusterApiProviderCluster) UpdateControlPlane(input CseControlPlaneUpdateInput, timeoutMinutes time.Duration) error {
 	return cluster.Update(CseClusterUpdateInput{
 		ControlPlane: &input,
 	}, timeoutMinutes)
@@ -239,29 +239,25 @@ func (cluster *CseClusterApiProviderCluster) SetAutoRepairOnErrors(autoRepairOnE
 // it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
 // receiver CseClusterApiProviderCluster.
 func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput, timeoutMinutes time.Duration) error {
-	if input.NodeHealthCheck != nil {
-		// TODO
-		return fmt.Errorf("not implemented")
+	err := cluster.Refresh()
+	if err != nil {
+		return err
 	}
+	if cluster.Capvcd.Status.VcdKe.State == "" {
+		return fmt.Errorf("can't update a Kubernetes cluster that does not have any state")
+	}
+	if cluster.Capvcd.Status.VcdKe.State != "provisioned" {
+		return fmt.Errorf("can't update a Kubernetes cluster that is not in 'provisioned' state, as it is in '%s'", cluster.Capvcd.Status.VcdKe.State)
+	}
+
 	if input.AutoRepairOnErrors != nil {
 		cluster.Capvcd.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
 	}
-	if input.KubernetesTemplateOvaId != nil {
-		// TODO: Get YAML, search for machines, change templateName
-		return fmt.Errorf("not implemented")
+	updatedCapiYaml, err := cseUpdateCapiYaml(cluster.Capvcd.Spec.CapiYaml, input)
+	if err != nil {
+		return err
 	}
-	if input.ControlPlane != nil {
-		// TODO: Get YAML, search for control plane, change replicas
-		return fmt.Errorf("not implemented")
-	}
-	if input.WorkerPools != nil {
-		for name, updateDetails := range *input.WorkerPools {
-			// TODO: Get YAML, search for node pool with name == 'name', if matches, change replicas
-			return fmt.Errorf("not implemented %s, %v", name, updateDetails)
-		}
-
-		return fmt.Errorf("not implemented")
-	}
+	cluster.Capvcd.Spec.CapiYaml = updatedCapiYaml
 
 	marshaledPayload, err := json.Marshal(cluster.Capvcd)
 	if err != nil {
@@ -272,14 +268,45 @@ func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput,
 	if err != nil {
 		return err
 	}
-	rde, err := getRdeById(cluster.client, cluster.ID)
-	if err != nil {
-		return err
+
+	logHttpResponse := util.LogHttpResponse
+	// The following loop is constantly polling VCD to retrieve the RDE, which has a big JSON inside, so we avoid filling
+	// the log with these big payloads. We use defer to be sure that we restore the initial logging state.
+	defer func() {
+		util.LogHttpResponse = logHttpResponse
+	}()
+
+	// We do this loop to increase the chances that the Kubernetes cluster is successfully created, as the Go SDK is
+	// "fighting" with the CSE Server
+	retries := 0
+	maxRetries := 5
+	updated := false
+	for retries <= maxRetries {
+		util.LogHttpResponse = false
+		rde, err := getRdeById(cluster.client, cluster.ID)
+		util.LogHttpResponse = logHttpResponse
+		if err != nil {
+			return err
+		}
+
+		rde.DefinedEntity.Entity = entityContent
+		err = rde.Update(*rde.DefinedEntity)
+		if err == nil {
+			updated = true
+			break
+		}
+		if err != nil {
+			// If it's an ETag error, we just retry
+			if !strings.Contains(strings.ToLower(err.Error()), "etag") {
+				return err
+			}
+		}
+		retries++
+		util.Logger.Printf("[DEBUG] The request to update the Kubernetes cluster '%s' failed due to a ETag lock. Trying again", cluster.ID)
 	}
-	rde.DefinedEntity.Entity = entityContent
-	err = rde.Update(*rde.DefinedEntity)
-	if err != nil {
-		return err
+
+	if !updated {
+		return fmt.Errorf("could not update the Kubernetes cluster '%s' due to %d ETag locks that blocked the operation", cluster.ID, maxRetries)
 	}
 
 	_, finalError := waitUntilClusterIsProvisioned(cluster.client, cluster.ID, timeoutMinutes)
