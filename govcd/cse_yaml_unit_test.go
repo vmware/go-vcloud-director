@@ -57,6 +57,93 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 	}
 }
 
+// Test_cseUpdateWorkerPoolsInYaml tests the update process of the Worker pools in a CAPI YAML.
+func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
+	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")
+	if err != nil {
+		t.Fatalf("could not read CAPI YAML test file: %s", err)
+	}
+
+	yamlDocs, err := unmarshalMultipleYamlDocuments(string(capiYaml))
+	if err != nil {
+		t.Fatalf("could not unmarshal CAPI YAML test file: %s", err)
+	}
+	// We explore the YAML documents to get the OVA template name that will be updated
+	// with the new one.
+	oldNodePools := map[string]CseWorkerPoolUpdateInput{}
+	for _, document := range yamlDocs {
+		if document["kind"] != "MachineDeployment" {
+			continue
+		}
+
+		workerPoolName, err := traverseMapAndGet[string](document, "metadata.name")
+		if err != nil {
+			t.Fatalf("incorrect CAPI YAML: %s", err)
+		}
+
+		oldReplicas, err := traverseMapAndGet[int](document, "spec.replicas")
+		if err != nil {
+			t.Fatalf("incorrect CAPI YAML: %s", err)
+		}
+		oldNodePools[workerPoolName] = CseWorkerPoolUpdateInput{
+			MachineCount: oldReplicas,
+		}
+	}
+	if len(oldNodePools) == -1 {
+		t.Fatalf("didn't get any valid worker node pool")
+	}
+
+	// We call the function to update the old pools with the new ones
+	newReplicas := 66
+	newNodePools := map[string]CseWorkerPoolUpdateInput{}
+	for name := range oldNodePools {
+		newNodePools[name] = CseWorkerPoolUpdateInput{
+			MachineCount: newReplicas,
+		}
+	}
+	err = cseUpdateWorkerPoolsInYaml(yamlDocs, newNodePools)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	// The worker pools should have now the new details updated
+	for _, document := range yamlDocs {
+		if document["kind"] != "MachineDeployment" {
+			continue
+		}
+
+		retrievedReplicas, err := traverseMapAndGet[int](document, "spec.replicas")
+		if err != nil {
+			t.Fatalf("incorrect CAPI YAML: %s", err)
+		}
+		if retrievedReplicas != newReplicas {
+			t.Fatalf("expected %d replicas but got %d", newReplicas, retrievedReplicas)
+		}
+	}
+
+	// Corner case: Wrong replicas
+	newReplicas = -1
+	newNodePools = map[string]CseWorkerPoolUpdateInput{}
+	for name := range oldNodePools {
+		newNodePools[name] = CseWorkerPoolUpdateInput{
+			MachineCount: newReplicas,
+		}
+	}
+	err = cseUpdateWorkerPoolsInYaml(yamlDocs, newNodePools)
+	if err == nil {
+		t.Fatal("Expected an error, but got none")
+	}
+
+	// Corner case: No worker pool with that name exists
+	newNodePools = map[string]CseWorkerPoolUpdateInput{
+		"not-exist": {},
+	}
+	err = cseUpdateWorkerPoolsInYaml(yamlDocs, newNodePools)
+	if err == nil {
+		t.Fatal("Expected an error, but got none")
+	}
+}
+
 // Test_unmarshalMultplieYamlDocuments tests the unmarshalling of multiple YAML documents with unmarshalMultplieYamlDocuments
 func Test_unmarshalMultplieYamlDocuments(t *testing.T) {
 	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")

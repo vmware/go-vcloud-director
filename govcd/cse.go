@@ -92,6 +92,7 @@ type CseClusterUpdateInput struct {
 	KubernetesTemplateOvaId *string
 	ControlPlane            *CseControlPlaneUpdateInput
 	WorkerPools             *map[string]CseWorkerPoolUpdateInput // Maps a node pool name with its contents
+	NewWorkerPools          *[]CseWorkerPoolCreateInput
 	NodeHealthCheck         *bool
 	AutoRepairOnErrors      *bool
 }

@@ -78,7 +78,46 @@ func updateControlPlaneYaml(docs []map[any]any, input CseControlPlaneUpdateInput
 	return nil
 }
 
-func updateWorkerPoolsYaml(docs []map[any]any, m map[string]CseWorkerPoolUpdateInput) error {
+func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[any]any, workerPools map[string]CseWorkerPoolUpdateInput) error {
+	updated := 0
+	for _, d := range yamlDocuments {
+		if d["kind"] != "MachineDeployment" {
+			continue
+		}
+
+		workerPoolName, err := traverseMapAndGet[string](d, "metadata.name")
+		if err != nil {
+			return fmt.Errorf("incorrect CAPI YAML: %s", err)
+		}
+
+		workerPoolToUpdate := ""
+		for wpName := range workerPools {
+			if wpName == workerPoolName {
+				workerPoolToUpdate = wpName
+			}
+		}
+		// This worker pool is not going to be updated, continue searching for another one
+		if workerPoolToUpdate == "" {
+			continue
+		}
+
+		_, err = traverseMapAndGet[int](d, "spec.replicas")
+		if err != nil {
+			return fmt.Errorf("incorrect CAPI YAML: %s", err)
+		}
+		if workerPools[workerPoolToUpdate].MachineCount < 0 {
+			return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
+		}
+		d["spec"].(map[any]any)["replicas"] = workerPools[workerPoolToUpdate].MachineCount
+		updated++
+	}
+	if updated != len(workerPools) {
+		return fmt.Errorf("could not update all the Node pools. Updated %d, expected %d", updated, len(workerPools))
+	}
+	return nil
+}
+
+func addWorkerPoolsYaml(docs []map[any]any, inputs []CseWorkerPoolCreateInput) error {
 	return nil
 }
 
@@ -120,14 +159,21 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 	if input.ControlPlane != nil {
 		err := updateControlPlaneYaml(yamlDocs, *input.ControlPlane)
 		if err != nil {
-			return "", err
+			return capiYaml, err
 		}
 	}
 
 	if input.WorkerPools != nil {
-		err := updateWorkerPoolsYaml(yamlDocs, *input.WorkerPools)
+		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
 		if err != nil {
-			return "", err
+			return capiYaml, err
+		}
+	}
+
+	if input.NewWorkerPools != nil {
+		err := addWorkerPoolsYaml(yamlDocs, *input.NewWorkerPools)
+		if err != nil {
+			return capiYaml, err
 		}
 	}
 
