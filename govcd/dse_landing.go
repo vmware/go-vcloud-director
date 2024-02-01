@@ -12,6 +12,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"sigs.k8s.io/yaml"
 	"time"
@@ -88,7 +89,7 @@ func getContentsFromIsoFiles(isoFileName string, wanted map[string]isoFileDef) (
 		result[key] = elem
 	}
 
-	file, err := os.Open(isoFileName)
+	file, err := os.Open(filepath.Clean(isoFileName))
 	if err != nil {
 		return nil, err
 	}
