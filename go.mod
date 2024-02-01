@@ -10,10 +10,10 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/yaml.v2 v2.4.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
-	github.com/howeyc/crc16 v0.0.0-20171223171357-2b2a61e366a6
 	github.com/kr/text v0.1.0 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a

@@ -2,7 +2,7 @@ package udf
 
 import (
 	"fmt"
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 const (
