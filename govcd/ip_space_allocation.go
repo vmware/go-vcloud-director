@@ -12,6 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelIpSpaceFloatingIpSuggestion = "IP Space floating IP suggestions"
+
 // IpSpaceIpAllocation handles IP Space IP allocation requests
 type IpSpaceIpAllocation struct {
 	IpSpaceIpAllocation *types.IpSpaceIpAllocation
@@ -278,4 +280,26 @@ func getAllIpSpaceAllocations(client *Client, ipSpaceId string, org *Org, queryP
 	}
 
 	return results, nil
+}
+
+// GetAllIpSpaceFloatingIpSuggestions suggests IP addresses to use for networking services on Edge
+// Gateway or Provider Gateway. 'gatewayId' filter is required. Based on the specified Gateway, VCD
+// will query all the applicable IP Spaces and suggest some IP addresses which can be utilized to
+// configure the network services on the Gateway. IP Space IP addresses which are allocated but not
+// currently used for any network services are considered. Results can also be filtered by IPV4 or
+// IPV6 IP address types.
+// In case of an invalid Edge Gateway URN (or if a user has no access) it will return an error
+// containing ACCESS_TO_RESOURCE_IS_FORBIDDEN
+//
+// Filter examples:(filter=gatewayId==URN), (filter=gatewayId==URN;ipType==IPV6)
+// queryParams := url.Values{}
+// queryParams.Set("filter", fmt.Sprintf("gatewayId==%s", edgeGatewayId))
+func (vcdClient *VCDClient) GetAllIpSpaceFloatingIpSuggestions(queryParameters url.Values) ([]*types.IpSpaceFloatingIpSuggestion, error) {
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceFloatingIpSuggestions,
+		entityLabel:     labelIpSpaceFloatingIpSuggestion,
+		queryParameters: queryParameters,
+	}
+
+	return getAllInnerEntities[types.IpSpaceFloatingIpSuggestion](&vcdClient.Client, c)
 }
