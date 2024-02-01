@@ -81,12 +81,12 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 			t.Fatalf("incorrect CAPI YAML: %s", err)
 		}
 
-		oldReplicas, err := traverseMapAndGet[int](document, "spec.replicas")
+		oldReplicas, err := traverseMapAndGet[float64](document, "spec.replicas")
 		if err != nil {
 			t.Fatalf("incorrect CAPI YAML: %s", err)
 		}
 		oldNodePools[workerPoolName] = CseWorkerPoolUpdateInput{
-			MachineCount: oldReplicas,
+			MachineCount: int(oldReplicas),
 		}
 	}
 	if len(oldNodePools) == -1 {
@@ -112,12 +112,12 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 			continue
 		}
 
-		retrievedReplicas, err := traverseMapAndGet[int](document, "spec.replicas")
+		retrievedReplicas, err := traverseMapAndGet[float64](document, "spec.replicas")
 		if err != nil {
 			t.Fatalf("incorrect CAPI YAML: %s", err)
 		}
-		if retrievedReplicas != newReplicas {
-			t.Fatalf("expected %d replicas but got %d", newReplicas, retrievedReplicas)
+		if retrievedReplicas != float64(newReplicas) {
+			t.Fatalf("expected %d replicas but got %0.f", newReplicas, retrievedReplicas)
 		}
 	}
 
@@ -163,12 +163,12 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 			continue
 		}
 
-		oldReplicas, err := traverseMapAndGet[int](document, "spec.replicas")
+		oldReplicas, err := traverseMapAndGet[float64](document, "spec.replicas")
 		if err != nil {
 			t.Fatalf("incorrect CAPI YAML: %s", err)
 		}
 		oldControlPlane = CseControlPlaneUpdateInput{
-			MachineCount: oldReplicas,
+			MachineCount: int(oldReplicas),
 		}
 	}
 	if reflect.DeepEqual(oldControlPlane, CseWorkerPoolUpdateInput{}) {
@@ -191,12 +191,12 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 			continue
 		}
 
-		retrievedReplicas, err := traverseMapAndGet[int](document, "spec.replicas")
+		retrievedReplicas, err := traverseMapAndGet[float64](document, "spec.replicas")
 		if err != nil {
 			t.Fatalf("incorrect CAPI YAML: %s", err)
 		}
-		if retrievedReplicas != newReplicas {
-			t.Fatalf("expected %d replicas but got %d", newReplicas, retrievedReplicas)
+		if retrievedReplicas != float64(newReplicas) {
+			t.Fatalf("expected %d replicas but got %0.f", newReplicas, retrievedReplicas)
 		}
 	}
 
@@ -275,8 +275,8 @@ func Test_marshalMultplieYamlDocuments(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		yamlDocuments []map[any]any
-		want          []map[any]any
+		yamlDocuments []map[string]any
+		want          []map[string]any
 		wantErr       bool
 	}{
 		{
@@ -287,8 +287,8 @@ func Test_marshalMultplieYamlDocuments(t *testing.T) {
 		},
 		{
 			name:          "marshal empty slice",
-			yamlDocuments: []map[any]any{},
-			want:          []map[any]any{},
+			yamlDocuments: []map[string]any{},
+			want:          []map[string]any{},
 			wantErr:       false,
 		},
 	}
@@ -336,19 +336,19 @@ func Test_traverseMapAndGet(t *testing.T) {
 			args: args{
 				input: "error",
 			},
-			wantErr: "the input is a string, not a map[any]any",
+			wantErr: "the input is a string, not a map[string]any",
 		},
 		{
 			name: "map is empty",
 			args: args{
-				input: map[any]any{},
+				input: map[string]any{},
 			},
 			wantErr: "the map is empty",
 		},
 		{
 			name: "map does not have key",
 			args: args{
-				input: map[any]any{
+				input: map[string]any{
 					"keyA": "value",
 				},
 				path: "keyB",
@@ -358,7 +358,7 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "map has a single simple key",
 			args: args{
-				input: map[any]any{
+				input: map[string]any{
 					"keyA": "value",
 				},
 				path: "keyA",
@@ -369,24 +369,24 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "map has a single complex key",
 			args: args{
-				input: map[any]any{
-					"keyA": map[any]any{
+				input: map[string]any{
+					"keyA": map[string]any{
 						"keyB": "value",
 					},
 				},
 				path: "keyA",
 			},
 			wantType: "map",
-			want: map[any]any{
+			want: map[string]any{
 				"keyB": "value",
 			},
 		},
 		{
 			name: "map has a complex structure",
 			args: args{
-				input: map[any]any{
-					"keyA": map[any]any{
-						"keyB": map[any]any{
+				input: map[string]any{
+					"keyA": map[string]any{
+						"keyB": map[string]any{
 							"keyC": "value",
 						},
 					},
@@ -399,9 +399,9 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "requested path is deeper than the map structure",
 			args: args{
-				input: map[any]any{
-					"keyA": map[any]any{
-						"keyB": map[any]any{
+				input: map[string]any{
+					"keyA": map[string]any{
+						"keyB": map[string]any{
 							"keyC": "value",
 						},
 					},
@@ -413,10 +413,10 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "obtained value does not correspond to the desired type",
 			args: args{
-				input: map[any]any{
-					"keyA": map[any]any{
-						"keyB": map[any]any{
-							"keyC": map[any]any{},
+				input: map[string]any{
+					"keyA": map[string]any{
+						"keyB": map[string]any{
+							"keyC": map[string]any{},
 						},
 					},
 				},
@@ -433,7 +433,7 @@ func Test_traverseMapAndGet(t *testing.T) {
 			if tt.wantType == "string" {
 				got, err = traverseMapAndGet[string](tt.args.input, tt.args.path)
 			} else if tt.wantType == "map" {
-				got, err = traverseMapAndGet[map[any]any](tt.args.input, tt.args.path)
+				got, err = traverseMapAndGet[map[string]any](tt.args.input, tt.args.path)
 			} else {
 				t.Fatalf("wantType type not used in this test")
 			}

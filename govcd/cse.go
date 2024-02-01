@@ -355,6 +355,7 @@ func (cluster *CseClusterApiProviderCluster) Delete(timeoutMinutes time.Duration
 			if err != nil {
 				if strings.Contains(strings.ToLower(err.Error()), "etag") {
 					continue // We ignore any ETag error. This just means a clash with the CSE Server, we just try again
+					// FIXME: No sleep here
 				}
 				return fmt.Errorf("could not mark the Kubernetes cluster with ID '%s' to be deleted: %s", cluster.ID, err)
 			}

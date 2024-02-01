@@ -1,9 +1,8 @@
 package govcd
 
 import (
-	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 	"strings"
 )
 
@@ -17,7 +16,7 @@ func traverseMapAndGet[ResultType any](input interface{}, path string) (ResultTy
 	if input == nil {
 		return nothing, fmt.Errorf("the input is nil")
 	}
-	inputMap, ok := input.(map[any]any)
+	inputMap, ok := input.(map[string]any)
 	if !ok {
 		return nothing, fmt.Errorf("the input is a %T, not a map[string]interface{}", input)
 	}
@@ -35,7 +34,7 @@ func traverseMapAndGet[ResultType any](input interface{}, path string) (ResultTy
 			return nothing, fmt.Errorf("key '%s' does not exist in input map", subPath)
 		}
 		if i < len(pathUnits)-1 {
-			traversedMap, ok := traversed.(map[any]any)
+			traversedMap, ok := traversed.(map[string]any)
 			if !ok {
 				return nothing, fmt.Errorf("key '%s' is a %T, not a map[string]interface{}, but there are still %d paths to explore", subPath, traversed, len(pathUnits)-(i+1))
 			}
@@ -54,7 +53,7 @@ func traverseMapAndGet[ResultType any](input interface{}, path string) (ResultTy
 }
 
 // cseUpdateKubernetesTemplateInYaml updates the Kubernetes template OVA used by all the VCDMachineTemplate blocks
-func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[any]any, kubernetesTemplateOvaName string) error {
+func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]any, kubernetesTemplateOvaName string) error {
 	updated := false
 	for _, d := range yamlDocuments {
 		if d["kind"] != "VCDMachineTemplate" {
@@ -65,7 +64,7 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[any]any, kubernetesTe
 		if err != nil {
 			return fmt.Errorf("incorrect CAPI YAML: %s", err)
 		}
-		d["spec"].(map[any]any)["template"].(map[any]any)["spec"].(map[any]any)["template"] = kubernetesTemplateOvaName
+		d["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["template"] = kubernetesTemplateOvaName
 		updated = true
 	}
 	if !updated {
@@ -74,7 +73,7 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[any]any, kubernetesTe
 	return nil
 }
 
-func cseUpdateControlPlaneInYaml(yamlDocuments []map[any]any, input CseControlPlaneUpdateInput) error {
+func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]any, input CseControlPlaneUpdateInput) error {
 	if input.MachineCount < 0 {
 		return fmt.Errorf("incorrect machine count for Control Plane: %d. Should be at least 0", input.MachineCount)
 	}
@@ -85,11 +84,11 @@ func cseUpdateControlPlaneInYaml(yamlDocuments []map[any]any, input CseControlPl
 			continue
 		}
 
-		_, err := traverseMapAndGet[int](d, "spec.replicas")
+		_, err := traverseMapAndGet[float64](d, "spec.replicas")
 		if err != nil {
 			return fmt.Errorf("incorrect CAPI YAML: %s", err)
 		}
-		d["spec"].(map[any]any)["replicas"] = input.MachineCount
+		d["spec"].(map[string]any)["replicas"] = float64(input.MachineCount) // As it was originally unmarshalled as a float64
 		updated = true
 	}
 	if !updated {
@@ -98,7 +97,7 @@ func cseUpdateControlPlaneInYaml(yamlDocuments []map[any]any, input CseControlPl
 	return nil
 }
 
-func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[any]any, workerPools map[string]CseWorkerPoolUpdateInput) error {
+func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]any, workerPools map[string]CseWorkerPoolUpdateInput) error {
 	updated := 0
 	for _, d := range yamlDocuments {
 		if d["kind"] != "MachineDeployment" {
@@ -125,12 +124,12 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[any]any, workerPools map[str
 			return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
 		}
 
-		_, err = traverseMapAndGet[int](d, "spec.replicas")
+		_, err = traverseMapAndGet[float64](d, "spec.replicas")
 		if err != nil {
 			return fmt.Errorf("incorrect CAPI YAML: %s", err)
 		}
 
-		d["spec"].(map[any]any)["replicas"] = workerPools[workerPoolToUpdate].MachineCount
+		d["spec"].(map[string]any)["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
 		updated++
 	}
 	if updated != len(workerPools) {
@@ -139,11 +138,11 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[any]any, workerPools map[str
 	return nil
 }
 
-func addWorkerPoolsYaml(docs []map[any]any, inputs []CseWorkerPoolCreateInput) error {
+func addWorkerPoolsYaml(docs []map[string]any, inputs []CseWorkerPoolCreateInput) error {
 	return nil
 }
 
-func updateNodeHealthCheckYaml(docs []map[any]any, b bool) error {
+func updateNodeHealthCheckYaml(docs []map[string]any, b bool) error {
 	return nil
 }
 
@@ -310,7 +309,7 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 
 // marshalMultipleYamlDocuments takes a slice of maps representing multiple YAML documents (one per item in the slice) and
 // marshals all of them into a single string with the corresponding separators "---".
-func marshalMultipleYamlDocuments(yamlDocuments []map[any]any) (string, error) {
+func marshalMultipleYamlDocuments(yamlDocuments []map[string]any) (string, error) {
 	result := ""
 	for i, yamlDoc := range yamlDocuments {
 		updatedSingleDoc, err := yaml.Marshal(yamlDoc)
@@ -327,26 +326,19 @@ func marshalMultipleYamlDocuments(yamlDocuments []map[any]any) (string, error) {
 
 // unmarshalMultipleYamlDocuments takes a multi-document YAML (multiple YAML documents are separated by "---") and
 // unmarshals all of them into a slice of generic maps with the corresponding content.
-func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[any]any, error) {
+func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[string]any, error) {
 	if len(strings.TrimSpace(yamlDocuments)) == 0 {
-		return []map[any]any{}, nil
+		return []map[string]any{}, nil
 	}
 
-	dec := yaml.NewDecoder(bytes.NewReader([]byte(yamlDocuments)))
-	documentCount := strings.Count(yamlDocuments, "---")
-	if documentCount == 0 {
-		// If it doesn't have any separator, we can assume it's just a single document.
-		// Otherwise, it will fail afterward
-		documentCount = 1
-	}
-	yamlDocs := make([]map[any]any, documentCount)
-	i := 0
-	for i < documentCount {
-		err := dec.Decode(&yamlDocs[i])
+	splitYamlDocs := strings.Split(yamlDocuments, "---\n")
+	result := make([]map[string]any, len(splitYamlDocs))
+	for i, yamlDoc := range splitYamlDocs {
+		err := yaml.Unmarshal([]byte(yamlDoc), &result[i])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("could not unmarshal document %s: %s", yamlDoc, err)
 		}
-		i++
 	}
-	return yamlDocs, nil
+
+	return result, nil
 }
