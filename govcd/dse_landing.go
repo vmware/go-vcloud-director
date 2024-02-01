@@ -265,11 +265,12 @@ func (client Client) buildLandingZoneRDE(isoFileName, user, catalogItemId string
 
 func (client Client) CreateLandingZoneRde(isoFileName, user, catalogId string) (*DefinedEntity, error) {
 
-	//solutionEntity, rdeName, err := client.buildLandingZoneRDE(isoFileName, user, catalogId)
-	//if err != nil {
-	//	return nil, err
-	//}
+	solutionEntity, rdeName, err := client.buildLandingZoneRDE(isoFileName, user, catalogId)
+	if err != nil {
+		return nil, err
+	}
 	// TODO: prepare RDE using solution entity as payload
 
+	fmt.Printf("%s, %T\n", rdeName, solutionEntity)
 	return nil, fmt.Errorf("WIP")
 }
