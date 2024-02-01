@@ -54,21 +54,55 @@ func traverseMapAndGet[ResultType any](input interface{}, path string) (ResultTy
 
 // cseUpdateKubernetesTemplateInYaml updates the Kubernetes template OVA used by all the VCDMachineTemplate blocks
 func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]any, kubernetesTemplateOvaName string) error {
-	updated := false
-	for _, d := range yamlDocuments {
-		if d["kind"] != "VCDMachineTemplate" {
-			continue
-		}
-
-		_, err := traverseMapAndGet[string](d, "spec.template.spec.template")
-		if err != nil {
-			return fmt.Errorf("incorrect CAPI YAML: %s", err)
-		}
-		d["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["template"] = kubernetesTemplateOvaName
-		updated = true
+	tkgBundle, err := getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName)
+	if err != nil {
+		return err
 	}
-	if !updated {
-		return fmt.Errorf("could not find any template inside the VCDMachineTemplate blocks in the CAPI YAML")
+	for _, d := range yamlDocuments {
+		switch d["kind"] {
+		case "VCDMachineTemplate":
+			_, err := traverseMapAndGet[string](d, "spec.template.spec.template")
+			if err != nil {
+				return fmt.Errorf("incorrect CAPI YAML: %s", err)
+			}
+			d["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["template"] = kubernetesTemplateOvaName
+		case "MachineDeployment":
+			_, err := traverseMapAndGet[string](d, "spec.template.spec.version")
+			if err != nil {
+				return fmt.Errorf("incorrect CAPI YAML: %s", err)
+			}
+			d["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["version"] = tkgBundle.KubernetesVersion
+		case "Cluster":
+			_, err := traverseMapAndGet[string](d, "metadata.annotations.TKGVERSION")
+			if err != nil {
+				return fmt.Errorf("incorrect CAPI YAML: %s", err)
+			}
+			d["metadata"].(map[string]any)["annotations"].(map[string]any)["TKGVERSION"] = tkgBundle.TkgVersion
+
+			_, err = traverseMapAndGet[string](d, "metadata.labels.tanzuKubernetesRelease")
+			if err != nil {
+				return fmt.Errorf("incorrect CAPI YAML: %s", err)
+			}
+			d["metadata"].(map[string]any)["labels"].(map[string]any)["tanzuKubernetesRelease"] = tkgBundle.TkrVersion
+		case "KubeadmControlPlane":
+			_, err := traverseMapAndGet[string](d, "spec.version")
+			if err != nil {
+				return fmt.Errorf("incorrect CAPI YAML: %s", err)
+			}
+			d["spec"].(map[string]any)["version"] = tkgBundle.KubernetesVersion
+
+			_, err = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag")
+			if err != nil {
+				return fmt.Errorf("incorrect CAPI YAML: %s", err)
+			}
+			d["spec"].(map[string]any)["kubeadmConfigSpec"].(map[string]any)["clusterConfiguration"].(map[string]any)["dns"].(map[string]any)["imageTag"] = tkgBundle.CoreDnsVersion
+
+			_, err = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag")
+			if err != nil {
+				return fmt.Errorf("incorrect CAPI YAML: %s", err)
+			}
+			d["spec"].(map[string]any)["kubeadmConfigSpec"].(map[string]any)["clusterConfiguration"].(map[string]any)["etcd"].(map[string]any)["local"].(map[string]any)["imageTag"] = tkgBundle.EtcdVersion
+		}
 	}
 	return nil
 }
@@ -138,8 +172,8 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]any, workerPools map[
 	return nil
 }
 
-func addWorkerPoolsYaml(docs []map[string]any, inputs []CseWorkerPoolCreateInput) error {
-	return nil
+func cseAddWorkerPoolsInYaml(docs []map[string]any, inputs []CseWorkerPoolCreateInput) ([]map[string]any, error) {
+	return nil, nil
 }
 
 func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, machineHealthCheck *machineHealthCheck) ([]map[string]any, error) {
@@ -232,7 +266,7 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 	}
 
 	if input.NewWorkerPools != nil {
-		err := addWorkerPoolsYaml(yamlDocs, *input.NewWorkerPools)
+		yamlDocs, err = cseAddWorkerPoolsInYaml(yamlDocs, *input.NewWorkerPools)
 		if err != nil {
 			return capiYaml, err
 		}
