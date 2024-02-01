@@ -172,11 +172,11 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]any, workerPools map[
 	return nil
 }
 
-func cseAddWorkerPoolsInYaml(docs []map[string]any, inputs []CseWorkerPoolCreateInput) ([]map[string]any, error) {
+func cseAddWorkerPoolsInYaml(docs []map[string]any, inputs []CseWorkerPoolSettings) ([]map[string]any, error) {
 	return nil, nil
 }
 
-func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, machineHealthCheck *machineHealthCheck) ([]map[string]any, error) {
+func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, machineHealthCheck *cseMachineHealthCheckInternal) ([]map[string]any, error) {
 	mhcPosition := -1
 	result := make([]map[string]any, len(yamlDocuments))
 	for i, d := range yamlDocuments {

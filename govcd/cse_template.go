@@ -14,7 +14,7 @@ import (
 // getCseKubernetesClusterCreationPayload gets the payload for the RDE that will trigger a Kubernetes cluster creation.
 // It generates a valid YAML that is embedded inside the RDE JSON, then it is returned as an unmarshaled
 // generic map, that allows to be sent to VCD as it is.
-func getCseKubernetesClusterCreationPayload(goTemplateContents *cseClusterCreationGoTemplateArguments) (map[string]interface{}, error) {
+func getCseKubernetesClusterCreationPayload(goTemplateContents *cseClusterSettingsInternal) (map[string]interface{}, error) {
 	capiYaml, err := generateCapiYaml(goTemplateContents)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func getCseKubernetesClusterCreationPayload(goTemplateContents *cseClusterCreati
 }
 
 // generateNodePoolYaml generates YAML blocks corresponding to the Kubernetes node pools.
-func generateNodePoolYaml(clusterDetails *cseClusterCreationGoTemplateArguments) (string, error) {
+func generateNodePoolYaml(clusterDetails *cseClusterSettingsInternal) (string, error) {
 	workerPoolTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_workerpool")
 	if err != nil {
 		return "", err
@@ -105,7 +105,7 @@ func generateNodePoolYaml(clusterDetails *cseClusterCreationGoTemplateArguments)
 }
 
 // generateMemoryHealthCheckYaml generates a YAML block corresponding to the Kubernetes memory health check.
-func generateMemoryHealthCheckYaml(mhcSettings *machineHealthCheck, cseVersion, clusterName string) (string, error) {
+func generateMemoryHealthCheckYaml(mhcSettings *cseMachineHealthCheckInternal, cseVersion, clusterName string) (string, error) {
 	if mhcSettings == nil {
 		return "", nil
 	}
@@ -135,7 +135,7 @@ func generateMemoryHealthCheckYaml(mhcSettings *machineHealthCheck, cseVersion, 
 // generateCapiYaml generates the YAML string that is required during Kubernetes cluster creation, to be embedded
 // in the CAPVCD cluster JSON payload. This function picks data from the Terraform schema and the createClusterDto to
 // populate several Go templates and build a final YAML.
-func generateCapiYaml(clusterDetails *cseClusterCreationGoTemplateArguments) (string, error) {
+func generateCapiYaml(clusterDetails *cseClusterSettingsInternal) (string, error) {
 	clusterTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_cluster")
 	if err != nil {
 		return "", err

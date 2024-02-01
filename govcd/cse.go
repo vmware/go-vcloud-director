@@ -1,7 +1,6 @@
 package govcd
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -10,122 +9,12 @@ import (
 	"time"
 )
 
-// supportedCseVersions is a map that contains only the supported CSE versions as keys,
-// and its corresponding components versions as a slice of strings. The first string is the VCDKEConfig RDE Type version,
-// then the CAPVCD RDE Type version and finally the CAPVCD Behavior version.
-// TODO: Is this really necessary? What happens in UI if I have a 1.1.0-1.2.0-1.0.0 (4.2) cluster and then CSE is updated to 4.3?
-var supportedCseVersions = map[string][]string{
-	"4.2": {
-		"1.1.0", // VCDKEConfig RDE Type version
-		"1.2.0", // CAPVCD RDE Type version
-		"1.0.0", // CAPVCD Behavior version
-	},
-}
-
-// CseClusterApiProviderCluster is a type for handling ClusterApiProviderVCD (CAPVCD) cluster instances created
-// by the Container Service Extension (CSE)
-type CseClusterApiProviderCluster struct {
-	Capvcd *types.Capvcd
-	ID     string
-	Owner  string
-	Etag   string
-	client *Client
-
-	// TODO: Updated fields are inside the YAML file, like if you update the Control Plane replicas, you need to inspect
-	// the YAML to get the updated value. Inspecting Capvcd fields will do nothing. So I need to put here this information
-	// for convenience.
-	CseVersion string
-}
-
-// CseClusterCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to create a Kubernetes cluster.
-type CseClusterCreateInput struct {
-	Name                    string
-	OrganizationId          string
-	VdcId                   string
-	NetworkId               string
-	KubernetesTemplateOvaId string
-	CseVersion              string
-	ControlPlane            CseControlPlaneCreateInput
-	WorkerPools             []CseWorkerPoolCreateInput
-	DefaultStorageClass     *CseDefaultStorageClassCreateInput // Optional
-	Owner                   string                             // Optional, if not set will pick the current user present in the VCDClient
-	ApiToken                string
-	NodeHealthCheck         bool
-	PodCidr                 string
-	ServiceCidr             string
-	SshPublicKey            string
-	VirtualIpSubnet         string
-	AutoRepairOnErrors      bool
-}
-
-// CseControlPlaneCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to specify the Control Plane inside a CseClusterCreateInput object.
-type CseControlPlaneCreateInput struct {
-	MachineCount      int
-	DiskSizeGi        int
-	SizingPolicyId    string // Optional
-	PlacementPolicyId string // Optional
-	StorageProfileId  string // Optional
-	Ip                string // Optional
-}
-
-// CseWorkerPoolCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to specify one Worker Pool inside a CseClusterCreateInput object.
-type CseWorkerPoolCreateInput struct {
-	Name              string
-	MachineCount      int
-	DiskSizeGi        int
-	SizingPolicyId    string // Optional
-	PlacementPolicyId string // Optional
-	VGpuPolicyId      string // Optional
-	StorageProfileId  string // Optional
-}
-
-// CseDefaultStorageClassCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to specify a Default Storage Class inside a CseClusterCreateInput object.
-type CseDefaultStorageClassCreateInput struct {
-	StorageProfileId string
-	Name             string
-	ReclaimPolicy    string
-	Filesystem       string
-}
-
-// CseClusterUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to update a Kubernetes cluster.
-type CseClusterUpdateInput struct {
-	KubernetesTemplateOvaId *string
-	ControlPlane            *CseControlPlaneUpdateInput
-	WorkerPools             *map[string]CseWorkerPoolUpdateInput // Maps a node pool name with its contents
-	NewWorkerPools          *[]CseWorkerPoolCreateInput
-	NodeHealthCheck         *bool
-	AutoRepairOnErrors      *bool
-
-	// Private fields that are computed, not requested to the consumer of this struct
-	vcdKeConfigVersion string
-	clusterName        string
-}
-
-// CseControlPlaneUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to specify the Control Plane inside a CseClusterUpdateInput object.
-type CseControlPlaneUpdateInput struct {
-	MachineCount int
-}
-
-// CseWorkerPoolUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
-// must set in order to specify one Worker Pool inside a CseClusterCreateInput object.
-type CseWorkerPoolUpdateInput struct {
-	MachineCount int
-}
-
-//go:embed cse
-var cseFiles embed.FS
-
-// CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterCreateInput). If the given
-// timeout is 0, it waits forever for the cluster creation. Otherwise, if the timeout is reached and the cluster is not available,
-// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster in the returned CseClusterApiProviderCluster.
-// If the cluster is created correctly, returns all the data in CseClusterApiProviderCluster.
-func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterCreateInput, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
+// CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterSettings). If the given
+// timeout is 0, it waits forever for the cluster creation. Otherwise, if the timeout is reached and the cluster is not available
+// (in "provisioned" state), it will return an error (the cluster will be left in VCD in any state) and the latest status
+// of the cluster in the returned CseKubernetesCluster.
+// If the cluster is created correctly, returns all the data in CseKubernetesCluster.
+func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeoutMinutes time.Duration) (*CseKubernetesCluster, error) {
 	clusterId, err := org.CseCreateKubernetesClusterAsync(clusterData)
 	if err != nil {
 		return nil, err
@@ -139,11 +28,11 @@ func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterCreateInput, ti
 	return cluster, nil
 }
 
-// CseCreateKubernetesClusterAsync creates a Kubernetes cluster with the data given as input (CseClusterCreateInput), but does not
+// CseCreateKubernetesClusterAsync creates a Kubernetes cluster with the data given as input (CseClusterSettings), but does not
 // wait for the creation process to finish, so it doesn't monitor for any errors during the process. It returns just the ID of
-// the created cluster. One can manually check the status of the cluster with GetKubernetesClusterById and the result of this method.
-func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterCreateInput) (string, error) {
-	goTemplateContents, err := clusterData.toCseClusterCreationGoTemplateContents(org)
+// the created cluster. One can manually check the status of the cluster with Org.CseGetKubernetesClusterById and the result of this method.
+func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) (string, error) {
+	goTemplateContents, err := cseClusterSettingsToInternal(clusterData, org)
 	if err != nil {
 		return "", err
 	}
@@ -169,7 +58,7 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterCreateInpu
 }
 
 // CseGetKubernetesClusterById retrieves a CSE Kubernetes cluster from VCD by its unique ID
-func (org *Org) CseGetKubernetesClusterById(id string) (*CseClusterApiProviderCluster, error) {
+func (org *Org) CseGetKubernetesClusterById(id string) (*CseKubernetesCluster, error) {
 	rde, err := getRdeById(org.client, id)
 	if err != nil {
 		return nil, err
@@ -178,54 +67,54 @@ func (org *Org) CseGetKubernetesClusterById(id string) (*CseClusterApiProviderCl
 	if rde.DefinedEntity.Org.ID != org.Org.ID {
 		return nil, fmt.Errorf("could not find any Kubernetes cluster with ID '%s' in Organization '%s': %s", id, org.Org.Name, ErrorEntityNotFound)
 	}
-	return rde.cseConvertToCapvcdCluster()
+	return cseConvertToCseClusterApiProviderClusterType(rde)
 }
 
 // Refresh gets the latest information about the receiver cluster and updates its properties.
-func (cluster *CseClusterApiProviderCluster) Refresh() error {
+func (cluster *CseKubernetesCluster) Refresh() error {
 	rde, err := getRdeById(cluster.client, cluster.ID)
 	if err != nil {
 		return err
 	}
-	refreshed, err := rde.cseConvertToCapvcdCluster()
+	refreshed, err := cseConvertToCseClusterApiProviderClusterType(rde)
 	if err != nil {
 		return err
 	}
-	cluster.Capvcd = refreshed.Capvcd
+	cluster.capvcdType = refreshed.capvcdType
 	cluster.Etag = refreshed.Etag
 	return nil
 }
 
 // UpdateWorkerPools executes an update on the receiver cluster to change the existing worker pools.
-func (cluster *CseClusterApiProviderCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput) error {
+func (cluster *CseKubernetesCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput) error {
 	return cluster.Update(CseClusterUpdateInput{
 		WorkerPools: &input,
 	})
 }
 
 // AddWorkerPools executes an update on the receiver cluster to add new worker pools.
-func (cluster *CseClusterApiProviderCluster) AddWorkerPools(input []CseWorkerPoolCreateInput) error {
+func (cluster *CseKubernetesCluster) AddWorkerPools(input []CseWorkerPoolSettings) error {
 	return cluster.Update(CseClusterUpdateInput{
 		NewWorkerPools: &input,
 	})
 }
 
 // UpdateControlPlane executes an update on the receiver cluster to change the existing control plane.
-func (cluster *CseClusterApiProviderCluster) UpdateControlPlane(input CseControlPlaneUpdateInput) error {
+func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpdateInput) error {
 	return cluster.Update(CseClusterUpdateInput{
 		ControlPlane: &input,
 	})
 }
 
 // ChangeKubernetesTemplate executes an update on the receiver cluster to change the Kubernetes template of the cluster.
-func (cluster *CseClusterApiProviderCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string) error {
+func (cluster *CseKubernetesCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string) error {
 	return cluster.Update(CseClusterUpdateInput{
 		KubernetesTemplateOvaId: &kubernetesTemplateOvaId,
 	})
 }
 
 // SetHealthCheck executes an update on the receiver cluster to enable or disable the machine health check capabilities.
-func (cluster *CseClusterApiProviderCluster) SetHealthCheck(healthCheckEnabled bool) error {
+func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		NodeHealthCheck: &healthCheckEnabled,
 	})
@@ -233,7 +122,7 @@ func (cluster *CseClusterApiProviderCluster) SetHealthCheck(healthCheckEnabled b
 
 // SetAutoRepairOnErrors executes an update on the receiver cluster to change the flag that controls the auto-repair
 // capabilities of CSE.
-func (cluster *CseClusterApiProviderCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool) error {
+func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		AutoRepairOnErrors: &autoRepairOnErrors,
 	})
@@ -242,34 +131,34 @@ func (cluster *CseClusterApiProviderCluster) SetAutoRepairOnErrors(autoRepairOnE
 // Update executes a synchronous update on the receiver cluster to perform a update on any of the allowed parameters of the cluster. If the given
 // timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
 // it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
-// receiver CseClusterApiProviderCluster.
-func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput) error {
+// receiver CseKubernetesCluster.
+func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput) error {
 	err := cluster.Refresh()
 	if err != nil {
 		return err
 	}
 
-	if cluster.Capvcd.Status.VcdKe.State == "" {
+	if cluster.capvcdType.Status.VcdKe.State == "" {
 		return fmt.Errorf("can't update a Kubernetes cluster that does not have any state")
 	}
-	if cluster.Capvcd.Status.VcdKe.State != "provisioned" {
-		return fmt.Errorf("can't update a Kubernetes cluster that is not in 'provisioned' state, as it is in '%s'", cluster.Capvcd.Status.VcdKe.State)
+	if cluster.capvcdType.Status.VcdKe.State != "provisioned" {
+		return fmt.Errorf("can't update a Kubernetes cluster that is not in 'provisioned' state, as it is in '%s'", cluster.capvcdType.Status.VcdKe.State)
 	}
 
 	if input.AutoRepairOnErrors != nil {
-		cluster.Capvcd.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
+		cluster.capvcdType.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
 	}
 
 	// Computed attributes that are required, such as the VcdKeConfig version
-	input.clusterName = cluster.Capvcd.Name
-	input.vcdKeConfigVersion = cluster.Capvcd.Status.VcdKe.VcdKeVersion
-	updatedCapiYaml, err := cseUpdateCapiYaml(cluster.client, cluster.Capvcd.Spec.CapiYaml, input)
+	input.clusterName = cluster.Name
+	input.vcdKeConfigVersion = cluster.capvcdType.Status.VcdKe.VcdKeVersion
+	updatedCapiYaml, err := cseUpdateCapiYaml(cluster.client, cluster.capvcdType.Spec.CapiYaml, input)
 	if err != nil {
 		return err
 	}
-	cluster.Capvcd.Spec.CapiYaml = updatedCapiYaml
+	cluster.capvcdType.Spec.CapiYaml = updatedCapiYaml
 
-	marshaledPayload, err := json.Marshal(cluster.Capvcd)
+	marshaledPayload, err := json.Marshal(cluster.capvcdType)
 	if err != nil {
 		return err
 	}
@@ -324,7 +213,7 @@ func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput)
 
 // Delete deletes a CSE Kubernetes cluster, waiting the specified amount of minutes. If the timeout is reached, this method
 // returns an error, even if the cluster is already marked for deletion.
-func (cluster *CseClusterApiProviderCluster) Delete(timeoutMinutes time.Duration) error {
+func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error {
 	logHttpResponse := util.LogHttpResponse
 
 	// The following loop is constantly polling VCD to retrieve the RDE, which has a big JSON inside, so we avoid filling
@@ -382,87 +271,4 @@ func (cluster *CseClusterApiProviderCluster) Delete(timeoutMinutes time.Duration
 		return fmt.Errorf("timeout of %v minutes reached, the cluster was successfully marked for deletion but was not removed in time", timeoutMinutes)
 	}
 	return fmt.Errorf("timeout of %v minutes reached, the cluster was not marked for deletion, please try again", timeoutMinutes)
-}
-
-// cseConvertToCapvcdCluster takes the receiver, which is a generic RDE that must represent an existing CSE Kubernetes cluster,
-// and transforms it to a specific Container Service Extension CAPVCD object that represents the same cluster, but
-// it is easy to explore and consume. If the receiver object does not contain a CAPVCD object, this method
-// will obviously return an error.
-func (rde *DefinedEntity) cseConvertToCapvcdCluster() (*CseClusterApiProviderCluster, error) {
-	requiredType := "vmware:capvcdCluster"
-
-	if !strings.Contains(rde.DefinedEntity.ID, requiredType) || !strings.Contains(rde.DefinedEntity.EntityType, requiredType) {
-		return nil, fmt.Errorf("the receiver RDE is not a '%s' entity, it is '%s'", requiredType, rde.DefinedEntity.EntityType)
-	}
-
-	entityBytes, err := json.Marshal(rde.DefinedEntity.Entity)
-	if err != nil {
-		return nil, fmt.Errorf("could not marshal the RDE contents to create a Capvcd instance: %s", err)
-	}
-
-	result := &CseClusterApiProviderCluster{
-		Capvcd: &types.Capvcd{},
-		ID:     rde.DefinedEntity.ID,
-		Etag:   rde.Etag,
-		client: rde.client,
-	}
-	if rde.DefinedEntity.Owner != nil {
-		result.Owner = rde.DefinedEntity.Owner.Name
-	}
-
-	err = json.Unmarshal(entityBytes, result.Capvcd)
-	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal the RDE contents to create a Capvcd instance: %s", err)
-	}
-	return result, nil
-}
-
-// waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if timeoutMinutes = 0)
-// or until this timeout is reached. If the cluster is in "provisioned" state before the given timeout, it returns a CseClusterApiProviderCluster object
-// representing the Kubernetes cluster with all the latest information.
-// If one of the states of the cluster at a given point is "error", this function also checks whether the cluster has the "Auto Repair on Errors" flag enabled,
-// so it keeps waiting if it's true.
-// If timeout is reached before the cluster, it returns an error.
-func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinutes time.Duration) (*CseClusterApiProviderCluster, error) {
-	var elapsed time.Duration
-	logHttpResponse := util.LogHttpResponse
-	sleepTime := 30
-
-	// The following loop is constantly polling VCD to retrieve the RDE, which has a big JSON inside, so we avoid filling
-	// the log with these big payloads. We use defer to be sure that we restore the initial logging state.
-	defer func() {
-		util.LogHttpResponse = logHttpResponse
-	}()
-
-	start := time.Now()
-	var capvcdCluster *CseClusterApiProviderCluster
-	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
-		util.LogHttpResponse = false
-		rde, err := getRdeById(client, clusterId)
-		util.LogHttpResponse = logHttpResponse
-		if err != nil {
-			return nil, err
-		}
-
-		capvcdCluster, err = rde.cseConvertToCapvcdCluster()
-		if err != nil {
-			return nil, err
-		}
-
-		switch capvcdCluster.Capvcd.Status.VcdKe.State {
-		case "provisioned":
-			return capvcdCluster, nil
-		case "error":
-			// We just finish if auto-recovery is disabled, otherwise we just let CSE fixing things in background
-			if !capvcdCluster.Capvcd.Spec.VcdKe.AutoRepairOnErrors {
-				// Try to give feedback about what went wrong, which is located in a set of events in the RDE payload
-				return capvcdCluster, fmt.Errorf("got an error and 'auto repair on errors' is disabled, aborting. Errors: %s", capvcdCluster.Capvcd.Status.Capvcd.ErrorSet[len(capvcdCluster.Capvcd.Status.Capvcd.ErrorSet)-1].AdditionalDetails.DetailedError)
-			}
-		}
-
-		util.Logger.Printf("[DEBUG] Cluster '%s' is in '%s' state, will check again in %d seconds", capvcdCluster.ID, capvcdCluster.Capvcd.Status.VcdKe.State, sleepTime)
-		elapsed = time.Since(start)
-		time.Sleep(time.Duration(sleepTime) * time.Second)
-	}
-	return capvcdCluster, fmt.Errorf("timeout of %d minutes reached, latest cluster state obtained was '%s'", timeoutMinutes, capvcdCluster.Capvcd.Status.VcdKe.State)
 }

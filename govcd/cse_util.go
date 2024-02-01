@@ -5,79 +5,160 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 	"regexp"
 	"strings"
+	"time"
 )
 
-// cseClusterCreationGoTemplateArguments defines the required arguments that are required by the Go templates used internally to specify
-// a Kubernetes cluster. These are not set by the user, but instead they are computed from a valid
-// CseClusterCreateInput object in the CseClusterCreateInput.toCseClusterCreationGoTemplateContents method. These fields are then
-// inserted in Go templates to render a final JSON that is valid to be used as the cluster Runtime Defined Entity (RDE) payload.
-type cseClusterCreationGoTemplateArguments struct {
-	CseVersion                string
-	Name                      string
-	OrganizationName          string
-	VdcName                   string
-	NetworkName               string
-	KubernetesTemplateOvaName string
-	TkgVersionBundle          tkgVersionBundle
-	CatalogName               string
-	RdeType                   *types.DefinedEntityType
-	ControlPlane              controlPlane
-	WorkerPools               []workerPool
-	DefaultStorageClass       defaultStorageClass
-	MachineHealthCheck        *machineHealthCheck
-	Owner                     string
-	ApiToken                  string
-	VcdUrl                    string
-	ContainerRegistryUrl      string
-	VirtualIpSubnet           string
-	SshPublicKey              string
-	PodCidr                   string
-	ServiceCidr               string
-	AutoRepairOnErrors        bool
+// cseConvertToCseClusterApiProviderClusterType takes a generic RDE that must represent an existing CSE Kubernetes cluster,
+// and transforms it to a specific Container Service Extension CseKubernetesCluster object that represents the same cluster, but
+// it is easy to explore and consume. If the receiver object does not contain a CAPVCD object, this method
+// will obviously return an error.
+func cseConvertToCseClusterApiProviderClusterType(rde *DefinedEntity) (*CseKubernetesCluster, error) {
+	requiredType := "vmware:capvcdCluster"
+
+	if !strings.Contains(rde.DefinedEntity.ID, requiredType) || !strings.Contains(rde.DefinedEntity.EntityType, requiredType) {
+		return nil, fmt.Errorf("the receiver RDE is not a '%s' entity, it is '%s'", requiredType, rde.DefinedEntity.EntityType)
+	}
+
+	entityBytes, err := json.Marshal(rde.DefinedEntity.Entity)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal the RDE contents to create a capvcdType instance: %s", err)
+	}
+
+	capvcd := &types.Capvcd{}
+	err = json.Unmarshal(entityBytes, &capvcd)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal the RDE contents to create a Capvcd instance: %s", err)
+	}
+
+	result := &CseKubernetesCluster{
+		CseClusterSettings: CseClusterSettings{
+			Name:               rde.DefinedEntity.Name,
+			ApiToken:           "******", // We can't return this one, we return the "standard" 6-asterisk value
+			AutoRepairOnErrors: capvcd.Spec.VcdKe.AutoRepairOnErrors,
+		},
+		ID:                         rde.DefinedEntity.ID,
+		Etag:                       rde.Etag,
+		KubernetesVersion:          capvcd.Status.Capvcd.Upgrade.Current.KubernetesVersion,
+		TkgVersion:                 capvcd.Status.Capvcd.Upgrade.Current.TkgVersion,
+		CapvcdVersion:              capvcd.Status.Capvcd.CapvcdVersion,
+		ClusterResourceSetBindings: make([]string, len(capvcd.Status.Capvcd.ClusterResourceSetBindings)),
+		CpiVersion:                 capvcd.Status.Cpi.Version,
+		CsiVersion:                 capvcd.Status.Csi.Version,
+		State:                      capvcd.Status.VcdKe.State,
+		client:                     rde.client,
+		capvcdType:                 capvcd,
+	}
+	for i, binding := range capvcd.Status.Capvcd.ClusterResourceSetBindings {
+		result.ClusterResourceSetBindings[i] = binding.ClusterResourceSetName
+	}
+
+	if len(result.capvcdType.Status.Capvcd.VcdProperties.Organizations) == 0 {
+		return nil, fmt.Errorf("could not read Organizations from Capvcd type")
+	}
+	result.OrganizationId = result.capvcdType.Status.Capvcd.VcdProperties.Organizations[0].Id
+	if len(result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs) == 0 {
+		return nil, fmt.Errorf("could not read Org VDC Network from Capvcd type")
+	}
+	result.VdcId = result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Id
+	result.NetworkId = result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].OvdcNetworkName // TODO: ID
+
+	if rde.DefinedEntity.Owner == nil {
+		return nil, fmt.Errorf("could not read Owner from RDE")
+	}
+	result.Owner = rde.DefinedEntity.Owner.Name
+
+	if result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.K8SStorageClassName != "" {
+		result.DefaultStorageClass = &CseDefaultStorageClassSettings{
+			StorageProfileId: "", // TODO: ID
+			Name:             result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.K8SStorageClassName,
+			ReclaimPolicy:    result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName,
+			Filesystem:       result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName,
+		}
+	}
+
+	yamlDocuments, err := unmarshalMultipleYamlDocuments(result.capvcdType.Spec.CapiYaml)
+	if err != nil {
+		return nil, err
+	}
+
+	result.KubernetesTemplateOvaId = "" // TODO: YAML > ID
+	result.CseVersion = ""              // TODO: Get opposite from supportedVersionsMap
+	// TODO: YAML > Control Plane
+	// TODO: YAML > Worker pools
+	// TODO: YAML > Health check
+	// 			YAML PodCidr:            "",
+	//			YAML ServiceCidr:        "",
+	//			YAML SshPublicKey:       "",
+	// 			YAML VirtualIpSubnet:    "",
+
+	for _, yamlDocument := range yamlDocuments {
+		switch yamlDocument["kind"] {
+
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("could not get the cluster state from the RDE contents: %s", err)
+	}
+
+	return result, nil
 }
 
-// controlPlane defines the Control Plane inside cseClusterCreationGoTemplateArguments
-type controlPlane struct {
-	MachineCount        int
-	DiskSizeGi          int
-	SizingPolicyName    string
-	PlacementPolicyName string
-	StorageProfileName  string
-	Ip                  string
-}
+// waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if timeoutMinutes = 0)
+// or until this timeout is reached. If the cluster is in "provisioned" state before the given timeout, it returns a CseKubernetesCluster object
+// representing the Kubernetes cluster with all the latest information.
+// If one of the states of the cluster at a given point is "error", this function also checks whether the cluster has the "Auto Repair on Errors" flag enabled,
+// so it keeps waiting if it's true.
+// If timeout is reached before the cluster, it returns an error.
+func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinutes time.Duration) (*CseKubernetesCluster, error) {
+	var elapsed time.Duration
+	logHttpResponse := util.LogHttpResponse
+	sleepTime := 30
 
-// workerPool defines a Worker pool inside cseClusterCreationGoTemplateArguments
-type workerPool struct {
-	Name                string
-	MachineCount        int
-	DiskSizeGi          int
-	SizingPolicyName    string
-	PlacementPolicyName string
-	VGpuPolicyName      string
-	StorageProfileName  string
-}
+	// The following loop is constantly polling VCD to retrieve the RDE, which has a big JSON inside, so we avoid filling
+	// the log with these big payloads. We use defer to be sure that we restore the initial logging state.
+	defer func() {
+		util.LogHttpResponse = logHttpResponse
+	}()
 
-// defaultStorageClass defines a Default Storage Class inside cseClusterCreationGoTemplateArguments
-type defaultStorageClass struct {
-	StorageProfileName     string
-	Name                   string
-	UseDeleteReclaimPolicy bool
-	Filesystem             string
-}
+	start := time.Now()
+	var capvcdCluster *CseKubernetesCluster
+	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
+		util.LogHttpResponse = false
+		rde, err := getRdeById(client, clusterId)
+		util.LogHttpResponse = logHttpResponse
+		if err != nil {
+			return nil, err
+		}
 
-// machineHealthCheck is a type that contains only the required and relevant fields from the Container Service Extension (CSE) installation configuration,
-// such as the Machine Health Check settings or the container registry URL.
-type machineHealthCheck struct {
-	MaxUnhealthyNodesPercentage float64
-	NodeStartupTimeout          string
-	NodeNotReadyTimeout         string
-	NodeUnknownTimeout          string
+		capvcdCluster, err = cseConvertToCseClusterApiProviderClusterType(rde)
+		if err != nil {
+			return nil, err
+		}
+
+		switch capvcdCluster.capvcdType.Status.VcdKe.State {
+		case "provisioned":
+			return capvcdCluster, nil
+		case "error":
+			// We just finish if auto-recovery is disabled, otherwise we just let CSE fixing things in background
+			if !capvcdCluster.capvcdType.Spec.VcdKe.AutoRepairOnErrors {
+				// Try to give feedback about what went wrong, which is located in a set of events in the RDE payload
+				return capvcdCluster, fmt.Errorf("got an error and 'auto repair on errors' is disabled, aborting")
+				// TODO				return capvcdCluster, fmt.Errorf("got an error and 'auto repair on errors' is disabled, aborting. Errors: %s", capvcdCluster.capvcdType.Status.Capvcd.ErrorSet[len(capvcdCluster.capvcdType.Status.Capvcd.ErrorSet)-1].AdditionalDetails.DetailedError)
+			}
+		}
+
+		util.Logger.Printf("[DEBUG] Cluster '%s' is in '%s' state, will check again in %d seconds", capvcdCluster.ID, capvcdCluster.capvcdType.Status.VcdKe.State, sleepTime)
+		elapsed = time.Since(start)
+		time.Sleep(time.Duration(sleepTime) * time.Second)
+	}
+	return capvcdCluster, fmt.Errorf("timeout of %d minutes reached, latest cluster state obtained was '%s'", timeoutMinutes, capvcdCluster.capvcdType.Status.VcdKe.State)
 }
 
 // validate validates the CSE Kubernetes cluster creation input data. Returns an error if some of the fields is wrong.
-func (ccd *CseClusterCreateInput) validate() error {
+func (ccd *CseClusterSettings) validate() error {
 	cseNamesRegex, err := regexp.Compile(`^[a-z](?:[a-z0-9-]{0,29}[a-z0-9])?$`)
 	if err != nil {
 		return fmt.Errorf("could not compile regular expression '%s'", err)
@@ -149,9 +230,9 @@ func (ccd *CseClusterCreateInput) validate() error {
 	return nil
 }
 
-// toCseClusterCreationGoTemplateContents transforms user input data (receiver CseClusterCreateInput) into the final payload that
-// will be used to render the Go templates that define a Kubernetes cluster creation payload (cseClusterCreationGoTemplateArguments).
-func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(org *Org) (*cseClusterCreationGoTemplateArguments, error) {
+// cseClusterSettingsToInternal transforms user input data (CseClusterSettings) into the final payload that
+// will be used to render the Go templates that define a Kubernetes cluster creation payload (cseClusterSettingsInternal).
+func cseClusterSettingsToInternal(input CseClusterSettings, org *Org) (*cseClusterSettingsInternal, error) {
 	err := input.validate()
 	if err != nil {
 		return nil, err
@@ -161,7 +242,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(org *
 		return nil, fmt.Errorf("cannot manipulate the CSE Kubernetes cluster creation input, the Organization is nil")
 	}
 
-	output := &cseClusterCreationGoTemplateArguments{}
+	output := &cseClusterSettingsInternal{}
 	output.OrganizationName = org.Org.Name
 
 	vdc, err := org.GetVDCById(input.VdcId, true)
@@ -235,9 +316,9 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(org *
 	}
 
 	// Now that everything is cached in memory, we can build the Node pools and Storage Class payloads
-	output.WorkerPools = make([]workerPool, len(input.WorkerPools))
+	output.WorkerPools = make([]cseWorkerPoolSettingsInternal, len(input.WorkerPools))
 	for i, w := range input.WorkerPools {
-		output.WorkerPools[i] = workerPool{
+		output.WorkerPools[i] = cseWorkerPoolSettingsInternal{
 			Name:         w.Name,
 			MachineCount: w.MachineCount,
 			DiskSizeGi:   w.DiskSizeGi,
@@ -247,7 +328,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(org *
 		output.WorkerPools[i].VGpuPolicyName = idToNameCache[w.VGpuPolicyId]
 		output.WorkerPools[i].StorageProfileName = idToNameCache[w.StorageProfileId]
 	}
-	output.ControlPlane = controlPlane{
+	output.ControlPlane = cseControlPlaneSettingsInternal{
 		MachineCount:        input.ControlPlane.MachineCount,
 		DiskSizeGi:          input.ControlPlane.DiskSizeGi,
 		SizingPolicyName:    idToNameCache[input.ControlPlane.SizingPolicyId],
@@ -257,7 +338,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(org *
 	}
 
 	if input.DefaultStorageClass != nil {
-		output.DefaultStorageClass = defaultStorageClass{
+		output.DefaultStorageClass = cseDefaultStorageClassInternal{
 			StorageProfileName: idToNameCache[input.DefaultStorageClass.StorageProfileId],
 			Name:               input.DefaultStorageClass.Name,
 			Filesystem:         input.DefaultStorageClass.Filesystem,
@@ -359,7 +440,7 @@ func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, 
 }
 
 // getMachineHealthCheck gets the required information from the CSE Server configuration RDE
-func getMachineHealthCheck(client *Client, vcdKeConfigVersion string, isNodeHealthCheckActive bool) (*machineHealthCheck, error) {
+func getMachineHealthCheck(client *Client, vcdKeConfigVersion string, isNodeHealthCheckActive bool) (*cseMachineHealthCheckInternal, error) {
 	if !isNodeHealthCheckActive {
 		return nil, nil
 	}
@@ -384,7 +465,7 @@ func getMachineHealthCheck(client *Client, vcdKeConfigVersion string, isNodeHeal
 	if !ok {
 		return nil, nil
 	}
-	result := machineHealthCheck{}
+	result := cseMachineHealthCheckInternal{}
 	result.MaxUnhealthyNodesPercentage = mhc["maxUnhealthyNodes"].(float64)
 	result.NodeStartupTimeout = mhc["nodeStartupTimeout"].(string)
 	result.NodeNotReadyTimeout = mhc["nodeUnknownTimeout"].(string)

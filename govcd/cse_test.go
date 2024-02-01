@@ -66,28 +66,28 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 
 	workerPoolName := "worker-pool-1"
 
-	cluster, err := org.CseCreateKubernetesCluster(CseClusterCreateInput{
+	cluster, err := org.CseCreateKubernetesCluster(CseClusterSettings{
 		Name:                    "test-cse",
 		OrganizationId:          org.Org.ID,
 		VdcId:                   vdc.Vdc.ID,
 		NetworkId:               net.OrgVDCNetwork.ID,
 		KubernetesTemplateOvaId: ova.VAppTemplate.ID,
 		CseVersion:              "4.2",
-		ControlPlane: CseControlPlaneCreateInput{
+		ControlPlane: CseControlPlaneSettings{
 			MachineCount:     1,
 			DiskSizeGi:       20,
 			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
 			StorageProfileId: sp.ID,
 			Ip:               "",
 		},
-		WorkerPools: []CseWorkerPoolCreateInput{{
+		WorkerPools: []CseWorkerPoolSettings{{
 			Name:             workerPoolName,
 			MachineCount:     1,
 			DiskSizeGi:       20,
 			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
 			StorageProfileId: sp.ID,
 		}},
-		DefaultStorageClass: &CseDefaultStorageClassCreateInput{
+		DefaultStorageClass: &CseDefaultStorageClassSettings{
 			StorageProfileId: sp.ID,
 			Name:             "storage-class-1",
 			ReclaimPolicy:    "delete",
@@ -103,7 +103,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cluster.ID, Not(Equals), "")
 	check.Assert(cluster.Etag, Not(Equals), "")
-	check.Assert(cluster.Capvcd.Status.VcdKe.State, Equals, "provisioned")
+	check.Assert(cluster.capvcdType.Status.VcdKe.State, Equals, "provisioned")
 
 	err = cluster.Refresh()
 	check.Assert(err, IsNil)
@@ -111,14 +111,14 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	clusterGet, err := org.CseGetKubernetesClusterById(cluster.ID)
 	check.Assert(err, IsNil)
 	check.Assert(cluster.ID, Equals, clusterGet.ID)
-	check.Assert(cluster.Capvcd.Name, Equals, clusterGet.Capvcd.Name)
+	check.Assert(cluster.Name, Equals, clusterGet.Name)
 	check.Assert(cluster.Owner, Equals, clusterGet.Owner)
-	check.Assert(cluster.Capvcd.Metadata, DeepEquals, clusterGet.Capvcd.Metadata)
-	check.Assert(cluster.Capvcd.Spec.VcdKe, DeepEquals, clusterGet.Capvcd.Spec.VcdKe)
+	check.Assert(cluster.capvcdType.Metadata, DeepEquals, clusterGet.capvcdType.Metadata)
+	check.Assert(cluster.capvcdType.Spec.VcdKe, DeepEquals, clusterGet.capvcdType.Spec.VcdKe)
 
 	// Update worker pool from 1 node to 2
 	// Pre-check. This should be 1, as it was created with just 1 pool
-	for _, nodePool := range cluster.Capvcd.Status.Capvcd.NodePool {
+	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {
 		if nodePool.Name == workerPoolName {
 			check.Assert(nodePool.DesiredReplicas, Equals, 1)
 		}
@@ -129,7 +129,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 
 	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool := false
-	for _, nodePool := range cluster.Capvcd.Status.Capvcd.NodePool {
+	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {
 		if nodePool.Name == workerPoolName {
 			foundWorkerPool = true
 			check.Assert(nodePool.DesiredReplicas, Equals, 2)
@@ -160,7 +160,7 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 
 	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool := false
-	for _, nodePool := range cluster.Capvcd.Status.Capvcd.NodePool {
+	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {
 		if nodePool.Name == workerPoolName {
 			foundWorkerPool = true
 			check.Assert(nodePool.DesiredReplicas, Equals, 2)

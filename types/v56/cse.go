@@ -5,179 +5,169 @@ import "time"
 // Capvcd (Cluster API Provider for VCD), is a type that represents a Kubernetes cluster inside VCD, that is created and managed
 // with the Container Service Extension (CSE)
 type Capvcd struct {
-	Kind string `json:"kind,omitempty"`
-	Name string `json:"name,omitempty"`
+	Kind string `json:"kind"`
 	Spec struct {
 		VcdKe struct {
-			ForceDelete                bool `json:"forceDelete,omitempty"`
-			MarkForDelete              bool `json:"markForDelete,omitempty"`
-			IsVCDKECluster             bool `json:"isVCDKECluster,omitempty"`
-			AutoRepairOnErrors         bool `json:"autoRepairOnErrors,omitempty"`
+			IsVCDKECluster             bool `json:"isVCDKECluster"`
+			AutoRepairOnErrors         bool `json:"autoRepairOnErrors"`
 			DefaultStorageClassOptions struct {
-				Filesystem             string `json:"filesystem,omitempty"`
-				K8SStorageClassName    string `json:"k8sStorageClassName,omitempty"`
-				VcdStorageProfileName  string `json:"vcdStorageProfileName,omitempty"`
-				UseDeleteReclaimPolicy bool   `json:"useDeleteReclaimPolicy,omitempty"`
-			} `json:"defaultStorageClassOptions,omitempty"`
-		} `json:"vcdKe,omitempty"`
-		CapiYaml string `json:"capiYaml,omitempty"`
-	} `json:"spec,omitempty"`
+				Filesystem             string `json:"filesystem"`
+				K8SStorageClassName    string `json:"k8sStorageClassName"`
+				VcdStorageProfileName  string `json:"vcdStorageProfileName"`
+				UseDeleteReclaimPolicy bool   `json:"useDeleteReclaimPolicy"`
+			} `json:"defaultStorageClassOptions"`
+		} `json:"vcdKe"`
+		CapiYaml string `json:"capiYaml"`
+	} `json:"spec"`
 	Status struct {
 		Cpi struct {
-			Name     string `json:"name,omitempty"`
-			Version  string `json:"version,omitempty"`
+			Name     string `json:"name"`
+			Version  string `json:"version"`
 			EventSet []struct {
-				Name              string    `json:"name,omitempty"`
-				OccurredAt        time.Time `json:"occurredAt,omitempty"`
-				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				Name              string    `json:"name"`
+				OccurredAt        time.Time `json:"occurredAt"`
+				VcdResourceId     string    `json:"vcdResourceId"`
 				AdditionalDetails struct {
-					DetailedEvent string `json:"Detailed Event,omitempty"`
-				} `json:"additionalDetails,omitempty"`
-			} `json:"eventSet,omitempty"`
-		} `json:"cpi,omitempty"`
+					DetailedEvent string `json:"Detailed Event"`
+				} `json:"additionalDetails"`
+			} `json:"eventSet"`
+		} `json:"cpi"`
 		Csi struct {
-			Name     string `json:"name,omitempty"`
-			Version  string `json:"version,omitempty"`
+			Name     string `json:"name"`
+			Version  string `json:"version"`
 			EventSet []struct {
-				Name              string    `json:"name,omitempty"`
-				OccurredAt        time.Time `json:"occurredAt,omitempty"`
+				Name              string    `json:"name"`
+				OccurredAt        time.Time `json:"occurredAt"`
 				AdditionalDetails struct {
 					DetailedDescription string `json:"Detailed Description,omitempty"`
-				} `json:"additionalDetails,omitempty"`
-			} `json:"eventSet,omitempty"`
-		} `json:"csi,omitempty"`
+				} `json:"additionalDetails"`
+			} `json:"eventSet"`
+		} `json:"csi"`
 		VcdKe struct {
-			State    string `json:"state,omitempty"`
+			State    string `json:"state"`
 			EventSet []struct {
-				Name              string    `json:"name,omitempty"`
-				OccurredAt        time.Time `json:"occurredAt,omitempty"`
-				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				Name              string    `json:"name"`
+				OccurredAt        time.Time `json:"occurredAt"`
+				VcdResourceId     string    `json:"vcdResourceId"`
 				AdditionalDetails struct {
-					DetailedEvent string `json:"Detailed Event,omitempty"`
-				} `json:"additionalDetails,omitempty"`
-			} `json:"eventSet,omitempty"`
-			WorkerId       string `json:"workerId,omitempty"`
-			VcdKeVersion   string `json:"vcdKeVersion,omitempty"`
+					DetailedEvent string `json:"Detailed Event"`
+				} `json:"additionalDetails"`
+			} `json:"eventSet"`
+			WorkerId       string `json:"workerId"`
+			VcdKeVersion   string `json:"vcdKeVersion"`
 			VcdResourceSet []struct {
-				Id   string `json:"id,omitempty"`
-				Name string `json:"name,omitempty"`
-				Type string `json:"type,omitempty"`
-			} `json:"vcdResourceSet,omitempty"`
-			HeartbeatString     string `json:"heartbeatString,omitempty"`
-			VcdKeInstanceId     string `json:"vcdKeInstanceId,omitempty"`
-			HeartbeatTimestamp  string `json:"heartbeatTimestamp,omitempty"`
+				Id   string `json:"id"`
+				Name string `json:"name"`
+				Type string `json:"type"`
+			} `json:"vcdResourceSet"`
+			HeartbeatString     string `json:"heartbeatString"`
+			VcdKeInstanceId     string `json:"vcdKeInstanceId"`
+			HeartbeatTimestamp  string `json:"heartbeatTimestamp"`
 			DefaultStorageClass struct {
-				FileSystem             string `json:"fileSystem,omitempty"`
-				K8SStorageClassName    string `json:"k8sStorageClassName,omitempty"`
-				VcdStorageProfileName  string `json:"vcdStorageProfileName,omitempty"`
-				UseDeleteReclaimPolicy bool   `json:"useDeleteReclaimPolicy,omitempty"`
-			} `json:"defaultStorageClass,omitempty"`
-		} `json:"vcdKe,omitempty"`
+				FileSystem             string `json:"fileSystem"`
+				K8SStorageClassName    string `json:"k8sStorageClassName"`
+				VcdStorageProfileName  string `json:"vcdStorageProfileName"`
+				UseDeleteReclaimPolicy bool   `json:"useDeleteReclaimPolicy"`
+			} `json:"defaultStorageClass"`
+		} `json:"vcdKe"`
 		Capvcd struct {
-			Uid     string `json:"uid,omitempty"`
-			Phase   string `json:"phase,omitempty"`
+			Uid     string `json:"uid"`
+			Phase   string `json:"phase"`
 			Upgrade struct {
-				Ready   bool `json:"ready,omitempty"`
+				Ready   bool `json:"ready"`
 				Current struct {
-					TkgVersion        string `json:"tkgVersion,omitempty"`
-					KubernetesVersion string `json:"kubernetesVersion,omitempty"`
-				} `json:"current,omitempty"`
-			} `json:"upgrade,omitempty"`
+					TkgVersion        string `json:"tkgVersion"`
+					KubernetesVersion string `json:"kubernetesVersion"`
+				} `json:"current"`
+			} `json:"upgrade"`
 			EventSet []struct {
-				Name              string    `json:"name,omitempty"`
-				OccurredAt        time.Time `json:"occurredAt,omitempty"`
-				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				Name              string    `json:"name"`
+				OccurredAt        time.Time `json:"occurredAt"`
+				VcdResourceId     string    `json:"vcdResourceId"`
 				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
 				AdditionalDetails struct {
-					Event string `json:"event,omitempty"`
+					Event string `json:"event"`
 				} `json:"additionalDetails,omitempty"`
-			} `json:"eventSet,omitempty"`
-			ErrorSet []struct {
-				Name              string    `json:"name,omitempty"`
-				OccurredAt        time.Time `json:"occurredAt,omitempty"`
-				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
-				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
-				AdditionalDetails struct {
-					DetailedError string `json:"Detailed Error,omitempty"`
-				} `json:"additionalDetails,omitempty"`
-			} `json:"errorSet,omitempty"`
+			} `json:"eventSet"`
 			NodePool []struct {
-				Name              string                 `json:"name,omitempty"`
-				DiskSizeMb        int                    `json:"diskSizeMb,omitempty"`
-				NodeStatus        map[string]interface{} `json:"nodeStatus,omitempty"`
-				SizingPolicy      string                 `json:"sizingPolicy,omitempty"`
-				PlacementPolicy   string                 `json:"placementPolicy,omitempty"`
-				NvidiaGpuEnabled  bool                   `json:"nvidiaGpuEnabled,omitempty"`
-				StorageProfile    string                 `json:"storageProfile,omitempty"`
-				DesiredReplicas   int                    `json:"desiredReplicas,omitempty"`
-				AvailableReplicas int                    `json:"availableReplicas,omitempty"`
-			} `json:"nodePool,omitempty"`
-			ParentUid  string `json:"parentUid,omitempty"`
-			K8sNetwork struct {
+				Name       string `json:"name"`
+				DiskSizeMb int    `json:"diskSizeMb"`
+				NodeStatus struct {
+					CseTest1WorkerNodePool1774Bdcdbffxcwc4BG9Nh9 string `json:"cse-test1-worker-node-pool-1-774bdcdbffxcwc4b-g9nh9,omitempty"`
+					CseTest1WorkerNodePool1774Bdcdbffxcwc4BRx9Wf string `json:"cse-test1-worker-node-pool-1-774bdcdbffxcwc4b-rx9wf,omitempty"`
+					CseTest1ControlPlaneNodePool56Jhv            string `json:"cse-test1-control-plane-node-pool-56jhv,omitempty"`
+				} `json:"nodeStatus"`
+				SizingPolicy      string `json:"sizingPolicy"`
+				StorageProfile    string `json:"storageProfile"`
+				DesiredReplicas   int    `json:"desiredReplicas"`
+				AvailableReplicas int    `json:"availableReplicas"`
+			} `json:"nodePool"`
+			ParentUid  string `json:"parentUid"`
+			K8SNetwork struct {
 				Pods struct {
-					CidrBlocks []string `json:"cidrBlocks,omitempty"`
-				} `json:"pods,omitempty"`
+					CidrBlocks []string `json:"cidrBlocks"`
+				} `json:"pods"`
 				Services struct {
-					CidrBlocks []string `json:"cidrBlocks,omitempty"`
-				} `json:"services,omitempty"`
-			} `json:"k8sNetwork,omitempty"`
-			Kubernetes    string `json:"kubernetes,omitempty"`
-			CapvcdVersion string `json:"capvcdVersion,omitempty"`
+					CidrBlocks []string `json:"cidrBlocks"`
+				} `json:"services"`
+			} `json:"k8sNetwork"`
+			Kubernetes    string `json:"kubernetes"`
+			CapvcdVersion string `json:"capvcdVersion"`
 			VcdProperties struct {
-				Site    string `json:"site,omitempty"`
+				Site    string `json:"site"`
 				OrgVdcs []struct {
-					Id              string `json:"id,omitempty"`
-					Name            string `json:"name,omitempty"`
-					OvdcNetworkName string `json:"ovdcNetworkName,omitempty"`
-				} `json:"orgVdcs,omitempty"`
+					Id              string `json:"id"`
+					Name            string `json:"name"`
+					OvdcNetworkName string `json:"ovdcNetworkName"`
+				} `json:"orgVdcs"`
 				Organizations []struct {
-					Id   string `json:"id,omitempty"`
-					Name string `json:"name,omitempty"`
-				} `json:"organizations,omitempty"`
-			} `json:"vcdProperties,omitempty"`
-			CapiStatusYaml string `json:"capiStatusYaml,omitempty"`
+					Id   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"organizations"`
+			} `json:"vcdProperties"`
+			CapiStatusYaml string `json:"capiStatusYaml"`
 			VcdResourceSet []struct {
-				Id                string `json:"id,omitempty"`
-				Name              string `json:"name,omitempty"`
-				Type              string `json:"type,omitempty"`
+				Id                string `json:"id"`
+				Name              string `json:"name"`
+				Type              string `json:"type"`
 				AdditionalDetails struct {
-					VirtualIP string `json:"virtualIP,omitempty"`
+					VirtualIP string `json:"virtualIP"`
 				} `json:"additionalDetails,omitempty"`
-			} `json:"vcdResourceSet,omitempty"`
+			} `json:"vcdResourceSet"`
 			ClusterApiStatus struct {
-				Phase        string `json:"phase,omitempty"`
+				Phase        string `json:"phase"`
 				ApiEndpoints []struct {
-					Host string `json:"host,omitempty"`
-					Port int    `json:"port,omitempty"`
-				} `json:"apiEndpoints,omitempty"`
-			} `json:"clusterApiStatus,omitempty"`
-			CreatedByVersion           string `json:"createdByVersion,omitempty"`
+					Host string `json:"host"`
+					Port int    `json:"port"`
+				} `json:"apiEndpoints"`
+			} `json:"clusterApiStatus"`
+			CreatedByVersion           string `json:"createdByVersion"`
 			ClusterResourceSetBindings []struct {
-				Kind                   string `json:"kind,omitempty"`
-				Name                   string `json:"name,omitempty"`
-				Applied                bool   `json:"applied,omitempty"`
-				LastAppliedTime        string `json:"lastAppliedTime,omitempty"`
-				ClusterResourceSetName string `json:"clusterResourceSetName,omitempty"`
-			} `json:"clusterResourceSetBindings,omitempty"`
-		} `json:"capvcd,omitempty"`
+				Kind                   string `json:"kind"`
+				Name                   string `json:"name"`
+				Applied                bool   `json:"applied"`
+				LastAppliedTime        string `json:"lastAppliedTime"`
+				ClusterResourceSetName string `json:"clusterResourceSetName"`
+			} `json:"clusterResourceSetBindings"`
+		} `json:"capvcd"`
 		Projector struct {
-			Name     string `json:"name,omitempty"`
-			Version  string `json:"version,omitempty"`
+			Name     string `json:"name"`
+			Version  string `json:"version"`
 			EventSet []struct {
-				Name              string    `json:"name,omitempty"`
-				OccurredAt        time.Time `json:"occurredAt,omitempty"`
-				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
+				Name              string    `json:"name"`
+				OccurredAt        time.Time `json:"occurredAt"`
+				VcdResourceName   string    `json:"vcdResourceName"`
 				AdditionalDetails struct {
-					Event string `json:"event,omitempty"`
-				} `json:"additionalDetails,omitempty"`
-			} `json:"eventSet,omitempty"`
-		} `json:"projector,omitempty"`
-	} `json:"status,omitempty"`
+					Event string `json:"event"`
+				} `json:"additionalDetails"`
+			} `json:"eventSet"`
+		} `json:"projector"`
+	} `json:"status"`
 	Metadata struct {
-		Name                  string `json:"name,omitempty"`
-		Site                  string `json:"site,omitempty"`
-		OrgName               string `json:"orgName,omitempty"`
-		VirtualDataCenterName string `json:"virtualDataCenterName,omitempty"`
-	} `json:"metadata,omitempty"`
-	ApiVersion string `json:"apiVersion,omitempty"`
+		Name                  string `json:"name"`
+		Site                  string `json:"site"`
+		OrgName               string `json:"orgName"`
+		VirtualDataCenterName string `json:"virtualDataCenterName"`
+	} `json:"metadata"`
+	ApiVersion string `json:"apiVersion"`
 }

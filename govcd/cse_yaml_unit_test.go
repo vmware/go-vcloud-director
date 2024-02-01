@@ -38,9 +38,18 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 	if oldOvaName == "" {
 		t.Fatalf("the OVA that needs to be changed is empty")
 	}
+	oldTkgBundle, err := getTkgVersionBundleFromVAppTemplateName(oldOvaName)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
 
 	// We call the function to update the old OVA with the new one
-	newOvaName := "my-super-ova-name"
+	newOvaName := "ubuntu-2004-kube-v1.19.16+vmware.1-tkg.2-fba68db15591c15fcd5f26b512663a42"
+	newTkgBundle, err := getTkgVersionBundleFromVAppTemplateName(newOvaName)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
 	err = cseUpdateKubernetesTemplateInYaml(yamlDocs, newOvaName)
 	if err != nil {
 		t.Fatalf("%s", err)
@@ -53,7 +62,22 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 
 	// No document should have the old OVA
 	if !strings.Contains(updatedYaml, newOvaName) || strings.Contains(updatedYaml, oldOvaName) {
-		t.Fatalf("failed updating the Kubernetes OVA template in the Control Plane:\n%s", updatedYaml)
+		t.Fatalf("failed updating the Kubernetes OVA template:\n%s", updatedYaml)
+	}
+	if !strings.Contains(updatedYaml, newTkgBundle.KubernetesVersion) || strings.Contains(updatedYaml, oldTkgBundle.KubernetesVersion) {
+		t.Fatalf("failed updating the Kubernetes version:\n%s", updatedYaml)
+	}
+	if !strings.Contains(updatedYaml, newTkgBundle.TkrVersion) || strings.Contains(updatedYaml, oldTkgBundle.TkrVersion) {
+		t.Fatalf("failed updating the Tanzu release version:\n%s", updatedYaml)
+	}
+	if !strings.Contains(updatedYaml, newTkgBundle.TkgVersion) || strings.Contains(updatedYaml, oldTkgBundle.TkgVersion) {
+		t.Fatalf("failed updating the Tanzu grid version:\n%s", updatedYaml)
+	}
+	if !strings.Contains(updatedYaml, newTkgBundle.CoreDnsVersion) || strings.Contains(updatedYaml, oldTkgBundle.CoreDnsVersion) {
+		t.Fatalf("failed updating the CoreDNS version:\n%s", updatedYaml)
+	}
+	if !strings.Contains(updatedYaml, newTkgBundle.EtcdVersion) || strings.Contains(updatedYaml, oldTkgBundle.EtcdVersion) {
+		t.Fatalf("failed updating the Etcd version:\n%s", updatedYaml)
 	}
 }
 
@@ -251,7 +275,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 	}
 
 	// Enables Machine Health Check
-	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, &machineHealthCheck{
+	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, &cseMachineHealthCheckInternal{
 		MaxUnhealthyNodesPercentage: 12,
 		NodeStartupTimeout:          "34",
 		NodeNotReadyTimeout:         "56",
