@@ -142,8 +142,48 @@ func addWorkerPoolsYaml(docs []map[string]any, inputs []CseWorkerPoolCreateInput
 	return nil
 }
 
-func updateNodeHealthCheckYaml(docs []map[string]any, b bool) error {
-	return nil
+func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, machineHealthCheck *machineHealthCheck) ([]map[string]any, error) {
+	mhcPosition := -1
+	result := make([]map[string]any, len(yamlDocuments))
+	for i, d := range yamlDocuments {
+		if d["kind"] == "MachineHealthCheck" {
+			mhcPosition = i
+		}
+		result[i] = d
+	}
+
+	if mhcPosition < 0 {
+		// There is no MachineHealthCheck block
+		if machineHealthCheck == nil {
+			// We don't want it neither, so nothing to do
+			return result, nil
+		}
+
+		// We need to add the block to the slice of YAML documents
+		mhcYaml, err := generateMemoryHealthCheckYaml(machineHealthCheck, "4.2", clusterName)
+		if err != nil {
+			return nil, err
+		}
+		var mhc map[string]any
+		err = yaml.Unmarshal([]byte(mhcYaml), &mhc)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, mhc)
+	} else {
+		// There is a MachineHealthCheck block
+		if machineHealthCheck != nil {
+			// We want it, but it is already there, so nothing to do
+			// TODO: What happens in UI if the VCDKEConfig MHC values are changed, does it get reflected in the cluster?
+			//       If that's the case, we might need to update this value always
+			return result, nil
+		}
+
+		// We don't want Machine Health Checks, we delete the YAML document
+		result[mhcPosition] = result[len(result)-1] // We override the MachineHealthCheck block with the last document
+		result = result[:len(result)-1]             // We remove the last document (now duplicated)
+	}
+	return result, nil
 }
 
 // cseUpdateCapiYaml takes a CAPI YAML and modifies its Kubernetes template, its Control plane, its Worker pools
@@ -199,7 +239,11 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 	}
 
 	if input.NodeHealthCheck != nil {
-		err := updateNodeHealthCheckYaml(yamlDocs, *input.NodeHealthCheck)
+		mhcSettings, err := getMachineHealthCheck(client, input.vcdKeConfigVersion, *input.NodeHealthCheck)
+		if err != nil {
+			return "", err
+		}
+		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, input.clusterName, mhcSettings)
 		if err != nil {
 			return "", err
 		}

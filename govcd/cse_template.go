@@ -105,12 +105,12 @@ func generateNodePoolYaml(clusterDetails *cseClusterCreationGoTemplateArguments)
 }
 
 // generateMemoryHealthCheckYaml generates a YAML block corresponding to the Kubernetes memory health check.
-func generateMemoryHealthCheckYaml(clusterDetails *cseClusterCreationGoTemplateArguments, clusterName string) (string, error) {
-	if clusterDetails.MachineHealthCheck == nil {
+func generateMemoryHealthCheckYaml(mhcSettings *machineHealthCheck, cseVersion, clusterName string) (string, error) {
+	if mhcSettings == nil {
 		return "", nil
 	}
 
-	mhcTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_mhc")
+	mhcTmpl, err := getCseTemplate(cseVersion, "capiyaml_mhc")
 	if err != nil {
 		return "", err
 	}
@@ -121,10 +121,10 @@ func generateMemoryHealthCheckYaml(clusterDetails *cseClusterCreationGoTemplateA
 	if err := mhcEmptyTmpl.Execute(buf, map[string]string{
 		"ClusterName":                clusterName,
 		"TargetNamespace":            clusterName + "-ns",
-		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", clusterDetails.MachineHealthCheck.MaxUnhealthyNodesPercentage), // With the 'percentage' suffix
-		"NodeStartupTimeout":         fmt.Sprintf("%ss", clusterDetails.MachineHealthCheck.NodeStartupTimeout),             // With the 'second' suffix
-		"NodeUnknownTimeout":         fmt.Sprintf("%ss", clusterDetails.MachineHealthCheck.NodeUnknownTimeout),             // With the 'second' suffix
-		"NodeNotReadyTimeout":        fmt.Sprintf("%ss", clusterDetails.MachineHealthCheck.NodeNotReadyTimeout),            // With the 'second' suffix
+		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", mhcSettings.MaxUnhealthyNodesPercentage), // With the 'percentage' suffix
+		"NodeStartupTimeout":         fmt.Sprintf("%ss", mhcSettings.NodeStartupTimeout),             // With the 'second' suffix
+		"NodeUnknownTimeout":         fmt.Sprintf("%ss", mhcSettings.NodeUnknownTimeout),             // With the 'second' suffix
+		"NodeNotReadyTimeout":        fmt.Sprintf("%ss", mhcSettings.NodeNotReadyTimeout),            // With the 'second' suffix
 	}); err != nil {
 		return "", fmt.Errorf("could not generate a correct Memory Health Check YAML: %s", err)
 	}
@@ -150,7 +150,7 @@ func generateCapiYaml(clusterDetails *cseClusterCreationGoTemplateArguments) (st
 		return "", err
 	}
 
-	memoryHealthCheckYaml, err := generateMemoryHealthCheckYaml(clusterDetails, clusterDetails.Name)
+	memoryHealthCheckYaml, err := generateMemoryHealthCheckYaml(clusterDetails.MachineHealthCheck, clusterDetails.CseVersion, clusterDetails.Name)
 	if err != nil {
 		return "", err
 	}

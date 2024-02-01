@@ -211,6 +211,83 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 	}
 }
 
+// Test_cseUpdateNodeHealthCheckInYaml tests the update process of the Machine Health Check capabilities in a CAPI YAML.
+func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
+	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")
+	if err != nil {
+		t.Fatalf("could not read CAPI YAML test file: %s", err)
+	}
+
+	yamlDocs, err := unmarshalMultipleYamlDocuments(string(capiYaml))
+	if err != nil {
+		t.Fatalf("could not unmarshal CAPI YAML test file: %s", err)
+	}
+
+	clusterName := ""
+	for _, doc := range yamlDocs {
+		if doc["kind"] != "Cluster" {
+			continue
+		}
+		clusterName, err = traverseMapAndGet[string](doc, "metadata.name")
+		if err != nil {
+			t.Fatalf("incorrect CAPI YAML: %s", err)
+		}
+	}
+	if clusterName == "" {
+		t.Fatal("could not find the cluster name in the CAPI YAML test file")
+	}
+
+	// Deactivates Machine Health Check
+	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, nil)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	// The resulting documents should not have that document
+	for _, document := range yamlDocs {
+		if document["kind"] == "MachineHealthCheck" {
+			t.Fatal("Expected the MachineHealthCheck to be deleted, but it is there")
+		}
+	}
+
+	// Enables Machine Health Check
+	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, &machineHealthCheck{
+		MaxUnhealthyNodesPercentage: 12,
+		NodeStartupTimeout:          "34",
+		NodeNotReadyTimeout:         "56",
+		NodeUnknownTimeout:          "78",
+	})
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	// The resulting documents should have a MachineHealthCheck
+	found := false
+	for _, document := range yamlDocs {
+		if document["kind"] != "MachineHealthCheck" {
+			continue
+		}
+		maxUnhealthy, err := traverseMapAndGet[string](document, "spec.maxUnhealthy")
+		if err != nil {
+			t.Fatalf("%s", err)
+		}
+		if maxUnhealthy != "12%" {
+			t.Fatalf("expected a 'spec.maxUnhealthy' = 12%%, but got %s", maxUnhealthy)
+		}
+		nodeStartupTimeout, err := traverseMapAndGet[string](document, "spec.nodeStartupTimeout")
+		if err != nil {
+			t.Fatalf("%s", err)
+		}
+		if nodeStartupTimeout != "34s" {
+			t.Fatalf("expected a 'spec.nodeStartupTimeout' = 34s, but got %s", nodeStartupTimeout)
+		}
+		found = true
+	}
+	if !found {
+		t.Fatalf("expected a MachineHealthCheck block but got nothing")
+	}
+}
+
 // Test_unmarshalMultplieYamlDocuments tests the unmarshalling of multiple YAML documents with unmarshalMultplieYamlDocuments
 func Test_unmarshalMultplieYamlDocuments(t *testing.T) {
 	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")

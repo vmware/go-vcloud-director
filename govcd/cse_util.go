@@ -268,7 +268,7 @@ func (input *CseClusterCreateInput) toCseClusterCreationGoTemplateContents(org *
 		}
 	}
 
-	mhc, err := getMachineHealthCheck(org.client, input.CseVersion, input.NodeHealthCheck)
+	mhc, err := getMachineHealthCheck(org.client, supportedCseVersions[input.CseVersion][0], input.NodeHealthCheck)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +339,7 @@ func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, 
 		return result, err
 	}
 
-	versionsMap := map[string]interface{}{}
+	versionsMap := map[string]any{}
 	err = json.Unmarshal(cseTkgVersionsJson, &versionsMap)
 	if err != nil {
 		return result, err
@@ -352,28 +352,27 @@ func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, 
 	// The map checking above guarantees that all splits and replaces will work
 	result.KubernetesVersion = strings.Split(parsedOvaName, "-")[0]
 	result.TkrVersion = strings.ReplaceAll(strings.Split(parsedOvaName, "-")[0], "+", "---") + "-" + strings.Split(parsedOvaName, "-")[1]
-	result.TkgVersion = versionMap.(map[string]interface{})["tkg"].(string)
-	result.EtcdVersion = versionMap.(map[string]interface{})["etcd"].(string)
-	result.CoreDnsVersion = versionMap.(map[string]interface{})["coreDns"].(string)
+	result.TkgVersion = versionMap.(map[string]any)["tkg"].(string)
+	result.EtcdVersion = versionMap.(map[string]any)["etcd"].(string)
+	result.CoreDnsVersion = versionMap.(map[string]any)["coreDns"].(string)
 	return result, nil
 }
 
 // getMachineHealthCheck gets the required information from the CSE Server configuration RDE
-func getMachineHealthCheck(client *Client, cseVersion string, isNodeHealthCheckActive bool) (*machineHealthCheck, error) {
+func getMachineHealthCheck(client *Client, vcdKeConfigVersion string, isNodeHealthCheckActive bool) (*machineHealthCheck, error) {
 	if !isNodeHealthCheckActive {
 		return nil, nil
 	}
-	currentCseVersion := supportedCseVersions[cseVersion]
 
-	rdes, err := getRdesByName(client, "vmware", "VCDKEConfig", currentCseVersion[0], "vcdKeConfig")
+	rdes, err := getRdesByName(client, "vmware", "VCDKEConfig", vcdKeConfigVersion, "vcdKeConfig")
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", currentCseVersion[0], err)
+		return nil, fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", vcdKeConfigVersion, err)
 	}
 	if len(rdes) != 1 {
 		return nil, fmt.Errorf("expected exactly one VCDKEConfig RDE but got %d", len(rdes))
 	}
 	// TODO: Get the struct Type for this one
-	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]interface{})
+	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]any)
 	if !ok {
 		return nil, fmt.Errorf("wrong format of VCDKEConfig, expected a 'profiles' array")
 	}
@@ -381,9 +380,11 @@ func getMachineHealthCheck(client *Client, cseVersion string, isNodeHealthCheckA
 		return nil, fmt.Errorf("wrong format of VCDKEConfig, expected a single 'profiles' element, got %d", len(profiles))
 	}
 
-	// TODO: Get the struct Type for this one
+	mhc, ok := profiles[0].(map[string]any)["K8Config"].(map[string]any)["mhc"].(map[string]any)
+	if !ok {
+		return nil, nil
+	}
 	result := machineHealthCheck{}
-	mhc := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"].(map[string]interface{})
 	result.MaxUnhealthyNodesPercentage = mhc["maxUnhealthyNodes"].(float64)
 	result.NodeStartupTimeout = mhc["nodeStartupTimeout"].(string)
 	result.NodeNotReadyTimeout = mhc["nodeUnknownTimeout"].(string)
@@ -403,7 +404,7 @@ func getContainerRegistryUrl(client *Client, cseVersion string) (string, error) 
 		return "", fmt.Errorf("expected exactly one VCDKEConfig RDE but got %d", len(rdes))
 	}
 	// TODO: Get the struct Type for this one
-	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]interface{})
+	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]any)
 	if !ok {
 		return "", fmt.Errorf("wrong format of VCDKEConfig, expected a 'profiles' array")
 	}
@@ -411,7 +412,7 @@ func getContainerRegistryUrl(client *Client, cseVersion string) (string, error) 
 		return "", fmt.Errorf("wrong format of VCDKEConfig, expected a single 'profiles' element, got %d", len(profiles))
 	}
 	// TODO: Check airgapped environments: https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.1.1a/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.1.1/GUID-F00BE796-B5F2-48F2-A012-546E2E694400.html
-	return fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"].(string)), nil
+	return fmt.Sprintf("%s/tkg", profiles[0].(map[string]any)["containerRegistryUrl"].(string)), nil
 }
 
 func getCseTemplate(cseVersion, templateName string) (string, error) {

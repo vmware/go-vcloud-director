@@ -30,9 +30,11 @@ type CseClusterApiProviderCluster struct {
 	Owner  string
 	Etag   string
 	client *Client
+
 	// TODO: Updated fields are inside the YAML file, like if you update the Control Plane replicas, you need to inspect
 	// the YAML to get the updated value. Inspecting Capvcd fields will do nothing. So I need to put here this information
 	// for convenience.
+	CseVersion string
 }
 
 // CseClusterCreateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
@@ -98,6 +100,10 @@ type CseClusterUpdateInput struct {
 	NewWorkerPools          *[]CseWorkerPoolCreateInput
 	NodeHealthCheck         *bool
 	AutoRepairOnErrors      *bool
+
+	// Private fields that are computed, not requested to the consumer of this struct
+	vcdKeConfigVersion string
+	clusterName        string
 }
 
 // CseControlPlaneUpdateInput defines the required elements that the consumer of these Container Service Extension (CSE) methods
@@ -242,6 +248,7 @@ func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput)
 	if err != nil {
 		return err
 	}
+
 	if cluster.Capvcd.Status.VcdKe.State == "" {
 		return fmt.Errorf("can't update a Kubernetes cluster that does not have any state")
 	}
@@ -252,6 +259,10 @@ func (cluster *CseClusterApiProviderCluster) Update(input CseClusterUpdateInput)
 	if input.AutoRepairOnErrors != nil {
 		cluster.Capvcd.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
 	}
+
+	// Computed attributes that are required, such as the VcdKeConfig version
+	input.clusterName = cluster.Capvcd.Name
+	input.vcdKeConfigVersion = cluster.Capvcd.Status.VcdKe.VcdKeVersion
 	updatedCapiYaml, err := cseUpdateCapiYaml(cluster.client, cluster.Capvcd.Spec.CapiYaml, input)
 	if err != nil {
 		return err
