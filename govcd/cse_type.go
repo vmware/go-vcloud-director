@@ -18,16 +18,18 @@ type CseKubernetesCluster struct {
 	CpiVersion                 string
 	CsiVersion                 string
 	State                      string
-	Kubeconfig                 string
 	Events                     []CseClusterEvent
 
 	client     *Client
 	capvcdType *types.Capvcd
+
+	nameToIdCache map[string]string // This helps to reduce calls to VCD drastically, specially when doing item Name->ID transformations inside loops
 }
 
 // CseClusterEvent is an event that has occurred during the lifetime of a Container Service Extension (CSE) Kubernetes cluster.
 type CseClusterEvent struct {
 	Name       string
+	Type       string
 	OccurredAt time.Time
 	Details    string
 }
@@ -128,11 +130,10 @@ type cseClusterSettingsInternal struct {
 	ControlPlane              cseControlPlaneSettingsInternal
 	WorkerPools               []cseWorkerPoolSettingsInternal
 	DefaultStorageClass       cseDefaultStorageClassInternal
-	MachineHealthCheck        *cseMachineHealthCheckInternal
+	VcdKeConfig               vcdKeConfig
 	Owner                     string
 	ApiToken                  string
 	VcdUrl                    string
-	ContainerRegistryUrl      string
 	VirtualIpSubnet           string
 	SshPublicKey              string
 	PodCidr                   string
@@ -169,29 +170,28 @@ type cseDefaultStorageClassInternal struct {
 	Filesystem             string
 }
 
-// cseMachineHealthCheckInternal is a type that contains only the required and relevant fields from the VCDKEConfig (CSE Server) configuration,
+// vcdKeConfig is a type that contains only the required and relevant fields from the VCDKEConfig (CSE Server) configuration,
 // such as the Machine Health Check settings.
-type cseMachineHealthCheckInternal struct {
+type vcdKeConfig struct {
 	MaxUnhealthyNodesPercentage float64
 	NodeStartupTimeout          string
 	NodeNotReadyTimeout         string
 	NodeUnknownTimeout          string
+	ContainerRegistryUrl        string
 }
+
+// cseComponentVersions is a type that registers the versions of the subcomponents of a specific CSE Version
+type cseComponentVersions struct {
+	VcdKeConfigRdeTypeVersion string
+	CapvcdRdeTypeVersion      string
+	CseInterfaceVersion       string
+}
+
+// cseVersions is a map that links a CSE Version with the versions of its subcomponents
+type cseVersions map[string]cseComponentVersions
 
 // This collection of files contains all the Go Templates and resources required for the Container Service Extension (CSE) methods
 // to work.
 //
 //go:embed cse
 var cseFiles embed.FS
-
-// supportedCseVersions is a map that contains only the supported CSE versions as keys,
-// and its corresponding components versions as a slice of strings. The first string is the VCDKEConfig RDE Type version,
-// then the CAPVCD RDE Type version and finally the CAPVCD Behavior version.
-// TODO: Is this really necessary? What happens in UI if I have a 1.1.0-1.2.0-1.0.0 (4.2) cluster and then CSE is updated to 4.3?
-var supportedCseVersions = map[string][]string{
-	"4.2": {
-		"1.1.0", // VCDKEConfig RDE Type version
-		"1.2.0", // CAPVCD RDE Type version
-		"1.0.0", // CAPVCD Behavior version
-	},
-}

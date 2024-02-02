@@ -176,7 +176,7 @@ func cseAddWorkerPoolsInYaml(docs []map[string]any, inputs []CseWorkerPoolSettin
 	return nil, nil
 }
 
-func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, machineHealthCheck *cseMachineHealthCheckInternal) ([]map[string]any, error) {
+func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, vcdKeConfig *vcdKeConfig) ([]map[string]any, error) {
 	mhcPosition := -1
 	result := make([]map[string]any, len(yamlDocuments))
 	for i, d := range yamlDocuments {
@@ -188,13 +188,13 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName 
 
 	if mhcPosition < 0 {
 		// There is no MachineHealthCheck block
-		if machineHealthCheck == nil {
+		if vcdKeConfig == nil {
 			// We don't want it neither, so nothing to do
 			return result, nil
 		}
 
 		// We need to add the block to the slice of YAML documents
-		mhcYaml, err := generateMemoryHealthCheckYaml(machineHealthCheck, "4.2", clusterName)
+		mhcYaml, err := generateMemoryHealthCheckYaml(*vcdKeConfig, "4.2", clusterName)
 		if err != nil {
 			return nil, err
 		}
@@ -206,7 +206,7 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName 
 		result = append(result, mhc)
 	} else {
 		// There is a MachineHealthCheck block
-		if machineHealthCheck != nil {
+		if vcdKeConfig != nil {
 			// We want it, but it is already there, so nothing to do
 			// TODO: What happens in UI if the VCDKEConfig MHC values are changed, does it get reflected in the cluster?
 			//       If that's the case, we might need to update this value always
@@ -273,11 +273,11 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 	}
 
 	if input.NodeHealthCheck != nil {
-		mhcSettings, err := getMachineHealthCheck(client, input.vcdKeConfigVersion, *input.NodeHealthCheck)
+		vcdKeConfig, err := getVcdKeConfig(client, input.vcdKeConfigVersion, *input.NodeHealthCheck)
 		if err != nil {
 			return "", err
 		}
-		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, input.clusterName, mhcSettings)
+		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, input.clusterName, &vcdKeConfig)
 		if err != nil {
 			return "", err
 		}

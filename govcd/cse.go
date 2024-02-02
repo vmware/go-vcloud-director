@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+// supportedCseVersions is a map that contains only the supported CSE versions with the versions of its subcomponents.
+// TODO: Is this really necessary? What happens in UI if I have a 1.1.0-1.2.0-1.0.0 (4.2) cluster and then CSE is updated to 4.3?
+var supportedCseVersions = cseVersions{
+	"4.2": {
+		VcdKeConfigRdeTypeVersion: "1.1.0",
+		CapvcdRdeTypeVersion:      "1.2.0",
+		CseInterfaceVersion:       "1.0.0",
+	},
+}
+
 // CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterSettings). If the given
 // timeout is 0, it waits forever for the cluster creation. Otherwise, if the timeout is reached and the cluster is not available
 // (in "provisioned" state), it will return an error (the cluster will be left in VCD in any state) and the latest status
@@ -32,7 +42,11 @@ func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeo
 // wait for the creation process to finish, so it doesn't monitor for any errors during the process. It returns just the ID of
 // the created cluster. One can manually check the status of the cluster with Org.CseGetKubernetesClusterById and the result of this method.
 func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) (string, error) {
-	goTemplateContents, err := cseClusterSettingsToInternal(clusterData, org)
+	if org == nil {
+		return "", fmt.Errorf("receiver Organization is nil")
+	}
+
+	goTemplateContents, err := cseClusterSettingsToInternal(clusterData, *org)
 	if err != nil {
 		return "", err
 	}
@@ -42,7 +56,7 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 		return "", err
 	}
 
-	rde, err := createRdeAndPoll(org.client, "vmware", "capvcdCluster", supportedCseVersions[clusterData.CseVersion][1], types.DefinedEntity{
+	rde, err := createRdeAndPoll(org.client, "vmware", "capvcdCluster", supportedCseVersions[clusterData.CseVersion].CapvcdRdeTypeVersion, types.DefinedEntity{
 		EntityType: goTemplateContents.RdeType.ID,
 		Name:       goTemplateContents.Name,
 		Entity:     rdeContents,
@@ -67,7 +81,24 @@ func (org *Org) CseGetKubernetesClusterById(id string) (*CseKubernetesCluster, e
 	if rde.DefinedEntity.Org.ID != org.Org.ID {
 		return nil, fmt.Errorf("could not find any Kubernetes cluster with ID '%s' in Organization '%s': %s", id, org.Org.Name, ErrorEntityNotFound)
 	}
-	return cseConvertToCseClusterApiProviderClusterType(rde)
+	return cseConvertToCseKubernetesClusterType(rde, nil)
+}
+
+// GetKubeconfig retrieves the Kubeconfig from an available cluster.
+func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
+	rde, err := getRdeById(cluster.client, cluster.ID)
+	if err != nil {
+		return "", err
+	}
+	var capvcd types.Capvcd
+	err = rde.InvokeBehaviorAndMarshal("", types.BehaviorInvocation{}, &capvcd)
+	if err != nil {
+		return "", err
+	}
+	if capvcd.Status.Capvcd.Private.KubeConfig == "" {
+		return "", fmt.Errorf("could not retrieve the Kubeconfig from the invocation of the Behavior")
+	}
+	return capvcd.Status.Capvcd.Private.KubeConfig, nil
 }
 
 // Refresh gets the latest information about the receiver cluster and updates its properties.
@@ -76,7 +107,8 @@ func (cluster *CseKubernetesCluster) Refresh() error {
 	if err != nil {
 		return err
 	}
-	refreshed, err := cseConvertToCseClusterApiProviderClusterType(rde)
+	cluster.nameToIdCache = nil // We deliberately want to refresh everything
+	refreshed, err := cseConvertToCseKubernetesClusterType(rde, cluster.nameToIdCache)
 	if err != nil {
 		return err
 	}
@@ -253,11 +285,10 @@ func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error 
 			rde.DefinedEntity.Entity["spec"].(map[string]interface{})["vcdKe"] = vcdKe
 			err = rde.Update(*rde.DefinedEntity)
 			if err != nil {
-				if strings.Contains(strings.ToLower(err.Error()), "etag") {
-					continue // We ignore any ETag error. This just means a clash with the CSE Server, we just try again
-					// FIXME: No sleep here
+				// We ignore any ETag error. This just means a clash with the CSE Server, we just try again
+				if !strings.Contains(strings.ToLower(err.Error()), "etag") {
+					return fmt.Errorf("could not mark the Kubernetes cluster with ID '%s' to be deleted: %s", cluster.ID, err)
 				}
-				return fmt.Errorf("could not mark the Kubernetes cluster with ID '%s' to be deleted: %s", cluster.ID, err)
 			}
 		}
 

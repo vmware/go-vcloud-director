@@ -12,6 +12,7 @@ import (
 	. "gopkg.in/check.v1"
 	"net/url"
 	"os"
+	"strings"
 )
 
 const (
@@ -41,6 +42,8 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 
 	ova, err := catalog.GetVAppTemplateByName(vcd.config.Cse.OvaName)
 	check.Assert(err, IsNil)
+	tkgBundle, err := getTkgVersionBundleFromVAppTemplateName(ova.VAppTemplate.Name)
+	check.Assert(err, IsNil)
 
 	vdc, err := org.GetVDCByName(vcd.config.Cse.TenantVdc, false)
 	check.Assert(err, IsNil)
@@ -64,9 +67,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	apiToken, err := token.GetInitialApiToken()
 	check.Assert(err, IsNil)
 
-	workerPoolName := "worker-pool-1"
-
-	cluster, err := org.CseCreateKubernetesCluster(CseClusterSettings{
+	clusterSettings := CseClusterSettings{
 		Name:                    "test-cse",
 		OrganizationId:          org.Org.ID,
 		VdcId:                   vdc.Vdc.ID,
@@ -81,7 +82,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 			Ip:               "",
 		},
 		WorkerPools: []CseWorkerPoolSettings{{
-			Name:             workerPoolName,
+			Name:             "worker-pool-1",
 			MachineCount:     1,
 			DiskSizeGi:       20,
 			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
@@ -99,11 +100,28 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		PodCidr:            "100.96.0.0/11",
 		ServiceCidr:        "100.64.0.0/13",
 		AutoRepairOnErrors: true,
-	}, 0)
+	}
+
+	cluster, err := org.CseCreateKubernetesCluster(clusterSettings, 0)
 	check.Assert(err, IsNil)
-	check.Assert(cluster.ID, Not(Equals), "")
+	check.Assert(true, Equals, strings.Contains(cluster.ID, "urn:vcloud:entity:vmware:capvcdCluster:"))
 	check.Assert(cluster.Etag, Not(Equals), "")
-	check.Assert(cluster.capvcdType.Status.VcdKe.State, Equals, "provisioned")
+	check.Assert(cluster.CseClusterSettings, DeepEquals, clusterSettings)
+	check.Assert(cluster.KubernetesVersion, Equals, tkgBundle.KubernetesVersion)
+	check.Assert(cluster.TkgVersion, Equals, tkgBundle.TkgVersion)
+	check.Assert(cluster.CapvcdVersion, Not(Equals), "")
+	check.Assert(cluster.CpiVersion, Not(Equals), "")
+	check.Assert(cluster.CsiVersion, Not(Equals), "")
+	check.Assert(len(cluster.ClusterResourceSetBindings), Not(Equals), 0)
+	check.Assert(cluster.State, Equals, "provisioned")
+	check.Assert(len(cluster.Events), Not(Equals), 0)
+
+	kubeconfig, err := cluster.GetKubeconfig()
+	check.Assert(err, IsNil)
+	check.Assert(true, Equals, strings.Contains(kubeconfig, cluster.Name))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-certificate-data"))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "certificate-authority-data"))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-key-data"))
 
 	err = cluster.Refresh()
 	check.Assert(err, IsNil)
@@ -119,18 +137,18 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	// Update worker pool from 1 node to 2
 	// Pre-check. This should be 1, as it was created with just 1 pool
 	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {
-		if nodePool.Name == workerPoolName {
+		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
 			check.Assert(nodePool.DesiredReplicas, Equals, 1)
 		}
 	}
 	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}})
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {MachineCount: 2}})
 	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool := false
 	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {
-		if nodePool.Name == workerPoolName {
+		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
 			foundWorkerPool = true
 			check.Assert(nodePool.DesiredReplicas, Equals, 2)
 		}

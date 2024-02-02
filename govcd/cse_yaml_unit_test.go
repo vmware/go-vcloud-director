@@ -275,7 +275,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 	}
 
 	// Enables Machine Health Check
-	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, &cseMachineHealthCheckInternal{
+	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, &vcdKeConfig{
 		MaxUnhealthyNodesPercentage: 12,
 		NodeStartupTimeout:          "34",
 		NodeNotReadyTimeout:         "56",

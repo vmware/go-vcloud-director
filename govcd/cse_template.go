@@ -14,7 +14,7 @@ import (
 // getCseKubernetesClusterCreationPayload gets the payload for the RDE that will trigger a Kubernetes cluster creation.
 // It generates a valid YAML that is embedded inside the RDE JSON, then it is returned as an unmarshaled
 // generic map, that allows to be sent to VCD as it is.
-func getCseKubernetesClusterCreationPayload(goTemplateContents *cseClusterSettingsInternal) (map[string]interface{}, error) {
+func getCseKubernetesClusterCreationPayload(goTemplateContents cseClusterSettingsInternal) (map[string]interface{}, error) {
 	capiYaml, err := generateCapiYaml(goTemplateContents)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func getCseKubernetesClusterCreationPayload(goTemplateContents *cseClusterSettin
 }
 
 // generateNodePoolYaml generates YAML blocks corresponding to the Kubernetes node pools.
-func generateNodePoolYaml(clusterDetails *cseClusterSettingsInternal) (string, error) {
+func generateNodePoolYaml(clusterDetails cseClusterSettingsInternal) (string, error) {
 	workerPoolTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_workerpool")
 	if err != nil {
 		return "", err
@@ -105,8 +105,9 @@ func generateNodePoolYaml(clusterDetails *cseClusterSettingsInternal) (string, e
 }
 
 // generateMemoryHealthCheckYaml generates a YAML block corresponding to the Kubernetes memory health check.
-func generateMemoryHealthCheckYaml(mhcSettings *cseMachineHealthCheckInternal, cseVersion, clusterName string) (string, error) {
-	if mhcSettings == nil {
+func generateMemoryHealthCheckYaml(vcdKeConfig vcdKeConfig, cseVersion, clusterName string) (string, error) {
+	if vcdKeConfig.NodeStartupTimeout == "" && vcdKeConfig.NodeUnknownTimeout == "" && vcdKeConfig.NodeNotReadyTimeout == "" &&
+		vcdKeConfig.MaxUnhealthyNodesPercentage == 0 {
 		return "", nil
 	}
 
@@ -121,10 +122,10 @@ func generateMemoryHealthCheckYaml(mhcSettings *cseMachineHealthCheckInternal, c
 	if err := mhcEmptyTmpl.Execute(buf, map[string]string{
 		"ClusterName":                clusterName,
 		"TargetNamespace":            clusterName + "-ns",
-		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", mhcSettings.MaxUnhealthyNodesPercentage), // With the 'percentage' suffix
-		"NodeStartupTimeout":         fmt.Sprintf("%ss", mhcSettings.NodeStartupTimeout),             // With the 'second' suffix
-		"NodeUnknownTimeout":         fmt.Sprintf("%ss", mhcSettings.NodeUnknownTimeout),             // With the 'second' suffix
-		"NodeNotReadyTimeout":        fmt.Sprintf("%ss", mhcSettings.NodeNotReadyTimeout),            // With the 'second' suffix
+		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", vcdKeConfig.MaxUnhealthyNodesPercentage), // With the 'percentage' suffix
+		"NodeStartupTimeout":         fmt.Sprintf("%ss", vcdKeConfig.NodeStartupTimeout),             // With the 'second' suffix
+		"NodeUnknownTimeout":         fmt.Sprintf("%ss", vcdKeConfig.NodeUnknownTimeout),             // With the 'second' suffix
+		"NodeNotReadyTimeout":        fmt.Sprintf("%ss", vcdKeConfig.NodeNotReadyTimeout),            // With the 'second' suffix
 	}); err != nil {
 		return "", fmt.Errorf("could not generate a correct Memory Health Check YAML: %s", err)
 	}
@@ -135,7 +136,7 @@ func generateMemoryHealthCheckYaml(mhcSettings *cseMachineHealthCheckInternal, c
 // generateCapiYaml generates the YAML string that is required during Kubernetes cluster creation, to be embedded
 // in the CAPVCD cluster JSON payload. This function picks data from the Terraform schema and the createClusterDto to
 // populate several Go templates and build a final YAML.
-func generateCapiYaml(clusterDetails *cseClusterSettingsInternal) (string, error) {
+func generateCapiYaml(clusterDetails cseClusterSettingsInternal) (string, error) {
 	clusterTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_cluster")
 	if err != nil {
 		return "", err
@@ -150,7 +151,7 @@ func generateCapiYaml(clusterDetails *cseClusterSettingsInternal) (string, error
 		return "", err
 	}
 
-	memoryHealthCheckYaml, err := generateMemoryHealthCheckYaml(clusterDetails.MachineHealthCheck, clusterDetails.CseVersion, clusterDetails.Name)
+	memoryHealthCheckYaml, err := generateMemoryHealthCheckYaml(clusterDetails.VcdKeConfig, clusterDetails.CseVersion, clusterDetails.Name)
 	if err != nil {
 		return "", err
 	}
@@ -178,7 +179,7 @@ func generateCapiYaml(clusterDetails *cseClusterSettingsInternal) (string, error
 		"ControlPlaneEndpoint":        clusterDetails.ControlPlane.Ip,
 		"DnsVersion":                  clusterDetails.TkgVersionBundle.CoreDnsVersion,
 		"EtcdVersion":                 clusterDetails.TkgVersionBundle.EtcdVersion,
-		"ContainerRegistryUrl":        clusterDetails.ContainerRegistryUrl,
+		"ContainerRegistryUrl":        clusterDetails.VcdKeConfig.ContainerRegistryUrl,
 		"KubernetesVersion":           clusterDetails.TkgVersionBundle.KubernetesVersion,
 		"SshPublicKey":                clusterDetails.SshPublicKey,
 		"VirtualIpSubnet":             clusterDetails.VirtualIpSubnet,

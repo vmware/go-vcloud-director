@@ -15,7 +15,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-// orgInfoCache is a cache to save org information, avoid repeated calls to compute the same result.
+// orgInfoCache is a nameToIdCache to save org information, avoid repeated calls to compute the same result.
 // The keys to this map are the requesting objects IDs.
 var orgInfoCache = make(map[string]*TenantContext)
 

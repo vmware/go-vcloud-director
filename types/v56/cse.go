@@ -8,6 +8,9 @@ type Capvcd struct {
 	Kind string `json:"kind"`
 	Spec struct {
 		VcdKe struct {
+			Secure struct {
+				ApiToken string `json:"apiToken"`
+			} `json:"secure"`
 			IsVCDKECluster             bool `json:"isVCDKECluster"`
 			AutoRepairOnErrors         bool `json:"autoRepairOnErrors"`
 			DefaultStorageClassOptions struct {
@@ -73,6 +76,9 @@ type Capvcd struct {
 		Capvcd struct {
 			Uid     string `json:"uid"`
 			Phase   string `json:"phase"`
+			Private struct {
+				KubeConfig string `json:"kubeConfig"`
+			} `json:"private"`
 			Upgrade struct {
 				Ready   bool `json:"ready"`
 				Current struct {
