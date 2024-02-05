@@ -2,6 +2,7 @@ package govcd
 
 import (
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"sigs.k8s.io/yaml"
 	"strings"
 )
@@ -176,7 +177,7 @@ func cseAddWorkerPoolsInYaml(docs []map[string]any, inputs []CseWorkerPoolSettin
 	return nil, nil
 }
 
-func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, vcdKeConfig *vcdKeConfig) ([]map[string]any, error) {
+func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, cseVersion semver.Version, vcdKeConfig *vcdKeConfig) ([]map[string]any, error) {
 	mhcPosition := -1
 	result := make([]map[string]any, len(yamlDocuments))
 	for i, d := range yamlDocuments {
@@ -194,7 +195,7 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName 
 		}
 
 		// We need to add the block to the slice of YAML documents
-		mhcYaml, err := generateMemoryHealthCheckYaml(*vcdKeConfig, "4.2", clusterName)
+		mhcYaml, err := generateMemoryHealthCheckYaml(*vcdKeConfig, cseVersion, clusterName)
 		if err != nil {
 			return nil, err
 		}
@@ -277,7 +278,7 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 		if err != nil {
 			return "", err
 		}
-		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, input.clusterName, &vcdKeConfig)
+		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, input.clusterName, input.cseVersion, &vcdKeConfig)
 		if err != nil {
 			return "", err
 		}

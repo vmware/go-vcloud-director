@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"net/url"
@@ -67,13 +68,17 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	apiToken, err := token.GetInitialApiToken()
 	check.Assert(err, IsNil)
 
+	cseVersion, err := semver.NewVersion("4.1")
+	check.Assert(err, IsNil)
+	check.Assert(cseVersion, NotNil)
+
 	clusterSettings := CseClusterSettings{
 		Name:                    "test-cse",
 		OrganizationId:          org.Org.ID,
 		VdcId:                   vdc.Vdc.ID,
 		NetworkId:               net.OrgVDCNetwork.ID,
 		KubernetesTemplateOvaId: ova.VAppTemplate.ID,
-		CseVersion:              "4.2",
+		CseVersion:              *cseVersion,
 		ControlPlane: CseControlPlaneSettings{
 			MachineCount:     1,
 			DiskSizeGi:       20,
@@ -142,7 +147,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		}
 	}
 	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {MachineCount: 2}})
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {MachineCount: 2}}, true)
 	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
@@ -172,16 +177,23 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 
 	workerPoolName := "cse-test1-worker-node-pool-1"
 
+	kubeconfig, err := cluster.GetKubeconfig()
+	check.Assert(err, IsNil)
+	check.Assert(true, Equals, strings.Contains(kubeconfig, cluster.Name))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-certificate-data"))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "certificate-authority-data"))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-key-data"))
+
 	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}})
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 1}}, true)
 	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool := false
-	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {
+	for _, nodePool := range cluster.WorkerPools {
 		if nodePool.Name == workerPoolName {
 			foundWorkerPool = true
-			check.Assert(nodePool.DesiredReplicas, Equals, 2)
+			check.Assert(nodePool.MachineCount, Equals, 1)
 		}
 	}
 	check.Assert(foundWorkerPool, Equals, true)

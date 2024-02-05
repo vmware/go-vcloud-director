@@ -9,16 +9,6 @@ import (
 	"time"
 )
 
-// supportedCseVersions is a map that contains only the supported CSE versions with the versions of its subcomponents.
-// TODO: Is this really necessary? What happens in UI if I have a 1.1.0-1.2.0-1.0.0 (4.2) cluster and then CSE is updated to 4.3?
-var supportedCseVersions = cseVersions{
-	"4.2": {
-		VcdKeConfigRdeTypeVersion: "1.1.0",
-		CapvcdRdeTypeVersion:      "1.2.0",
-		CseInterfaceVersion:       "1.0.0",
-	},
-}
-
 // CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterSettings). If the given
 // timeout is 0, it waits forever for the cluster creation.
 //
@@ -60,7 +50,12 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 		return "", err
 	}
 
-	rde, err := createRdeAndPoll(org.client, "vmware", "capvcdCluster", supportedCseVersions[clusterData.CseVersion].CapvcdRdeTypeVersion, types.DefinedEntity{
+	cseSubcomponents, err := getCseComponentsVersions(clusterData.CseVersion)
+	if err != nil {
+		return "", err
+	}
+
+	rde, err := createRdeAndPoll(org.client, "vmware", "capvcdCluster", cseSubcomponents.CapvcdRdeTypeVersion, types.DefinedEntity{
 		EntityType: goTemplateContents.RdeType.ID,
 		Name:       goTemplateContents.Name,
 		Entity:     rdeContents,
@@ -105,68 +100,82 @@ func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var capvcd types.Capvcd
-	err = rde.InvokeBehaviorAndMarshal("", types.BehaviorInvocation{}, &capvcd)
+	versions, err := getCseComponentsVersions(cluster.CseVersion)
 	if err != nil {
 		return "", err
 	}
-	if capvcd.Status.Capvcd.Private.KubeConfig == "" {
+
+	// Auxiliary wrapper of the result, as the invocation returns the full RDE.
+	type invocationResult struct {
+		Capvcd types.Capvcd `json:"entity,omitempty"`
+	}
+	result := invocationResult{}
+	err = rde.InvokeBehaviorAndMarshal(fmt.Sprintf("urn:vcloud:behavior-interface:getFullEntity:cse:capvcd:%s", versions.CseInterfaceVersion), types.BehaviorInvocation{}, &result)
+	if err != nil {
+		return "", err
+	}
+	if result.Capvcd.Status.Capvcd.Private.KubeConfig == "" {
 		return "", fmt.Errorf("could not retrieve the Kubeconfig from the invocation of the Behavior")
 	}
-	return capvcd.Status.Capvcd.Private.KubeConfig, nil
+	return result.Capvcd.Status.Capvcd.Private.KubeConfig, nil
 }
 
 // UpdateWorkerPools executes an update on the receiver cluster to change the existing worker pools.
-func (cluster *CseKubernetesCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput) error {
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+func (cluster *CseKubernetesCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		WorkerPools: &input,
-	})
+	}, refresh)
 }
 
 // AddWorkerPools executes an update on the receiver cluster to add new worker pools.
-func (cluster *CseKubernetesCluster) AddWorkerPools(input []CseWorkerPoolSettings) error {
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+func (cluster *CseKubernetesCluster) AddWorkerPools(input []CseWorkerPoolSettings, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		NewWorkerPools: &input,
-	})
+	}, refresh)
 }
 
 // UpdateControlPlane executes an update on the receiver cluster to change the existing control plane.
-func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpdateInput) error {
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpdateInput, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		ControlPlane: &input,
-	})
+	}, refresh)
 }
 
 // ChangeKubernetesTemplate executes an update on the receiver cluster to change the Kubernetes template of the cluster.
-func (cluster *CseKubernetesCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string) error {
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+func (cluster *CseKubernetesCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		KubernetesTemplateOvaId: &kubernetesTemplateOvaId,
-	})
+	}, refresh)
 }
 
 // SetHealthCheck executes an update on the receiver cluster to enable or disable the machine health check capabilities.
-func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool) error {
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		NodeHealthCheck: &healthCheckEnabled,
-	})
+	}, refresh)
 }
 
 // SetAutoRepairOnErrors executes an update on the receiver cluster to change the flag that controls the auto-repair
-// capabilities of CSE.
-func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool) error {
+// capabilities of CSE. If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		AutoRepairOnErrors: &autoRepairOnErrors,
-	})
+	}, refresh)
 }
 
-// Update executes a synchronous update on the receiver cluster to perform a update on any of the allowed parameters of the cluster. If the given
-// timeout is 0, it waits forever for the cluster update to finish. Otherwise, if the timeout is reached and the cluster is not available,
-// it will return an error (the cluster will be left in VCD in any state) and the latest status of the cluster will be available in the
-// receiver CseKubernetesCluster.
-func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput) error {
-	err := cluster.Refresh()
-	if err != nil {
-		return err
+// Update executes an update on the receiver CSE Kubernetes Cluster on any of the allowed parameters defined in the input type. If refresh=true,
+// it retrieves the latest state of the cluster from VCD before updating (recommended).
+func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh bool) error {
+	if refresh {
+		err := cluster.Refresh()
+		if err != nil {
+			return err
+		}
 	}
 
 	if cluster.capvcdType.Status.VcdKe.State == "" {
@@ -183,6 +192,7 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput) error {
 	// Computed attributes that are required, such as the VcdKeConfig version
 	input.clusterName = cluster.Name
 	input.vcdKeConfigVersion = cluster.capvcdType.Status.VcdKe.VcdKeVersion
+	input.cseVersion = cluster.CseVersion
 	updatedCapiYaml, err := cseUpdateCapiYaml(cluster.client, cluster.capvcdType.Spec.CapiYaml, input)
 	if err != nil {
 		return err

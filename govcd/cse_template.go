@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"strconv"
 	"strings"
 	"text/template"
@@ -105,7 +106,7 @@ func generateNodePoolYaml(clusterDetails cseClusterSettingsInternal) (string, er
 }
 
 // generateMemoryHealthCheckYaml generates a YAML block corresponding to the Kubernetes memory health check.
-func generateMemoryHealthCheckYaml(vcdKeConfig vcdKeConfig, cseVersion, clusterName string) (string, error) {
+func generateMemoryHealthCheckYaml(vcdKeConfig vcdKeConfig, cseVersion semver.Version, clusterName string) (string, error) {
 	if vcdKeConfig.NodeStartupTimeout == "" && vcdKeConfig.NodeUnknownTimeout == "" && vcdKeConfig.NodeNotReadyTimeout == "" &&
 		vcdKeConfig.MaxUnhealthyNodesPercentage == 0 {
 		return "", nil

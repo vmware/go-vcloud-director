@@ -2,6 +2,7 @@ package govcd
 
 import (
 	"embed"
+	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"time"
 )
@@ -11,12 +12,12 @@ type CseKubernetesCluster struct {
 	CseClusterSettings
 	ID                         string
 	Etag                       string
-	KubernetesVersion          string
-	TkgVersion                 string
-	CapvcdVersion              string
+	KubernetesVersion          semver.Version
+	TkgVersion                 semver.Version
+	CapvcdVersion              semver.Version
 	ClusterResourceSetBindings []string
-	CpiVersion                 string
-	CsiVersion                 string
+	CpiVersion                 semver.Version
+	CsiVersion                 semver.Version
 	State                      string
 	Events                     []CseClusterEvent
 
@@ -34,12 +35,12 @@ type CseClusterEvent struct {
 
 // CseClusterSettings defines the required configuration of a Container Service Extension (CSE) Kubernetes cluster.
 type CseClusterSettings struct {
+	CseVersion              semver.Version
 	Name                    string
 	OrganizationId          string
 	VdcId                   string
 	NetworkId               string
 	KubernetesTemplateOvaId string
-	CseVersion              string
 	ControlPlane            CseControlPlaneSettings
 	WorkerPools             []CseWorkerPoolSettings
 	DefaultStorageClass     *CseDefaultStorageClassSettings // Optional
@@ -94,6 +95,7 @@ type CseClusterUpdateInput struct {
 	// Private fields that are computed, not requested to the consumer of this struct
 	vcdKeConfigVersion string
 	clusterName        string
+	cseVersion         semver.Version
 }
 
 // CseControlPlaneUpdateInput defines the required configuration that the Control Plane of the Container Service Extension (CSE) Kubernetes cluster
@@ -116,7 +118,7 @@ type CseWorkerPoolUpdateInput struct {
 // The main difference between CseClusterSettings and this structure is that the first one uses IDs and this one uses names, among
 // other differences like the computed TkgVersionBundle.
 type cseClusterSettingsInternal struct {
-	CseVersion                string
+	CseVersion                semver.Version
 	Name                      string
 	OrganizationName          string
 	VdcName                   string
@@ -178,15 +180,12 @@ type vcdKeConfig struct {
 	ContainerRegistryUrl        string
 }
 
-// cseComponentVersions is a type that registers the versions of the subcomponents of a specific CSE Version
-type cseComponentVersions struct {
+// cseComponentsVersions is a type that registers the versions of the subcomponents of a specific CSE Version
+type cseComponentsVersions struct {
 	VcdKeConfigRdeTypeVersion string
 	CapvcdRdeTypeVersion      string
 	CseInterfaceVersion       string
 }
-
-// cseVersions is a map that links a CSE Version with the versions of its subcomponents
-type cseVersions map[string]cseComponentVersions
 
 // This collection of files contains all the Go Templates and resources required for the Container Service Extension (CSE) methods
 // to work.

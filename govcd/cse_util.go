@@ -4,13 +4,30 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
+
+// getCseComponentsVersions gets the CSE components versions from its version.
+// TODO: Is this really necessary? What happens in UI if I have a 1.1.0-1.2.0-1.0.0 (4.2) cluster and then CSE is updated to 4.3?
+func getCseComponentsVersions(cseVersion semver.Version) (*cseComponentsVersions, error) {
+	v42, _ := semver.NewVersion("4.1")
+
+	if cseVersion.Equal(v42) {
+		return &cseComponentsVersions{
+			VcdKeConfigRdeTypeVersion: "1.1.0",
+			CapvcdRdeTypeVersion:      "1.2.0",
+			CseInterfaceVersion:       "1.0.0",
+		}, nil
+	}
+	return nil, fmt.Errorf("not supported version %s", cseVersion.String())
+}
 
 // cseConvertToCseKubernetesClusterType takes a generic RDE that must represent an existing CSE Kubernetes cluster,
 // and transforms it to an equivalent CseKubernetesCluster object that represents the same cluster, but
@@ -42,24 +59,54 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			Name:               rde.DefinedEntity.Name,
 			ApiToken:           "******", // We can't return this one, we return the "standard" 6-asterisk value
 			AutoRepairOnErrors: capvcd.Spec.VcdKe.AutoRepairOnErrors,
+			ControlPlane:       CseControlPlaneSettings{},
 		},
 		ID:                         rde.DefinedEntity.ID,
 		Etag:                       rde.Etag,
-		KubernetesVersion:          capvcd.Status.Capvcd.Upgrade.Current.KubernetesVersion,
-		TkgVersion:                 capvcd.Status.Capvcd.Upgrade.Current.TkgVersion,
-		CapvcdVersion:              capvcd.Status.Capvcd.CapvcdVersion,
 		ClusterResourceSetBindings: make([]string, len(capvcd.Status.Capvcd.ClusterResourceSetBindings)),
-		CpiVersion:                 capvcd.Status.Cpi.Version,
-		CsiVersion:                 capvcd.Status.Csi.Version,
 		State:                      capvcd.Status.VcdKe.State,
 		client:                     rde.client,
 		capvcdType:                 capvcd,
 	}
+	version, err := semver.NewVersion(capvcd.Status.Capvcd.Upgrade.Current.KubernetesVersion)
+	if err != nil {
+		return nil, fmt.Errorf("could not read Kubernetes version: %s", err)
+	}
+	result.KubernetesVersion = *version
+
+	version, err = semver.NewVersion(capvcd.Status.Capvcd.Upgrade.Current.TkgVersion)
+	if err != nil {
+		return nil, fmt.Errorf("could not read Tkg version: %s", err)
+	}
+	result.TkgVersion = *version
+
+	version, err = semver.NewVersion(capvcd.Status.Capvcd.CapvcdVersion)
+	if err != nil {
+		return nil, fmt.Errorf("could not read Capvcd version: %s", err)
+	}
+	result.CapvcdVersion = *version
+
+	version, err = semver.NewVersion(strings.TrimSpace(capvcd.Status.Cpi.Version)) // Note: We use trim as the version comes with spacing characters
+	if err != nil {
+		return nil, fmt.Errorf("could not read CPI version: %s", err)
+	}
+	result.CpiVersion = *version
+
+	version, err = semver.NewVersion(capvcd.Status.Csi.Version)
+	if err != nil {
+		return nil, fmt.Errorf("could not read CSI version: %s", err)
+	}
+	result.CsiVersion = *version
 
 	// Retrieve the Organization ID
 	for i, binding := range capvcd.Status.Capvcd.ClusterResourceSetBindings {
-		result.ClusterResourceSetBindings[i] = binding.ClusterResourceSetName
+		result.ClusterResourceSetBindings[i] = binding.Name
 	}
+
+	if len(capvcd.Status.Capvcd.ClusterApiStatus.ApiEndpoints) == 0 {
+		return nil, fmt.Errorf("could not get Control Plane endpoint")
+	}
+	result.ControlPlane.Ip = capvcd.Status.Capvcd.ClusterApiStatus.ApiEndpoints[0].Host
 
 	if len(result.capvcdType.Status.Capvcd.VcdProperties.Organizations) == 0 {
 		return nil, fmt.Errorf("could not read Organizations from Capvcd type")
@@ -70,7 +117,26 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	if len(result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs) == 0 {
 		return nil, fmt.Errorf("could not read VDCs from Capvcd type")
 	}
+	// FIXME: This is a workaround, because for some reason the ID contains the VDC name instead of the VDC ID.
+	//        Once this is fixed, this conditional should not be needed anymore.
 	result.VdcId = result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Id
+	if result.VdcId == result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Name {
+		vdcs, err := queryOrgVdcList(rde.client, map[string]string{})
+		if err != nil {
+			return nil, fmt.Errorf("could not get VDC IDs as no VDC was found: %s", err)
+		}
+		found := false
+		for _, vdc := range vdcs {
+			if vdc.Name == result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Name {
+				result.VdcId = fmt.Sprintf("urn:vcloud:vdc:%s", extractUuid(vdc.HREF))
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("could not get VDC IDs as no VDC with name '%s' was found", result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Name)
+		}
+	}
 
 	// Retrieve the Network ID
 	params := url.Values{}
@@ -85,14 +151,12 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	}
 	result.NetworkId = networks[0].OpenApiOrgVdcNetwork.ID
 
-	// Calculate the CSE Version
-	for cseVersion, subcomponents := range supportedCseVersions {
-		if subcomponents.CapvcdRdeTypeVersion == capvcd.Status.Capvcd.CapvcdVersion &&
-			subcomponents.VcdKeConfigRdeTypeVersion == capvcd.Status.VcdKe.VcdKeVersion {
-			result.CseVersion = cseVersion
-			break
-		}
+	// Get the CSE version
+	cseVersion, err := semver.NewVersion(capvcd.Status.VcdKe.VcdKeVersion)
+	if err != nil {
+		return nil, fmt.Errorf("could not read the CSE Version that the cluster uses: %s", err)
 	}
+	result.CseVersion = *cseVersion
 
 	// Retrieve the Owner
 	if rde.DefinedEntity.Owner == nil {
@@ -101,10 +165,25 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	result.Owner = rde.DefinedEntity.Owner.Name
 
 	// Here we retrieve several items that we need from now onwards, like Storage Profiles and Compute Policies
-	storageProfiles, err := getAllStorageProfiles(rde.client)
-	if err != nil {
-		return nil, fmt.Errorf("could not get all the Storage Profiles: %s", err)
+	storageProfiles := map[string]string{}
+	if rde.client.IsSysAdmin {
+		allSp, err := queryAdminOrgVdcStorageProfilesByVdcId(rde.client, result.VdcId)
+		if err != nil {
+			return nil, fmt.Errorf("could not get all the Storage Profiles: %s", err)
+		}
+		for _, recordType := range allSp {
+			storageProfiles[recordType.Name] = fmt.Sprintf("urn:vcloud:vdcstorageProfile:%s", extractUuid(recordType.HREF))
+		}
+	} else {
+		allSp, err := queryOrgVdcStorageProfilesByVdcId(rde.client, result.VdcId)
+		if err != nil {
+			return nil, fmt.Errorf("could not get all the Storage Profiles: %s", err)
+		}
+		for _, recordType := range allSp {
+			storageProfiles[recordType.Name] = fmt.Sprintf("urn:vcloud:vdcstorageProfile:%s", extractUuid(recordType.HREF))
+		}
 	}
+
 	computePolicies, err := getAllVdcComputePoliciesV2(rde.client, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not get all the Compute Policies: %s", err)
@@ -116,9 +195,9 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			ReclaimPolicy: "retain",
 			Filesystem:    result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.Filesystem,
 		}
-		for _, profile := range storageProfiles {
-			if profile.Name == result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName {
-				result.DefaultStorageClass.StorageProfileId = profile.ID
+		for spName, spId := range storageProfiles {
+			if spName == result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName {
+				result.DefaultStorageClass.StorageProfileId = spId
 			}
 		}
 		if result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.UseDeleteReclaimPolicy {
@@ -131,7 +210,10 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		return nil, err
 	}
 
-	var workerPools []CseWorkerPoolSettings
+	// We need a map of worker pools and not a slice, because there are two types of YAML documents
+	// that contain data about a specific worker pool (VCDMachineTemplate and MachineDeployment), and we can get them in no
+	// particular order, so we store the worker pools with their name as key. This way we can easily fetch them and override them.
+	workerPools := map[string]CseWorkerPoolSettings{}
 	for _, yamlDocument := range yamlDocuments {
 		switch yamlDocument["kind"] {
 		case "KubeadmControlPlane":
@@ -149,32 +231,40 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				return nil, fmt.Errorf("expected 'spec.kubeadmConfigSpec.users' slice to not to be empty")
 			}
 			keys, err := traverseMapAndGet[[]string](users[0], "sshAuthorizedKeys")
+			if err != nil && !strings.Contains(err.Error(), "key 'sshAuthorizedKeys' does not exist in input map") {
+				return nil, err
+			}
+			if len(keys) > 0 {
+				result.SshPublicKey = keys[0] // Optional field
+			}
+		case "VCDMachineTemplate":
+			name, err := traverseMapAndGet[string](yamlDocument, "metadata.name")
 			if err != nil {
 				return nil, err
 			}
-			if len(keys) == 0 {
-				return nil, fmt.Errorf("expected 'spec.kubeadmConfigSpec.users[0].sshAuthorizedKeys' slice to not to be empty")
-			}
-			result.SshPublicKey = keys[0]
-		case "VCDMachineTemplate":
 			sizingPolicyName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy")
-			if err != nil || !strings.Contains(err.Error(), "key 'sizingPolicy' does not exist in input map") {
+			if err != nil && !strings.Contains(err.Error(), "key 'sizingPolicy' does not exist in input map") {
 				return nil, err
 			}
 			placementPolicyName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.placementPolicy")
-			if err != nil || !strings.Contains(err.Error(), "key 'placementPolicy' does not exist in input map") {
+			if err != nil && !strings.Contains(err.Error(), "key 'placementPolicy' does not exist in input map") {
 				return nil, err
 			}
 			storageProfileName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.storageProfile")
-			if err != nil || !strings.Contains(err.Error(), "key 'storageProfile' does not exist in input map") {
+			if err != nil && !strings.Contains(err.Error(), "key 'storageProfile' does not exist in input map") {
 				return nil, err
 			}
-			diskSizeGi, err := traverseMapAndGet[float64](yamlDocument, "spec.template.spec.diskSize")
+			diskSizeGiRaw, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.diskSize")
+			if err != nil {
+				return nil, err
+			}
+			diskSizeGi, err := strconv.Atoi(strings.ReplaceAll(diskSizeGiRaw, "Gi", ""))
 			if err != nil {
 				return nil, err
 			}
 
-			if strings.Contains("name", "control-plane-node-pool") {
+			if strings.Contains(name, "control-plane-node-pool") {
+				// This is the single Control Plane
 				for _, policy := range computePolicies {
 					if sizingPolicyName == policy.VdcComputePolicyV2.Name && policy.VdcComputePolicyV2.IsSizingOnly {
 						result.ControlPlane.SizingPolicyId = policy.VdcComputePolicyV2.ID
@@ -182,12 +272,13 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 						result.ControlPlane.PlacementPolicyId = policy.VdcComputePolicyV2.ID
 					}
 				}
-				for _, sp := range storageProfiles {
-					if storageProfileName == sp.Name {
-						result.ControlPlane.StorageProfileId = sp.ID
+				for spName, spId := range storageProfiles {
+					if storageProfileName == spName {
+						result.ControlPlane.StorageProfileId = spId
 					}
 				}
-				result.ControlPlane.DiskSizeGi = int(diskSizeGi)
+
+				result.ControlPlane.DiskSizeGi = diskSizeGi
 
 				// We do it just once for the Control Plane because all VCDMachineTemplate blocks share the same OVA
 				ovaName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template")
@@ -197,8 +288,13 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				// TODO: There is no method to retrieve vApp templates by name....
 				result.KubernetesTemplateOvaId = ovaName
 			} else {
-				workerPool := CseWorkerPoolSettings{}
-
+				// This is one Worker Pool. We need to check the map of worker pools, just in case we already saved the
+				// machine count from MachineDeployment.
+				if _, ok := workerPools[name]; !ok {
+					workerPools[name] = CseWorkerPoolSettings{}
+				}
+				workerPool := workerPools[name]
+				workerPool.Name = name
 				for _, policy := range computePolicies {
 					if sizingPolicyName == policy.VdcComputePolicyV2.Name && policy.VdcComputePolicyV2.IsSizingOnly {
 						workerPool.SizingPolicyId = policy.VdcComputePolicyV2.ID
@@ -208,48 +304,65 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 						workerPool.VGpuPolicyId = policy.VdcComputePolicyV2.ID
 					}
 				}
-				for _, sp := range storageProfiles {
-					if storageProfileName == sp.Name {
-						workerPool.StorageProfileId = sp.ID
+				for spName, spId := range storageProfiles {
+					if storageProfileName == spName {
+						workerPool.StorageProfileId = spId
 					}
 				}
-				workerPool.DiskSizeGi = int(diskSizeGi)
-				workerPools = append(workerPools, workerPool)
+				workerPool.DiskSizeGi = diskSizeGi
+				workerPools[name] = workerPool // Override the worker pool with the updated data
 			}
-		case "VCDCluster":
-			ip, err := traverseMapAndGet[string](yamlDocument, "spec.controlPlaneEndpoint.host")
+		case "MachineDeployment":
+			name, err := traverseMapAndGet[string](yamlDocument, "metadata.name")
 			if err != nil {
 				return nil, err
 			}
-			result.ControlPlane.Ip = ip
-			ip, err = traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet")
+			// This is one Worker Pool. We need to check the map of worker pools, just in case we already saved the
+			// other information from VCDMachineTemplate.
+			if _, ok := workerPools[name]; !ok {
+				workerPools[name] = CseWorkerPoolSettings{}
+			}
+			workerPool := workerPools[name]
+			replicas, err := traverseMapAndGet[float64](yamlDocument, "spec.replicas")
+			if err != nil {
+				return nil, err
+			}
+			workerPool.MachineCount = int(replicas)
+			workerPools[name] = workerPool // Override the worker pool with the updated data
+		case "VCDCluster":
+			subnet, err := traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet")
 			if err == nil {
-				result.VirtualIpSubnet = ip // This is optional
+				result.VirtualIpSubnet = subnet // This is optional
 			}
 		case "Cluster":
-			cidrBlocks, err := traverseMapAndGet[[]string](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
+			cidrBlocks, err := traverseMapAndGet[[]any](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
 			if err != nil {
 				return nil, err
 			}
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.pods.cidrBlocks' item")
 			}
-			result.PodCidr = cidrBlocks[0]
+			result.PodCidr = cidrBlocks[0].(string)
 
-			cidrBlocks, err = traverseMapAndGet[[]string](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
+			cidrBlocks, err = traverseMapAndGet[[]any](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
 			if err != nil {
 				return nil, err
 			}
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.services.cidrBlocks' item")
 			}
-			result.ServiceCidr = cidrBlocks[0]
+			result.ServiceCidr = cidrBlocks[0].(string)
 		case "MachineHealthCheck":
 			// This is quite simple, if we find this document, means that Machine Health Check is enabled
 			result.NodeHealthCheck = true
 		}
 	}
-	result.WorkerPools = workerPools
+	result.WorkerPools = make([]CseWorkerPoolSettings, len(workerPools))
+	i := 0
+	for _, workerPool := range workerPools {
+		result.WorkerPools[i] = workerPool
+		i++
+	}
 
 	return result, nil
 }
@@ -329,8 +442,9 @@ func (input *CseClusterSettings) validate() error {
 	if input.NetworkId == "" {
 		return fmt.Errorf("the Network ID is required")
 	}
-	if _, ok := supportedCseVersions[input.CseVersion]; !ok {
-		return fmt.Errorf("the CSE version '%s' is not supported. Must be one of %v", input.CseVersion, getKeys(supportedCseVersions))
+	_, err = getCseComponentsVersions(input.CseVersion)
+	if err != nil {
+		return fmt.Errorf("the CSE version '%s' is not supported", input.CseVersion.String())
 	}
 	if input.ControlPlane.MachineCount < 1 || input.ControlPlane.MachineCount%2 == 0 {
 		return fmt.Errorf("number of control plane nodes must be odd and higher than 0, but it was '%d'", input.ControlPlane.MachineCount)
@@ -424,9 +538,9 @@ func cseClusterSettingsToInternal(input CseClusterSettings, org Org) (cseCluster
 	}
 	output.NetworkName = network.OrgVDCNetwork.Name
 
-	currentCseVersion, ok := supportedCseVersions[input.CseVersion]
-	if !ok {
-		return output, fmt.Errorf("the CSE version '%s' is not supported. List of supported versions: %v", input.CseVersion, getKeys(supportedCseVersions))
+	currentCseVersion, err := getCseComponentsVersions(input.CseVersion)
+	if err != nil {
+		return output, fmt.Errorf("the CSE version '%s' is not supported: %s", input.CseVersion.String(), err)
 	}
 	rdeType, err := getRdeType(org.client, "vmware", "capvcdCluster", currentCseVersion.CapvcdRdeTypeVersion)
 	if err != nil {
@@ -501,7 +615,12 @@ func cseClusterSettingsToInternal(input CseClusterSettings, org Org) (cseCluster
 		}
 	}
 
-	vcdKeConfig, err := getVcdKeConfig(org.client, supportedCseVersions[input.CseVersion].VcdKeConfigRdeTypeVersion, input.NodeHealthCheck)
+	cseVersions, err := getCseComponentsVersions(input.CseVersion)
+	if err != nil {
+		return output, err
+	}
+
+	vcdKeConfig, err := getVcdKeConfig(org.client, cseVersions.VcdKeConfigRdeTypeVersion, input.NodeHealthCheck)
 	if err != nil {
 		return output, err
 	}
@@ -621,21 +740,11 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheck
 	return result, nil
 }
 
-func getCseTemplate(cseVersion, templateName string) (string, error) {
-	result, err := cseFiles.ReadFile(fmt.Sprintf("cse/%s/%s.tmpl", cseVersion, templateName))
+func getCseTemplate(cseVersion semver.Version, templateName string) (string, error) {
+	cseVersionSegments := cseVersion.Segments()
+	result, err := cseFiles.ReadFile(fmt.Sprintf("cse/%d.%d/%s.tmpl", cseVersionSegments[0], cseVersionSegments[1], templateName))
 	if err != nil {
 		return "", err
 	}
 	return string(result), nil
-}
-
-// getKeys retrieves all the keys from the given map and returns them as a slice
-func getKeys[K comparable, V any](input map[K]V) []K {
-	result := make([]K, len(input))
-	i := 0
-	for k := range input {
-		result[i] = k
-		i++
-	}
-	return result
 }

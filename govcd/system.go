@@ -743,21 +743,6 @@ func getStorageProfileById(client *Client, id string) (*types.VdcStorageProfile,
 	return vdcStorageProfile, nil
 }
 
-// getAllStorageProfiles fetches all VDC Storage Profiles available to use.
-func getAllStorageProfiles(client *Client) ([]*types.VdcStorageProfile, error) {
-	storageProfileHref := client.VCDHREF
-	storageProfileHref.Path += "/admin/vdcStorageProfile"
-
-	vdcStorageProfiles := []*types.VdcStorageProfile{{}}
-
-	_, err := client.ExecuteRequest(storageProfileHref.String(), http.MethodGet, "", "error retrieving all storage profiles: %s", nil, vdcStorageProfiles)
-	if err != nil {
-		return nil, err
-	}
-
-	return vdcStorageProfiles, nil
-}
-
 // GetStorageProfileByHref fetches storage profile using provided HREF.
 // Deprecated: use client.GetStorageProfileByHref or vcdClient.GetStorageProfileByHref
 func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorageProfile, error) {
@@ -1188,6 +1173,38 @@ func QueryAdminOrgVdcStorageProfileByID(vcdCli *VCDClient, id string) (*types.Qu
 		return nil, fmt.Errorf("more than one Storage Profile found with ID %s", id)
 	}
 	return results.Results.AdminOrgVdcStorageProfileRecord[0], nil
+}
+
+// queryAdminOrgVdcStorageProfilesByVdcId finds all Storage Profiles of a VDC
+func queryAdminOrgVdcStorageProfilesByVdcId(client *Client, vdcId string) ([]*types.QueryResultAdminOrgVdcStorageProfileRecordType, error) {
+	if !client.IsSysAdmin {
+		return nil, errors.New("can't query type QueryResultAdminOrgVdcStorageProfileRecordType as Tenant user")
+	}
+	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          types.QtAdminOrgVdcStorageProfile,
+		"filter":        fmt.Sprintf("vdc==%s", url.QueryEscape(vdcId)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results.Results.AdminOrgVdcStorageProfileRecord, nil
+}
+
+// queryOrgVdcStorageProfilesByVdcId finds all Storage Profiles of a VDC
+func queryOrgVdcStorageProfilesByVdcId(client *Client, vdcId string) ([]*types.QueryResultOrgVdcStorageProfileRecordType, error) {
+	if client.IsSysAdmin {
+		return nil, errors.New("can't query type QueryResultOrgVdcStorageProfileRecordType as System administrator")
+	}
+	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":          types.QtOrgVdcStorageProfile,
+		"filter":        fmt.Sprintf("vdc==%s", url.QueryEscape(vdcId)),
+		"filterEncoded": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results.Results.OrgVdcStorageProfileRecord, nil
 }
 
 // QueryOrgVdcStorageProfileByID finds a StorageProfile of VDC by ID

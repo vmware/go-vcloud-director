@@ -3,6 +3,7 @@
 package govcd
 
 import (
+	semver "github.com/hashicorp/go-version"
 	"os"
 	"reflect"
 	"strings"
@@ -261,8 +262,13 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 		t.Fatal("could not find the cluster name in the CAPI YAML test file")
 	}
 
+	v, err := semver.NewVersion("4.1")
+	if err != nil {
+		t.Fatalf("incorrect version: %s", err)
+	}
+
 	// Deactivates Machine Health Check
-	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, nil)
+	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, nil)
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
@@ -275,7 +281,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 	}
 
 	// Enables Machine Health Check
-	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, &vcdKeConfig{
+	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, &vcdKeConfig{
 		MaxUnhealthyNodesPercentage: 12,
 		NodeStartupTimeout:          "34",
 		NodeNotReadyTimeout:         "56",
