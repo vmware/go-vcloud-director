@@ -16,8 +16,10 @@ import (
 // and transforms it to an equivalent CseKubernetesCluster object that represents the same cluster, but
 // it is easy to explore and consume. If the input RDE is not a CSE Kubernetes cluster, this method
 // will obviously return an error.
-// The nameToIdCache maps names with their IDs. This is used to reduce calls to VCD to retrieve this information.
-func cseConvertToCseKubernetesClusterType(rde *DefinedEntity, nameToIdCache map[string]string) (*CseKubernetesCluster, error) {
+//
+// WARNING: Don't use this method inside loops or avoid calling it multiple times in a row, as it performs many queries
+// to VCD.
+func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesCluster, error) {
 	requiredType := "vmware:capvcdCluster"
 
 	if !strings.Contains(rde.DefinedEntity.ID, requiredType) || !strings.Contains(rde.DefinedEntity.EntityType, requiredType) {
@@ -52,12 +54,9 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity, nameToIdCache map[
 		State:                      capvcd.Status.VcdKe.State,
 		client:                     rde.client,
 		capvcdType:                 capvcd,
-		nameToIdCache:              nameToIdCache,
-	}
-	if result.nameToIdCache == nil {
-		result.nameToIdCache = map[string]string{}
 	}
 
+	// Retrieve the Organization ID
 	for i, binding := range capvcd.Status.Capvcd.ClusterResourceSetBindings {
 		result.ClusterResourceSetBindings[i] = binding.ClusterResourceSetName
 	}
@@ -66,47 +65,65 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity, nameToIdCache map[
 		return nil, fmt.Errorf("could not read Organizations from Capvcd type")
 	}
 	result.OrganizationId = result.capvcdType.Status.Capvcd.VcdProperties.Organizations[0].Id
+
+	// Retrieve the VDC ID
 	if len(result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs) == 0 {
 		return nil, fmt.Errorf("could not read VDCs from Capvcd type")
 	}
 	result.VdcId = result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Id
 
-	// To retrieve the Network ID, we check that it is not already cached. If it's not, we retrieve it with
-	// the VDC ID and name filters
-	if _, ok := result.nameToIdCache[result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].OvdcNetworkName]; !ok {
-		params := url.Values{}
-		params.Add("filter", fmt.Sprintf("name==%s", result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].OvdcNetworkName))
-		params = queryParameterFilterAnd("ownerRef.id=="+result.VdcId, params)
-
-		networks, err := getAllOpenApiOrgVdcNetworks(rde.client, params)
-		if err != nil {
-			return nil, fmt.Errorf("could not read Org VDC Network from Capvcd type: %s", err)
-		}
-		if len(networks) != 1 {
-			return nil, fmt.Errorf("expected one Org VDC Network from Capvcd type, but got %d", len(networks))
-		}
-		result.nameToIdCache[result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].OvdcNetworkName] = networks[0].OpenApiOrgVdcNetwork.ID
+	// Retrieve the Network ID
+	params := url.Values{}
+	params.Add("filter", fmt.Sprintf("name==%s", result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].OvdcNetworkName))
+	params = queryParameterFilterAnd("ownerRef.id=="+result.VdcId, params)
+	networks, err := getAllOpenApiOrgVdcNetworks(rde.client, params)
+	if err != nil {
+		return nil, fmt.Errorf("could not read Org VDC Network from Capvcd type: %s", err)
 	}
-	result.NetworkId = result.nameToIdCache[result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].OvdcNetworkName]
+	if len(networks) != 1 {
+		return nil, fmt.Errorf("expected one Org VDC Network from Capvcd type, but got %d", len(networks))
+	}
+	result.NetworkId = networks[0].OpenApiOrgVdcNetwork.ID
 
+	// Calculate the CSE Version
+	for cseVersion, subcomponents := range supportedCseVersions {
+		if subcomponents.CapvcdRdeTypeVersion == capvcd.Status.Capvcd.CapvcdVersion &&
+			subcomponents.VcdKeConfigRdeTypeVersion == capvcd.Status.VcdKe.VcdKeVersion {
+			result.CseVersion = cseVersion
+			break
+		}
+	}
+
+	// Retrieve the Owner
 	if rde.DefinedEntity.Owner == nil {
 		return nil, fmt.Errorf("could not read Owner from RDE")
 	}
 	result.Owner = rde.DefinedEntity.Owner.Name
 
+	// Here we retrieve several items that we need from now onwards, like Storage Profiles and Compute Policies
+	storageProfiles, err := getAllStorageProfiles(rde.client)
+	if err != nil {
+		return nil, fmt.Errorf("could not get all the Storage Profiles: %s", err)
+	}
+	computePolicies, err := getAllVdcComputePoliciesV2(rde.client, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not get all the Compute Policies: %s", err)
+	}
+
 	if result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.K8SStorageClassName != "" { // This would mean there is a Default Storage Class defined
 		result.DefaultStorageClass = &CseDefaultStorageClassSettings{
 			Name:          result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.K8SStorageClassName,
-			ReclaimPolicy: result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName,
-			Filesystem:    result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName,
+			ReclaimPolicy: "retain",
+			Filesystem:    result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.Filesystem,
 		}
-
-		// To retrieve the Storage Profile ID, we check that it is not already cached. If it's not, we retrieve it
-		if _, ok := result.nameToIdCache[result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName]; !ok {
-			// TODO: There is no method to retrieve Storage profiles by name....
-			result.nameToIdCache[result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName] = ""
+		for _, profile := range storageProfiles {
+			if profile.Name == result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName {
+				result.DefaultStorageClass.StorageProfileId = profile.ID
+			}
 		}
-		result.DefaultStorageClass.StorageProfileId = result.nameToIdCache[result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.VcdStorageProfileName]
+		if result.capvcdType.Spec.VcdKe.DefaultStorageClassOptions.UseDeleteReclaimPolicy {
+			result.DefaultStorageClass.ReclaimPolicy = "delete"
+		}
 	}
 
 	yamlDocuments, err := unmarshalMultipleYamlDocuments(result.capvcdType.Spec.CapiYaml)
@@ -114,91 +131,125 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity, nameToIdCache map[
 		return nil, err
 	}
 
-	result.CseVersion = "" // TODO: Get opposite from supportedVersionsMap
-
-	//var workerPools []CseWorkerPoolSettings
+	var workerPools []CseWorkerPoolSettings
 	for _, yamlDocument := range yamlDocuments {
 		switch yamlDocument["kind"] {
 		case "KubeadmControlPlane":
-		// result.ControlPlane.MachineCount
-		// result.SshPublicKey
+			replicas, err := traverseMapAndGet[float64](yamlDocument, "spec.replicas")
+			if err != nil {
+				return nil, err
+			}
+			result.ControlPlane.MachineCount = int(replicas)
+
+			users, err := traverseMapAndGet[[]any](yamlDocument, "spec.kubeadmConfigSpec.users")
+			if err != nil {
+				return nil, err
+			}
+			if len(users) == 0 {
+				return nil, fmt.Errorf("expected 'spec.kubeadmConfigSpec.users' slice to not to be empty")
+			}
+			keys, err := traverseMapAndGet[[]string](users[0], "sshAuthorizedKeys")
+			if err != nil {
+				return nil, err
+			}
+			if len(keys) == 0 {
+				return nil, fmt.Errorf("expected 'spec.kubeadmConfigSpec.users[0].sshAuthorizedKeys' slice to not to be empty")
+			}
+			result.SshPublicKey = keys[0]
 		case "VCDMachineTemplate":
-			// Obtain all name->ID
+			sizingPolicyName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy")
+			if err != nil || !strings.Contains(err.Error(), "key 'sizingPolicy' does not exist in input map") {
+				return nil, err
+			}
+			placementPolicyName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.placementPolicy")
+			if err != nil || !strings.Contains(err.Error(), "key 'placementPolicy' does not exist in input map") {
+				return nil, err
+			}
+			storageProfileName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.storageProfile")
+			if err != nil || !strings.Contains(err.Error(), "key 'storageProfile' does not exist in input map") {
+				return nil, err
+			}
+			diskSizeGi, err := traverseMapAndGet[float64](yamlDocument, "spec.template.spec.diskSize")
+			if err != nil {
+				return nil, err
+			}
+
 			if strings.Contains("name", "control-plane-node-pool") {
+				for _, policy := range computePolicies {
+					if sizingPolicyName == policy.VdcComputePolicyV2.Name && policy.VdcComputePolicyV2.IsSizingOnly {
+						result.ControlPlane.SizingPolicyId = policy.VdcComputePolicyV2.ID
+					} else if placementPolicyName == policy.VdcComputePolicyV2.Name && !policy.VdcComputePolicyV2.IsSizingOnly {
+						result.ControlPlane.PlacementPolicyId = policy.VdcComputePolicyV2.ID
+					}
+				}
+				for _, sp := range storageProfiles {
+					if storageProfileName == sp.Name {
+						result.ControlPlane.StorageProfileId = sp.ID
+					}
+				}
+				result.ControlPlane.DiskSizeGi = int(diskSizeGi)
+
+				// We do it just once for the Control Plane because all VCDMachineTemplate blocks share the same OVA
+				ovaName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template")
+				if err != nil {
+					return nil, err
+				}
 				// TODO: There is no method to retrieve vApp templates by name....
-				// result.KubernetesTemplateOvaId
-				// TODO: There is no method to retrieve vApp templates by name....
-				// getAllVdcComputePoliciesV2()
-				// result.ControlPlane.SizingPolicyId
-				// result.ControlPlane.PlacementPolicyId
-				// result.ControlPlane.StorageProfileId
-				// result.ControlPlane.DiskSizeGi
-				fmt.Print("b")
+				result.KubernetesTemplateOvaId = ovaName
 			} else {
-				fmt.Print("a")
-				//workerPool := CseWorkerPoolSettings{}
-				//workerPools = append(workerPools, workerPool)
+				workerPool := CseWorkerPoolSettings{}
+
+				for _, policy := range computePolicies {
+					if sizingPolicyName == policy.VdcComputePolicyV2.Name && policy.VdcComputePolicyV2.IsSizingOnly {
+						workerPool.SizingPolicyId = policy.VdcComputePolicyV2.ID
+					} else if placementPolicyName == policy.VdcComputePolicyV2.Name && !policy.VdcComputePolicyV2.IsSizingOnly && !policy.VdcComputePolicyV2.IsVgpuPolicy {
+						workerPool.PlacementPolicyId = policy.VdcComputePolicyV2.ID
+					} else if placementPolicyName == policy.VdcComputePolicyV2.Name && !policy.VdcComputePolicyV2.IsSizingOnly && policy.VdcComputePolicyV2.IsVgpuPolicy {
+						workerPool.VGpuPolicyId = policy.VdcComputePolicyV2.ID
+					}
+				}
+				for _, sp := range storageProfiles {
+					if storageProfileName == sp.Name {
+						workerPool.StorageProfileId = sp.ID
+					}
+				}
+				workerPool.DiskSizeGi = int(diskSizeGi)
+				workerPools = append(workerPools, workerPool)
 			}
 		case "VCDCluster":
-		// result.ControlPlane.Ip
-		// result.VirtualIpSubnet
+			ip, err := traverseMapAndGet[string](yamlDocument, "spec.controlPlaneEndpoint.host")
+			if err != nil {
+				return nil, err
+			}
+			result.ControlPlane.Ip = ip
+			ip, err = traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet")
+			if err == nil {
+				result.VirtualIpSubnet = ip // This is optional
+			}
 		case "Cluster":
-		// result.PodCidr
-		// result.ServicesCidr
+			cidrBlocks, err := traverseMapAndGet[[]string](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
+			if err != nil {
+				return nil, err
+			}
+			if len(cidrBlocks) == 0 {
+				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.pods.cidrBlocks' item")
+			}
+			result.PodCidr = cidrBlocks[0]
+
+			cidrBlocks, err = traverseMapAndGet[[]string](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
+			if err != nil {
+				return nil, err
+			}
+			if len(cidrBlocks) == 0 {
+				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.services.cidrBlocks' item")
+			}
+			result.ServiceCidr = cidrBlocks[0]
 		case "MachineHealthCheck":
 			// This is quite simple, if we find this document, means that Machine Health Check is enabled
 			result.NodeHealthCheck = true
 		}
 	}
-
-	// // TODO: This needs a refactoring
-	//		if nodePool.PlacementPolicy != "" {
-	//			policies, err := vcdClient.GetAllVdcComputePoliciesV2(url.Values{
-	//				"filter": []string{fmt.Sprintf("name==%s", nodePool.PlacementPolicy)},
-	//			})
-	//			if err != nil {
-	//				return nil, err // TODO
-	//			}
-	//			nameToIds[nodePool.PlacementPolicy] = policies[0].VdcComputePolicyV2.ID
-	//		}
-	//		if nodePool.SizingPolicy != "" {
-	//			policies, err := vcdClient.GetAllVdcComputePoliciesV2(url.Values{
-	//				"filter": []string{fmt.Sprintf("name==%s", nodePool.SizingPolicy)},
-	//			})
-	//			if err != nil {
-	//				return nil, err // TODO
-	//			}
-	//			nameToIds[nodePool.SizingPolicy] = policies[0].VdcComputePolicyV2.ID
-	//		}
-	//		if nodePool.StorageProfile != "" {
-	//			ref, err := vdc.FindStorageProfileReference(nodePool.StorageProfile)
-	//			if err != nil {
-	//				return nil, fmt.Errorf("could not get Default Storage Class options from 'spec.vcdKe.defaultStorageClassOptions': %s", err) // TODO
-	//			}
-	//			nameToIds[nodePool.StorageProfile] = ref.ID
-	//		}
-	//		block["sizing_policy_id"] = nameToIds[nodePool.SizingPolicy]
-	//		if nodePool.NvidiaGpuEnabled { // TODO: Be sure this is a worker node pool and not control plane (doesnt have this attr)
-	//			block["vgpu_policy_id"] = nameToIds[nodePool.PlacementPolicy] // It's a placement policy here
-	//		} else {
-	//			block["placement_policy_id"] = nameToIds[nodePool.PlacementPolicy]
-	//		}
-	//		block["storage_profile_id"] = nameToIds[nodePool.StorageProfile]
-	//		block["disk_size_gi"] = nodePool.DiskSizeMb / 1024
-	//
-	//		if strings.HasSuffix(nodePool.Name, "-control-plane-node-pool") {
-	//			// Control Plane
-	//			if len(cluster.Capvcd.Status.Capvcd.ClusterApiStatus.ApiEndpoints) == 0 {
-	//				return nil, fmt.Errorf("could not retrieve Cluster IP")
-	//			}
-	//			block["ip"] = cluster.Capvcd.Status.Capvcd.ClusterApiStatus.ApiEndpoints[0].Host
-	//			controlPlaneBlocks[0] = block
-	//		} else {
-	//			// Worker node
-	//			block["name"] = nodePool.Name
-	//
-	//			nodePoolBlocks[i] = block
-	//		}
+	result.WorkerPools = workerPools
 
 	return result, nil
 }
@@ -209,45 +260,50 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity, nameToIdCache map[
 // If one of the states of the cluster at a given point is "error", this function also checks whether the cluster has the "Auto Repair on Errors" flag enabled,
 // so it keeps waiting if it's true.
 // If timeout is reached before the cluster is in "provisioned" state, it returns an error.
-func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinutes time.Duration) (*CseKubernetesCluster, error) {
+func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinutes time.Duration) error {
 	var elapsed time.Duration
 	sleepTime := 10
 
 	start := time.Now()
-	cluster := &CseKubernetesCluster{}
+	capvcd := &types.Capvcd{}
 	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
 		rde, err := getRdeById(client, clusterId)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		cluster, err = cseConvertToCseKubernetesClusterType(rde, cluster.nameToIdCache)
+		// Here we don't to use cseConvertToCseKubernetesClusterType to avoid calling VCD
+		entityBytes, err := json.Marshal(rde.DefinedEntity.Entity)
 		if err != nil {
-			return nil, err
+			return fmt.Errorf("could not marshal the RDE contents to create a capvcdType instance: %s", err)
 		}
 
-		switch cluster.State {
+		err = json.Unmarshal(entityBytes, &capvcd)
+		if err != nil {
+			return fmt.Errorf("could not unmarshal the RDE contents to create a Capvcd instance: %s", err)
+		}
+
+		switch capvcd.Status.VcdKe.State {
 		case "provisioned":
-			return cluster, nil
+			return nil
 		case "error":
 			// We just finish if auto-recovery is disabled, otherwise we just let CSE fixing things in background
-			if !cluster.AutoRepairOnErrors {
+			if !capvcd.Spec.VcdKe.AutoRepairOnErrors {
 				// Give feedback about what went wrong
 				errors := ""
-				for _, event := range cluster.Events {
-					if event.Type == "error" {
-						errors += fmt.Sprintf("%s\n", event.Details)
-					}
+				// TODO: Change to ErrorSet
+				for _, event := range capvcd.Status.Capvcd.EventSet {
+					errors += fmt.Sprintf("%s,\n", event.AdditionalDetails)
 				}
-				return cluster, fmt.Errorf("got an error and 'auto repair on errors' is disabled, aborting. Errors:\n%s", errors)
+				return fmt.Errorf("got an error and 'AutoRepairOnErrors' is disabled, aborting. Errors:\n%s", errors)
 			}
 		}
 
-		util.Logger.Printf("[DEBUG] Cluster '%s' is in '%s' state, will check again in %d seconds", cluster.ID, cluster.State, sleepTime)
+		util.Logger.Printf("[DEBUG] Cluster '%s' is in '%s' state, will check again in %d seconds", rde.DefinedEntity.ID, capvcd.Status.VcdKe.State, sleepTime)
 		elapsed = time.Since(start)
 		time.Sleep(time.Duration(sleepTime) * time.Second)
 	}
-	return cluster, fmt.Errorf("timeout of %d minutes reached, latest cluster state obtained was '%s'", timeoutMinutes, cluster.State)
+	return fmt.Errorf("timeout of %d minutes reached, latest cluster state obtained was '%s'", timeoutMinutes, capvcd.Status.VcdKe.State)
 }
 
 // validate validates the CSE Kubernetes cluster creation input data. Returns an error if some of the fields is wrong.

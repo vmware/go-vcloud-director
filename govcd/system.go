@@ -743,6 +743,21 @@ func getStorageProfileById(client *Client, id string) (*types.VdcStorageProfile,
 	return vdcStorageProfile, nil
 }
 
+// getAllStorageProfiles fetches all VDC Storage Profiles available to use.
+func getAllStorageProfiles(client *Client) ([]*types.VdcStorageProfile, error) {
+	storageProfileHref := client.VCDHREF
+	storageProfileHref.Path += "/admin/vdcStorageProfile"
+
+	vdcStorageProfiles := []*types.VdcStorageProfile{{}}
+
+	_, err := client.ExecuteRequest(storageProfileHref.String(), http.MethodGet, "", "error retrieving all storage profiles: %s", nil, vdcStorageProfiles)
+	if err != nil {
+		return nil, err
+	}
+
+	return vdcStorageProfiles, nil
+}
+
 // GetStorageProfileByHref fetches storage profile using provided HREF.
 // Deprecated: use client.GetStorageProfileByHref or vcdClient.GetStorageProfileByHref
 func GetStorageProfileByHref(vcdClient *VCDClient, url string) (*types.VdcStorageProfile, error) {

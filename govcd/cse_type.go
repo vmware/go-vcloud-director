@@ -22,8 +22,6 @@ type CseKubernetesCluster struct {
 
 	client     *Client
 	capvcdType *types.Capvcd
-
-	nameToIdCache map[string]string // This helps to reduce calls to VCD drastically, specially when doing item Name->ID transformations inside loops
 }
 
 // CseClusterEvent is an event that has occurred during the lifetime of a Container Service Extension (CSE) Kubernetes cluster.

@@ -20,22 +20,26 @@ var supportedCseVersions = cseVersions{
 }
 
 // CseCreateKubernetesCluster creates a Kubernetes cluster with the data given as input (CseClusterSettings). If the given
-// timeout is 0, it waits forever for the cluster creation. Otherwise, if the timeout is reached and the cluster is not available
-// (in "provisioned" state), it will return an error (the cluster will be left in VCD in any state) and the latest status
-// of the cluster in the returned CseKubernetesCluster.
-// If the cluster is created correctly, returns all the data in CseKubernetesCluster.
+// timeout is 0, it waits forever for the cluster creation.
+//
+// If the timeout is reached and the cluster is not available (in "provisioned" state), it will return a non-nil CseKubernetesCluster
+// with only the cluster ID and an error. This means that the cluster will be left in VCD in any state, and it can be retrieved with
+// Org.CseGetKubernetesClusterById manually.
+//
+// If the cluster is created correctly, returns all the available data in CseKubernetesCluster or an error if some of the fields
+// of the created cluster cannot be calculated or retrieved.
 func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeoutMinutes time.Duration) (*CseKubernetesCluster, error) {
 	clusterId, err := org.CseCreateKubernetesClusterAsync(clusterData)
 	if err != nil {
 		return nil, err
 	}
 
-	cluster, err := waitUntilClusterIsProvisioned(org.client, clusterId, timeoutMinutes)
+	err = waitUntilClusterIsProvisioned(org.client, clusterId, timeoutMinutes)
 	if err != nil {
-		return cluster, err // Returns the latest status of the cluster
+		return &CseKubernetesCluster{ID: clusterId}, err
 	}
 
-	return cluster, nil
+	return org.CseGetKubernetesClusterById(clusterId)
 }
 
 // CseCreateKubernetesClusterAsync creates a Kubernetes cluster with the data given as input (CseClusterSettings), but does not
@@ -73,15 +77,26 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 
 // CseGetKubernetesClusterById retrieves a CSE Kubernetes cluster from VCD by its unique ID
 func (org *Org) CseGetKubernetesClusterById(id string) (*CseKubernetesCluster, error) {
-	rde, err := getRdeById(org.client, id)
+	return getCseKubernetesCluster(org.client, id)
+}
+
+// getCseKubernetesCluster retrieves a CSE Kubernetes cluster from VCD by its unique ID
+func getCseKubernetesCluster(client *Client, clusterId string) (*CseKubernetesCluster, error) {
+	rde, err := getRdeById(client, clusterId)
 	if err != nil {
 		return nil, err
 	}
-	// This should be guaranteed by the proper rights, but just in case
-	if rde.DefinedEntity.Org.ID != org.Org.ID {
-		return nil, fmt.Errorf("could not find any Kubernetes cluster with ID '%s' in Organization '%s': %s", id, org.Org.Name, ErrorEntityNotFound)
+	return cseConvertToCseKubernetesClusterType(rde)
+}
+
+// Refresh gets the latest information about the receiver cluster and updates its properties.
+func (cluster *CseKubernetesCluster) Refresh() error {
+	refreshed, err := getCseKubernetesCluster(cluster.client, cluster.ID)
+	if err != nil {
+		return fmt.Errorf("failed refreshing the CSE Kubernetes Cluster: %s", err)
 	}
-	return cseConvertToCseKubernetesClusterType(rde, nil)
+	*cluster = *refreshed
+	return nil
 }
 
 // GetKubeconfig retrieves the Kubeconfig from an available cluster.
@@ -99,22 +114,6 @@ func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
 		return "", fmt.Errorf("could not retrieve the Kubeconfig from the invocation of the Behavior")
 	}
 	return capvcd.Status.Capvcd.Private.KubeConfig, nil
-}
-
-// Refresh gets the latest information about the receiver cluster and updates its properties.
-func (cluster *CseKubernetesCluster) Refresh() error {
-	rde, err := getRdeById(cluster.client, cluster.ID)
-	if err != nil {
-		return err
-	}
-	cluster.nameToIdCache = nil // We deliberately want to refresh everything
-	refreshed, err := cseConvertToCseKubernetesClusterType(rde, cluster.nameToIdCache)
-	if err != nil {
-		return err
-	}
-	cluster.capvcdType = refreshed.capvcdType
-	cluster.Etag = refreshed.Etag
-	return nil
 }
 
 // UpdateWorkerPools executes an update on the receiver cluster to change the existing worker pools.
@@ -200,22 +199,13 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput) error {
 		return err
 	}
 
-	logHttpResponse := util.LogHttpResponse
-	// The following loop is constantly polling VCD to retrieve the RDE, which has a big JSON inside, so we avoid filling
-	// the log with these big payloads. We use defer to be sure that we restore the initial logging state.
-	defer func() {
-		util.LogHttpResponse = logHttpResponse
-	}()
-
 	// We do this loop to increase the chances that the Kubernetes cluster is successfully created, as the Go SDK is
 	// "fighting" with the CSE Server
 	retries := 0
 	maxRetries := 5
 	updated := false
 	for retries <= maxRetries {
-		util.LogHttpResponse = false
 		rde, err := getRdeById(cluster.client, cluster.ID)
-		util.LogHttpResponse = logHttpResponse
 		if err != nil {
 			return err
 		}
@@ -246,21 +236,11 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput) error {
 // Delete deletes a CSE Kubernetes cluster, waiting the specified amount of minutes. If the timeout is reached, this method
 // returns an error, even if the cluster is already marked for deletion.
 func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error {
-	logHttpResponse := util.LogHttpResponse
-
-	// The following loop is constantly polling VCD to retrieve the RDE, which has a big JSON inside, so we avoid filling
-	// the log with these big payloads. We use defer to be sure that we restore the initial logging state.
-	defer func() {
-		util.LogHttpResponse = logHttpResponse
-	}()
-
 	var elapsed time.Duration
 	start := time.Now()
 	vcdKe := map[string]interface{}{}
 	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
-		util.LogHttpResponse = false
 		rde, err := getRdeById(cluster.client, cluster.ID)
-		util.LogHttpResponse = logHttpResponse
 		if err != nil {
 			if ContainsNotFound(err) {
 				return nil // The RDE is gone, so the process is completed and there's nothing more to do
