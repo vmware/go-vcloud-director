@@ -7,20 +7,23 @@ import (
 	"strings"
 )
 
-// cseUpdateCapiYaml takes a YAML and modifies its Kubernetes Template OVA, its Control plane, its Worker pools
+// updateCapiYaml takes a YAML and modifies its Kubernetes Template OVA, its Control plane, its Worker pools
 // and its Node Health Check capabilities, by using the new values provided as input.
 // If some of the values of the input is not provided, it doesn't change them.
 // If none of the values is provided, it just returns the same untouched YAML.
-func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateInput) (string, error) {
+func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput) (string, error) {
+	if cluster == nil {
+		return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("receiver cluster is nil")
+	}
 	if input.ControlPlane == nil && input.WorkerPools == nil && input.NodeHealthCheck == nil && input.KubernetesTemplateOvaId == nil {
-		return capiYaml, nil
+		return cluster.capvcdType.Spec.CapiYaml, nil
 	}
 
 	// The YAML contains multiple documents, so we cannot use a simple yaml.Unmarshal() as this one just gets the first
 	// document it finds.
-	yamlDocs, err := unmarshalMultipleYamlDocuments(capiYaml)
+	yamlDocs, err := unmarshalMultipleYamlDocuments(cluster.capvcdType.Spec.CapiYaml)
 	if err != nil {
-		return capiYaml, fmt.Errorf("error unmarshaling YAML: %s", err)
+		return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("error unmarshaling YAML: %s", err)
 	}
 
 	// As a side note, we can't optimize this one with "if <current value> equals <new value> do nothing" because
@@ -29,39 +32,39 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 	// as well.
 	// So in this special case this "optimization" would optimize nothing. The same happens with other YAML values.
 	if input.KubernetesTemplateOvaId != nil {
-		vAppTemplate, err := getVAppTemplateById(client, *input.KubernetesTemplateOvaId)
+		vAppTemplate, err := getVAppTemplateById(cluster.client, *input.KubernetesTemplateOvaId)
 		if err != nil {
-			return capiYaml, fmt.Errorf("could not retrieve the Kubernetes Template OVA with ID '%s': %s", *input.KubernetesTemplateOvaId, err)
+			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the Kubernetes Template OVA with ID '%s': %s", *input.KubernetesTemplateOvaId, err)
 		}
 		err = cseUpdateKubernetesTemplateInYaml(yamlDocs, vAppTemplate.VAppTemplate.Name)
 		if err != nil {
-			return capiYaml, err
+			return cluster.capvcdType.Spec.CapiYaml, err
 		}
 	}
 
 	if input.ControlPlane != nil {
 		err := cseUpdateControlPlaneInYaml(yamlDocs, *input.ControlPlane)
 		if err != nil {
-			return capiYaml, err
+			return cluster.capvcdType.Spec.CapiYaml, err
 		}
 	}
 
 	if input.WorkerPools != nil {
 		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
 		if err != nil {
-			return capiYaml, err
+			return cluster.capvcdType.Spec.CapiYaml, err
 		}
 	}
 
 	if input.NewWorkerPools != nil {
-		yamlDocs, err = cseAddWorkerPoolsInYaml(yamlDocs, *input.NewWorkerPools)
+		yamlDocs, err = cseAddWorkerPoolsInYaml(yamlDocs, *cluster, *input.NewWorkerPools)
 		if err != nil {
-			return capiYaml, err
+			return cluster.capvcdType.Spec.CapiYaml, err
 		}
 	}
 
 	if input.NodeHealthCheck != nil {
-		vcdKeConfig, err := getVcdKeConfig(client, input.vcdKeConfigVersion, *input.NodeHealthCheck)
+		vcdKeConfig, err := getVcdKeConfig(cluster.client, input.vcdKeConfigVersion, *input.NodeHealthCheck)
 		if err != nil {
 			return "", err
 		}
@@ -198,8 +201,37 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 
 // cseAddWorkerPoolsInYaml modifies the given Kubernetes cluster YAML contents by adding new Worker Pools
 // described by the input parameters.
-func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, inputs []CseWorkerPoolSettings) ([]map[string]interface{}, error) {
-	return nil, nil
+func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernetesCluster, newWorkerPools []CseWorkerPoolSettings) ([]map[string]interface{}, error) {
+	internalSettings := cseClusterSettingsInternal{WorkerPools: make([]cseWorkerPoolSettingsInternal, len(newWorkerPools))}
+	for i, workerPool := range newWorkerPools {
+		internalSettings.WorkerPools[i] = cseWorkerPoolSettingsInternal{
+			Name:                workerPool.Name,
+			MachineCount:        workerPool.MachineCount,
+			DiskSizeGi:          workerPool.DiskSizeGi,
+			SizingPolicyName:    workerPool.SizingPolicyId,
+			PlacementPolicyName: workerPool.PlacementPolicyId,
+			VGpuPolicyName:      workerPool.VGpuPolicyId,
+			StorageProfileName:  workerPool.StorageProfileId,
+		}
+	}
+	internalSettings.Name = cluster.Name
+	internalSettings.CseVersion = cluster.CseVersion
+	nodePoolsYaml, err := internalSettings.generateNodePoolYaml()
+	if err != nil {
+		return nil, err
+	}
+
+	newWorkerPoolsYamlDocs, err := unmarshalMultipleYamlDocuments(nodePoolsYaml)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]map[string]interface{}, len(docs)+len(newWorkerPoolsYamlDocs))
+	copy(result, docs)
+	for i, doc := range newWorkerPoolsYamlDocs {
+		result[i+len(docs)] = doc
+	}
+	return result, nil
 }
 
 // cseUpdateNodeHealthCheckInYaml updates the Kubernetes cluster described in the given YAML documents by adding or removing

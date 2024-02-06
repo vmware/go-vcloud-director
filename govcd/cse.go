@@ -195,7 +195,7 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 	input.clusterName = cluster.Name
 	input.vcdKeConfigVersion = cluster.capvcdType.Status.VcdKe.VcdKeVersion
 	input.cseVersion = cluster.CseVersion
-	updatedCapiYaml, err := cseUpdateCapiYaml(cluster.client, cluster.capvcdType.Spec.CapiYaml, input)
+	updatedCapiYaml, err := cluster.updateCapiYaml(input)
 	if err != nil {
 		return err
 	}
