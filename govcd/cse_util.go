@@ -227,7 +227,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			}
 			result.ControlPlane.MachineCount = int(replicas)
 
-			users, err := traverseMapAndGet[[]any](yamlDocument, "spec.kubeadmConfigSpec.users")
+			users, err := traverseMapAndGet[[]interface{}](yamlDocument, "spec.kubeadmConfigSpec.users")
 			if err != nil {
 				return nil, err
 			}
@@ -350,7 +350,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				result.VirtualIpSubnet = subnet // This is optional
 			}
 		case "Cluster":
-			cidrBlocks, err := traverseMapAndGet[[]any](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
+			cidrBlocks, err := traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
 			if err != nil {
 				return nil, err
 			}
@@ -359,7 +359,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			}
 			result.PodCidr = cidrBlocks[0].(string)
 
-			cidrBlocks, err = traverseMapAndGet[[]any](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
+			cidrBlocks, err = traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
 			if err != nil {
 				return nil, err
 			}
@@ -695,7 +695,7 @@ func getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName string) (
 		return result, fmt.Errorf("failed reading %s: %s", tkgVersionsMap, err)
 	}
 
-	versionsMap := map[string]any{}
+	versionsMap := map[string]interface{}{}
 	err = json.Unmarshal(cseTkgVersionsJson, &versionsMap)
 	if err != nil {
 		return result, fmt.Errorf("failed unmarshaling %s: %s", tkgVersionsMap, err)
@@ -714,9 +714,9 @@ func getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName string) (
 
 	result.KubernetesVersion = ovaParts[0]
 	result.TkrVersion = strings.ReplaceAll(ovaParts[0], "+", "---") + "-" + ovaParts[1]
-	result.TkgVersion = versionMap.(map[string]any)["tkg"].(string)
-	result.EtcdVersion = versionMap.(map[string]any)["etcd"].(string)
-	result.CoreDnsVersion = versionMap.(map[string]any)["coreDns"].(string)
+	result.TkgVersion = versionMap.(map[string]interface{})["tkg"].(string)
+	result.EtcdVersion = versionMap.(map[string]interface{})["etcd"].(string)
+	result.CoreDnsVersion = versionMap.(map[string]interface{})["coreDns"].(string)
 	return result, nil
 }
 
@@ -731,7 +731,7 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheck
 		return nil, fmt.Errorf("expected exactly one VCDKEConfig RDE with version '%s', but got %d", vcdKeConfigVersion, len(rdes))
 	}
 
-	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]any)
+	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'profiles' array")
 	}
@@ -741,18 +741,18 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheck
 
 	result := &vcdKeConfig{}
 	// TODO: Check airgapped environments: https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.1.1a/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.1.1/GUID-F00BE796-B5F2-48F2-A012-546E2E694400.html
-	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]any)["containerRegistryUrl"])
+	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"])
 
 	if isNodeHealthCheckActive {
-		mhc, ok := profiles[0].(map[string]any)["K8Config"].(map[string]any)["mhc"]
+		mhc, ok := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"]
 		if !ok {
 			// If there is no "mhc" entry in the VCDKEConfig JSON, we skip setting this part of the Kubernetes cluster configuration
 			return result, nil
 		}
-		result.MaxUnhealthyNodesPercentage = mhc.(map[string]any)["maxUnhealthyNodes"].(float64)
-		result.NodeStartupTimeout = mhc.(map[string]any)["nodeStartupTimeout"].(string)
-		result.NodeNotReadyTimeout = mhc.(map[string]any)["nodeUnknownTimeout"].(string)
-		result.NodeUnknownTimeout = mhc.(map[string]any)["nodeNotReadyTimeout"].(string)
+		result.MaxUnhealthyNodesPercentage = mhc.(map[string]interface{})["maxUnhealthyNodes"].(float64)
+		result.NodeStartupTimeout = mhc.(map[string]interface{})["nodeStartupTimeout"].(string)
+		result.NodeNotReadyTimeout = mhc.(map[string]interface{})["nodeUnknownTimeout"].(string)
+		result.NodeUnknownTimeout = mhc.(map[string]interface{})["nodeNotReadyTimeout"].(string)
 	}
 
 	return result, nil

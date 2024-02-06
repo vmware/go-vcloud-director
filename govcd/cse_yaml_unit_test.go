@@ -382,8 +382,8 @@ func Test_marshalMultplieYamlDocuments(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		yamlDocuments []map[string]any
-		want          []map[string]any
+		yamlDocuments []map[string]interface{}
+		want          []map[string]interface{}
 		wantErr       bool
 	}{
 		{
@@ -394,8 +394,8 @@ func Test_marshalMultplieYamlDocuments(t *testing.T) {
 		},
 		{
 			name:          "marshal empty slice",
-			yamlDocuments: []map[string]any{},
-			want:          []map[string]any{},
+			yamlDocuments: []map[string]interface{}{},
+			want:          []map[string]interface{}{},
 			wantErr:       false,
 		},
 	}
@@ -443,19 +443,19 @@ func Test_traverseMapAndGet(t *testing.T) {
 			args: args{
 				input: "error",
 			},
-			wantErr: "the input is a string, not a map[string]any",
+			wantErr: "the input is a string, not a map[string]interface{}",
 		},
 		{
 			name: "map is empty",
 			args: args{
-				input: map[string]any{},
+				input: map[string]interface{}{},
 			},
 			wantErr: "the map is empty",
 		},
 		{
 			name: "map does not have key",
 			args: args{
-				input: map[string]any{
+				input: map[string]interface{}{
 					"keyA": "value",
 				},
 				path: "keyB",
@@ -465,7 +465,7 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "map has a single simple key",
 			args: args{
-				input: map[string]any{
+				input: map[string]interface{}{
 					"keyA": "value",
 				},
 				path: "keyA",
@@ -476,24 +476,24 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "map has a single complex key",
 			args: args{
-				input: map[string]any{
-					"keyA": map[string]any{
+				input: map[string]interface{}{
+					"keyA": map[string]interface{}{
 						"keyB": "value",
 					},
 				},
 				path: "keyA",
 			},
 			wantType: "map",
-			want: map[string]any{
+			want: map[string]interface{}{
 				"keyB": "value",
 			},
 		},
 		{
 			name: "map has a complex structure",
 			args: args{
-				input: map[string]any{
-					"keyA": map[string]any{
-						"keyB": map[string]any{
+				input: map[string]interface{}{
+					"keyA": map[string]interface{}{
+						"keyB": map[string]interface{}{
 							"keyC": "value",
 						},
 					},
@@ -506,9 +506,9 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "requested path is deeper than the map structure",
 			args: args{
-				input: map[string]any{
-					"keyA": map[string]any{
-						"keyB": map[string]any{
+				input: map[string]interface{}{
+					"keyA": map[string]interface{}{
+						"keyB": map[string]interface{}{
 							"keyC": "value",
 						},
 					},
@@ -520,10 +520,10 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "obtained value does not correspond to the desired type",
 			args: args{
-				input: map[string]any{
-					"keyA": map[string]any{
-						"keyB": map[string]any{
-							"keyC": map[string]any{},
+				input: map[string]interface{}{
+					"keyA": map[string]interface{}{
+						"keyB": map[string]interface{}{
+							"keyC": map[string]interface{}{},
 						},
 					},
 				},
@@ -540,7 +540,7 @@ func Test_traverseMapAndGet(t *testing.T) {
 			if tt.wantType == "string" {
 				got, err = traverseMapAndGet[string](tt.args.input, tt.args.path)
 			} else if tt.wantType == "map" {
-				got, err = traverseMapAndGet[map[string]any](tt.args.input, tt.args.path)
+				got, err = traverseMapAndGet[map[string]interface{}](tt.args.input, tt.args.path)
 			} else {
 				t.Fatalf("wantType type not used in this test")
 			}

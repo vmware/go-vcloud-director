@@ -78,7 +78,7 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 // used by all the cluster elements.
 // The caveat here is that not only VCDMachineTemplate needs to be changed with the new OVA name, but also
 // other fields that reference the related Kubernetes version, TKG version and other derived information.
-func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]any, kubernetesTemplateOvaName string) error {
+func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, kubernetesTemplateOvaName string) error {
 	tkgBundle, err := getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName)
 	if err != nil {
 		return err
@@ -90,47 +90,47 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]any, kubernete
 			if err != nil {
 				return fmt.Errorf("incorrect YAML: %s", err)
 			}
-			d["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["template"] = kubernetesTemplateOvaName
+			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["template"] = kubernetesTemplateOvaName
 		case "MachineDeployment":
 			_, err := traverseMapAndGet[string](d, "spec.template.spec.version")
 			if err != nil {
 				return fmt.Errorf("incorrect YAML: %s", err)
 			}
-			d["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["version"] = tkgBundle.KubernetesVersion
+			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["version"] = tkgBundle.KubernetesVersion
 		case "Cluster":
 			_, err := traverseMapAndGet[string](d, "metadata.annotations.TKGVERSION")
 			if err != nil {
 				return fmt.Errorf("incorrect YAML: %s", err)
 			}
-			d["metadata"].(map[string]any)["annotations"].(map[string]any)["TKGVERSION"] = tkgBundle.TkgVersion
+			d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["TKGVERSION"] = tkgBundle.TkgVersion
 			_, err = traverseMapAndGet[string](d, "metadata.labels.tanzuKubernetesRelease")
 			if err != nil {
 				return fmt.Errorf("incorrect YAML: %s", err)
 			}
-			d["metadata"].(map[string]any)["labels"].(map[string]any)["tanzuKubernetesRelease"] = tkgBundle.TkrVersion
+			d["metadata"].(map[string]interface{})["labels"].(map[string]interface{})["tanzuKubernetesRelease"] = tkgBundle.TkrVersion
 		case "KubeadmControlPlane":
 			_, err := traverseMapAndGet[string](d, "spec.version")
 			if err != nil {
 				return fmt.Errorf("incorrect YAML: %s", err)
 			}
-			d["spec"].(map[string]any)["version"] = tkgBundle.KubernetesVersion
+			d["spec"].(map[string]interface{})["version"] = tkgBundle.KubernetesVersion
 			_, err = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag")
 			if err != nil {
 				return fmt.Errorf("incorrect YAML: %s", err)
 			}
-			d["spec"].(map[string]any)["kubeadmConfigSpec"].(map[string]any)["clusterConfiguration"].(map[string]any)["dns"].(map[string]any)["imageTag"] = tkgBundle.CoreDnsVersion
+			d["spec"].(map[string]interface{})["kubeadmConfigSpec"].(map[string]interface{})["clusterConfiguration"].(map[string]interface{})["dns"].(map[string]interface{})["imageTag"] = tkgBundle.CoreDnsVersion
 			_, err = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag")
 			if err != nil {
 				return fmt.Errorf("incorrect YAML: %s", err)
 			}
-			d["spec"].(map[string]any)["kubeadmConfigSpec"].(map[string]any)["clusterConfiguration"].(map[string]any)["etcd"].(map[string]any)["local"].(map[string]any)["imageTag"] = tkgBundle.EtcdVersion
+			d["spec"].(map[string]interface{})["kubeadmConfigSpec"].(map[string]interface{})["clusterConfiguration"].(map[string]interface{})["etcd"].(map[string]interface{})["local"].(map[string]interface{})["imageTag"] = tkgBundle.EtcdVersion
 		}
 	}
 	return nil
 }
 
 // cseUpdateControlPlaneInYaml modifies the given Kubernetes cluster YAML contents by changing the Control Plane with the input parameters.
-func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]any, input CseControlPlaneUpdateInput) error {
+func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]interface{}, input CseControlPlaneUpdateInput) error {
 	if input.MachineCount < 0 {
 		return fmt.Errorf("incorrect machine count for Control Plane: %d. Should be at least 0", input.MachineCount)
 	}
@@ -144,7 +144,7 @@ func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]any, input CseContro
 		if err != nil {
 			return fmt.Errorf("incorrect YAML: %s", err)
 		}
-		d["spec"].(map[string]any)["replicas"] = float64(input.MachineCount) // As it was originally unmarshalled as a float64
+		d["spec"].(map[string]interface{})["replicas"] = float64(input.MachineCount) // As it was originally unmarshalled as a float64
 		updated = true
 	}
 	if !updated {
@@ -155,7 +155,7 @@ func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]any, input CseContro
 
 // cseUpdateControlPlaneInYaml modifies the given Kubernetes cluster YAML contents by changing
 // the existing Worker Pools with the input parameters.
-func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]any, workerPools map[string]CseWorkerPoolUpdateInput) error {
+func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPools map[string]CseWorkerPoolUpdateInput) error {
 	updated := 0
 	for _, d := range yamlDocuments {
 		if d["kind"] != "MachineDeployment" {
@@ -187,7 +187,7 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]any, workerPools map[
 			return fmt.Errorf("incorrect YAML: %s", err)
 		}
 
-		d["spec"].(map[string]any)["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
+		d["spec"].(map[string]interface{})["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
 		updated++
 	}
 	if updated != len(workerPools) {
@@ -198,15 +198,15 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]any, workerPools map[
 
 // cseAddWorkerPoolsInYaml modifies the given Kubernetes cluster YAML contents by adding new Worker Pools
 // described by the input parameters.
-func cseAddWorkerPoolsInYaml(docs []map[string]any, inputs []CseWorkerPoolSettings) ([]map[string]any, error) {
+func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, inputs []CseWorkerPoolSettings) ([]map[string]interface{}, error) {
 	return nil, nil
 }
 
 // cseUpdateNodeHealthCheckInYaml updates the Kubernetes cluster described in the given YAML documents by adding or removing
 // the MachineHealthCheck object. This function doesn't modify the input, but returns a copy of the YAML with the modifications.
-func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName string, cseVersion semver.Version, vcdKeConfig *vcdKeConfig) ([]map[string]any, error) {
+func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clusterName string, cseVersion semver.Version, vcdKeConfig *vcdKeConfig) ([]map[string]interface{}, error) {
 	mhcPosition := -1
-	result := make([]map[string]any, len(yamlDocuments))
+	result := make([]map[string]interface{}, len(yamlDocuments))
 	for i, d := range yamlDocuments {
 		if d["kind"] == "MachineHealthCheck" {
 			mhcPosition = i
@@ -227,7 +227,7 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName 
 		if err != nil {
 			return nil, err
 		}
-		var mhc map[string]any
+		var mhc map[string]interface{}
 		err = yaml.Unmarshal([]byte(mhcYaml), &mhc)
 		if err != nil {
 			return nil, err
@@ -251,7 +251,7 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName 
 
 // marshalMultipleYamlDocuments takes a slice of maps representing multiple YAML documents (one per item in the slice) and
 // marshals all of them into a single string with the corresponding separators "---".
-func marshalMultipleYamlDocuments(yamlDocuments []map[string]any) (string, error) {
+func marshalMultipleYamlDocuments(yamlDocuments []map[string]interface{}) (string, error) {
 	result := ""
 	for i, yamlDoc := range yamlDocuments {
 		updatedSingleDoc, err := yaml.Marshal(yamlDoc)
@@ -268,13 +268,13 @@ func marshalMultipleYamlDocuments(yamlDocuments []map[string]any) (string, error
 
 // unmarshalMultipleYamlDocuments takes a multi-document YAML (multiple YAML documents are separated by "---") and
 // unmarshals all of them into a slice of generic maps with the corresponding content.
-func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[string]any, error) {
+func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[string]interface{}, error) {
 	if len(strings.TrimSpace(yamlDocuments)) == 0 {
-		return []map[string]any{}, nil
+		return []map[string]interface{}{}, nil
 	}
 
 	splitYamlDocs := strings.Split(yamlDocuments, "---\n")
-	result := make([]map[string]any, len(splitYamlDocs))
+	result := make([]map[string]interface{}, len(splitYamlDocs))
 	for i, yamlDoc := range splitYamlDocs {
 		err := yaml.Unmarshal([]byte(yamlDoc), &result[i])
 		if err != nil {
@@ -295,7 +295,7 @@ func traverseMapAndGet[T any](input interface{}, path string) (T, error) {
 	if input == nil {
 		return nothing, fmt.Errorf("the input is nil")
 	}
-	inputMap, ok := input.(map[string]any)
+	inputMap, ok := input.(map[string]interface{})
 	if !ok {
 		return nothing, fmt.Errorf("the input is a %T, not a map[string]interface{}", input)
 	}
@@ -313,7 +313,7 @@ func traverseMapAndGet[T any](input interface{}, path string) (T, error) {
 			return nothing, fmt.Errorf("key '%s' does not exist in input map", subPath)
 		}
 		if i < len(pathUnits)-1 {
-			traversedMap, ok := traversed.(map[string]any)
+			traversedMap, ok := traversed.(map[string]interface{})
 			if !ok {
 				return nothing, fmt.Errorf("key '%s' is a %T, not a map[string]interface{}, but there are still %d paths to explore", subPath, traversed, len(pathUnits)-(i+1))
 			}
