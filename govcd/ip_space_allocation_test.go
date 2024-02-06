@@ -126,25 +126,39 @@ func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId, edgeGatewayId 
 }
 
 func performIpSuggestionChecks(vcd *TestVCD, check *C, ipSpaceId, edgeGatewayId string, ipSpaceAllocationRequest *types.IpSpaceIpAllocationRequest) {
-	// check ip suggestions with specific Edge Gateway
-	queryParams := url.Values{}
-	queryParams.Set("filter", fmt.Sprintf("gatewayId==%s", edgeGatewayId))
-	floatingIpSuggestions, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(queryParams)
+	// Get IP suggestions without additional filters
+	floatingIpSuggestions, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(edgeGatewayId, nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(floatingIpSuggestions) > 0, Equals, true)
 	if ipSpaceAllocationRequest.Type == "FLOATING_IP" {
 		check.Assert(len(floatingIpSuggestions[0].UnusedValues), Equals, 1)
 	}
 
+	// Get IP suggestions only for IPv4
+	queryParams := url.Values{}
+	queryParams.Set("filter", "ipType==IPV4")
+	floatingIpSuggestionsWithFilterIpv4, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(edgeGatewayId, queryParams)
+	check.Assert(err, IsNil)
+	check.Assert(len(floatingIpSuggestionsWithFilterIpv4) > 0, Equals, true)
+	if ipSpaceAllocationRequest.Type == "FLOATING_IP" {
+		check.Assert(len(floatingIpSuggestionsWithFilterIpv4[0].UnusedValues), Equals, 1)
+	}
+
+	// Get IP suggestions only for IPv6
+	queryParams.Set("filter", "ipType==IPV6")
+	floatingIpSuggestionsWithFilterIpv6, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(edgeGatewayId, queryParams)
+	check.Assert(err, IsNil)
+	check.Assert(len(floatingIpSuggestionsWithFilterIpv6) > 0, Equals, false)
+
 	// check IP suggestions with invalid Edge Gateway - it returns ACCESS_TO_RESOURCE_IS_FORBIDDEN
-	queryParams.Set("filter", fmt.Sprintf("gatewayId==%s", "urn:vcloud:gateway:00000000-0000-0000-0000-000000000000"))
-	floatingIpSuggestions2, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(queryParams)
+	// queryParams.Set("filter", fmt.Sprintf("gatewayId==%s", "urn:vcloud:gateway:00000000-0000-0000-0000-000000000000"))
+	floatingIpSuggestions2, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions("urn:vcloud:gateway:00000000-0000-0000-0000-000000000000", nil)
 	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
 	check.Assert(floatingIpSuggestions2, IsNil)
 
-	// check with empty filter - it cannot be used this way
-	floatingIpSuggestions3, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(nil)
-	check.Assert(strings.Contains(err.Error(), "filter field value missing"), Equals, true)
+	// check with empty filter - it cannot be used this way (edge gateway is mandatory)
+	floatingIpSuggestions3, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions("", nil)
+	check.Assert(strings.Contains(err.Error(), "edge gateway ID is mandatory"), Equals, true)
 	check.Assert(floatingIpSuggestions3, IsNil)
 }
 
