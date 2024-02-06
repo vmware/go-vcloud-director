@@ -18,7 +18,7 @@ func (clusterSettings *cseClusterSettingsInternal) getKubernetesClusterCreationP
 	if clusterSettings == nil {
 		return nil, fmt.Errorf("the receiver cluster settings is nil")
 	}
-	capiYaml, err := clusterSettings.generateCapiYaml()
+	capiYaml, err := clusterSettings.generateCapiYamlAsJsonString()
 	if err != nil {
 		return nil, err
 	}
@@ -133,10 +133,10 @@ func (clusterSettings *cseClusterSettingsInternal) generateMemoryHealthCheckYaml
 	if err := mhcEmptyTmpl.Execute(buf, map[string]string{
 		"ClusterName":                clusterSettings.Name,
 		"TargetNamespace":            clusterSettings.Name + "-ns",
-		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", clusterSettings.VcdKeConfig.MaxUnhealthyNodesPercentage), // With the 'percentage' suffix
-		"NodeStartupTimeout":         fmt.Sprintf("%ss", clusterSettings.VcdKeConfig.NodeStartupTimeout),             // With the 'second' suffix
-		"NodeUnknownTimeout":         fmt.Sprintf("%ss", clusterSettings.VcdKeConfig.NodeUnknownTimeout),             // With the 'second' suffix
-		"NodeNotReadyTimeout":        fmt.Sprintf("%ss", clusterSettings.VcdKeConfig.NodeNotReadyTimeout),            // With the 'second' suffix
+		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", clusterSettings.VcdKeConfig.MaxUnhealthyNodesPercentage),                   // With the 'percentage' suffix
+		"NodeStartupTimeout":         fmt.Sprintf("%ss", strings.ReplaceAll(clusterSettings.VcdKeConfig.NodeStartupTimeout, "s", "")),  // We assure don't duplicate the 's' suffix
+		"NodeUnknownTimeout":         fmt.Sprintf("%ss", strings.ReplaceAll(clusterSettings.VcdKeConfig.NodeUnknownTimeout, "s", "")),  // We assure don't duplicate the 's' suffix
+		"NodeNotReadyTimeout":        fmt.Sprintf("%ss", strings.ReplaceAll(clusterSettings.VcdKeConfig.NodeNotReadyTimeout, "s", "")), // We assure don't duplicate the 's' suffix
 	}); err != nil {
 		return "", fmt.Errorf("could not generate a correct Memory Health Check YAML: %s", err)
 	}
@@ -144,10 +144,10 @@ func (clusterSettings *cseClusterSettingsInternal) generateMemoryHealthCheckYaml
 
 }
 
-// generateCapiYaml generates the YAML string that is required during Kubernetes cluster creation, to be embedded
+// generateCapiYamlAsJsonString generates the YAML string that is required during Kubernetes cluster creation, to be embedded
 // in the CAPVCD cluster JSON payload. This function picks data from the Terraform schema and the createClusterDto to
 // populate several Go templates and build a final YAML.
-func (clusterSettings *cseClusterSettingsInternal) generateCapiYaml() (string, error) {
+func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString() (string, error) {
 	if clusterSettings == nil {
 		return "", fmt.Errorf("the receiver cluster settings is nil")
 	}
