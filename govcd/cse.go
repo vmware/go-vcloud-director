@@ -13,8 +13,8 @@ import (
 // timeout is 0, it waits forever for the cluster creation.
 //
 // If the timeout is reached and the cluster is not available (in "provisioned" state), it will return a non-nil CseKubernetesCluster
-// with only the cluster ID and an error. This means that the cluster will be left in VCD in any state, and it can be retrieved with
-// Org.CseGetKubernetesClusterById manually.
+// with only the cluster ID and an error. This means that the cluster will be left in VCD in any state, and it can be retrieved afterward
+// with Org.CseGetKubernetesClusterById and the returned ID.
 //
 // If the cluster is created correctly, returns all the available data in CseKubernetesCluster or an error if some of the fields
 // of the created cluster cannot be calculated or retrieved.
@@ -37,15 +37,15 @@ func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeo
 // the created cluster. One can manually check the status of the cluster with Org.CseGetKubernetesClusterById and the result of this method.
 func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) (string, error) {
 	if org == nil {
-		return "", fmt.Errorf("receiver Organization is nil")
+		return "", fmt.Errorf("CseCreateKubernetesClusterAsync cannot be called on a nil Organization receiver")
 	}
 
-	goTemplateContents, err := cseClusterSettingsToInternal(clusterData, *org)
+	internalSettings, err := clusterData.toCseClusterSettingsInternal(*org)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error creating the CSE Kubernetes cluster: %s", err)
 	}
 
-	rdeContents, err := getCseKubernetesClusterCreationPayload(goTemplateContents)
+	rdeContents, err := internalSettings.getKubernetesClusterCreationPayload()
 	if err != nil {
 		return "", err
 	}
@@ -55,14 +55,15 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 		return "", err
 	}
 
-	rde, err := createRdeAndPoll(org.client, "vmware", "capvcdCluster", cseSubcomponents.CapvcdRdeTypeVersion, types.DefinedEntity{
-		EntityType: goTemplateContents.RdeType.ID,
-		Name:       goTemplateContents.Name,
-		Entity:     rdeContents,
-	}, &TenantContext{
-		OrgId:   org.Org.ID,
-		OrgName: org.Org.Name,
-	})
+	rde, err := createRdeAndPoll(org.client, "vmware", "capvcdCluster", cseSubcomponents.CapvcdRdeTypeVersion,
+		types.DefinedEntity{
+			EntityType: internalSettings.RdeType.ID,
+			Name:       internalSettings.Name,
+			Entity:     rdeContents,
+		}, &TenantContext{
+			OrgId:   org.Org.ID,
+			OrgName: org.Org.Name,
+		})
 	if err != nil {
 		return "", err
 	}
@@ -105,7 +106,8 @@ func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
 		return "", err
 	}
 
-	// Auxiliary wrapper of the result, as the invocation returns the full RDE.
+	// Auxiliary wrapper of the result, as the invocation returns the RDE and
+	// what we need is inside of it.
 	type invocationResult struct {
 		Capvcd types.Capvcd `json:"entity,omitempty"`
 	}

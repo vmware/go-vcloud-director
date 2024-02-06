@@ -6,46 +6,48 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	semver "github.com/hashicorp/go-version"
 	"strconv"
 	"strings"
 	"text/template"
 )
 
-// getCseKubernetesClusterCreationPayload gets the payload for the RDE that will trigger a Kubernetes cluster creation.
+// getKubernetesClusterCreationPayload gets the payload for the RDE that will trigger a Kubernetes cluster creation.
 // It generates a valid YAML that is embedded inside the RDE JSON, then it is returned as an unmarshaled
 // generic map, that allows to be sent to VCD as it is.
-func getCseKubernetesClusterCreationPayload(goTemplateContents cseClusterSettingsInternal) (map[string]interface{}, error) {
-	capiYaml, err := generateCapiYaml(goTemplateContents)
+func (clusterSettings *cseClusterSettingsInternal) getKubernetesClusterCreationPayload() (map[string]interface{}, error) {
+	if clusterSettings == nil {
+		return nil, fmt.Errorf("the receiver cluster settings is nil")
+	}
+	capiYaml, err := clusterSettings.generateCapiYaml()
 	if err != nil {
 		return nil, err
 	}
 
 	args := map[string]string{
-		"Name":               goTemplateContents.Name,
-		"Org":                goTemplateContents.OrganizationName,
-		"VcdUrl":             goTemplateContents.VcdUrl,
-		"Vdc":                goTemplateContents.VdcName,
+		"Name":               clusterSettings.Name,
+		"Org":                clusterSettings.OrganizationName,
+		"VcdUrl":             clusterSettings.VcdUrl,
+		"Vdc":                clusterSettings.VdcName,
 		"Delete":             "false",
 		"ForceDelete":        "false",
-		"AutoRepairOnErrors": strconv.FormatBool(goTemplateContents.AutoRepairOnErrors),
-		"ApiToken":           goTemplateContents.ApiToken,
+		"AutoRepairOnErrors": strconv.FormatBool(clusterSettings.AutoRepairOnErrors),
+		"ApiToken":           clusterSettings.ApiToken,
 		"CapiYaml":           capiYaml,
 	}
 
-	if goTemplateContents.DefaultStorageClass.StorageProfileName != "" {
-		args["DefaultStorageClassStorageProfile"] = goTemplateContents.DefaultStorageClass.StorageProfileName
-		args["DefaultStorageClassName"] = goTemplateContents.DefaultStorageClass.Name
-		args["DefaultStorageClassUseDeleteReclaimPolicy"] = strconv.FormatBool(goTemplateContents.DefaultStorageClass.UseDeleteReclaimPolicy)
-		args["DefaultStorageClassFileSystem"] = goTemplateContents.DefaultStorageClass.Filesystem
+	if clusterSettings.DefaultStorageClass.StorageProfileName != "" {
+		args["DefaultStorageClassStorageProfile"] = clusterSettings.DefaultStorageClass.StorageProfileName
+		args["DefaultStorageClassName"] = clusterSettings.DefaultStorageClass.Name
+		args["DefaultStorageClassUseDeleteReclaimPolicy"] = strconv.FormatBool(clusterSettings.DefaultStorageClass.UseDeleteReclaimPolicy)
+		args["DefaultStorageClassFileSystem"] = clusterSettings.DefaultStorageClass.Filesystem
 	}
 
-	rdeTmpl, err := getCseTemplate(goTemplateContents.CseVersion, "rde")
+	rdeTmpl, err := getCseTemplate(clusterSettings.CseVersion, "rde")
 	if err != nil {
 		return nil, err
 	}
 
-	capvcdEmpty := template.Must(template.New(goTemplateContents.Name).Parse(rdeTmpl))
+	capvcdEmpty := template.Must(template.New(clusterSettings.Name).Parse(rdeTmpl))
 	buf := &bytes.Buffer{}
 	if err := capvcdEmpty.Execute(buf, args); err != nil {
 		return nil, fmt.Errorf("could not render the Go template with the CAPVCD JSON: %s", err)
@@ -61,18 +63,22 @@ func getCseKubernetesClusterCreationPayload(goTemplateContents cseClusterSetting
 }
 
 // generateNodePoolYaml generates YAML blocks corresponding to the Kubernetes node pools.
-func generateNodePoolYaml(clusterDetails cseClusterSettingsInternal) (string, error) {
-	workerPoolTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_workerpool")
+func (clusterSettings *cseClusterSettingsInternal) generateNodePoolYaml() (string, error) {
+	if clusterSettings == nil {
+		return "", fmt.Errorf("the receiver cluster settings is nil")
+	}
+
+	workerPoolTmpl, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_workerpool")
 	if err != nil {
 		return "", err
 	}
 
-	nodePoolEmptyTmpl := template.Must(template.New(clusterDetails.Name + "-worker-pool").Parse(workerPoolTmpl))
+	nodePoolEmptyTmpl := template.Must(template.New(clusterSettings.Name + "-worker-pool").Parse(workerPoolTmpl))
 	resultYaml := ""
 	buf := &bytes.Buffer{}
 
 	// We can have many worker pools, we build a YAML object for each one of them.
-	for _, workerPool := range clusterDetails.WorkerPools {
+	for _, workerPool := range clusterSettings.WorkerPools {
 
 		// Check the correctness of the compute policies in the node pool block
 		if workerPool.PlacementPolicyName != "" && workerPool.VGpuPolicyName != "" {
@@ -84,18 +90,18 @@ func generateNodePoolYaml(clusterDetails cseClusterSettingsInternal) (string, er
 		}
 
 		if err := nodePoolEmptyTmpl.Execute(buf, map[string]string{
-			"ClusterName":             clusterDetails.Name,
+			"ClusterName":             clusterSettings.Name,
 			"NodePoolName":            workerPool.Name,
-			"TargetNamespace":         clusterDetails.Name + "-ns",
-			"Catalog":                 clusterDetails.CatalogName,
-			"VAppTemplate":            clusterDetails.KubernetesTemplateOvaName,
+			"TargetNamespace":         clusterSettings.Name + "-ns",
+			"Catalog":                 clusterSettings.CatalogName,
+			"VAppTemplate":            clusterSettings.KubernetesTemplateOvaName,
 			"NodePoolSizingPolicy":    workerPool.SizingPolicyName,
 			"NodePoolPlacementPolicy": placementPolicy, // Can be either Placement or vGPU policy
 			"NodePoolStorageProfile":  workerPool.StorageProfileName,
 			"NodePoolDiskSize":        fmt.Sprintf("%dGi", workerPool.DiskSizeGi),
 			"NodePoolEnableGpu":       strconv.FormatBool(workerPool.VGpuPolicyName != ""),
 			"NodePoolMachineCount":    strconv.Itoa(workerPool.MachineCount),
-			"KubernetesVersion":       clusterDetails.TkgVersionBundle.KubernetesVersion,
+			"KubernetesVersion":       clusterSettings.TkgVersionBundle.KubernetesVersion,
 		}); err != nil {
 			return "", fmt.Errorf("could not generate a correct Node Pool YAML: %s", err)
 		}
@@ -106,27 +112,31 @@ func generateNodePoolYaml(clusterDetails cseClusterSettingsInternal) (string, er
 }
 
 // generateMemoryHealthCheckYaml generates a YAML block corresponding to the Kubernetes memory health check.
-func generateMemoryHealthCheckYaml(vcdKeConfig vcdKeConfig, cseVersion semver.Version, clusterName string) (string, error) {
-	if vcdKeConfig.NodeStartupTimeout == "" && vcdKeConfig.NodeUnknownTimeout == "" && vcdKeConfig.NodeNotReadyTimeout == "" &&
-		vcdKeConfig.MaxUnhealthyNodesPercentage == 0 {
+func (clusterSettings *cseClusterSettingsInternal) generateMemoryHealthCheckYaml() (string, error) {
+	if clusterSettings == nil {
+		return "", fmt.Errorf("the receiver cluster settings is nil")
+	}
+
+	if clusterSettings.VcdKeConfig.NodeStartupTimeout == "" && clusterSettings.VcdKeConfig.NodeUnknownTimeout == "" && clusterSettings.VcdKeConfig.NodeNotReadyTimeout == "" &&
+		clusterSettings.VcdKeConfig.MaxUnhealthyNodesPercentage == 0 {
 		return "", nil
 	}
 
-	mhcTmpl, err := getCseTemplate(cseVersion, "capiyaml_mhc")
+	mhcTmpl, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_mhc")
 	if err != nil {
 		return "", err
 	}
 
-	mhcEmptyTmpl := template.Must(template.New(clusterName + "-mhc").Parse(mhcTmpl))
+	mhcEmptyTmpl := template.Must(template.New(clusterSettings.Name + "-mhc").Parse(mhcTmpl))
 	buf := &bytes.Buffer{}
 
 	if err := mhcEmptyTmpl.Execute(buf, map[string]string{
-		"ClusterName":                clusterName,
-		"TargetNamespace":            clusterName + "-ns",
-		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", vcdKeConfig.MaxUnhealthyNodesPercentage), // With the 'percentage' suffix
-		"NodeStartupTimeout":         fmt.Sprintf("%ss", vcdKeConfig.NodeStartupTimeout),             // With the 'second' suffix
-		"NodeUnknownTimeout":         fmt.Sprintf("%ss", vcdKeConfig.NodeUnknownTimeout),             // With the 'second' suffix
-		"NodeNotReadyTimeout":        fmt.Sprintf("%ss", vcdKeConfig.NodeNotReadyTimeout),            // With the 'second' suffix
+		"ClusterName":                clusterSettings.Name,
+		"TargetNamespace":            clusterSettings.Name + "-ns",
+		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", clusterSettings.VcdKeConfig.MaxUnhealthyNodesPercentage), // With the 'percentage' suffix
+		"NodeStartupTimeout":         fmt.Sprintf("%ss", clusterSettings.VcdKeConfig.NodeStartupTimeout),             // With the 'second' suffix
+		"NodeUnknownTimeout":         fmt.Sprintf("%ss", clusterSettings.VcdKeConfig.NodeUnknownTimeout),             // With the 'second' suffix
+		"NodeNotReadyTimeout":        fmt.Sprintf("%ss", clusterSettings.VcdKeConfig.NodeNotReadyTimeout),            // With the 'second' suffix
 	}); err != nil {
 		return "", fmt.Errorf("could not generate a correct Memory Health Check YAML: %s", err)
 	}
@@ -137,53 +147,57 @@ func generateMemoryHealthCheckYaml(vcdKeConfig vcdKeConfig, cseVersion semver.Ve
 // generateCapiYaml generates the YAML string that is required during Kubernetes cluster creation, to be embedded
 // in the CAPVCD cluster JSON payload. This function picks data from the Terraform schema and the createClusterDto to
 // populate several Go templates and build a final YAML.
-func generateCapiYaml(clusterDetails cseClusterSettingsInternal) (string, error) {
-	clusterTmpl, err := getCseTemplate(clusterDetails.CseVersion, "capiyaml_cluster")
+func (clusterSettings *cseClusterSettingsInternal) generateCapiYaml() (string, error) {
+	if clusterSettings == nil {
+		return "", fmt.Errorf("the receiver cluster settings is nil")
+	}
+
+	clusterTmpl, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_cluster")
 	if err != nil {
 		return "", err
 	}
 
 	// This YAML snippet contains special strings, such as "%,", that render wrong using the Go template engine
 	sanitizedTemplate := strings.NewReplacer("%", "%%").Replace(clusterTmpl)
-	capiYamlEmpty := template.Must(template.New(clusterDetails.Name + "-cluster").Parse(sanitizedTemplate))
+	capiYamlEmpty := template.Must(template.New(clusterSettings.Name + "-cluster").Parse(sanitizedTemplate))
 
-	nodePoolYaml, err := generateNodePoolYaml(clusterDetails)
+	nodePoolYaml, err := clusterSettings.generateNodePoolYaml()
 	if err != nil {
 		return "", err
 	}
 
-	memoryHealthCheckYaml, err := generateMemoryHealthCheckYaml(clusterDetails.VcdKeConfig, clusterDetails.CseVersion, clusterDetails.Name)
+	memoryHealthCheckYaml, err := clusterSettings.generateMemoryHealthCheckYaml()
 	if err != nil {
 		return "", err
 	}
 
 	args := map[string]string{
-		"ClusterName":                 clusterDetails.Name,
-		"TargetNamespace":             clusterDetails.Name + "-ns",
-		"TkrVersion":                  clusterDetails.TkgVersionBundle.TkrVersion,
-		"TkgVersion":                  clusterDetails.TkgVersionBundle.TkgVersion,
-		"UsernameB64":                 base64.StdEncoding.EncodeToString([]byte(clusterDetails.Owner)),
-		"ApiTokenB64":                 base64.StdEncoding.EncodeToString([]byte(clusterDetails.ApiToken)),
-		"PodCidr":                     clusterDetails.PodCidr,
-		"ServiceCidr":                 clusterDetails.ServiceCidr,
-		"VcdSite":                     clusterDetails.VcdUrl,
-		"Org":                         clusterDetails.OrganizationName,
-		"OrgVdc":                      clusterDetails.VdcName,
-		"OrgVdcNetwork":               clusterDetails.NetworkName,
-		"Catalog":                     clusterDetails.CatalogName,
-		"VAppTemplate":                clusterDetails.KubernetesTemplateOvaName,
-		"ControlPlaneSizingPolicy":    clusterDetails.ControlPlane.SizingPolicyName,
-		"ControlPlanePlacementPolicy": clusterDetails.ControlPlane.PlacementPolicyName,
-		"ControlPlaneStorageProfile":  clusterDetails.ControlPlane.StorageProfileName,
-		"ControlPlaneDiskSize":        fmt.Sprintf("%dGi", clusterDetails.ControlPlane.DiskSizeGi),
-		"ControlPlaneMachineCount":    strconv.Itoa(clusterDetails.ControlPlane.MachineCount),
-		"ControlPlaneEndpoint":        clusterDetails.ControlPlane.Ip,
-		"DnsVersion":                  clusterDetails.TkgVersionBundle.CoreDnsVersion,
-		"EtcdVersion":                 clusterDetails.TkgVersionBundle.EtcdVersion,
-		"ContainerRegistryUrl":        clusterDetails.VcdKeConfig.ContainerRegistryUrl,
-		"KubernetesVersion":           clusterDetails.TkgVersionBundle.KubernetesVersion,
-		"SshPublicKey":                clusterDetails.SshPublicKey,
-		"VirtualIpSubnet":             clusterDetails.VirtualIpSubnet,
+		"ClusterName":                 clusterSettings.Name,
+		"TargetNamespace":             clusterSettings.Name + "-ns",
+		"TkrVersion":                  clusterSettings.TkgVersionBundle.TkrVersion,
+		"TkgVersion":                  clusterSettings.TkgVersionBundle.TkgVersion,
+		"UsernameB64":                 base64.StdEncoding.EncodeToString([]byte(clusterSettings.Owner)),
+		"ApiTokenB64":                 base64.StdEncoding.EncodeToString([]byte(clusterSettings.ApiToken)),
+		"PodCidr":                     clusterSettings.PodCidr,
+		"ServiceCidr":                 clusterSettings.ServiceCidr,
+		"VcdSite":                     clusterSettings.VcdUrl,
+		"Org":                         clusterSettings.OrganizationName,
+		"OrgVdc":                      clusterSettings.VdcName,
+		"OrgVdcNetwork":               clusterSettings.NetworkName,
+		"Catalog":                     clusterSettings.CatalogName,
+		"VAppTemplate":                clusterSettings.KubernetesTemplateOvaName,
+		"ControlPlaneSizingPolicy":    clusterSettings.ControlPlane.SizingPolicyName,
+		"ControlPlanePlacementPolicy": clusterSettings.ControlPlane.PlacementPolicyName,
+		"ControlPlaneStorageProfile":  clusterSettings.ControlPlane.StorageProfileName,
+		"ControlPlaneDiskSize":        fmt.Sprintf("%dGi", clusterSettings.ControlPlane.DiskSizeGi),
+		"ControlPlaneMachineCount":    strconv.Itoa(clusterSettings.ControlPlane.MachineCount),
+		"ControlPlaneEndpoint":        clusterSettings.ControlPlane.Ip,
+		"DnsVersion":                  clusterSettings.TkgVersionBundle.CoreDnsVersion,
+		"EtcdVersion":                 clusterSettings.TkgVersionBundle.EtcdVersion,
+		"ContainerRegistryUrl":        clusterSettings.VcdKeConfig.ContainerRegistryUrl,
+		"KubernetesVersion":           clusterSettings.TkgVersionBundle.KubernetesVersion,
+		"SshPublicKey":                clusterSettings.SshPublicKey,
+		"VirtualIpSubnet":             clusterSettings.VirtualIpSubnet,
 	}
 
 	buf := &bytes.Buffer{}

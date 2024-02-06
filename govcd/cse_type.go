@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// CseKubernetesCluster is a type for handling a Kubernetes cluster created by the Container Service Extension (CSE)
+// CseKubernetesCluster is a type for managing an existing Kubernetes cluster created by the Container Service Extension (CSE)
 type CseKubernetesCluster struct {
 	CseClusterSettings
 	ID                         string
@@ -79,8 +79,8 @@ type CseWorkerPoolSettings struct {
 type CseDefaultStorageClassSettings struct {
 	StorageProfileId string
 	Name             string
-	ReclaimPolicy    string
-	Filesystem       string
+	ReclaimPolicy    string // Must be either "delete" or "retain"
+	Filesystem       string // Must be either "ext4" or "xfs"
 }
 
 // CseClusterUpdateInput defines the required configuration that a Container Service Extension (CSE) Kubernetes cluster needs in order to be updated.
@@ -139,6 +139,18 @@ type cseClusterSettingsInternal struct {
 	PodCidr                   string
 	ServiceCidr               string
 	AutoRepairOnErrors        bool
+}
+
+// tkgVersionBundle is a type that contains all the versions of the components of
+// a Kubernetes cluster that can be obtained with the Kubernetes Template OVA name, downloaded
+// from VMware Customer connect:
+// https://customerconnect.vmware.com/downloads/details?downloadGroup=TKG-240&productId=1400
+type tkgVersionBundle struct {
+	EtcdVersion       string
+	CoreDnsVersion    string
+	TkgVersion        string
+	TkrVersion        string
+	KubernetesVersion string
 }
 
 // cseControlPlaneSettingsInternal defines the Control Plane inside cseClusterSettingsInternal

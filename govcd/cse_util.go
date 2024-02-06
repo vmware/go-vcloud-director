@@ -14,19 +14,19 @@ import (
 	"time"
 )
 
-// getCseComponentsVersions gets the CSE components versions from its version.
+// getCseComponentsVersions gets the versions of the sub-components that are part of Container Service Extension.
 // TODO: Is this really necessary? What happens in UI if I have a 1.1.0-1.2.0-1.0.0 (4.2) cluster and then CSE is updated to 4.3?
 func getCseComponentsVersions(cseVersion semver.Version) (*cseComponentsVersions, error) {
-	v42, _ := semver.NewVersion("4.1")
+	v41, _ := semver.NewVersion("4.1")
 
-	if cseVersion.Equal(v42) {
+	if cseVersion.Equal(v41) {
 		return &cseComponentsVersions{
 			VcdKeConfigRdeTypeVersion: "1.1.0",
 			CapvcdRdeTypeVersion:      "1.2.0",
 			CseInterfaceVersion:       "1.0.0",
 		}, nil
 	}
-	return nil, fmt.Errorf("not supported version %s", cseVersion.String())
+	return nil, fmt.Errorf("the Container Service Extension version '%s' is not supported", cseVersion.String())
 }
 
 // cseConvertToCseKubernetesClusterType takes a generic RDE that must represent an existing CSE Kubernetes cluster,
@@ -117,9 +117,10 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	if len(result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs) == 0 {
 		return nil, fmt.Errorf("could not read VDCs from Capvcd type")
 	}
+	result.VdcId = result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Id
+
 	// FIXME: This is a workaround, because for some reason the ID contains the VDC name instead of the VDC ID.
 	//        Once this is fixed, this conditional should not be needed anymore.
-	result.VdcId = result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Id
 	if result.VdcId == result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Name {
 		vdcs, err := queryOrgVdcList(rde.client, map[string]string{})
 		if err != nil {
@@ -205,6 +206,9 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		}
 	}
 
+	// NOTE: We get the remaining elements from the CAPI YAML, despite they are also inside capvcdType.Status.
+	// The reason is that any change on the cluster is immediately reflected in the CAPI YAML, but not in the capvcdType.Status
+	// elements, which may take 10 minutes to be refreshed.
 	yamlDocuments, err := unmarshalMultipleYamlDocuments(result.capvcdType.Spec.CapiYaml)
 	if err != nil {
 		return nil, err
@@ -212,7 +216,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 
 	// We need a map of worker pools and not a slice, because there are two types of YAML documents
 	// that contain data about a specific worker pool (VCDMachineTemplate and MachineDeployment), and we can get them in no
-	// particular order, so we store the worker pools with their name as key. This way we can easily fetch them and override them.
+	// particular order, so we store the worker pools with their name as key. This way we can easily (O(1)) fetch and update them.
 	workerPools := map[string]CseWorkerPoolSettings{}
 	for _, yamlDocument := range yamlDocuments {
 		switch yamlDocument["kind"] {
@@ -419,62 +423,67 @@ func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinu
 	return fmt.Errorf("timeout of %d minutes reached, latest cluster state obtained was '%s'", timeoutMinutes, capvcd.Status.VcdKe.State)
 }
 
-// validate validates the CSE Kubernetes cluster creation input data. Returns an error if some of the fields is wrong.
+// validate validates the receiver CseClusterSettings. Returns an error if any of the fields is empty or wrong.
 func (input *CseClusterSettings) validate() error {
+	if input == nil {
+		return fmt.Errorf("the receiver CseClusterSettings cannot be nil")
+	}
+	// This regular expression is used to validate the constraints placed by Container Service Extension on the names
+	// of the components of the Kubernetes clusters:
+	// Names must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters.
 	cseNamesRegex, err := regexp.Compile(`^[a-z](?:[a-z0-9-]{0,29}[a-z0-9])?$`)
 	if err != nil {
 		return fmt.Errorf("could not compile regular expression '%s'", err)
 	}
 
-	if !cseNamesRegex.MatchString(input.Name) {
-		return fmt.Errorf("the cluster name is required and must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters, but it was: '%s'", input.Name)
+	_, err = getCseComponentsVersions(input.CseVersion)
+	if err != nil {
+		return err
 	}
-
+	if !cseNamesRegex.MatchString(input.Name) {
+		return fmt.Errorf("the name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", input.Name)
+	}
 	if input.OrganizationId == "" {
 		return fmt.Errorf("the Organization ID is required")
 	}
 	if input.VdcId == "" {
 		return fmt.Errorf("the VDC ID is required")
 	}
-	if input.KubernetesTemplateOvaId == "" {
-		return fmt.Errorf("the Kubernetes template OVA ID is required")
-	}
 	if input.NetworkId == "" {
 		return fmt.Errorf("the Network ID is required")
 	}
-	_, err = getCseComponentsVersions(input.CseVersion)
-	if err != nil {
-		return fmt.Errorf("the CSE version '%s' is not supported", input.CseVersion.String())
+	if input.KubernetesTemplateOvaId == "" {
+		return fmt.Errorf("the Kubernetes Template OVA ID is required")
 	}
 	if input.ControlPlane.MachineCount < 1 || input.ControlPlane.MachineCount%2 == 0 {
-		return fmt.Errorf("number of control plane nodes must be odd and higher than 0, but it was '%d'", input.ControlPlane.MachineCount)
+		return fmt.Errorf("number of Control Plane nodes must be odd and higher than 0, but it was '%d'", input.ControlPlane.MachineCount)
 	}
 	if input.ControlPlane.DiskSizeGi < 20 {
 		return fmt.Errorf("disk size for the Control Plane in Gibibytes (Gi) must be at least 20, but it was '%d'", input.ControlPlane.DiskSizeGi)
 	}
 	if len(input.WorkerPools) == 0 {
-		return fmt.Errorf("there must be at least one Worker pool")
+		return fmt.Errorf("there must be at least one Worker Pool")
 	}
 	for _, workerPool := range input.WorkerPools {
-		if !cseNamesRegex.MatchString(workerPool.Name) {
-			return fmt.Errorf("the Worker pool name is required and must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters, but it was: '%s'", workerPool.Name)
+		if workerPool.MachineCount < 1 {
+			return fmt.Errorf("number of Worker Pool '%s' nodes must higher than 0, but it was '%d'", workerPool.Name, workerPool.MachineCount)
 		}
 		if workerPool.DiskSizeGi < 20 {
-			return fmt.Errorf("disk size for the Worker pool '%s' in Gibibytes (Gi) must be at least 20, but it was '%d'", workerPool.Name, workerPool.DiskSizeGi)
+			return fmt.Errorf("disk size for the Worker Pool '%s' in Gibibytes (Gi) must be at least 20, but it was '%d'", workerPool.Name, workerPool.DiskSizeGi)
 		}
-		if workerPool.MachineCount < 1 {
-			return fmt.Errorf("number of Worker pool '%s' nodes must higher than 0, but it was '%d'", workerPool.Name, workerPool.MachineCount)
+		if !cseNamesRegex.MatchString(workerPool.Name) {
+			return fmt.Errorf("the Worker Pool name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", workerPool.Name)
 		}
 	}
-	if input.DefaultStorageClass != nil {
+	if input.DefaultStorageClass != nil { // This field is optional
 		if !cseNamesRegex.MatchString(input.DefaultStorageClass.Name) {
-			return fmt.Errorf("the Default Storage Class name is required and must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters, but it was: '%s'", input.DefaultStorageClass.Name)
+			return fmt.Errorf("the Default Storage Class name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", input.DefaultStorageClass.Name)
 		}
 		if input.DefaultStorageClass.StorageProfileId == "" {
 			return fmt.Errorf("the Storage Profile ID for the Default Storage Class is required")
 		}
 		if input.DefaultStorageClass.ReclaimPolicy != "delete" && input.DefaultStorageClass.ReclaimPolicy != "retain" {
-			return fmt.Errorf("the reclaim policy for the Default Storage Class must be either 'delete' or 'retain', but it was '%s'", input.DefaultStorageClass.ReclaimPolicy)
+			return fmt.Errorf("the Reclaim Policy for the Default Storage Class must be either 'delete' or 'retain', but it was '%s'", input.DefaultStorageClass.ReclaimPolicy)
 		}
 		if input.DefaultStorageClass.Filesystem != "ext4" && input.DefaultStorageClass.ReclaimPolicy != "xfs" {
 			return fmt.Errorf("the filesystem for the Default Storage Class must be either 'ext4' or 'xfs', but it was '%s'", input.DefaultStorageClass.Filesystem)
@@ -489,70 +498,74 @@ func (input *CseClusterSettings) validate() error {
 	if input.ServiceCidr == "" {
 		return fmt.Errorf("the Service CIDR is required")
 	}
-
 	return nil
 }
 
-// cseClusterSettingsToInternal transforms user input data (CseClusterSettings) into the final payload that
-// will be used to render the Go templates that define a Kubernetes cluster creation payload (cseClusterSettingsInternal).
-func cseClusterSettingsToInternal(input CseClusterSettings, org Org) (cseClusterSettingsInternal, error) {
-	output := cseClusterSettingsInternal{}
+// toCseClusterSettingsInternal transforms user input data (CseClusterSettings) into the final payload that
+// will be used to define a Container Service Extension Kubernetes cluster (cseClusterSettingsInternal).
+//
+// For example, the most relevant transformation is the change of the item IDs that are present in CseClusterSettings
+// (such as CseClusterSettings.KubernetesTemplateOvaId) to their corresponding Names (e.g. cseClusterSettingsInternal.KubernetesTemplateOvaName),
+// which are the identifiers that Container Service Extension uses internally.
+func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClusterSettingsInternal, error) {
 	err := input.validate()
 	if err != nil {
-		return output, err
+		return nil, err
 	}
 
+	output := &cseClusterSettingsInternal{}
 	if org.Org == nil {
-		return output, fmt.Errorf("the Organization is nil")
+		return nil, fmt.Errorf("could not retrieve the Organization, it is nil")
 	}
-
 	output.OrganizationName = org.Org.Name
 
 	vdc, err := org.GetVDCById(input.VdcId, true)
 	if err != nil {
-		return output, fmt.Errorf("could not retrieve the VDC with ID '%s': %s", input.VdcId, err)
+		return nil, fmt.Errorf("could not retrieve the VDC with ID '%s': %s", input.VdcId, err)
 	}
 	output.VdcName = vdc.Vdc.Name
 
 	vAppTemplate, err := getVAppTemplateById(org.client, input.KubernetesTemplateOvaId)
 	if err != nil {
-		return output, fmt.Errorf("could not retrieve the Kubernetes Template OVA with ID '%s': %s", input.KubernetesTemplateOvaId, err)
+		return nil, fmt.Errorf("could not retrieve the Kubernetes Template OVA with ID '%s': %s", input.KubernetesTemplateOvaId, err)
 	}
 	output.KubernetesTemplateOvaName = vAppTemplate.VAppTemplate.Name
 
 	tkgVersions, err := getTkgVersionBundleFromVAppTemplateName(vAppTemplate.VAppTemplate.Name)
 	if err != nil {
-		return output, fmt.Errorf("could not retrieve the required information from the Kubernetes Template OVA: %s", err)
+		return nil, fmt.Errorf("could not retrieve the required information from the Kubernetes Template OVA: %s", err)
 	}
 	output.TkgVersionBundle = tkgVersions
 
 	catalogName, err := vAppTemplate.GetCatalogName()
 	if err != nil {
-		return output, fmt.Errorf("could not retrieve the Catalog name where the the Kubernetes Template OVA '%s' is hosted: %s", input.KubernetesTemplateOvaId, err)
+		return nil, fmt.Errorf("could not retrieve the Catalog name where the the Kubernetes Template OVA '%s' (%s) is hosted: %s", input.KubernetesTemplateOvaId, vAppTemplate.VAppTemplate.Name, err)
 	}
 	output.CatalogName = catalogName
 
 	network, err := vdc.GetOrgVdcNetworkById(input.NetworkId, true)
 	if err != nil {
-		return output, fmt.Errorf("could not retrieve the Org VDC Network with ID '%s': %s", input.NetworkId, err)
+		return nil, fmt.Errorf("could not retrieve the Org VDC Network with ID '%s': %s", input.NetworkId, err)
 	}
 	output.NetworkName = network.OrgVDCNetwork.Name
 
-	currentCseVersion, err := getCseComponentsVersions(input.CseVersion)
+	cseComponentsVersions, err := getCseComponentsVersions(input.CseVersion)
 	if err != nil {
-		return output, fmt.Errorf("the CSE version '%s' is not supported: %s", input.CseVersion.String(), err)
+		return nil, err
 	}
-	rdeType, err := getRdeType(org.client, "vmware", "capvcdCluster", currentCseVersion.CapvcdRdeTypeVersion)
+	rdeType, err := getRdeType(org.client, "vmware", "capvcdCluster", cseComponentsVersions.CapvcdRdeTypeVersion)
 	if err != nil {
-		return output, err
+		return nil, err
 	}
 	output.RdeType = rdeType.DefinedEntityType
 
-	// The input to create a cluster uses different entities IDs, but CSE cluster creation process uses names.
-	// For that reason, we need to transform IDs to Names by querying VCD. This process is optimized with a tiny "nameToIdCache" map.
+	// The input to create a cluster uses different entities IDs, but CSE cluster creation process uses Names.
+	// For that reason, we need to transform IDs to Names by querying VCD. This process is optimized with a tiny cache map.
 	idToNameCache := map[string]string{
-		"": "", // Default empty value to map optional values that were not set
+		"": "", // Default empty value to map optional values that were not set, to avoid extra checks. For example, an empty vGPU Policy.
 	}
+
+	// Gather all the IDs of the Compute Policies and Storage Profiles, so we can transform them to Names in bulk.
 	var computePolicyIds []string
 	var storageProfileIds []string
 	for _, w := range input.WorkerPools {
@@ -562,11 +575,13 @@ func cseClusterSettingsToInternal(input CseClusterSettings, org Org) (cseCluster
 	computePolicyIds = append(computePolicyIds, input.ControlPlane.SizingPolicyId, input.ControlPlane.PlacementPolicyId)
 	storageProfileIds = append(storageProfileIds, input.ControlPlane.StorageProfileId, input.DefaultStorageClass.StorageProfileId)
 
+	// Retrieve the Compute Policies and Storage Profiles names and put them in the cache. The cache
+	// reduces the calls to VCD. The URN format used by VCD guarantees that IDs are unique, so there is no possibility of clashes here.
 	for _, id := range storageProfileIds {
 		if _, alreadyPresent := idToNameCache[id]; !alreadyPresent {
 			storageProfile, err := getStorageProfileById(org.client, id)
 			if err != nil {
-				return output, fmt.Errorf("could not retrieve Storage Profile with ID '%s': %s", id, err)
+				return nil, fmt.Errorf("could not retrieve Storage Profile with ID '%s': %s", id, err)
 			}
 			idToNameCache[id] = storageProfile.Name
 		}
@@ -575,13 +590,13 @@ func cseClusterSettingsToInternal(input CseClusterSettings, org Org) (cseCluster
 		if _, alreadyPresent := idToNameCache[id]; !alreadyPresent {
 			computePolicy, err := getVdcComputePolicyV2ById(org.client, id)
 			if err != nil {
-				return output, fmt.Errorf("could not retrieve Compute Policy with ID '%s': %s", id, err)
+				return nil, fmt.Errorf("could not retrieve Compute Policy with ID '%s': %s", id, err)
 			}
 			idToNameCache[id] = computePolicy.VdcComputePolicyV2.Name
 		}
 	}
 
-	// Now that everything is cached in memory, we can build the Node pools and Storage Class payloads
+	// Now that everything is cached in memory, we can build the Node pools and Storage Class payloads in a trivial way.
 	output.WorkerPools = make([]cseWorkerPoolSettingsInternal, len(input.WorkerPools))
 	for i, w := range input.WorkerPools {
 		output.WorkerPools[i] = cseWorkerPoolSettingsInternal{
@@ -615,25 +630,23 @@ func cseClusterSettingsToInternal(input CseClusterSettings, org Org) (cseCluster
 		}
 	}
 
-	cseVersions, err := getCseComponentsVersions(input.CseVersion)
+	vcdKeConfig, err := getVcdKeConfig(org.client, cseComponentsVersions.VcdKeConfigRdeTypeVersion, input.NodeHealthCheck)
 	if err != nil {
-		return output, err
+		return nil, err
 	}
-
-	vcdKeConfig, err := getVcdKeConfig(org.client, cseVersions.VcdKeConfigRdeTypeVersion, input.NodeHealthCheck)
-	if err != nil {
-		return output, err
+	if vcdKeConfig != nil {
+		output.VcdKeConfig = *vcdKeConfig
 	}
-	output.VcdKeConfig = vcdKeConfig
 
 	output.Owner = input.Owner
 	if input.Owner == "" {
 		sessionInfo, err := org.client.GetSessionInfo()
 		if err != nil {
-			return output, fmt.Errorf("error getting the owner of the cluster: %s", err)
+			return nil, fmt.Errorf("error getting the Owner: %s", err)
 		}
 		output.Owner = sessionInfo.User.Name
 	}
+
 	output.VcdUrl = strings.Replace(org.client.VCDHREF.String(), "/api", "", 1)
 
 	// These don't change, don't need mapping
@@ -649,52 +662,42 @@ func cseClusterSettingsToInternal(input CseClusterSettings, org Org) (cseCluster
 	return output, nil
 }
 
-// tkgVersionBundle is a type that contains all the versions of the components of
-// a Kubernetes cluster that can be obtained with the vApp Template name, downloaded
-// from VMware Customer connect:
-// https://customerconnect.vmware.com/downloads/details?downloadGroup=TKG-240&productId=1400
-type tkgVersionBundle struct {
-	EtcdVersion       string
-	CoreDnsVersion    string
-	TkgVersion        string
-	TkrVersion        string
-	KubernetesVersion string
-}
-
 // getTkgVersionBundleFromVAppTemplateName returns a tkgVersionBundle with the details of
-// all the Kubernetes cluster components versions given a valid vApp Template name, that should
-// correspond to a Kubernetes template. If it is not a valid vApp Template, returns an error.
-func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, error) {
+// all the Kubernetes cluster components versions given a valid Kubernetes Template OVA name.
+// If it is not a valid Kubernetes Template OVA, returns an error.
+func getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName string) (tkgVersionBundle, error) {
 	result := tkgVersionBundle{}
 
-	if strings.Contains(ovaName, "photon") {
-		return result, fmt.Errorf("the OVA '%s' uses Photon, and it is not supported", ovaName)
+	if strings.Contains(kubernetesTemplateOvaName, "photon") {
+		return result, fmt.Errorf("the Kubernetes Template OVA '%s' uses Photon, and it is not supported", kubernetesTemplateOvaName)
 	}
 
-	cutPosition := strings.LastIndex(ovaName, "kube-")
+	cutPosition := strings.LastIndex(kubernetesTemplateOvaName, "kube-")
 	if cutPosition < 0 {
-		return result, fmt.Errorf("the OVA '%s' is not a Kubernetes template OVA", ovaName)
+		return result, fmt.Errorf("the OVA '%s' is not a Kubernetes template OVA", kubernetesTemplateOvaName)
 	}
-	parsedOvaName := strings.ReplaceAll(ovaName, ".ova", "")[cutPosition+len("kube-"):]
+	parsedOvaName := strings.ReplaceAll(kubernetesTemplateOvaName, ".ova", "")[cutPosition+len("kube-"):]
 
-	cseTkgVersionsJson, err := cseFiles.ReadFile("cse/tkg_versions.json")
+	tkgVersionsMap := "cse/tkg_versions.json"
+	cseTkgVersionsJson, err := cseFiles.ReadFile(tkgVersionsMap)
 	if err != nil {
-		return result, err
+		return result, fmt.Errorf("failed reading %s: %s", tkgVersionsMap, err)
 	}
 
 	versionsMap := map[string]any{}
 	err = json.Unmarshal(cseTkgVersionsJson, &versionsMap)
 	if err != nil {
-		return result, fmt.Errorf("failed unmarshaling cse/tkg_versions.json: %s", err)
+		return result, fmt.Errorf("failed unmarshaling %s: %s", tkgVersionsMap, err)
 	}
 	versionMap, ok := versionsMap[parsedOvaName]
 	if !ok {
-		return result, fmt.Errorf("the Kubernetes OVA '%s' is not supported", parsedOvaName)
+		return result, fmt.Errorf("the Kubernetes Template OVA '%s' is not supported", parsedOvaName)
 	}
 
 	ovaParts := strings.Split(parsedOvaName, "-")
 	if len(ovaParts) < 2 {
-		return result, fmt.Errorf("unexpected error parsing the OVA name '%s', it doesn't follow the original naming convention", parsedOvaName)
+		return result, fmt.Errorf("unexpected error parsing the Kubernetes Template OVA name '%s',"+
+			"it doesn't follow the original naming convention (e.g: ubuntu-2004-kube-v1.24.11+vmware.1-tkg.1-2ccb2a001f8bd8f15f1bfbc811071830)", parsedOvaName)
 	}
 
 	result.KubernetesVersion = ovaParts[0]
@@ -705,46 +708,58 @@ func getTkgVersionBundleFromVAppTemplateName(ovaName string) (tkgVersionBundle, 
 	return result, nil
 }
 
-// getVcdKeConfig gets the required information from the CSE Server configuration RDE
-func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheckActive bool) (vcdKeConfig, error) {
-	result := vcdKeConfig{}
+// getVcdKeConfig gets the required information from the CSE Server configuration RDE (VCDKEConfig), such as the
+// Machine Health Check settings and the Container Registry URL.
+func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheckActive bool) (*vcdKeConfig, error) {
 	rdes, err := getRdesByName(client, "vmware", "VCDKEConfig", vcdKeConfigVersion, "vcdKeConfig")
 	if err != nil {
-		return result, fmt.Errorf("could not retrieve VCDKEConfig RDE with version %s: %s", vcdKeConfigVersion, err)
+		return nil, err
 	}
 	if len(rdes) != 1 {
-		return result, fmt.Errorf("expected exactly one VCDKEConfig RDE but got %d", len(rdes))
+		return nil, fmt.Errorf("expected exactly one VCDKEConfig RDE with version '%s', but got %d", vcdKeConfigVersion, len(rdes))
 	}
 
 	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]any)
 	if !ok {
-		return result, fmt.Errorf("wrong format of VCDKEConfig, expected a 'profiles' array")
+		return nil, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'profiles' array")
 	}
-	if len(profiles) != 1 {
-		return result, fmt.Errorf("wrong format of VCDKEConfig, expected a single 'profiles' element, got %d", len(profiles))
+	if len(profiles) == 0 {
+		return nil, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a non-empty 'profiles' element")
 	}
+
+	result := &vcdKeConfig{}
 	// TODO: Check airgapped environments: https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.1.1a/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.1.1/GUID-F00BE796-B5F2-48F2-A012-546E2E694400.html
 	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]any)["containerRegistryUrl"])
 
 	if isNodeHealthCheckActive {
-		mhc, ok := profiles[0].(map[string]any)["K8Config"].(map[string]any)["mhc"].(map[string]any)
+		mhc, ok := profiles[0].(map[string]any)["K8Config"].(map[string]any)["mhc"]
 		if !ok {
+			// If there is no "mhc" entry in the VCDKEConfig JSON, we skip setting this part of the Kubernetes cluster configuration
 			return result, nil
 		}
-		result.MaxUnhealthyNodesPercentage = mhc["maxUnhealthyNodes"].(float64)
-		result.NodeStartupTimeout = mhc["nodeStartupTimeout"].(string)
-		result.NodeNotReadyTimeout = mhc["nodeUnknownTimeout"].(string)
-		result.NodeUnknownTimeout = mhc["nodeNotReadyTimeout"].(string)
+		result.MaxUnhealthyNodesPercentage = mhc.(map[string]any)["maxUnhealthyNodes"].(float64)
+		result.NodeStartupTimeout = mhc.(map[string]any)["nodeStartupTimeout"].(string)
+		result.NodeNotReadyTimeout = mhc.(map[string]any)["nodeUnknownTimeout"].(string)
+		result.NodeUnknownTimeout = mhc.(map[string]any)["nodeNotReadyTimeout"].(string)
 	}
 
 	return result, nil
 }
 
+// getCseTemplate reads the Go template present in the embedded cseFiles filesystem.
 func getCseTemplate(cseVersion semver.Version, templateName string) (string, error) {
-	cseVersionSegments := cseVersion.Segments()
-	result, err := cseFiles.ReadFile(fmt.Sprintf("cse/%d.%d/%s.tmpl", cseVersionSegments[0], cseVersionSegments[1], templateName))
+	minimumVersion, err := semver.NewVersion("4.1")
 	if err != nil {
 		return "", err
+	}
+	if cseVersion.LessThan(minimumVersion) {
+		return "", fmt.Errorf("the Container Service version '%s' is not supported", minimumVersion.String())
+	}
+	versionSegments := cseVersion.Segments()
+	fullTemplatePath := fmt.Sprintf("cse/%d.%d/%s.tmpl", versionSegments[0], versionSegments[1], templateName)
+	result, err := cseFiles.ReadFile(fullTemplatePath)
+	if err != nil {
+		return "", fmt.Errorf("could not read Go template '%s'", fullTemplatePath)
 	}
 	return string(result), nil
 }

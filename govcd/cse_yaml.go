@@ -195,7 +195,8 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]any, clusterName 
 		}
 
 		// We need to add the block to the slice of YAML documents
-		mhcYaml, err := generateMemoryHealthCheckYaml(*vcdKeConfig, cseVersion, clusterName)
+		settings := &cseClusterSettingsInternal{CseVersion: cseVersion, Name: clusterName, VcdKeConfig: *vcdKeConfig}
+		mhcYaml, err := settings.generateMemoryHealthCheckYaml()
 		if err != nil {
 			return nil, err
 		}
@@ -278,7 +279,7 @@ func cseUpdateCapiYaml(client *Client, capiYaml string, input CseClusterUpdateIn
 		if err != nil {
 			return "", err
 		}
-		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, input.clusterName, input.cseVersion, &vcdKeConfig)
+		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, input.clusterName, input.cseVersion, vcdKeConfig)
 		if err != nil {
 			return "", err
 		}
