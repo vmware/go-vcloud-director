@@ -45,7 +45,7 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 		return "", fmt.Errorf("error creating the CSE Kubernetes cluster: %s", err)
 	}
 
-	rdeContents, err := internalSettings.getKubernetesClusterCreationPayload()
+	payload, err := internalSettings.getKubernetesClusterCreationPayload()
 	if err != nil {
 		return "", err
 	}
@@ -59,13 +59,13 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 		types.DefinedEntity{
 			EntityType: internalSettings.RdeType.ID,
 			Name:       internalSettings.Name,
-			Entity:     rdeContents,
+			Entity:     payload,
 		}, &TenantContext{
 			OrgId:   org.Org.ID,
 			OrgName: org.Org.Name,
 		})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error creating the CSE Kubernetes cluster: %s", err)
 	}
 
 	return rde.DefinedEntity.ID, nil
@@ -123,7 +123,7 @@ func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
 }
 
 // UpdateWorkerPools executes an update on the receiver cluster to change the existing worker pools.
-// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		WorkerPools: &input,
@@ -131,7 +131,7 @@ func (cluster *CseKubernetesCluster) UpdateWorkerPools(input map[string]CseWorke
 }
 
 // AddWorkerPools executes an update on the receiver cluster to add new worker pools.
-// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) AddWorkerPools(input []CseWorkerPoolSettings, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		NewWorkerPools: &input,
@@ -139,7 +139,7 @@ func (cluster *CseKubernetesCluster) AddWorkerPools(input []CseWorkerPoolSetting
 }
 
 // UpdateControlPlane executes an update on the receiver cluster to change the existing control plane.
-// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpdateInput, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		ControlPlane: &input,
@@ -147,7 +147,7 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 }
 
 // ChangeKubernetesTemplate executes an update on the receiver cluster to change the Kubernetes template of the cluster.
-// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		KubernetesTemplateOvaId: &kubernetesTemplateOvaId,
@@ -155,7 +155,7 @@ func (cluster *CseKubernetesCluster) ChangeKubernetesTemplate(kubernetesTemplate
 }
 
 // SetHealthCheck executes an update on the receiver cluster to enable or disable the machine health check capabilities.
-// If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		NodeHealthCheck: &healthCheckEnabled,
@@ -163,7 +163,7 @@ func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool, ref
 }
 
 // SetAutoRepairOnErrors executes an update on the receiver cluster to change the flag that controls the auto-repair
-// capabilities of CSE. If refresh=true, it retrieves the latest state of the cluster from VCD before updating (recommended).
+// capabilities of CSE. If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		AutoRepairOnErrors: &autoRepairOnErrors,
@@ -171,7 +171,7 @@ func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bo
 }
 
 // Update executes an update on the receiver CSE Kubernetes Cluster on any of the allowed parameters defined in the input type. If refresh=true,
-// it retrieves the latest state of the cluster from VCD before updating (recommended).
+// it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh bool) error {
 	if refresh {
 		err := cluster.Refresh()

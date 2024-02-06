@@ -208,7 +208,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 
 	// NOTE: We get the remaining elements from the CAPI YAML, despite they are also inside capvcdType.Status.
 	// The reason is that any change on the cluster is immediately reflected in the CAPI YAML, but not in the capvcdType.Status
-	// elements, which may take 10 minutes to be refreshed.
+	// elements, which may take more than 10 minutes to be refreshed.
 	yamlDocuments, err := unmarshalMultipleYamlDocuments(result.capvcdType.Spec.CapiYaml)
 	if err != nil {
 		return nil, err
@@ -284,13 +284,24 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 
 				result.ControlPlane.DiskSizeGi = diskSizeGi
 
-				// We do it just once for the Control Plane because all VCDMachineTemplate blocks share the same OVA
+				// We retrieve the Kubernetes Template OVA just once for the Control Plane because all YAML blocks share the same
+				catalogName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog")
+				if err != nil {
+					return nil, err
+				}
+				catalog, err := rde.client.GetCatalogByName(result.capvcdType.Status.Capvcd.VcdProperties.Organizations[0].Name, catalogName)
+				if err != nil {
+					return nil, err
+				}
 				ovaName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template")
 				if err != nil {
 					return nil, err
 				}
-				// TODO: There is no method to retrieve vApp templates by name....
-				result.KubernetesTemplateOvaId = ovaName
+				ova, err := catalog.GetVAppTemplateByName(ovaName)
+				if err != nil {
+					return nil, err
+				}
+				result.KubernetesTemplateOvaId = ova.VAppTemplate.ID
 			} else {
 				// This is one Worker Pool. We need to check the map of worker pools, just in case we already saved the
 				// machine count from MachineDeployment.
@@ -372,9 +383,8 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 }
 
 // waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if timeoutMinutes = 0)
-// or until the timeout is reached. If the cluster is in "provisioned" state before the given timeout, it returns a CseKubernetesCluster object
-// representing the Kubernetes cluster with all its latest details.
-// If one of the states of the cluster at a given point is "error", this function also checks whether the cluster has the "Auto Repair on Errors" flag enabled,
+// or until the timeout is reached.
+// If one of the states of the cluster at a given point is "error", this function also checks whether the cluster has the "AutoRepairOnErrors" flag enabled,
 // so it keeps waiting if it's true.
 // If timeout is reached before the cluster is in "provisioned" state, it returns an error.
 func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinutes time.Duration) error {
@@ -389,15 +399,14 @@ func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinu
 			return err
 		}
 
-		// Here we don't to use cseConvertToCseKubernetesClusterType to avoid calling VCD
+		// Here we don't use cseConvertToCseKubernetesClusterType to avoid calling VCD. We only need the state.
 		entityBytes, err := json.Marshal(rde.DefinedEntity.Entity)
 		if err != nil {
-			return fmt.Errorf("could not marshal the RDE contents to create a capvcdType instance: %s", err)
+			return fmt.Errorf("could not check the Kubernetes cluster state: %s", err)
 		}
-
 		err = json.Unmarshal(entityBytes, &capvcd)
 		if err != nil {
-			return fmt.Errorf("could not unmarshal the RDE contents to create a Capvcd instance: %s", err)
+			return fmt.Errorf("could not check the Kubernetes cluster state: %s", err)
 		}
 
 		switch capvcd.Status.VcdKe.State {
@@ -408,11 +417,10 @@ func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinu
 			if !capvcd.Spec.VcdKe.AutoRepairOnErrors {
 				// Give feedback about what went wrong
 				errors := ""
-				// TODO: Change to ErrorSet
-				for _, event := range capvcd.Status.Capvcd.EventSet {
-					errors += fmt.Sprintf("%s,\n", event.AdditionalDetails)
+				for _, event := range capvcd.Status.Capvcd.ErrorSet {
+					errors += fmt.Sprintf("%s,\n", event.AdditionalDetails.DetailedError)
 				}
-				return fmt.Errorf("got an error and 'AutoRepairOnErrors' is disabled, aborting. Errors:\n%s", errors)
+				return fmt.Errorf("got an error and 'AutoRepairOnErrors' is disabled, aborting. Error events:\n%s", errors)
 			}
 		}
 
@@ -667,6 +675,9 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 // If it is not a valid Kubernetes Template OVA, returns an error.
 func getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName string) (tkgVersionBundle, error) {
 	result := tkgVersionBundle{}
+	if strings.TrimSpace(kubernetesTemplateOvaName) == "" {
+		return result, fmt.Errorf("the Kubernetes Template OVA cannot be empty")
+	}
 
 	if strings.Contains(kubernetesTemplateOvaName, "photon") {
 		return result, fmt.Errorf("the Kubernetes Template OVA '%s' uses Photon, and it is not supported", kubernetesTemplateOvaName)
@@ -691,13 +702,14 @@ func getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName string) (
 	}
 	versionMap, ok := versionsMap[parsedOvaName]
 	if !ok {
-		return result, fmt.Errorf("the Kubernetes Template OVA '%s' is not supported", parsedOvaName)
+		return result, fmt.Errorf("the Kubernetes Template OVA '%s' is not supported", kubernetesTemplateOvaName)
 	}
 
+	// This check should not be needed unless the tkgVersionsMap JSON is deliberately bad constructed.
 	ovaParts := strings.Split(parsedOvaName, "-")
-	if len(ovaParts) < 2 {
+	if len(ovaParts) != 3 {
 		return result, fmt.Errorf("unexpected error parsing the Kubernetes Template OVA name '%s',"+
-			"it doesn't follow the original naming convention (e.g: ubuntu-2004-kube-v1.24.11+vmware.1-tkg.1-2ccb2a001f8bd8f15f1bfbc811071830)", parsedOvaName)
+			"it doesn't follow the original naming convention (e.g: ubuntu-2004-kube-v1.24.11+vmware.1-tkg.1-2ccb2a001f8bd8f15f1bfbc811071830)", kubernetesTemplateOvaName)
 	}
 
 	result.KubernetesVersion = ovaParts[0]
