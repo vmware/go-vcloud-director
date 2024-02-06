@@ -133,7 +133,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 			},
 		},
 		{
-			name: "correct YAML with everything",
+			name: "correct YAML with every possible option",
 			input: cseClusterSettingsInternal{
 				CseVersion:                *v41,
 				Name:                      "test1",

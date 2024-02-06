@@ -288,8 +288,7 @@ func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[string]interfac
 // traverseMapAndGet traverses the input interface{}, which should be a map of maps, by following the path specified as
 // "keyA.keyB.keyC.keyD", doing something similar to, visually speaking, map["keyA"]["keyB"]["keyC"]["keyD"], or in other words,
 // it goes inside every inner map iteratively, until the given path is finished.
-// The final value, "keyD" in the same example, should be of type T, which is a generic type requested during the call
-// to this function.
+// The final value, "keyD" in the same example, should be of any type T.
 func traverseMapAndGet[T any](input interface{}, path string) (T, error) {
 	var nothing T
 	if input == nil {
