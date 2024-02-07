@@ -283,11 +283,11 @@ func getAllIpSpaceAllocations(client *Client, ipSpaceId string, org *Org, queryP
 }
 
 // GetAllIpSpaceFloatingIpSuggestions suggests IP addresses to use for networking services on Edge
-// Gateway or Provider Gateway. 'gatewayId' is mandatory. Based on the specified Gateway, VCD
-// will query all the applicable IP Spaces and suggest some IP addresses which can be utilized to
-// configure the network services on the Gateway. IP Space IP addresses which are are allocated but
-// not currently used for any network services are considered. Results can also be filtered by IPV4
-// or IPV6 IP address types.
+// Gateway or Provider Gateway. 'gatewayId' is mandatory. Based on the specified Gateway, VCD will
+// query all the applicable IP Spaces and suggest some IP addresses which can be utilized to
+// configure the network services on the Gateway. Allocated IP Space's IP addresses, but not
+// currently used for any network services are returned. Results can also be filtered by IPV4 or
+// IPV6 IP address types.
 //
 // Filter examples:(filter=gatewayId==URN), (filter=gatewayId==URN;ipType==IPV6)
 // Go code:
