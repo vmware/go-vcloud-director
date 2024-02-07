@@ -229,8 +229,7 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 
 	result := make([]map[string]interface{}, len(docs))
 	copy(result, docs)
-	result = append(result, newWorkerPoolsYamlDocs...)
-	return result, nil
+	return append(result, newWorkerPoolsYamlDocs...), nil
 }
 
 // cseUpdateNodeHealthCheckInYaml updates the Kubernetes cluster described in the given YAML documents by adding or removing
