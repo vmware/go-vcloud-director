@@ -201,6 +201,7 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 
 // cseAddWorkerPoolsInYaml modifies the given Kubernetes cluster YAML contents by adding new Worker Pools
 // described by the input parameters.
+// NOTE: This function doesn't modify the input, but returns a copy of the YAML with the added unmarshalled documents.
 func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernetesCluster, newWorkerPools []CseWorkerPoolSettings) ([]map[string]interface{}, error) {
 	internalSettings := cseClusterSettingsInternal{WorkerPools: make([]cseWorkerPoolSettingsInternal, len(newWorkerPools))}
 	for i, workerPool := range newWorkerPools {
@@ -226,16 +227,15 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 		return nil, err
 	}
 
-	result := make([]map[string]interface{}, len(docs)+len(newWorkerPoolsYamlDocs))
+	result := make([]map[string]interface{}, len(docs))
 	copy(result, docs)
-	for i, doc := range newWorkerPoolsYamlDocs {
-		result[i+len(docs)] = doc
-	}
+	result = append(result, newWorkerPoolsYamlDocs...)
 	return result, nil
 }
 
 // cseUpdateNodeHealthCheckInYaml updates the Kubernetes cluster described in the given YAML documents by adding or removing
-// the MachineHealthCheck object. This function doesn't modify the input, but returns a copy of the YAML with the modifications.
+// the MachineHealthCheck object.
+// NOTE: This function doesn't modify the input, but returns a copy of the YAML with the modifications.
 func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clusterName string, cseVersion semver.Version, vcdKeConfig *vcdKeConfig) ([]map[string]interface{}, error) {
 	mhcPosition := -1
 	result := make([]map[string]interface{}, len(yamlDocuments))

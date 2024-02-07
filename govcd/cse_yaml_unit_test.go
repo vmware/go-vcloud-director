@@ -114,7 +114,7 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 			MachineCount: int(oldReplicas),
 		}
 	}
-	if len(oldNodePools) == -1 {
+	if len(oldNodePools) == 0 {
 		t.Fatalf("didn't get any valid worker node pool")
 	}
 
@@ -166,6 +166,84 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 	err = cseUpdateWorkerPoolsInYaml(yamlDocs, newNodePools)
 	if err == nil {
 		t.Fatal("Expected an error, but got none")
+	}
+}
+
+// Test_cseAddWorkerPoolsInYaml tests the addition process of the Worker pools in a CAPI YAML.
+func Test_cseAddWorkerPoolsInYaml(t *testing.T) {
+	version, err := semver.NewVersion("4.1")
+	if err != nil {
+		t.Fatalf("could not create version: %s", err)
+	}
+	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")
+	if err != nil {
+		t.Fatalf("could not read CAPI YAML test file: %s", err)
+	}
+
+	yamlDocs, err := unmarshalMultipleYamlDocuments(string(capiYaml))
+	if err != nil {
+		t.Fatalf("could not unmarshal CAPI YAML test file: %s", err)
+	}
+
+	// The worker pools should have now the new details updated
+	poolCount := 0
+	for _, document := range yamlDocs {
+		if document["kind"] != "MachineDeployment" {
+			continue
+		}
+		poolCount++
+	}
+
+	// We call the function to update the old pools with the new ones
+	newNodePools := []CseWorkerPoolSettings{{
+		Name:              "new-pool",
+		MachineCount:      35,
+		DiskSizeGi:        20,
+		SizingPolicyId:    "dummy",
+		PlacementPolicyId: "",
+		VGpuPolicyId:      "",
+		StorageProfileId:  "*",
+	}}
+
+	newYamlDocs, err := cseAddWorkerPoolsInYaml(yamlDocs, CseKubernetesCluster{
+		CseClusterSettings: CseClusterSettings{
+			CseVersion: *version,
+			Name:       "dummy",
+		},
+	}, newNodePools)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	// The worker pools should have now the new details updated
+	var newPool map[string]interface{}
+	newPoolCount := 0
+	for _, document := range newYamlDocs {
+		if document["kind"] != "MachineDeployment" {
+			continue
+		}
+
+		name, err := traverseMapAndGet[string](document, "metadata.name")
+		if err != nil {
+			t.Fatalf("incorrect CAPI YAML: %s", err)
+		}
+		if name == "new-pool" {
+			newPool = document
+		}
+		newPoolCount++
+	}
+	if newPool == nil {
+		t.Fatalf("should have found the new Worker Pool")
+	}
+	if poolCount != newPoolCount-1 {
+		t.Fatalf("should have one extra Worker Pool")
+	}
+	replicas, err := traverseMapAndGet[float64](newPool, "spec.replicas")
+	if err != nil {
+		t.Fatalf("incorrect CAPI YAML: %s", err)
+	}
+	if replicas != 35 {
+		t.Fatalf("incorrect replicas: %.f", replicas)
 	}
 }
 
