@@ -2056,3 +2056,22 @@ func (vm *VM) ChangeCPUAndCoreCount(cpus, cpuCores *int) error {
 	}
 	return nil
 }
+
+// ConsolidateDisksAsync triggers VM disk consolidation task
+func (vm *VM) ConsolidateDisksAsync() (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("cannot consolidate disks, VM HREF is unset")
+	}
+
+	return vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/consolidate", http.MethodPost,
+		types.AnyXMLMime, "error consolidating VM disks: %s", nil)
+}
+
+// ConsolidateDisks triggers VM disk consolidation task and waits until it is completed
+func (vm *VM) ConsolidateDisks() error {
+	task, err := vm.ConsolidateDisksAsync()
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
