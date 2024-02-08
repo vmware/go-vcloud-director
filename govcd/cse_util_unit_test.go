@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	semver "github.com/hashicorp/go-version"
 	"reflect"
 	"testing"
 )
@@ -64,5 +65,45 @@ func Test_getTkgVersionBundleFromVAppTemplateName(t *testing.T) {
 				t.Errorf("getTkgVersionBundleFromVAppTemplateName() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func Test_getCseTemplate(t *testing.T) {
+	v40, err := semver.NewVersion("4.0")
+	if err != nil {
+		t.Fatalf("could not create 4.0 version object")
+	}
+	v41, err := semver.NewVersion("4.1")
+	if err != nil {
+		t.Fatalf("could not create 4.1 version object")
+	}
+	v410, err := semver.NewVersion("4.1.0")
+	if err != nil {
+		t.Fatalf("could not create 4.1.0 version object")
+	}
+	v411, err := semver.NewVersion("4.1.1")
+	if err != nil {
+		t.Fatalf("could not create 4.1.1 version object")
+	}
+
+	tmpl41, err := getCseTemplate(*v41, "rde")
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	tmpl410, err := getCseTemplate(*v410, "rde")
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	tmpl411, err := getCseTemplate(*v411, "rde")
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	if tmpl41 != tmpl410 || tmpl41 != tmpl411 || tmpl410 != tmpl411 {
+		t.Fatalf("templates should be the same:\n4.1: %s\n4.1.0: %s\n4.1.1: %s", tmpl41, tmpl410, tmpl411)
+	}
+
+	_, err = getCseTemplate(*v40, "rde")
+	if err == nil && err.Error() != "the Container Service minimum version is '4.1.0'" {
+		t.Fatalf("expected an error but got %s", err)
 	}
 }

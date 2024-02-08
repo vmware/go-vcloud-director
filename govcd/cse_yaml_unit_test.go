@@ -30,8 +30,8 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 			continue
 		}
 
-		oldOvaName, err = traverseMapAndGet[string](document, "spec.template.spec.template")
-		if err != nil {
+		oldOvaName = traverseMapAndGet[string](document, "spec.template.spec.template")
+		if oldOvaName == "" {
 			t.Fatalf("expected to find spec.template.spec.template in %v but got an error: %s", document, err)
 		}
 		break
@@ -101,17 +101,13 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 			continue
 		}
 
-		workerPoolName, err := traverseMapAndGet[string](document, "metadata.name")
-		if err != nil {
+		workerPoolName := traverseMapAndGet[string](document, "metadata.name")
+		if workerPoolName == "" {
 			t.Fatalf("incorrect CAPI YAML: %s", err)
 		}
 
-		oldReplicas, err := traverseMapAndGet[float64](document, "spec.replicas")
-		if err != nil {
-			t.Fatalf("incorrect CAPI YAML: %s", err)
-		}
 		oldNodePools[workerPoolName] = CseWorkerPoolUpdateInput{
-			MachineCount: int(oldReplicas),
+			MachineCount: int(traverseMapAndGet[float64](document, "spec.replicas")),
 		}
 	}
 	if len(oldNodePools) == 0 {
@@ -137,11 +133,8 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 			continue
 		}
 
-		retrievedReplicas, err := traverseMapAndGet[float64](document, "spec.replicas")
-		if err != nil {
-			t.Fatalf("incorrect CAPI YAML: %s", err)
-		}
-		if retrievedReplicas != float64(newReplicas) {
+		retrievedReplicas := traverseMapAndGet[float64](document, "spec.replicas")
+		if traverseMapAndGet[float64](document, "spec.replicas") != float64(newReplicas) {
 			t.Fatalf("expected %d replicas but got %0.f", newReplicas, retrievedReplicas)
 		}
 	}
@@ -223,10 +216,7 @@ func Test_cseAddWorkerPoolsInYaml(t *testing.T) {
 			continue
 		}
 
-		name, err := traverseMapAndGet[string](document, "metadata.name")
-		if err != nil {
-			t.Fatalf("incorrect CAPI YAML: %s", err)
-		}
+		name := traverseMapAndGet[string](document, "metadata.name")
 		if name == "new-pool" {
 			newPool = document
 		}
@@ -238,10 +228,7 @@ func Test_cseAddWorkerPoolsInYaml(t *testing.T) {
 	if poolCount != newPoolCount-1 {
 		t.Fatalf("should have one extra Worker Pool")
 	}
-	replicas, err := traverseMapAndGet[float64](newPool, "spec.replicas")
-	if err != nil {
-		t.Fatalf("incorrect CAPI YAML: %s", err)
-	}
+	replicas := traverseMapAndGet[float64](newPool, "spec.replicas")
 	if replicas != 35 {
 		t.Fatalf("incorrect replicas: %.f", replicas)
 	}
@@ -266,12 +253,8 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 			continue
 		}
 
-		oldReplicas, err := traverseMapAndGet[float64](document, "spec.replicas")
-		if err != nil {
-			t.Fatalf("incorrect CAPI YAML: %s", err)
-		}
 		oldControlPlane = CseControlPlaneUpdateInput{
-			MachineCount: int(oldReplicas),
+			MachineCount: int(traverseMapAndGet[float64](document, "spec.replicas")),
 		}
 	}
 	if reflect.DeepEqual(oldControlPlane, CseWorkerPoolUpdateInput{}) {
@@ -294,10 +277,7 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 			continue
 		}
 
-		retrievedReplicas, err := traverseMapAndGet[float64](document, "spec.replicas")
-		if err != nil {
-			t.Fatalf("incorrect CAPI YAML: %s", err)
-		}
+		retrievedReplicas := traverseMapAndGet[float64](document, "spec.replicas")
 		if retrievedReplicas != float64(newReplicas) {
 			t.Fatalf("expected %d replicas but got %0.f", newReplicas, retrievedReplicas)
 		}
@@ -331,10 +311,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 		if doc["kind"] != "Cluster" {
 			continue
 		}
-		clusterName, err = traverseMapAndGet[string](doc, "metadata.name")
-		if err != nil {
-			t.Fatalf("incorrect CAPI YAML: %s", err)
-		}
+		clusterName = traverseMapAndGet[string](doc, "metadata.name")
 	}
 	if clusterName == "" {
 		t.Fatal("could not find the cluster name in the CAPI YAML test file")
@@ -375,17 +352,11 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 		if document["kind"] != "MachineHealthCheck" {
 			continue
 		}
-		maxUnhealthy, err := traverseMapAndGet[string](document, "spec.maxUnhealthy")
-		if err != nil {
-			t.Fatalf("%s", err)
-		}
+		maxUnhealthy := traverseMapAndGet[string](document, "spec.maxUnhealthy")
 		if maxUnhealthy != "12%" {
 			t.Fatalf("expected a 'spec.maxUnhealthy' = 12%%, but got %s", maxUnhealthy)
 		}
-		nodeStartupTimeout, err := traverseMapAndGet[string](document, "spec.nodeStartupTimeout")
-		if err != nil {
-			t.Fatalf("%s", err)
-		}
+		nodeStartupTimeout := traverseMapAndGet[string](document, "spec.nodeStartupTimeout")
 		if nodeStartupTimeout != "34s" {
 			t.Fatalf("expected a 'spec.nodeStartupTimeout' = 34s, but got %s", nodeStartupTimeout)
 		}
@@ -499,36 +470,38 @@ func Test_marshalMultplieYamlDocuments(t *testing.T) {
 // Test_traverseMapAndGet tests traverseMapAndGet function
 func Test_traverseMapAndGet(t *testing.T) {
 	type args struct {
-		input any
+		input interface{}
 		path  string
 	}
 	tests := []struct {
 		name     string
 		args     args
 		wantType string
-		want     any
-		wantErr  string
+		want     interface{}
 	}{
 		{
 			name: "input is nil",
 			args: args{
 				input: nil,
 			},
-			wantErr: "the input is nil",
+			wantType: "string",
+			want:     "",
 		},
 		{
 			name: "input is not a map",
 			args: args{
 				input: "error",
 			},
-			wantErr: "the input is a string, not a map[string]interface{}",
+			wantType: "string",
+			want:     "",
 		},
 		{
 			name: "map is empty",
 			args: args{
 				input: map[string]interface{}{},
 			},
-			wantErr: "the map is empty",
+			wantType: "float64",
+			want:     float64(0),
 		},
 		{
 			name: "map does not have key",
@@ -538,7 +511,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 				},
 				path: "keyB",
 			},
-			wantErr: "key 'keyB' does not exist in input map",
+			wantType: "string",
+			want:     "",
 		},
 		{
 			name: "map has a single simple key",
@@ -593,7 +567,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 				},
 				path: "keyA.keyB.keyC.keyD",
 			},
-			wantErr: "key 'keyC' is a string, not a map, but there are still 1 paths to explore",
+			wantType: "string",
+			want:     "",
 		},
 		{
 			name: "obtained value does not correspond to the desired type",
@@ -608,27 +583,22 @@ func Test_traverseMapAndGet(t *testing.T) {
 				path: "keyA.keyB.keyC",
 			},
 			wantType: "string",
-			wantErr:  "could not convert obtained type map[string]interface {} to requested string",
+			want:     "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var got any
-			var err error
+			var got interface{}
 			if tt.wantType == "string" {
-				got, err = traverseMapAndGet[string](tt.args.input, tt.args.path)
+				got = traverseMapAndGet[string](tt.args.input, tt.args.path)
 			} else if tt.wantType == "map" {
-				got, err = traverseMapAndGet[map[string]interface{}](tt.args.input, tt.args.path)
+				got = traverseMapAndGet[map[string]interface{}](tt.args.input, tt.args.path)
+			} else if tt.wantType == "float64" {
+				got = traverseMapAndGet[float64](tt.args.input, tt.args.path)
 			} else {
 				t.Fatalf("wantType type not used in this test")
 			}
 
-			if err != nil {
-				if tt.wantErr != err.Error() {
-					t.Errorf("traverseMapAndGet() error = %v, wantErr = %v", err, tt.wantErr)
-				}
-				return
-			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("traverseMapAndGet() got = %v, want %v", got, tt.want)
 			}

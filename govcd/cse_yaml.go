@@ -89,42 +89,42 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, k
 	for _, d := range yamlDocuments {
 		switch d["kind"] {
 		case "VCDMachineTemplate":
-			_, err := traverseMapAndGet[string](d, "spec.template.spec.template")
-			if err != nil {
-				return fmt.Errorf("incorrect YAML: %s", err)
+			ok := traverseMapAndGet[string](d, "spec.template.spec.template") != ""
+			if !ok {
+				return fmt.Errorf("the VCDMachineTemplate 'spec.template.spec.template' field is missing")
 			}
 			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["template"] = kubernetesTemplateOvaName
 		case "MachineDeployment":
-			_, err := traverseMapAndGet[string](d, "spec.template.spec.version")
-			if err != nil {
-				return fmt.Errorf("incorrect YAML: %s", err)
+			ok := traverseMapAndGet[string](d, "spec.template.spec.version") != ""
+			if !ok {
+				return fmt.Errorf("the MachineDeployment 'spec.template.spec.version' field is missing")
 			}
 			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["version"] = tkgBundle.KubernetesVersion
 		case "Cluster":
-			_, err := traverseMapAndGet[string](d, "metadata.annotations.TKGVERSION")
-			if err != nil {
-				return fmt.Errorf("incorrect YAML: %s", err)
+			ok := traverseMapAndGet[string](d, "metadata.annotations.TKGVERSION") != ""
+			if !ok {
+				return fmt.Errorf("the Cluster 'metadata.annotations.TKGVERSION' field is missing")
 			}
 			d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["TKGVERSION"] = tkgBundle.TkgVersion
-			_, err = traverseMapAndGet[string](d, "metadata.labels.tanzuKubernetesRelease")
-			if err != nil {
-				return fmt.Errorf("incorrect YAML: %s", err)
+			ok = traverseMapAndGet[string](d, "metadata.labels.tanzuKubernetesRelease") != ""
+			if !ok {
+				return fmt.Errorf("the Cluster 'metadata.labels.tanzuKubernetesRelease' field is missing")
 			}
 			d["metadata"].(map[string]interface{})["labels"].(map[string]interface{})["tanzuKubernetesRelease"] = tkgBundle.TkrVersion
 		case "KubeadmControlPlane":
-			_, err := traverseMapAndGet[string](d, "spec.version")
-			if err != nil {
-				return fmt.Errorf("incorrect YAML: %s", err)
+			ok := traverseMapAndGet[string](d, "spec.version") != ""
+			if !ok {
+				return fmt.Errorf("the KubeadmControlPlane 'spec.version' field is missing")
 			}
 			d["spec"].(map[string]interface{})["version"] = tkgBundle.KubernetesVersion
-			_, err = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag")
-			if err != nil {
-				return fmt.Errorf("incorrect YAML: %s", err)
+			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag") != ""
+			if !ok {
+				return fmt.Errorf("the KubeadmControlPlane 'spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag' field is missing")
 			}
 			d["spec"].(map[string]interface{})["kubeadmConfigSpec"].(map[string]interface{})["clusterConfiguration"].(map[string]interface{})["dns"].(map[string]interface{})["imageTag"] = tkgBundle.CoreDnsVersion
-			_, err = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag")
-			if err != nil {
-				return fmt.Errorf("incorrect YAML: %s", err)
+			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag") != ""
+			if !ok {
+				return fmt.Errorf("the KubeadmControlPlane 'spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag' field is missing")
 			}
 			d["spec"].(map[string]interface{})["kubeadmConfigSpec"].(map[string]interface{})["clusterConfiguration"].(map[string]interface{})["etcd"].(map[string]interface{})["local"].(map[string]interface{})["imageTag"] = tkgBundle.EtcdVersion
 		}
@@ -142,10 +142,6 @@ func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]interface{}, input C
 	for _, d := range yamlDocuments {
 		if d["kind"] != "KubeadmControlPlane" {
 			continue
-		}
-		_, err := traverseMapAndGet[float64](d, "spec.replicas")
-		if err != nil {
-			return fmt.Errorf("incorrect YAML: %s", err)
 		}
 		d["spec"].(map[string]interface{})["replicas"] = float64(input.MachineCount) // As it was originally unmarshalled as a float64
 		updated = true
@@ -165,9 +161,9 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 			continue
 		}
 
-		workerPoolName, err := traverseMapAndGet[string](d, "metadata.name")
-		if err != nil {
-			return fmt.Errorf("incorrect YAML: %s", err)
+		workerPoolName := traverseMapAndGet[string](d, "metadata.name")
+		if workerPoolName == "" {
+			return fmt.Errorf("the MachineDeployment 'metadata.name' field is empty")
 		}
 
 		workerPoolToUpdate := ""
@@ -183,11 +179,6 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 
 		if workerPools[workerPoolToUpdate].MachineCount < 0 {
 			return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
-		}
-
-		_, err = traverseMapAndGet[float64](d, "spec.replicas")
-		if err != nil {
-			return fmt.Errorf("incorrect YAML: %s", err)
 		}
 
 		d["spec"].(map[string]interface{})["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
@@ -319,18 +310,18 @@ func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[string]interfac
 // traverseMapAndGet traverses the input interface{}, which should be a map of maps, by following the path specified as
 // "keyA.keyB.keyC.keyD", doing something similar to, visually speaking, map["keyA"]["keyB"]["keyC"]["keyD"], or in other words,
 // it goes inside every inner map iteratively, until the given path is finished.
-// The final value, "keyD" in the same example, should be of any type T.
-func traverseMapAndGet[T any](input interface{}, path string) (T, error) {
+// If the path doesn't lead to any value, or if the value is nil, or there is any other issue, returns the "zero" value of T.
+func traverseMapAndGet[T any](input interface{}, path string) T {
 	var nothing T
 	if input == nil {
-		return nothing, fmt.Errorf("the input is nil")
+		return nothing
 	}
 	inputMap, ok := input.(map[string]interface{})
 	if !ok {
-		return nothing, fmt.Errorf("the input is a %T, not a map[string]interface{}", input)
+		return nothing
 	}
 	if len(inputMap) == 0 {
-		return nothing, fmt.Errorf("the map is empty")
+		return nothing
 	}
 	pathUnits := strings.Split(path, ".")
 	completed := false
@@ -340,12 +331,12 @@ func traverseMapAndGet[T any](input interface{}, path string) (T, error) {
 		subPath := pathUnits[i]
 		traversed, ok := inputMap[subPath]
 		if !ok {
-			return nothing, fmt.Errorf("key '%s' does not exist in input map", subPath)
+			return nothing
 		}
 		if i < len(pathUnits)-1 {
 			traversedMap, ok := traversed.(map[string]interface{})
 			if !ok {
-				return nothing, fmt.Errorf("key '%s' is a %T, not a map[string]interface{}, but there are still %d paths to explore", subPath, traversed, len(pathUnits)-(i+1))
+				return nothing
 			}
 			inputMap = traversedMap
 		} else {
@@ -356,7 +347,7 @@ func traverseMapAndGet[T any](input interface{}, path string) (T, error) {
 	}
 	resultTyped, ok := result.(T)
 	if !ok {
-		return nothing, fmt.Errorf("could not convert obtained type %T to requested %T", result, nothing)
+		return nothing
 	}
-	return resultTyped, nil
+	return resultTyped
 }

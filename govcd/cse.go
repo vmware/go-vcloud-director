@@ -97,6 +97,10 @@ func (cluster *CseKubernetesCluster) Refresh() error {
 
 // GetKubeconfig retrieves the Kubeconfig from an available cluster.
 func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
+	if cluster.State != "provisioned" {
+		return "", fmt.Errorf("cannot get a Kubeconfig of a Kubernetes cluster that is not in 'provisioned' state")
+	}
+
 	rde, err := getRdeById(cluster.client, cluster.ID)
 	if err != nil {
 		return "", err
@@ -146,9 +150,9 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 	}, refresh)
 }
 
-// ChangeKubernetesTemplate executes an update on the receiver cluster to change the Kubernetes template of the cluster.
+// ChangeKubernetesTemplateOva executes an update on the receiver cluster to change the Kubernetes template of the cluster.
 // If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
-func (cluster *CseKubernetesCluster) ChangeKubernetesTemplate(kubernetesTemplateOvaId string, refresh bool) error {
+func (cluster *CseKubernetesCluster) ChangeKubernetesTemplateOva(kubernetesTemplateOvaId string, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		KubernetesTemplateOvaId: &kubernetesTemplateOvaId,
 	}, refresh)

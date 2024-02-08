@@ -14,8 +14,7 @@ import (
 	"time"
 )
 
-// getCseComponentsVersions gets the versions of the sub-components that are part of Container Service Extension.
-// TODO: Is this really necessary? What happens in UI if I have a 1.1.0-1.2.0-1.0.0 (4.2) cluster and then CSE is updated to 4.3?
+// getCseComponentsVersions gets the versions of the subcomponents that are part of Container Service Extension.
 func getCseComponentsVersions(cseVersion semver.Version) (*cseComponentsVersions, error) {
 	v41, _ := semver.NewVersion("4.1")
 
@@ -119,7 +118,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	}
 	result.VdcId = result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Id
 
-	// FIXME: This is a workaround, because for some reason the ID contains the VDC name instead of the VDC ID.
+	// FIXME: This is a workaround, because for some reason the OrgVdcs[*].Id property contains the VDC name instead of the VDC ID.
 	//        Once this is fixed, this conditional should not be needed anymore.
 	if result.VdcId == result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Name {
 		vdcs, err := queryOrgVdcList(rde.client, map[string]string{})
@@ -221,48 +220,21 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	for _, yamlDocument := range yamlDocuments {
 		switch yamlDocument["kind"] {
 		case "KubeadmControlPlane":
-			replicas, err := traverseMapAndGet[float64](yamlDocument, "spec.replicas")
-			if err != nil {
-				return nil, err
-			}
-			result.ControlPlane.MachineCount = int(replicas)
-
-			users, err := traverseMapAndGet[[]interface{}](yamlDocument, "spec.kubeadmConfigSpec.users")
-			if err != nil {
-				return nil, err
-			}
+			result.ControlPlane.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas"))
+			users := traverseMapAndGet[[]interface{}](yamlDocument, "spec.kubeadmConfigSpec.users")
 			if len(users) == 0 {
 				return nil, fmt.Errorf("expected 'spec.kubeadmConfigSpec.users' slice to not to be empty")
 			}
-			keys, err := traverseMapAndGet[[]string](users[0], "sshAuthorizedKeys")
-			if err != nil && !strings.Contains(err.Error(), "key 'sshAuthorizedKeys' does not exist in input map") {
-				return nil, err
-			}
+			keys := traverseMapAndGet[[]string](users[0], "sshAuthorizedKeys")
 			if len(keys) > 0 {
 				result.SshPublicKey = keys[0] // Optional field
 			}
 		case "VCDMachineTemplate":
-			name, err := traverseMapAndGet[string](yamlDocument, "metadata.name")
-			if err != nil {
-				return nil, err
-			}
-			sizingPolicyName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy")
-			if err != nil && !strings.Contains(err.Error(), "key 'sizingPolicy' does not exist in input map") {
-				return nil, err
-			}
-			placementPolicyName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.placementPolicy")
-			if err != nil && !strings.Contains(err.Error(), "key 'placementPolicy' does not exist in input map") {
-				return nil, err
-			}
-			storageProfileName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.storageProfile")
-			if err != nil && !strings.Contains(err.Error(), "key 'storageProfile' does not exist in input map") {
-				return nil, err
-			}
-			diskSizeGiRaw, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.diskSize")
-			if err != nil {
-				return nil, err
-			}
-			diskSizeGi, err := strconv.Atoi(strings.ReplaceAll(diskSizeGiRaw, "Gi", ""))
+			name := traverseMapAndGet[string](yamlDocument, "metadata.name")
+			sizingPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy")
+			placementPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.placementPolicy")
+			storageProfileName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.storageProfile")
+			diskSizeGi, err := strconv.Atoi(strings.ReplaceAll(traverseMapAndGet[string](yamlDocument, "spec.template.spec.diskSize"), "Gi", ""))
 			if err != nil {
 				return nil, err
 			}
@@ -285,19 +257,11 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				result.ControlPlane.DiskSizeGi = diskSizeGi
 
 				// We retrieve the Kubernetes Template OVA just once for the Control Plane because all YAML blocks share the same
-				catalogName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog")
+				catalog, err := rde.client.GetCatalogByName(result.capvcdType.Status.Capvcd.VcdProperties.Organizations[0].Name, traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog"))
 				if err != nil {
 					return nil, err
 				}
-				catalog, err := rde.client.GetCatalogByName(result.capvcdType.Status.Capvcd.VcdProperties.Organizations[0].Name, catalogName)
-				if err != nil {
-					return nil, err
-				}
-				ovaName, err := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template")
-				if err != nil {
-					return nil, err
-				}
-				ova, err := catalog.GetVAppTemplateByName(ovaName)
+				ova, err := catalog.GetVAppTemplateByName(traverseMapAndGet[string](yamlDocument, "spec.template.spec.template"))
 				if err != nil {
 					return nil, err
 				}
@@ -328,41 +292,25 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				workerPools[name] = workerPool // Override the worker pool with the updated data
 			}
 		case "MachineDeployment":
-			name, err := traverseMapAndGet[string](yamlDocument, "metadata.name")
-			if err != nil {
-				return nil, err
-			}
+			name := traverseMapAndGet[string](yamlDocument, "metadata.name")
 			// This is one Worker Pool. We need to check the map of worker pools, just in case we already saved the
 			// other information from VCDMachineTemplate.
 			if _, ok := workerPools[name]; !ok {
 				workerPools[name] = CseWorkerPoolSettings{}
 			}
 			workerPool := workerPools[name]
-			replicas, err := traverseMapAndGet[float64](yamlDocument, "spec.replicas")
-			if err != nil {
-				return nil, err
-			}
-			workerPool.MachineCount = int(replicas)
+			workerPool.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas"))
 			workerPools[name] = workerPool // Override the worker pool with the updated data
 		case "VCDCluster":
-			subnet, err := traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet")
-			if err == nil {
-				result.VirtualIpSubnet = subnet // This is optional
-			}
+			result.VirtualIpSubnet = traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet")
 		case "Cluster":
-			cidrBlocks, err := traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
-			if err != nil {
-				return nil, err
-			}
+			cidrBlocks := traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.pods.cidrBlocks' item")
 			}
 			result.PodCidr = cidrBlocks[0].(string)
 
-			cidrBlocks, err = traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
-			if err != nil {
-				return nil, err
-			}
+			cidrBlocks = traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.services.cidrBlocks' item")
 			}
@@ -740,7 +688,8 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheck
 	}
 
 	result := &vcdKeConfig{}
-	// TODO: Check airgapped environments: https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.1.1a/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.1.1/GUID-F00BE796-B5F2-48F2-A012-546E2E694400.html
+	// We append /tkg as required, even in air-gapped environments:
+	// https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.2/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.2/GUID-B5C19221-2ECA-4DCD-8EA1-8E391F6217C1.html
 	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"])
 
 	if isNodeHealthCheckActive {
@@ -765,7 +714,7 @@ func getCseTemplate(cseVersion semver.Version, templateName string) (string, err
 		return "", err
 	}
 	if cseVersion.LessThan(minimumVersion) {
-		return "", fmt.Errorf("the Container Service version '%s' is not supported", minimumVersion.String())
+		return "", fmt.Errorf("the Container Service minimum version is '%s'", minimumVersion.String())
 	}
 	versionSegments := cseVersion.Segments()
 	fullTemplatePath := fmt.Sprintf("cse/%d.%d/%s.tmpl", versionSegments[0], versionSegments[1], templateName)

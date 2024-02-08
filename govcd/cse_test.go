@@ -185,7 +185,7 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-key-data"))
 
 	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 1}}, true)
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, true)
 	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
@@ -193,9 +193,26 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	for _, nodePool := range cluster.WorkerPools {
 		if nodePool.Name == workerPoolName {
 			foundWorkerPool = true
-			check.Assert(nodePool.MachineCount, Equals, 1)
+			check.Assert(nodePool.MachineCount, Equals, 2)
 		}
 	}
 	check.Assert(foundWorkerPool, Equals, true)
 
+	// Revert back (resources can be limited)
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 1}}, true)
+	check.Assert(err, IsNil)
+
+	// Perform the update
+	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 2}, true)
+	check.Assert(err, IsNil)
+
+	// Post-check. This should be 2, as it should have scaled up
+	check.Assert(cluster.ControlPlane.MachineCount, Equals, 2)
+
+	// Revert back (resources can be limited)
+	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 1}, true)
+	check.Assert(err, IsNil)
+
+	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 1}, true)
+	check.Assert(err, IsNil)
 }
