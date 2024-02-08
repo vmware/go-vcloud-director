@@ -4,6 +4,8 @@ package govcd
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -32,7 +34,7 @@ func (vcd *TestVCD) Test_IpSpaceIpAllocation(check *C) {
 		Type:     "FLOATING_IP",
 		Quantity: addrOf(1),
 	}
-	performIpAllocationChecks(vcd, check, ipSpace.IpSpace.ID, floatingIpAllocationRequest)
+	performIpAllocationChecks(vcd, check, ipSpace.IpSpace.ID, edgeGw.EdgeGateway.ID, floatingIpAllocationRequest)
 
 	// Prefix allocation request
 	prefixAllocationRequest := &types.IpSpaceIpAllocationRequest{
@@ -40,7 +42,7 @@ func (vcd *TestVCD) Test_IpSpaceIpAllocation(check *C) {
 		Quantity:     addrOf(1),
 		PrefixLength: addrOf(31),
 	}
-	performIpAllocationChecks(vcd, check, ipSpace.IpSpace.ID, prefixAllocationRequest)
+	performIpAllocationChecks(vcd, check, ipSpace.IpSpace.ID, edgeGw.EdgeGateway.ID, prefixAllocationRequest)
 
 	// Cleanup
 	err := edgeGw.Delete()
@@ -56,7 +58,7 @@ func (vcd *TestVCD) Test_IpSpaceIpAllocation(check *C) {
 	check.Assert(err, IsNil)
 }
 
-func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId string, ipSpaceAllocationRequest *types.IpSpaceIpAllocationRequest) {
+func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId, edgeGatewayId string, ipSpaceAllocationRequest *types.IpSpaceIpAllocationRequest) {
 	// resulting slice must have 1 IP as the requested quantity is 1
 	ipAllocationResult, err := vcd.org.IpSpaceAllocateIp(ipSpaceId, ipSpaceAllocationRequest)
 	check.Assert(err, IsNil)
@@ -64,6 +66,9 @@ func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId string, ipSpace
 
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + fmt.Sprintf(types.OpenApiEndpointIpSpaceIpAllocations, ipSpaceId) + ipAllocationResult[0].ID
 	PrependToCleanupListOpenApi("NSX-T IP Space IP Allocation", check.TestName(), openApiEndpoint)
+
+	// Check IP allocation suggestion endpoint
+	performIpSuggestionChecks(vcd, check, ipSpaceId, edgeGatewayId, ipSpaceAllocationRequest)
 
 	// Get IP Allocation
 	ipAllocation, err := vcd.org.GetIpSpaceAllocationByTypeAndValue(ipSpaceId, ipSpaceAllocationRequest.Type, ipAllocationResult[0].Value, nil)
@@ -118,6 +123,43 @@ func performIpAllocationChecks(vcd *TestVCD, check *C, ipSpaceId string, ipSpace
 	err = ipAllocationByIpSpaceResult.Delete()
 	check.Assert(err, IsNil)
 
+}
+
+func performIpSuggestionChecks(vcd *TestVCD, check *C, ipSpaceId, edgeGatewayId string, ipSpaceAllocationRequest *types.IpSpaceIpAllocationRequest) {
+	// Get IP suggestions without additional filters
+	floatingIpSuggestions, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(edgeGatewayId, nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(floatingIpSuggestions) > 0, Equals, true)
+	if ipSpaceAllocationRequest.Type == "FLOATING_IP" {
+		check.Assert(len(floatingIpSuggestions[0].UnusedValues), Equals, 1)
+	}
+
+	// Get IP suggestions only for IPv4
+	queryParams := url.Values{}
+	queryParams.Set("filter", "ipType==IPV4")
+	floatingIpSuggestionsWithFilterIpv4, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(edgeGatewayId, queryParams)
+	check.Assert(err, IsNil)
+	check.Assert(len(floatingIpSuggestionsWithFilterIpv4) > 0, Equals, true)
+	if ipSpaceAllocationRequest.Type == "FLOATING_IP" {
+		check.Assert(len(floatingIpSuggestionsWithFilterIpv4[0].UnusedValues), Equals, 1)
+	}
+
+	// Get IP suggestions only for IPv6
+	queryParams.Set("filter", "ipType==IPV6")
+	floatingIpSuggestionsWithFilterIpv6, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions(edgeGatewayId, queryParams)
+	check.Assert(err, IsNil)
+	check.Assert(len(floatingIpSuggestionsWithFilterIpv6) > 0, Equals, false)
+
+	// check IP suggestions with invalid Edge Gateway - it returns ACCESS_TO_RESOURCE_IS_FORBIDDEN
+	// queryParams.Set("filter", fmt.Sprintf("gatewayId==%s", "urn:vcloud:gateway:00000000-0000-0000-0000-000000000000"))
+	floatingIpSuggestions2, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions("urn:vcloud:gateway:00000000-0000-0000-0000-000000000000", nil)
+	check.Assert(strings.Contains(err.Error(), "ACCESS_TO_RESOURCE_IS_FORBIDDEN"), Equals, true)
+	check.Assert(floatingIpSuggestions2, IsNil)
+
+	// check with empty filter - it cannot be used this way (edge gateway is mandatory)
+	floatingIpSuggestions3, err := vcd.client.GetAllIpSpaceFloatingIpSuggestions("", nil)
+	check.Assert(strings.Contains(err.Error(), "edge gateway ID is mandatory"), Equals, true)
+	check.Assert(floatingIpSuggestions3, IsNil)
 }
 
 func createIpSpaceUplink(vcd *TestVCD, check *C, extNetId, ipSpaceId string) *IpSpaceUplink {

@@ -364,3 +364,10 @@ type IpSpaceOrgAssignmentIPPrefixQuotas struct {
 	PrefixLength *int `json:"prefixLength"`
 	Quota        *int `json:"quota"`
 }
+
+// IpSpaceFloatingIpSuggestion provides a list of unused IP Addresses in an IP Space
+type IpSpaceFloatingIpSuggestion struct {
+	IPSpaceRef OpenApiReference `json:"ipSpaceRef"`
+	// UnusedValues lists unused IP Addresses or IP Prefixes from the referenced IP Space
+	UnusedValues []string `json:"unusedValues"`
+}

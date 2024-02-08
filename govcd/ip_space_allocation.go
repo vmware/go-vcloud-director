@@ -12,6 +12,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelIpSpaceFloatingIpSuggestion = "IP Space floating IP suggestions"
+
 // IpSpaceIpAllocation handles IP Space IP allocation requests
 type IpSpaceIpAllocation struct {
 	IpSpaceIpAllocation *types.IpSpaceIpAllocation
@@ -278,4 +280,31 @@ func getAllIpSpaceAllocations(client *Client, ipSpaceId string, org *Org, queryP
 	}
 
 	return results, nil
+}
+
+// GetAllIpSpaceFloatingIpSuggestions suggests IP addresses to use for networking services on Edge
+// Gateway or Provider Gateway. 'gatewayId' is mandatory. Based on the specified Gateway, VCD will
+// query all the applicable IP Spaces and suggest some IP addresses which can be utilized to
+// configure the network services on the Gateway. Allocated IP Space's IP addresses, but not
+// currently used for any network services are returned. Results can also be filtered by IPV4 or
+// IPV6 IP address types.
+//
+// Filter examples:(filter=gatewayId==URN), (filter=gatewayId==URN;ipType==IPV6)
+// Go code:
+// queryParams := url.Values{}
+// queryParams.Set("filter", "ipType==IPV4")
+func (vcdClient *VCDClient) GetAllIpSpaceFloatingIpSuggestions(gatewayId string, queryParameters url.Values) ([]*types.IpSpaceFloatingIpSuggestion, error) {
+	if gatewayId == "" {
+		return nil, fmt.Errorf("edge gateway ID is mandatory")
+	}
+
+	queryParams := copyOrNewUrlValues(queryParameters)
+	queryParams = queryParameterFilterAnd("gatewayId=="+gatewayId, queryParams)
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceFloatingIpSuggestions,
+		entityLabel:     labelIpSpaceFloatingIpSuggestion,
+		queryParameters: queryParams,
+	}
+
+	return getAllInnerEntities[types.IpSpaceFloatingIpSuggestion](&vcdClient.Client, c)
 }
