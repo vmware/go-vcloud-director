@@ -32,25 +32,26 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	// as well.
 	// So in this special case this "optimization" would optimize nothing. The same happens with other YAML values.
 	if input.KubernetesTemplateOvaId != nil {
+		if !cluster.Upgradeable {
+			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the cluster is not upgradeable")
+		}
 		vAppTemplate, err := getVAppTemplateById(cluster.client, *input.KubernetesTemplateOvaId)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the Kubernetes Template OVA with ID '%s': %s", *input.KubernetesTemplateOvaId, err)
 		}
+		// Check the versions of the selected OVA before upgrading
+		versions, err := getTkgVersionBundleFromVAppTemplateName(vAppTemplate.VAppTemplate.Name)
+		if err != nil {
+			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the TKG versions of OVA '%s': %s", vAppTemplate.VAppTemplate.Name, err)
+		}
+
+		if versions.TkgVersion < cluster.capvcdType.Status.Capvcd.Upgrade.Target.TkgVersion {
+			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the new one '%s' has an older TKG version", vAppTemplate.VAppTemplate.Name)
+		}
+		if versions.KubernetesVersion < cluster.capvcdType.Status.Capvcd.Upgrade.Target.KubernetesVersion {
+			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the new one '%s' has an older TKG version", vAppTemplate.VAppTemplate.Name)
+		}
 		err = cseUpdateKubernetesTemplateInYaml(yamlDocs, vAppTemplate.VAppTemplate.Name)
-		if err != nil {
-			return cluster.capvcdType.Spec.CapiYaml, err
-		}
-	}
-
-	if input.ControlPlane != nil {
-		err := cseUpdateControlPlaneInYaml(yamlDocs, *input.ControlPlane)
-		if err != nil {
-			return cluster.capvcdType.Spec.CapiYaml, err
-		}
-	}
-
-	if input.WorkerPools != nil {
-		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, err
 		}

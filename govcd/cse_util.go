@@ -63,6 +63,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		ID:                         rde.DefinedEntity.ID,
 		Etag:                       rde.Etag,
 		ClusterResourceSetBindings: make([]string, len(capvcd.Status.Capvcd.ClusterResourceSetBindings)),
+		Upgradeable:                capvcd.Status.Capvcd.Upgrade.Target.KubernetesVersion != "" && capvcd.Status.Capvcd.Upgrade.Target.TkgVersion != "",
 		State:                      capvcd.Status.VcdKe.State,
 		client:                     rde.client,
 		capvcdType:                 capvcd,

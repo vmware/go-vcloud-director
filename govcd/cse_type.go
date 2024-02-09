@@ -19,6 +19,7 @@ type CseKubernetesCluster struct {
 	CpiVersion                 semver.Version
 	CsiVersion                 semver.Version
 	State                      string
+	Upgradeable                bool
 	Events                     []CseClusterEvent
 
 	client     *Client
