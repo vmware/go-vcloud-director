@@ -71,7 +71,7 @@ func Test_getTkgVersionBundleFromVAppTemplate(t *testing.T) {
 					},
 				}},
 			},
-			wantErr: "could not find any Version inside the Kubernetes Template OVA 'dummy' Product section properties",
+			wantErr: "could not find any VERSION property inside the Kubernetes Template OVA 'dummy' Product section",
 		},
 		{
 			name: "correct ova",

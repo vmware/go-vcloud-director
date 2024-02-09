@@ -640,7 +640,7 @@ func getTkgVersionBundleFromVAppTemplate(template *types.VAppTemplate) (tkgVersi
 		}
 	}
 	if id == "" {
-		return result, fmt.Errorf("could not find any Version inside the Kubernetes Template OVA '%s' Product section properties", template.Name)
+		return result, fmt.Errorf("could not find any VERSION property inside the Kubernetes Template OVA '%s' Product section", template.Name)
 	}
 
 	tkgVersionsMap := "cse/tkg_versions.json"
