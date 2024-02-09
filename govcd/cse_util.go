@@ -258,15 +258,20 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				result.ControlPlane.DiskSizeGi = diskSizeGi
 
 				// We retrieve the Kubernetes Template OVA just once for the Control Plane because all YAML blocks share the same
-				catalog, err := rde.client.GetCatalogByName(result.capvcdType.Status.Capvcd.VcdProperties.Organizations[0].Name, traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog"))
+				vAppTemplateName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template")
+				catalogName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog")
+				vAppTemplates, err := queryVappTemplateListWithFilter(rde.client, map[string]string{
+					"catalogName": catalogName,
+					"name":        vAppTemplateName,
+				})
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("could not find any vApp Template with name '%s' in Catalog '%s': %s", vAppTemplateName, catalogName, err)
 				}
-				ova, err := catalog.GetVAppTemplateByName(traverseMapAndGet[string](yamlDocument, "spec.template.spec.template"))
-				if err != nil {
-					return nil, err
+				if len(vAppTemplates) == 0 {
+					return nil, fmt.Errorf("could not find any vApp Template with name '%s' in Catalog '%s'", vAppTemplateName, catalogName)
 				}
-				result.KubernetesTemplateOvaId = ova.VAppTemplate.ID
+				// The records don't have ID set, so we calculate it
+				result.KubernetesTemplateOvaId = fmt.Sprintf("urn:vcloud:vapptemplate:%s", extractUuid(vAppTemplates[0].HREF))
 			} else {
 				// This is one Worker Pool. We need to check the map of worker pools, just in case we already saved the
 				// machine count from MachineDeployment.
@@ -635,8 +640,8 @@ func getTkgVersionBundleFromVAppTemplate(template *types.VAppTemplate) (tkgVersi
 	}
 	id := ""
 	for _, prop := range template.Children.VM[0].ProductSection.Property {
-		if prop != nil && prop.Key == "VERSION" && prop.Value != nil {
-			id = prop.Value.Value
+		if prop != nil && prop.Key == "VERSION" {
+			id = prop.DefaultValue // Use DefaultValue and not Value as the value we want is in the "value" attr
 		}
 	}
 	if id == "" {

@@ -217,7 +217,7 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
 	check.Assert(err, IsNil)
 
-	cluster, err := org.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:e8e82bcc-50a1-484f-9dd0-20965ab3e865")
+	cluster, err := org.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:60e287b2-db49-4316-84c0-e0d3d58e8f52")
 	check.Assert(err, IsNil)
 
 	workerPoolName := "cse-test1-worker-node-pool-1"

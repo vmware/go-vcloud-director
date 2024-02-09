@@ -63,8 +63,8 @@ func Test_getTkgVersionBundleFromVAppTemplate(t *testing.T) {
 						ProductSection: &types.ProductSection{
 							Property: []*types.Property{
 								{
-									Key:   "foo",
-									Value: &types.Value{Value: "bar"},
+									Key:          "foo",
+									DefaultValue: "bar",
 								},
 							},
 						},

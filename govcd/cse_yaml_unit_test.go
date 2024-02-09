@@ -35,8 +35,8 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 				ProductSection: &types.ProductSection{
 					Property: []*types.Property{
 						{
-							Key:   "VERSION",
-							Value: &types.Value{Value: oldOvaVersion},
+							Key:          "VERSION",
+							DefaultValue: oldOvaVersion,
 						},
 					},
 				},
@@ -56,8 +56,8 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 				ProductSection: &types.ProductSection{
 					Property: []*types.Property{
 						{
-							Key:   "VERSION",
-							Value: &types.Value{Value: "v1.19.16+vmware.1-tkg.2-fba68db15591c15fcd5f26b512663a42"},
+							Key:          "VERSION",
+							DefaultValue: "v1.19.16+vmware.1-tkg.2-fba68db15591c15fcd5f26b512663a42",
 						},
 					},
 				},
