@@ -34,6 +34,15 @@ type Capvcd struct {
 					DetailedEvent string `json:"Detailed Event,omitempty"`
 				} `json:"additionalDetails,omitempty"`
 			} `json:"eventSet,omitempty"`
+			ErrorSet []struct {
+				Name              string    `json:"name,omitempty"`
+				OccurredAt        time.Time `json:"occurredAt,omitempty"`
+				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
+				AdditionalDetails struct {
+					DetailedError string `json:"Detailed Error,omitempty"`
+				} `json:"additionalDetails,omitempty"`
+			} `json:"errorSet,omitempty"`
 		} `json:"cpi,omitempty"`
 		Csi struct {
 			Name     string `json:"name,omitempty"`
@@ -45,6 +54,15 @@ type Capvcd struct {
 					DetailedDescription string `json:"Detailed Description,omitempty"`
 				} `json:"additionalDetails,omitempty"`
 			} `json:"eventSet,omitempty"`
+			ErrorSet []struct {
+				Name              string    `json:"name,omitempty"`
+				OccurredAt        time.Time `json:"occurredAt,omitempty"`
+				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
+				AdditionalDetails struct {
+					DetailedError string `json:"Detailed Error,omitempty"`
+				} `json:"additionalDetails,omitempty"`
+			} `json:"errorSet,omitempty"`
 		} `json:"csi,omitempty"`
 		VcdKe struct {
 			State    string `json:"state,omitempty"`
@@ -94,15 +112,16 @@ type Capvcd struct {
 					TkgVersion        string `json:"tkgVersion,omitempty"`
 					KubernetesVersion string `json:"kubernetesVersion,omitempty"`
 				} `json:"current,omitempty"`
+				Target struct {
+					TkgVersion        string `json:"tkgVersion,omitempty"`
+					KubernetesVersion string `json:"kubernetesVersion,omitempty"`
+				} `json:"target,omitempty"`
 			} `json:"upgrade,omitempty"`
 			EventSet []struct {
-				Name              string    `json:"name,omitempty"`
-				OccurredAt        time.Time `json:"occurredAt,omitempty"`
-				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
-				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
-				AdditionalDetails struct {
-					Event string `json:"event,omitempty"`
-				} `json:"additionalDetails,omitempty"`
+				Name            string    `json:"name,omitempty"`
+				OccurredAt      time.Time `json:"occurredAt,omitempty"`
+				VcdResourceId   string    `json:"vcdResourceId,omitempty"`
+				VcdResourceName string    `json:"vcdResourceName,omitempty"`
 			} `json:"eventSet,omitempty"`
 			ErrorSet []struct {
 				Name              string    `json:"name,omitempty"`
@@ -180,6 +199,15 @@ type Capvcd struct {
 					Event string `json:"event,omitempty"`
 				} `json:"additionalDetails,omitempty"`
 			} `json:"eventSet,omitempty"`
+			ErrorSet []struct {
+				Name              string    `json:"name,omitempty"`
+				OccurredAt        time.Time `json:"occurredAt,omitempty"`
+				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
+				AdditionalDetails struct {
+					DetailedError string `json:"Detailed Error,omitempty"`
+				} `json:"additionalDetails,omitempty"`
+			} `json:"errorSet,omitempty"`
 		} `json:"projector,omitempty"`
 	} `json:"status,omitempty"`
 	Metadata struct {
