@@ -220,6 +220,10 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	cluster, err := org.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:60e287b2-db49-4316-84c0-e0d3d58e8f52")
 	check.Assert(err, IsNil)
 
+	upgrades, err := cluster.GetSupportedUpgrades()
+	check.Assert(err, IsNil)
+	check.Assert(len(upgrades) > 0, Equals, true)
+
 	workerPoolName := "cse-test1-worker-node-pool-1"
 
 	kubeconfig, err := cluster.GetKubeconfig()

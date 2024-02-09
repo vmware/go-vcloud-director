@@ -150,9 +150,28 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 	}, refresh)
 }
 
-// GetSupportedUpgrades gets a list of Kubernetes Template OVA IDs that can be used for a cluster upgrade
-func (cluster *CseKubernetesCluster) GetSupportedUpgrades() ([]string, error) {
-	return nil, nil
+// GetSupportedUpgrades queries all vApp Templates from VCD and returns those Kubernetes Templates that
+// can be used for upgrading the cluster.
+func (cluster *CseKubernetesCluster) GetSupportedUpgrades() ([]*types.VAppTemplate, error) {
+	vAppTemplates, err := queryVappTemplateListWithFilter(cluster.client, nil)
+	if err != nil {
+		return nil, fmt.Errorf("could not get vApp Templates: %s", err)
+	}
+	var tkgmOvaIds []*types.VAppTemplate
+	for _, template := range vAppTemplates {
+		vAppTemplate, err := getVAppTemplateById(cluster.client, fmt.Sprintf("urn:vcloud:vapptemplate:%s", extractUuid(template.HREF)))
+		if err != nil {
+			continue // This means we cannot retrieve it (maybe due to some rights missing), so we cannot use it. We skip it
+		}
+		tkgVersions, err := getTkgVersionBundleFromVAppTemplate(vAppTemplate.VAppTemplate)
+		if err != nil {
+			continue // This means it's not a TKGm OVA, we skip it
+		}
+		if tkgVersions.compareTkgVersion(cluster.TkgVersion.String()) == 1 && tkgVersions.kubernetesVersionIsOneMinorHigher(cluster.KubernetesVersion.String()) {
+			tkgmOvaIds = append(tkgmOvaIds, vAppTemplate.VAppTemplate)
+		}
+	}
+	return tkgmOvaIds, nil
 }
 
 // UpgradeCluster executes an update on the receiver cluster to change the Kubernetes template of the cluster.

@@ -674,6 +674,35 @@ func getTkgVersionBundleFromVAppTemplate(template *types.VAppTemplate) (tkgVersi
 	return result, nil
 }
 
+func (tkgVersions tkgVersionBundle) compareTkgVersion(tkgVersion string) int {
+	receiverVersion, err := semver.NewVersion(tkgVersions.TkgVersion)
+	if err != nil {
+		return -2
+	}
+	inputVersion, err := semver.NewVersion(tkgVersion)
+	if err != nil {
+		return -2
+	}
+	return receiverVersion.Compare(inputVersion)
+}
+
+func (tkgVersions tkgVersionBundle) kubernetesVersionIsOneMinorHigher(kubernetesVersion string) bool {
+	receiverVersionTokens := strings.Split(tkgVersions.KubernetesVersion, ".")
+	if len(receiverVersionTokens) < 3 {
+		return false
+	}
+	vTokens := strings.Split(kubernetesVersion, ".")
+	if len(vTokens) < 3 {
+		return false
+	}
+	minor, err := strconv.Atoi(receiverVersionTokens[1])
+	if err != nil {
+		return false
+	}
+
+	return receiverVersionTokens[0] == vTokens[0] && fmt.Sprintf("%d", minor+1) == vTokens[1] && receiverVersionTokens[2] == vTokens[2]
+}
+
 // getVcdKeConfig gets the required information from the CSE Server configuration RDE (VCDKEConfig), such as the
 // Machine Health Check settings and the Container Registry URL.
 func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheckActive bool) (*vcdKeConfig, error) {

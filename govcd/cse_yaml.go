@@ -45,12 +45,8 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the TKG versions of OVA '%s': %s", *input.KubernetesTemplateOvaId, err)
 		}
-
-		if versions.TkgVersion < cluster.capvcdType.Status.Capvcd.Upgrade.Target.TkgVersion {
-			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the new one '%s' has an older TKG version", vAppTemplate.VAppTemplate.Name)
-		}
-		if versions.KubernetesVersion < cluster.capvcdType.Status.Capvcd.Upgrade.Target.KubernetesVersion {
-			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the new one '%s' has an older TKG version", vAppTemplate.VAppTemplate.Name)
+		if versions.compareTkgVersion(cluster.capvcdType.Status.Capvcd.Upgrade.Target.TkgVersion) != 1 || !versions.kubernetesVersionIsOneMinorHigher(cluster.capvcdType.Status.Capvcd.Upgrade.Target.KubernetesVersion) {
+			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the new one '%s' has an older TKG/Kubernetes version (%s/%s)", vAppTemplate.VAppTemplate.Name, versions.TkgVersion, versions.KubernetesVersion)
 		}
 		err = cseUpdateKubernetesTemplateInYaml(yamlDocs, vAppTemplate.VAppTemplate)
 		if err != nil {
