@@ -150,9 +150,14 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 	}, refresh)
 }
 
-// ChangeKubernetesTemplateOva executes an update on the receiver cluster to change the Kubernetes template of the cluster.
+// GetSupportedUpgrades gets a list of Kubernetes Template OVA IDs that can be used for a cluster upgrade
+func (cluster *CseKubernetesCluster) GetSupportedUpgrades() ([]string, error) {
+	return nil, nil
+}
+
+// UpgradeCluster executes an update on the receiver cluster to change the Kubernetes template of the cluster.
 // If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
-func (cluster *CseKubernetesCluster) ChangeKubernetesTemplateOva(kubernetesTemplateOvaId string, refresh bool) error {
+func (cluster *CseKubernetesCluster) UpgradeCluster(kubernetesTemplateOvaId string, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		KubernetesTemplateOvaId: &kubernetesTemplateOvaId,
 	}, refresh)

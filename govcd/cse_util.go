@@ -488,7 +488,7 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 	}
 	output.KubernetesTemplateOvaName = vAppTemplate.VAppTemplate.Name
 
-	tkgVersions, err := getTkgVersionBundleFromVAppTemplateName(vAppTemplate.VAppTemplate.Name)
+	tkgVersions, err := getTkgVersionBundleFromVAppTemplate(vAppTemplate.VAppTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve the required information from the Kubernetes Template OVA: %s", err)
 	}
@@ -619,24 +619,29 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 	return output, nil
 }
 
-// getTkgVersionBundleFromVAppTemplateName returns a tkgVersionBundle with the details of
-// all the Kubernetes cluster components versions given a valid Kubernetes Template OVA name.
+// getTkgVersionBundleFromVAppTemplate returns a tkgVersionBundle with the details of
+// all the Kubernetes cluster components versions given a valid Kubernetes Template OVA.
 // If it is not a valid Kubernetes Template OVA, returns an error.
-func getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName string) (tkgVersionBundle, error) {
+func getTkgVersionBundleFromVAppTemplate(template *types.VAppTemplate) (tkgVersionBundle, error) {
 	result := tkgVersionBundle{}
-	if strings.TrimSpace(kubernetesTemplateOvaName) == "" {
-		return result, fmt.Errorf("the Kubernetes Template OVA cannot be empty")
+	if template == nil {
+		return result, fmt.Errorf("the Kubernetes Template OVA is nil")
 	}
-
-	if strings.Contains(kubernetesTemplateOvaName, "photon") {
-		return result, fmt.Errorf("the Kubernetes Template OVA '%s' uses Photon, and it is not supported", kubernetesTemplateOvaName)
+	if template.Children == nil || len(template.Children.VM) == 0 {
+		return result, fmt.Errorf("the Kubernetes Template OVA '%s' doesn't have any child VM", template.Name)
 	}
-
-	cutPosition := strings.LastIndex(kubernetesTemplateOvaName, "kube-")
-	if cutPosition < 0 {
-		return result, fmt.Errorf("the OVA '%s' is not a Kubernetes template OVA", kubernetesTemplateOvaName)
+	if template.Children.VM[0].ProductSection == nil {
+		return result, fmt.Errorf("the Product section of the Kubernetes Template OVA '%s' is empty, can't proceed", template.Name)
 	}
-	parsedOvaName := strings.ReplaceAll(kubernetesTemplateOvaName, ".ova", "")[cutPosition+len("kube-"):]
+	id := ""
+	for _, prop := range template.Children.VM[0].ProductSection.Property {
+		if prop != nil && prop.Key == "VERSION" && prop.Value != nil {
+			id = prop.Value.Value
+		}
+	}
+	if id == "" {
+		return result, fmt.Errorf("could not find any Version inside the Kubernetes Template OVA '%s' Product section properties", template.Name)
+	}
 
 	tkgVersionsMap := "cse/tkg_versions.json"
 	cseTkgVersionsJson, err := cseFiles.ReadFile(tkgVersionsMap)
@@ -649,20 +654,15 @@ func getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName string) (
 	if err != nil {
 		return result, fmt.Errorf("failed unmarshaling %s: %s", tkgVersionsMap, err)
 	}
-	versionMap, ok := versionsMap[parsedOvaName]
+	versionMap, ok := versionsMap[id]
 	if !ok {
-		return result, fmt.Errorf("the Kubernetes Template OVA '%s' is not supported", kubernetesTemplateOvaName)
+		return result, fmt.Errorf("the Kubernetes Template OVA '%s' is not supported", template.Name)
 	}
 
-	// This check should not be needed unless the tkgVersionsMap JSON is deliberately bad constructed.
-	ovaParts := strings.Split(parsedOvaName, "-")
-	if len(ovaParts) != 3 {
-		return result, fmt.Errorf("unexpected error parsing the Kubernetes Template OVA name '%s',"+
-			"it doesn't follow the original naming convention (e.g: ubuntu-2004-kube-v1.24.11+vmware.1-tkg.1-2ccb2a001f8bd8f15f1bfbc811071830)", kubernetesTemplateOvaName)
-	}
-
-	result.KubernetesVersion = ovaParts[0]
-	result.TkrVersion = strings.ReplaceAll(ovaParts[0], "+", "---") + "-" + ovaParts[1]
+	// We don't need to check the Split result because the map checking above guarantees that the ID is well-formed.
+	idParts := strings.Split(id, "-")
+	result.KubernetesVersion = idParts[0]
+	result.TkrVersion = strings.ReplaceAll(idParts[0], "+", "---") + "-" + idParts[1]
 	result.TkgVersion = versionMap.(map[string]interface{})["tkg"].(string)
 	result.EtcdVersion = versionMap.(map[string]interface{})["etcd"].(string)
 	result.CoreDnsVersion = versionMap.(map[string]interface{})["coreDns"].(string)

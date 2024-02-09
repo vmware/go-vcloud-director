@@ -3,6 +3,7 @@ package govcd
 import (
 	"fmt"
 	semver "github.com/hashicorp/go-version"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"sigs.k8s.io/yaml"
 	"strings"
 )
@@ -40,9 +41,9 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the Kubernetes Template OVA with ID '%s': %s", *input.KubernetesTemplateOvaId, err)
 		}
 		// Check the versions of the selected OVA before upgrading
-		versions, err := getTkgVersionBundleFromVAppTemplateName(vAppTemplate.VAppTemplate.Name)
+		versions, err := getTkgVersionBundleFromVAppTemplate(vAppTemplate.VAppTemplate)
 		if err != nil {
-			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the TKG versions of OVA '%s': %s", vAppTemplate.VAppTemplate.Name, err)
+			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the TKG versions of OVA '%s': %s", *input.KubernetesTemplateOvaId, err)
 		}
 
 		if versions.TkgVersion < cluster.capvcdType.Status.Capvcd.Upgrade.Target.TkgVersion {
@@ -51,7 +52,7 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		if versions.KubernetesVersion < cluster.capvcdType.Status.Capvcd.Upgrade.Target.KubernetesVersion {
 			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the new one '%s' has an older TKG version", vAppTemplate.VAppTemplate.Name)
 		}
-		err = cseUpdateKubernetesTemplateInYaml(yamlDocs, vAppTemplate.VAppTemplate.Name)
+		err = cseUpdateKubernetesTemplateInYaml(yamlDocs, vAppTemplate.VAppTemplate)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, err
 		}
@@ -82,8 +83,8 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 // used by all the cluster elements.
 // The caveat here is that not only VCDMachineTemplate needs to be changed with the new OVA name, but also
 // other fields that reference the related Kubernetes version, TKG version and other derived information.
-func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, kubernetesTemplateOvaName string) error {
-	tkgBundle, err := getTkgVersionBundleFromVAppTemplateName(kubernetesTemplateOvaName)
+func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, kubernetesTemplateOva *types.VAppTemplate) error {
+	tkgBundle, err := getTkgVersionBundleFromVAppTemplate(kubernetesTemplateOva)
 	if err != nil {
 		return err
 	}
@@ -94,7 +95,7 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, k
 			if !ok {
 				return fmt.Errorf("the VCDMachineTemplate 'spec.template.spec.template' field is missing")
 			}
-			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["template"] = kubernetesTemplateOvaName
+			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["template"] = kubernetesTemplateOva.Name
 		case "MachineDeployment":
 			ok := traverseMapAndGet[string](d, "spec.template.spec.version") != ""
 			if !ok {

@@ -43,7 +43,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 
 	ova, err := catalog.GetVAppTemplateByName(vcd.config.Cse.OvaName)
 	check.Assert(err, IsNil)
-	tkgBundle, err := getTkgVersionBundleFromVAppTemplateName(ova.VAppTemplate.Name)
+	tkgBundle, err := getTkgVersionBundleFromVAppTemplate(ova.VAppTemplate)
 	check.Assert(err, IsNil)
 
 	vdc, err := org.GetVDCByName(vcd.config.Cse.TenantVdc, false)

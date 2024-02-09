@@ -4,6 +4,7 @@ package govcd
 
 import (
 	semver "github.com/hashicorp/go-version"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"os"
 	"reflect"
 	"strings"
@@ -22,36 +23,53 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 		t.Fatalf("could not unmarshal CAPI YAML test file: %s", err)
 	}
 
-	// We explore the YAML documents to get the OVA template name that will be updated
-	// with the new one.
-	oldOvaName := ""
-	for _, document := range yamlDocs {
-		if document["kind"] != "VCDMachineTemplate" {
-			continue
-		}
+	oldOvaVersion := "v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc" // Matches the version in capiYaml.yaml
+	if strings.Count(string(capiYaml), oldOvaVersion) < 2 {
+		t.Fatalf("the testing YAML doesn't contain the OVA to change")
+	}
 
-		oldOvaName = traverseMapAndGet[string](document, "spec.template.spec.template")
-		if oldOvaName == "" {
-			t.Fatalf("expected to find spec.template.spec.template in %v but got an error: %s", document, err)
-		}
-		break
-	}
-	if oldOvaName == "" {
-		t.Fatalf("the OVA that needs to be changed is empty")
-	}
-	oldTkgBundle, err := getTkgVersionBundleFromVAppTemplateName(oldOvaName)
+	oldTkgBundle, err := getTkgVersionBundleFromVAppTemplate(&types.VAppTemplate{
+		Name: "dummy",
+		Children: &types.VAppTemplateChildren{VM: []*types.VAppTemplate{
+			{
+				ProductSection: &types.ProductSection{
+					Property: []*types.Property{
+						{
+							Key:   "VERSION",
+							Value: &types.Value{Value: oldOvaVersion},
+						},
+					},
+				},
+			},
+		}},
+	})
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
 
 	// We call the function to update the old OVA with the new one
-	newOvaName := "ubuntu-2004-kube-v1.19.16+vmware.1-tkg.2-fba68db15591c15fcd5f26b512663a42"
-	newTkgBundle, err := getTkgVersionBundleFromVAppTemplateName(newOvaName)
+	newOva := &types.VAppTemplate{
+		ID:   "urn:vcloud:vapptemplate:e23b8a5c-e676-4d82-9050-c906a3ac2fea",
+		Name: "dummy",
+		Children: &types.VAppTemplateChildren{VM: []*types.VAppTemplate{
+			{
+				ProductSection: &types.ProductSection{
+					Property: []*types.Property{
+						{
+							Key:   "VERSION",
+							Value: &types.Value{Value: "v1.19.16+vmware.1-tkg.2-fba68db15591c15fcd5f26b512663a42"},
+						},
+					},
+				},
+			},
+		}},
+	}
+	newTkgBundle, err := getTkgVersionBundleFromVAppTemplate(newOva)
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
 
-	err = cseUpdateKubernetesTemplateInYaml(yamlDocs, newOvaName)
+	err = cseUpdateKubernetesTemplateInYaml(yamlDocs, newOva)
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
@@ -62,7 +80,7 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 	}
 
 	// No document should have the old OVA
-	if !strings.Contains(updatedYaml, newOvaName) || strings.Contains(updatedYaml, oldOvaName) {
+	if strings.Count(updatedYaml, newOva.Name) < 2 || strings.Contains(updatedYaml, oldOvaVersion) {
 		t.Fatalf("failed updating the Kubernetes OVA template:\n%s", updatedYaml)
 	}
 	if !strings.Contains(updatedYaml, newTkgBundle.KubernetesVersion) || strings.Contains(updatedYaml, oldTkgBundle.KubernetesVersion) {

@@ -8,41 +8,88 @@ package govcd
 
 import (
 	semver "github.com/hashicorp/go-version"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"reflect"
 	"testing"
 )
 
-// Test_getTkgVersionBundleFromVAppTemplateName tests getTkgVersionBundleFromVAppTemplateName function
-func Test_getTkgVersionBundleFromVAppTemplateName(t *testing.T) {
+// Test_getTkgVersionBundleFromVAppTemplate tests getTkgVersionBundleFromVAppTemplate function
+func Test_getTkgVersionBundleFromVAppTemplate(t *testing.T) {
 	tests := []struct {
-		name                      string
-		kubernetesTemplateOvaName string
-		want                      tkgVersionBundle
-		wantErr                   string
+		name                  string
+		kubernetesTemplateOva *types.VAppTemplate
+		want                  tkgVersionBundle
+		wantErr               string
 	}{
 		{
-			name:                      "input is empty",
-			kubernetesTemplateOvaName: "",
-			wantErr:                   "the Kubernetes Template OVA cannot be empty",
+			name:                  "ova is nil",
+			kubernetesTemplateOva: nil,
+			wantErr:               "the Kubernetes Template OVA is nil",
 		},
 		{
-			name:                      "input is Photon OVA",
-			kubernetesTemplateOvaName: "photon-2004-kube-v9.99.9+vmware.9-tkg.9-aaaaa.ova",
-			wantErr:                   "the Kubernetes Template OVA 'photon-2004-kube-v9.99.9+vmware.9-tkg.9-aaaaa.ova' uses Photon, and it is not supported",
+			name: "ova without children",
+			kubernetesTemplateOva: &types.VAppTemplate{
+				Name:     "dummy",
+				Children: nil,
+			},
+			wantErr: "the Kubernetes Template OVA 'dummy' doesn't have any child VM",
 		},
 		{
-			name:                      "input is not a Kubernetes OVA",
-			kubernetesTemplateOvaName: "random-ova.ova",
-			wantErr:                   "the OVA 'random-ova.ova' is not a Kubernetes template OVA",
+			name: "ova with nil children",
+			kubernetesTemplateOva: &types.VAppTemplate{
+				Name:     "dummy",
+				Children: &types.VAppTemplateChildren{VM: nil},
+			},
+			wantErr: "the Kubernetes Template OVA 'dummy' doesn't have any child VM",
 		},
 		{
-			name:                      "input is not supported",
-			kubernetesTemplateOvaName: "ubuntu-2004-kube-v9.99.9+vmware.9-tkg.9-99999999999999999999999999999999.ova",
-			wantErr:                   "the Kubernetes Template OVA 'ubuntu-2004-kube-v9.99.9+vmware.9-tkg.9-99999999999999999999999999999999.ova' is not supported",
+			name: "ova with nil product section",
+			kubernetesTemplateOva: &types.VAppTemplate{
+				Name: "dummy",
+				Children: &types.VAppTemplateChildren{VM: []*types.VAppTemplate{
+					{
+						ProductSection: nil,
+					},
+				}},
+			},
+			wantErr: "the Product section of the Kubernetes Template OVA 'dummy' is empty, can't proceed",
 		},
 		{
-			name:                      "correct OVA",
-			kubernetesTemplateOvaName: "ubuntu-2004-kube-v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc.ova",
+			name: "ova with no version in the product section",
+			kubernetesTemplateOva: &types.VAppTemplate{
+				Name: "dummy",
+				Children: &types.VAppTemplateChildren{VM: []*types.VAppTemplate{
+					{
+						ProductSection: &types.ProductSection{
+							Property: []*types.Property{
+								{
+									Key:   "foo",
+									Value: &types.Value{Value: "bar"},
+								},
+							},
+						},
+					},
+				}},
+			},
+			wantErr: "could not find any Version inside the Kubernetes Template OVA 'dummy' Product section properties",
+		},
+		{
+			name: "correct ova",
+			kubernetesTemplateOva: &types.VAppTemplate{
+				Name: "dummy",
+				Children: &types.VAppTemplateChildren{VM: []*types.VAppTemplate{
+					{
+						ProductSection: &types.ProductSection{
+							Property: []*types.Property{
+								{
+									Key:   "VERSION",
+									Value: &types.Value{Value: "v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc"},
+								},
+							},
+						},
+					},
+				}},
+			},
 			want: tkgVersionBundle{
 				EtcdVersion:       "v3.5.6_vmware.9",
 				CoreDnsVersion:    "v1.9.3_vmware.8",
@@ -54,15 +101,15 @@ func Test_getTkgVersionBundleFromVAppTemplateName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getTkgVersionBundleFromVAppTemplateName(tt.kubernetesTemplateOvaName)
+			got, err := getTkgVersionBundleFromVAppTemplate(tt.kubernetesTemplateOva)
 			if err != nil {
 				if tt.wantErr != err.Error() {
-					t.Errorf("getTkgVersionBundleFromVAppTemplateName() error = %v, wantErr = %v", err, tt.wantErr)
+					t.Errorf("getTkgVersionBundleFromVAppTemplate() error = %v, wantErr = %v", err, tt.wantErr)
 				}
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getTkgVersionBundleFromVAppTemplateName() got = %v, want %v", got, tt.want)
+				t.Errorf("getTkgVersionBundleFromVAppTemplate() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

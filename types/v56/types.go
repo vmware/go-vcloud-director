@@ -1582,6 +1582,7 @@ type VAppTemplate struct {
 	NetworkConnectionSection *NetworkConnectionSection `xml:"NetworkConnectionSection,omitempty"`
 	LeaseSettingsSection     *LeaseSettingsSection     `xml:"LeaseSettingsSection,omitempty"`
 	CustomizationSection     *CustomizationSection     `xml:"CustomizationSection,omitempty"`
+	ProductSection           *ProductSection           `xml:"ProductSection,omitempty"`
 	// OVF Section needs to be added
 	// Section               Section              `xml:"Section,omitempty"`
 }
