@@ -86,6 +86,7 @@ func getCseKubernetesCluster(client *Client, clusterId string) (*CseKubernetesCl
 }
 
 // Refresh gets the latest information about the receiver cluster and updates its properties.
+// All cached fields such as the supported OVAs list (from CseKubernetesCluster.GetSupportedUpgrades) are also cleared.
 func (cluster *CseKubernetesCluster) Refresh() error {
 	refreshed, err := getCseKubernetesCluster(cluster.client, cluster.ID)
 	if err != nil {
