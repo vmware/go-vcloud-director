@@ -22,8 +22,9 @@ type CseKubernetesCluster struct {
 	Upgradeable                bool
 	Events                     []CseClusterEvent
 
-	client     *Client
-	capvcdType *types.Capvcd
+	client            *Client
+	capvcdType        *types.Capvcd
+	supportedUpgrades []*types.VAppTemplate // Caches the vApp templates that can be used to upgrade a cluster.
 }
 
 // CseClusterEvent is an event that has occurred during the lifetime of a Container Service Extension (CSE) Kubernetes cluster.

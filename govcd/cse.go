@@ -150,31 +150,46 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 	}, refresh)
 }
 
-// GetSupportedUpgrades queries all vApp Templates from VCD and returns those Kubernetes Templates that
-// can be used for upgrading the cluster.
-func (cluster *CseKubernetesCluster) GetSupportedUpgrades() ([]*types.VAppTemplate, error) {
+// GetSupportedUpgrades queries all vApp Templates from VCD, one by one, and returns those that can be used for upgrading the cluster.
+// As retrieving all OVAs one by one from VCD is expensive, the first time this method is called the returned OVAs are
+// cached to avoid querying VCD for every OVA whenever this method is called.
+// If refresh=true, this cache is cleared out and this method will query VCD for every vApp Template again.
+// Therefore, the refresh flag should be set to true only when VCD has new OVAs that need to be considered or the cluster
+// has significantly changed since the first call.
+func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refresh bool) ([]*types.VAppTemplate, error) {
+	if refresh {
+		cluster.supportedUpgrades = nil
+	}
+	if len(cluster.supportedUpgrades) != 0 {
+		return cluster.supportedUpgrades, nil
+	}
+
 	vAppTemplates, err := queryVappTemplateListWithFilter(cluster.client, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not get vApp Templates: %s", err)
 	}
-	var tkgmOvaIds []*types.VAppTemplate
+	var tkgmOvas []*types.VAppTemplate
 	for _, template := range vAppTemplates {
+		// We can only know if the vApp Template is a TKGm OVA by inspecting its internals, hence we need to retrieve every one
+		// of them one by one. This is an expensive operation, hence the cache.
 		vAppTemplate, err := getVAppTemplateById(cluster.client, fmt.Sprintf("urn:vcloud:vapptemplate:%s", extractUuid(template.HREF)))
 		if err != nil {
 			continue // This means we cannot retrieve it (maybe due to some rights missing), so we cannot use it. We skip it
 		}
-		tkgVersions, err := getTkgVersionBundleFromVAppTemplate(vAppTemplate.VAppTemplate)
+		targetVersions, err := getTkgVersionBundleFromVAppTemplate(vAppTemplate.VAppTemplate)
 		if err != nil {
 			continue // This means it's not a TKGm OVA, we skip it
 		}
-		if tkgVersions.compareTkgVersion(cluster.TkgVersion.String()) == 1 && tkgVersions.kubernetesVersionIsOneMinorHigher(cluster.KubernetesVersion.String()) {
-			tkgmOvaIds = append(tkgmOvaIds, vAppTemplate.VAppTemplate)
+		if targetVersions.compareTkgVersion(cluster.TkgVersion.String()) == 1 && targetVersions.kubernetesVersionIsOneMinorHigher(cluster.KubernetesVersion.String()) {
+			tkgmOvas = append(tkgmOvas, vAppTemplate.VAppTemplate)
 		}
 	}
-	return tkgmOvaIds, nil
+	cluster.supportedUpgrades = tkgmOvas
+	return tkgmOvas, nil
 }
 
-// UpgradeCluster executes an update on the receiver cluster to change the Kubernetes template of the cluster.
+// UpgradeCluster executes an update on the receiver cluster to upgrade the Kubernetes template of the cluster.
+// If the cluster is not upgradeable or the OVA is incorrect, this method will return an error.
 // If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) UpgradeCluster(kubernetesTemplateOvaId string, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
@@ -257,7 +272,7 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 			break
 		}
 		if err != nil {
-			// If it's an ETag error, we just retry
+			// If it's an ETag error, we just retry without waiting
 			if !strings.Contains(strings.ToLower(err.Error()), "etag") {
 				return err
 			}
