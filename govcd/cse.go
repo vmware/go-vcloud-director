@@ -3,6 +3,7 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	"strings"
@@ -74,6 +75,28 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 // CseGetKubernetesClusterById retrieves a CSE Kubernetes cluster from VCD by its unique ID
 func (org *Org) CseGetKubernetesClusterById(id string) (*CseKubernetesCluster, error) {
 	return getCseKubernetesCluster(org.client, id)
+}
+
+// CseGetKubernetesClustersByName retrieves the CSE Kubernetes cluster from VCD with the given name
+func (org *Org) CseGetKubernetesClustersByName(cseVersion semver.Version, name string) ([]*CseKubernetesCluster, error) {
+	cseSubcomponents, err := getCseComponentsVersions(cseVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	rdes, err := getRdesByName(org.client, "vmware", "capvcdCluster", cseSubcomponents.CapvcdRdeTypeVersion, name)
+	if err != nil {
+		return nil, err
+	}
+	clusters := make([]*CseKubernetesCluster, len(rdes))
+	for i, rde := range rdes {
+		cluster, err := cseConvertToCseKubernetesClusterType(rde)
+		if err != nil {
+			return nil, err
+		}
+		clusters[i] = cluster
+	}
+	return clusters, nil
 }
 
 // getCseKubernetesCluster retrieves a CSE Kubernetes cluster from VCD by its unique ID

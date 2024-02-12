@@ -184,6 +184,11 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(cluster.Upgradeable, Equals, clusterGet.Upgradeable)
 	check.Assert(cluster.State, Equals, clusterGet.State)
 
+	allClusters, err := org.CseGetKubernetesClustersByName(clusterGet.CseVersion, clusterGet.Name)
+	check.Assert(err, IsNil)
+	check.Assert(len(allClusters), Equals, 1)
+	check.Assert(allClusters[0], DeepEquals, clusterGet)
+
 	// Update worker pool from 1 node to 2
 	// Pre-check. This should be 1, as it was created with just 1 pool
 	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {

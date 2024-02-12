@@ -16,12 +16,20 @@ import (
 
 // getCseComponentsVersions gets the versions of the subcomponents that are part of Container Service Extension.
 func getCseComponentsVersions(cseVersion semver.Version) (*cseComponentsVersions, error) {
-	v41, _ := semver.NewVersion("4.1")
+	v41, _ := semver.NewVersion("4.1.0")
+	v42, _ := semver.NewVersion("4.2.0")
+	v43, _ := semver.NewVersion("4.3.0")
 
-	if cseVersion.Equal(v41) {
+	if cseVersion.GreaterThanOrEqual(v41) && cseVersion.LessThan(v42) {
 		return &cseComponentsVersions{
 			VcdKeConfigRdeTypeVersion: "1.1.0",
 			CapvcdRdeTypeVersion:      "1.2.0",
+			CseInterfaceVersion:       "1.0.0",
+		}, nil
+	} else if cseVersion.GreaterThanOrEqual(v42) && cseVersion.LessThan(v43) {
+		return &cseComponentsVersions{
+			VcdKeConfigRdeTypeVersion: "1.1.0",
+			CapvcdRdeTypeVersion:      "1.3.0",
 			CseInterfaceVersion:       "1.0.0",
 		}, nil
 	}
@@ -752,10 +760,16 @@ func getCseTemplate(cseVersion semver.Version, templateName string) (string, err
 		return "", fmt.Errorf("the Container Service minimum version is '%s'", minimumVersion.String())
 	}
 	versionSegments := cseVersion.Segments()
-	fullTemplatePath := fmt.Sprintf("cse/%d.%d/%s.tmpl", versionSegments[0], versionSegments[1], templateName)
+	// We try with major.minor.patch
+	fullTemplatePath := fmt.Sprintf("cse/%d.%d.%d/%s.tmpl", versionSegments[0], versionSegments[1], versionSegments[2], templateName)
 	result, err := cseFiles.ReadFile(fullTemplatePath)
 	if err != nil {
-		return "", fmt.Errorf("could not read Go template '%s'", fullTemplatePath)
+		// We try now just with major.minor
+		fullTemplatePath = fmt.Sprintf("cse/%d.%d/%s.tmpl", versionSegments[0], versionSegments[1], templateName)
+		result, err = cseFiles.ReadFile(fullTemplatePath)
+		if err != nil {
+			return "", fmt.Errorf("could not read Go template '%s.tmpl' for CSE version %s", templateName, cseVersion.String())
+		}
 	}
 	return string(result), nil
 }
