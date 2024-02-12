@@ -151,7 +151,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	err = cluster.Refresh()
 	check.Assert(err, IsNil)
 
-	clusterGet, err := org.CseGetKubernetesClusterById(cluster.ID)
+	clusterGet, err := vcd.client.CseGetKubernetesClusterById(cluster.ID)
 	check.Assert(err, IsNil)
 	check.Assert(cluster.CseVersion.String(), Equals, clusterGet.CseVersion.String())
 	check.Assert(cluster.Name, Equals, clusterGet.Name)
@@ -219,10 +219,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 }
 
 func (vcd *TestVCD) Test_Deleteme(check *C) {
-	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
-	check.Assert(err, IsNil)
-
-	cluster, err := org.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:60e287b2-db49-4316-84c0-e0d3d58e8f52")
+	cluster, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:60e287b2-db49-4316-84c0-e0d3d58e8f52")
 	check.Assert(err, IsNil)
 
 	upgrades, err := cluster.GetSupportedUpgrades(true)

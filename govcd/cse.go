@@ -30,7 +30,7 @@ func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeo
 		return &CseKubernetesCluster{ID: clusterId}, err
 	}
 
-	return org.CseGetKubernetesClusterById(clusterId)
+	return getCseKubernetesClusterById(org.client, clusterId)
 }
 
 // CseCreateKubernetesClusterAsync creates a Kubernetes cluster with the data given as input (CseClusterSettings), but does not
@@ -73,8 +73,8 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 }
 
 // CseGetKubernetesClusterById retrieves a CSE Kubernetes cluster from VCD by its unique ID
-func (org *Org) CseGetKubernetesClusterById(id string) (*CseKubernetesCluster, error) {
-	return getCseKubernetesCluster(org.client, id)
+func (vcdClient *VCDClient) CseGetKubernetesClusterById(id string) (*CseKubernetesCluster, error) {
+	return getCseKubernetesClusterById(&vcdClient.Client, id)
 }
 
 // CseGetKubernetesClustersByName retrieves the CSE Kubernetes cluster from VCD with the given name
@@ -88,19 +88,21 @@ func (org *Org) CseGetKubernetesClustersByName(cseVersion semver.Version, name s
 	if err != nil {
 		return nil, err
 	}
-	clusters := make([]*CseKubernetesCluster, len(rdes))
-	for i, rde := range rdes {
-		cluster, err := cseConvertToCseKubernetesClusterType(rde)
-		if err != nil {
-			return nil, err
+	var clusters []*CseKubernetesCluster
+	for _, rde := range rdes {
+		if rde.DefinedEntity.Org != nil && rde.DefinedEntity.Org.ID == org.Org.ID {
+			cluster, err := cseConvertToCseKubernetesClusterType(rde)
+			if err != nil {
+				return nil, err
+			}
+			clusters = append(clusters, cluster)
 		}
-		clusters[i] = cluster
 	}
 	return clusters, nil
 }
 
-// getCseKubernetesCluster retrieves a CSE Kubernetes cluster from VCD by its unique ID
-func getCseKubernetesCluster(client *Client, clusterId string) (*CseKubernetesCluster, error) {
+// getCseKubernetesClusterById retrieves a CSE Kubernetes cluster from VCD by its unique ID
+func getCseKubernetesClusterById(client *Client, clusterId string) (*CseKubernetesCluster, error) {
 	rde, err := getRdeById(client, clusterId)
 	if err != nil {
 		return nil, err
@@ -111,7 +113,7 @@ func getCseKubernetesCluster(client *Client, clusterId string) (*CseKubernetesCl
 // Refresh gets the latest information about the receiver cluster and updates its properties.
 // All cached fields such as the supported OVAs list (from CseKubernetesCluster.GetSupportedUpgrades) are also cleared.
 func (cluster *CseKubernetesCluster) Refresh() error {
-	refreshed, err := getCseKubernetesCluster(cluster.client, cluster.ID)
+	refreshed, err := getCseKubernetesClusterById(cluster.client, cluster.ID)
 	if err != nil {
 		return fmt.Errorf("failed refreshing the CSE Kubernetes Cluster: %s", err)
 	}
