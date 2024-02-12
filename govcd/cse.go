@@ -153,11 +153,11 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 // GetSupportedUpgrades queries all vApp Templates from VCD, one by one, and returns those that can be used for upgrading the cluster.
 // As retrieving all OVAs one by one from VCD is expensive, the first time this method is called the returned OVAs are
 // cached to avoid querying VCD for every OVA whenever this method is called.
-// If refresh=true, this cache is cleared out and this method will query VCD for every vApp Template again.
-// Therefore, the refresh flag should be set to true only when VCD has new OVAs that need to be considered or the cluster
+// If refreshOvas=true, this cache is cleared out and this method will query VCD for every vApp Template again.
+// Therefore, the refreshOvas flag should be set to true only when VCD has new OVAs that need to be considered or the cluster
 // has significantly changed since the first call.
-func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refresh bool) ([]*types.VAppTemplate, error) {
-	if refresh {
+func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*types.VAppTemplate, error) {
+	if refreshOvas {
 		cluster.supportedUpgrades = nil
 	}
 	if len(cluster.supportedUpgrades) != 0 {
