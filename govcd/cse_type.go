@@ -92,7 +92,6 @@ type CseClusterUpdateInput struct {
 	WorkerPools             *map[string]CseWorkerPoolUpdateInput // Maps a node pool name with its contents
 	NewWorkerPools          *[]CseWorkerPoolSettings
 	NodeHealthCheck         *bool
-	AutoRepairOnErrors      *bool
 
 	// Private fields that are computed, not requested to the consumer of this struct
 	vcdKeConfigVersion string

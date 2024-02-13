@@ -231,14 +231,6 @@ func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool, ref
 	}, refresh)
 }
 
-// SetAutoRepairOnErrors executes an update on the receiver cluster to change the flag that controls the auto-repair
-// capabilities of CSE. If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
-func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool, refresh bool) error {
-	return cluster.Update(CseClusterUpdateInput{
-		AutoRepairOnErrors: &autoRepairOnErrors,
-	}, refresh)
-}
-
 // Update executes an update on the receiver CSE Kubernetes Cluster on any of the allowed parameters defined in the input type. If refresh=true,
 // it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh bool) error {
@@ -254,10 +246,6 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 	}
 	if cluster.capvcdType.Status.VcdKe.State != "provisioned" {
 		return fmt.Errorf("can't update a Kubernetes cluster that is not in 'provisioned' state, as it is in '%s'", cluster.capvcdType.Status.VcdKe.State)
-	}
-
-	if input.AutoRepairOnErrors != nil {
-		cluster.capvcdType.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
 	}
 
 	// Computed attributes that are required, such as the VcdKeConfig version
