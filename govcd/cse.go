@@ -231,6 +231,14 @@ func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool, ref
 	}, refresh)
 }
 
+// SetAutoRepairOnErrors executes an update on the receiver cluster to change the flag that controls the auto-repair
+// capabilities of CSE. If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
+func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool, refresh bool) error {
+	return cluster.Update(CseClusterUpdateInput{
+		AutoRepairOnErrors: &autoRepairOnErrors,
+	}, refresh)
+}
+
 // Update executes an update on the receiver CSE Kubernetes Cluster on any of the allowed parameters defined in the input type. If refresh=true,
 // it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh bool) error {
@@ -246,6 +254,19 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 	}
 	if cluster.capvcdType.Status.VcdKe.State != "provisioned" {
 		return fmt.Errorf("can't update a Kubernetes cluster that is not in 'provisioned' state, as it is in '%s'", cluster.capvcdType.Status.VcdKe.State)
+	}
+
+	if input.AutoRepairOnErrors != nil {
+		// Since CSE 4.1.1, the AutoRepairOnError toggle can't be modified and is turned off
+		// automatically by the CSE Server.
+		v411, err := semver.NewVersion("4.1.1")
+		if err != nil {
+			return fmt.Errorf("can't update the Kubernetes cluster: %s", err)
+		}
+		if cluster.CseVersion.GreaterThanOrEqual(v411) {
+			return fmt.Errorf("the 'Auto Repair on Errors' feature can't be changed after the cluster is created since CSE 4.1.1")
+		}
+		cluster.capvcdType.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
 	}
 
 	// Computed attributes that are required, such as the VcdKeConfig version
@@ -319,6 +340,7 @@ func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error 
 
 		markForDelete := traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.markForDelete")
 		forceDelete := traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.forceDelete")
+
 		if !markForDelete || !forceDelete {
 			// Mark the cluster for deletion
 			vcdKe["markForDelete"] = true
