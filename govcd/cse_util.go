@@ -9,6 +9,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -73,6 +74,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		ClusterResourceSetBindings: make([]string, len(capvcd.Status.Capvcd.ClusterResourceSetBindings)),
 		Upgradeable:                capvcd.Status.Capvcd.Upgrade.Target.KubernetesVersion != "" && capvcd.Status.Capvcd.Upgrade.Target.TkgVersion != "",
 		State:                      capvcd.Status.VcdKe.State,
+		Events:                     make([]CseClusterEvent, 0),
 		client:                     rde.client,
 		capvcdType:                 capvcd,
 	}
@@ -340,6 +342,76 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		result.WorkerPools[i] = workerPool
 		i++
 	}
+
+	// Add all events to the resulting cluster
+	for _, s := range capvcd.Status.VcdKe.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:       s.Name,
+			Type:       "event",
+			OccurredAt: s.OccurredAt,
+			Details:    s.AdditionalDetails.DetailedEvent,
+		})
+	}
+	for _, s := range capvcd.Status.VcdKe.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:       s.Name,
+			Type:       "error",
+			OccurredAt: s.OccurredAt,
+			Details:    s.AdditionalDetails.DetailedError,
+		})
+	}
+	for _, s := range capvcd.Status.Capvcd.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:       s.Name,
+			Type:       "event",
+			OccurredAt: s.OccurredAt,
+			Details:    s.Name,
+		})
+	}
+	for _, s := range capvcd.Status.Capvcd.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:       s.Name,
+			Type:       "error",
+			OccurredAt: s.OccurredAt,
+			Details:    s.AdditionalDetails.DetailedError,
+		})
+	}
+	for _, s := range capvcd.Status.Cpi.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:       s.Name,
+			Type:       "event",
+			OccurredAt: s.OccurredAt,
+			Details:    s.Name,
+		})
+	}
+	for _, s := range capvcd.Status.Cpi.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:       s.Name,
+			Type:       "error",
+			OccurredAt: s.OccurredAt,
+			Details:    s.AdditionalDetails.DetailedError,
+		})
+	}
+	for _, s := range capvcd.Status.Csi.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:       s.Name,
+			Type:       "event",
+			OccurredAt: s.OccurredAt,
+			Details:    s.Name,
+		})
+	}
+	for _, s := range capvcd.Status.Csi.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:       s.Name,
+			Type:       "error",
+			OccurredAt: s.OccurredAt,
+			Details:    s.AdditionalDetails.DetailedError,
+		})
+	}
+
+	sort.SliceStable(result.Events, func(i, j int) bool {
+		return result.Events[i].OccurredAt.Before(result.Events[j].OccurredAt)
+	})
 
 	return result, nil
 }
