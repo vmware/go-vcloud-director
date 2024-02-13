@@ -329,17 +329,9 @@ func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error 
 			return fmt.Errorf("could not retrieve the Kubernetes cluster with ID '%s': %s", cluster.ID, err)
 		}
 
-		spec, ok := rde.DefinedEntity.Entity["spec"].(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("JSON object 'spec' is not correct in the RDE '%s': %s", cluster.ID, err)
-		}
-
-		vcdKe, ok = spec["vcdKe"].(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("JSON object 'spec.vcdKe' is not correct in the RDE '%s': %s", cluster.ID, err)
-		}
-
-		if !vcdKe["markForDelete"].(bool) || !vcdKe["forceDelete"].(bool) {
+		markForDelete := traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.markForDelete")
+		forceDelete := traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.forceDelete")
+		if !markForDelete || !forceDelete {
 			// Mark the cluster for deletion
 			vcdKe["markForDelete"] = true
 			vcdKe["forceDelete"] = true
