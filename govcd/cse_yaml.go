@@ -52,6 +52,14 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	}
 
 	if input.WorkerPools != nil {
+		// Worker pool names must be unique
+		for _, existingPool := range cluster.WorkerPools {
+			for _, newPool := range *input.NewWorkerPools {
+				if newPool.Name == existingPool.Name {
+					return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("there is an existing Worker Pool with name %s", existingPool.Name)
+				}
+			}
+		}
 		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, err

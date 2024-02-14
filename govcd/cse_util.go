@@ -533,7 +533,11 @@ func (input *CseClusterSettings) validate() error {
 	if len(input.WorkerPools) == 0 {
 		return fmt.Errorf("there must be at least one Worker Pool")
 	}
+	existingWorkerPools := map[string]bool{}
 	for _, workerPool := range input.WorkerPools {
+		if _, alreadyExists := existingWorkerPools[workerPool.Name]; alreadyExists {
+			return fmt.Errorf("the names of the Worker Pools must be unique, but '%s' is repeated", workerPool.Name)
+		}
 		if workerPool.MachineCount < 1 {
 			return fmt.Errorf("number of Worker Pool '%s' nodes must higher than 0, but it was '%d'", workerPool.Name, workerPool.MachineCount)
 		}
@@ -543,6 +547,7 @@ func (input *CseClusterSettings) validate() error {
 		if !cseNamesRegex.MatchString(workerPool.Name) {
 			return fmt.Errorf("the Worker Pool name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", workerPool.Name)
 		}
+		existingWorkerPools[workerPool.Name] = true
 	}
 	if input.DefaultStorageClass != nil { // This field is optional
 		if !cseNamesRegex.MatchString(input.DefaultStorageClass.Name) {
