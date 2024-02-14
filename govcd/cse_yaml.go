@@ -260,7 +260,7 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 	}
 	internalSettings.Name = cluster.Name
 	internalSettings.CseVersion = cluster.CseVersion
-	nodePoolsYaml, err := internalSettings.generateNodePoolYaml()
+	nodePoolsYaml, err := internalSettings.generateWorkerPoolsYaml()
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +297,7 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clus
 
 		// We need to add the block to the slice of YAML documents
 		settings := &cseClusterSettingsInternal{CseVersion: cseVersion, Name: clusterName, VcdKeConfig: *vcdKeConfig}
-		mhcYaml, err := settings.generateMemoryHealthCheckYaml()
+		mhcYaml, err := settings.generateMachineHealthCheckYaml()
 		if err != nil {
 			return nil, err
 		}

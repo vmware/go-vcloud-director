@@ -220,48 +220,9 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	cluster, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:fd8e63dc-9127-407f-bf7b-29357442b8b4")
 	check.Assert(err, IsNil)
 
-	workerPoolName := "test2-worker-node-pool-1"
-
-	_, err = cluster.GetKubeconfig()
+	ovas, err := cluster.GetSupportedUpgrades(true)
 	check.Assert(err, IsNil)
 
-	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, true)
-	check.Assert(err, IsNil)
-
-	// Post-check. This should be 2, as it should have scaled up
-	foundWorkerPool := false
-	for _, nodePool := range cluster.WorkerPools {
-		if nodePool.Name == workerPoolName {
-			foundWorkerPool = true
-			check.Assert(nodePool.MachineCount, Equals, 2)
-		}
-	}
-	check.Assert(foundWorkerPool, Equals, true)
-
-	// Revert back (resources can be limited)
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 1}}, true)
-	check.Assert(err, IsNil)
-
-	// Perform the update
-	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 2}, true)
-	check.Assert(err, IsNil)
-
-	// Post-check. This should be 2, as it should have scaled up
-	check.Assert(cluster.ControlPlane.MachineCount, Equals, 2)
-
-	// Revert back (resources can be limited)
-	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 1}, true)
-	check.Assert(err, IsNil)
-
-	err = cluster.AddWorkerPools([]CseWorkerPoolSettings{{
-		Name:              "node-pool-5",
-		MachineCount:      1,
-		DiskSizeGi:        20,
-		SizingPolicyId:    cluster.WorkerPools[0].SizingPolicyId,
-		PlacementPolicyId: "",
-		VGpuPolicyId:      "",
-		StorageProfileId:  cluster.WorkerPools[0].StorageProfileId,
-	}}, true)
+	err = cluster.UpgradeCluster(ovas[0].ID, true)
 	check.Assert(err, IsNil)
 }

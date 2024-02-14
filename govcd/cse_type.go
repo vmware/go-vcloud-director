@@ -1,7 +1,6 @@
 package govcd
 
 import (
-	"embed"
 	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"time"
@@ -24,16 +23,6 @@ type CseKubernetesCluster struct {
 	client            *Client
 	capvcdType        *types.Capvcd
 	supportedUpgrades []*types.VAppTemplate // Caches the vApp templates that can be used to upgrade a cluster.
-}
-
-// CseClusterEvent is an event that has occurred during the lifetime of a Container Service Extension (CSE) Kubernetes cluster.
-type CseClusterEvent struct {
-	Name         string
-	Type         string
-	ResourceId   string
-	ResourceName string
-	OccurredAt   time.Time
-	Details      string
 }
 
 // CseClusterSettings defines the required configuration of a Container Service Extension (CSE) Kubernetes cluster.
@@ -86,6 +75,16 @@ type CseDefaultStorageClassSettings struct {
 	Filesystem       string // Must be either "ext4" or "xfs"
 }
 
+// CseClusterEvent is an event that has occurred during the lifetime of a Container Service Extension (CSE) Kubernetes cluster.
+type CseClusterEvent struct {
+	Name         string
+	Type         string
+	ResourceId   string
+	ResourceName string
+	OccurredAt   time.Time
+	Details      string
+}
+
 // CseClusterUpdateInput defines the required configuration that a Container Service Extension (CSE) Kubernetes cluster needs in order to be updated.
 type CseClusterUpdateInput struct {
 	KubernetesTemplateOvaId *string
@@ -110,11 +109,11 @@ type CseWorkerPoolUpdateInput struct {
 
 // cseClusterSettingsInternal defines the required arguments that are required by the CSE Server used internally to specify
 // a Kubernetes cluster. These are not set by the user, but instead they are computed from a valid
-// CseClusterSettings object in the cseClusterSettingsToInternal method. These fields are then
+// CseClusterSettings object in the CseClusterSettings.toCseClusterSettingsInternal method. These fields are then
 // inserted in Go templates to render a final JSON that is valid to be used as the cluster Runtime Defined Entity (RDE) payload.
 //
 // The main difference between CseClusterSettings and this structure is that the first one uses IDs and this one uses names, among
-// other differences like the computed TkgVersionBundle.
+// other differences like the computed tkgVersionBundle.
 type cseClusterSettingsInternal struct {
 	CseVersion                semver.Version
 	Name                      string
@@ -140,9 +139,8 @@ type cseClusterSettingsInternal struct {
 }
 
 // tkgVersionBundle is a type that contains all the versions of the components of
-// a Kubernetes cluster that can be obtained with the Kubernetes Template OVA name, downloaded
-// from VMware Customer connect:
-// https://customerconnect.vmware.com/downloads/details?downloadGroup=TKG-240&productId=1400
+// a Kubernetes cluster that can be obtained with the internal properties of the Kubernetes Template OVAs downloaded from
+// https://customerconnect.vmware.com
 type tkgVersionBundle struct {
 	EtcdVersion       string
 	CoreDnsVersion    string
@@ -196,9 +194,3 @@ type cseComponentsVersions struct {
 	CapvcdRdeTypeVersion      string
 	CseInterfaceVersion       string
 }
-
-// This collection of files contains all the Go Templates and resources required for the Container Service Extension (CSE) methods
-// to work.
-//
-//go:embed cse
-var cseFiles embed.FS

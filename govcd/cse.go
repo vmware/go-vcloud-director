@@ -46,7 +46,7 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 		return "", fmt.Errorf("error creating the CSE Kubernetes cluster: %s", err)
 	}
 
-	payload, err := internalSettings.getKubernetesClusterCreationPayload()
+	payload, err := internalSettings.getUnmarshaledRdePayload()
 	if err != nil {
 		return "", err
 	}
@@ -184,8 +184,7 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 // As retrieving all OVAs one by one from VCD is expensive, the first time this method is called the returned OVAs are
 // cached to avoid querying VCD again multiple times.
 // If refreshOvas=true, this cache is cleared out and this method will query VCD for every vApp Template again.
-// Therefore, the refreshOvas flag should be set to true only when VCD has new OVAs that need to be considered or the cluster
-// has significantly changed since the first call.
+// Therefore, the refreshOvas flag should be set to true only when VCD has new OVAs that need to be considered.
 func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*types.VAppTemplate, error) {
 	if refreshOvas {
 		cluster.supportedUpgrades = nil
@@ -237,6 +236,7 @@ func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool, ref
 
 // SetAutoRepairOnErrors executes an update on the receiver cluster to change the flag that controls the auto-repair
 // capabilities of CSE. If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
+// NOTE: This can only be used in CSE versions < 4.1.1
 func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		AutoRepairOnErrors: &autoRepairOnErrors,

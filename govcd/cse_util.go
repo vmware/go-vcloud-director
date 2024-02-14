@@ -764,6 +764,8 @@ func getTkgVersionBundleFromVAppTemplate(template *types.VAppTemplate) (tkgVersi
 	return result, nil
 }
 
+// compareTkgVersion returns -1, 0 or 1 if the receiver TKG version is less than, equal or higher to the input TKG version.
+// If they cannot be compared it returns -2.
 func (tkgVersions tkgVersionBundle) compareTkgVersion(tkgVersion string) int {
 	receiverVersion, err := semver.NewVersion(tkgVersions.TkgVersion)
 	if err != nil {
@@ -776,6 +778,8 @@ func (tkgVersions tkgVersionBundle) compareTkgVersion(tkgVersion string) int {
 	return receiverVersion.Compare(inputVersion)
 }
 
+// kubernetesVersionIsOneMinorHigher returns true only if the receiver Kubernetes version is exactly one minor version higher
+// than the given input version, being the minor digit the 'Y' in 'X.Y.Z'.
 func (tkgVersions tkgVersionBundle) kubernetesVersionIsOneMinorHigher(kubernetesVersion string) bool {
 	receiverVersion, err := semver.NewVersion(tkgVersions.KubernetesVersion)
 	if err != nil {
@@ -800,7 +804,7 @@ func (tkgVersions tkgVersionBundle) kubernetesVersionIsOneMinorHigher(kubernetes
 
 // getVcdKeConfig gets the required information from the CSE Server configuration RDE (VCDKEConfig), such as the
 // Machine Health Check settings and the Container Registry URL.
-func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheckActive bool) (*vcdKeConfig, error) {
+func getVcdKeConfig(client *Client, vcdKeConfigVersion string, retrieveMachineHealtchCheckInfo bool) (*vcdKeConfig, error) {
 	rdes, err := getRdesByName(client, "vmware", "VCDKEConfig", vcdKeConfigVersion, "vcdKeConfig")
 	if err != nil {
 		return nil, err
@@ -822,7 +826,7 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheck
 	// https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.2/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.2/GUID-B5C19221-2ECA-4DCD-8EA1-8E391F6217C1.html
 	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"])
 
-	if isNodeHealthCheckActive {
+	if retrieveMachineHealtchCheckInfo {
 		mhc, ok := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"]
 		if !ok {
 			// If there is no "mhc" entry in the VCDKEConfig JSON, we skip setting this part of the Kubernetes cluster configuration

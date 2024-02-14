@@ -10,12 +10,12 @@ import (
 	"testing"
 )
 
+// Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString
 func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) {
-	v41, err := semver.NewVersion("4.1")
+	v41, err := semver.NewVersion("4.2.0")
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
-
 	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")
 	if err != nil {
 		t.Fatalf("could not read YAML test file: %s", err)
@@ -125,7 +125,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 				var result []map[string]interface{}
 				for _, doc := range baseUnmarshaledYaml {
 					if doc["kind"] == "MachineHealthCheck" {
-						continue
+						continue // Remove the MachineHealthCheck document from the expected result
 					}
 					result = append(result, doc)
 				}
@@ -183,9 +183,10 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 				var result []map[string]interface{}
 				for _, doc := range baseUnmarshaledYaml {
 					if doc["kind"] == "VCDCluster" {
+						// Add the extra items to the document of the expected result
 						doc["spec"].(map[string]interface{})["controlPlaneEndpoint"] = map[string]interface{}{"host": "1.2.3.4"}
 						doc["spec"].(map[string]interface{})["controlPlaneEndpoint"].(map[string]interface{})["port"] = 6443
-						doc["spec"].(map[string]interface{})["loadBalancerConfigSpec"] = map[string]string{"vipSubnet": "6.7.8.9/24"}
+						doc["spec"].(map[string]interface{})["loadBalancerConfigSpec"] = map[string]interface{}{"vipSubnet": "6.7.8.9/24"}
 					}
 					result = append(result, doc)
 				}
@@ -227,7 +228,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 
 			expected := tt.expectedFunc()
 			if !reflect.DeepEqual(expected, gotUnmarshaled) {
-				t.Errorf("generateCapiYamlAsJsonString() got =\n%v\nwant =\n%v\n", gotUnmarshaled, expected)
+				t.Errorf("generateCapiYamlAsJsonString() got =\n%#v\nwant =\n%#v\n", gotUnmarshaled, expected)
 			}
 		})
 	}
