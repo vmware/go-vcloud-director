@@ -8,7 +8,9 @@ type Capvcd struct {
 	Kind string `json:"kind,omitempty"`
 	Spec struct {
 		VcdKe struct {
-			Secure struct {
+			// NOTE: "Secure" struct needs to be a pointer to avoid overriding with empty values by mistake, as VCD doesn't return RDE fields
+			// marked with "x-vcloud-restricted: secure"
+			Secure *struct {
 				ApiToken string `json:"apiToken,omitempty"`
 			} `json:"secure,omitempty"`
 			IsVCDKECluster             bool `json:"isVCDKECluster,omitempty"`
@@ -105,9 +107,11 @@ type Capvcd struct {
 			} `json:"defaultStorageClass,omitempty"`
 		} `json:"vcdKe,omitempty"`
 		Capvcd struct {
-			Uid     string `json:"uid,omitempty"`
-			Phase   string `json:"phase,omitempty"`
-			Private struct {
+			Uid   string `json:"uid,omitempty"`
+			Phase string `json:"phase,omitempty"`
+			// NOTE: "Private" struct needs to be a pointer to avoid overriding with empty values by mistake, as VCD doesn't return RDE fields
+			// marked with "x-vcloud-restricted: secure"
+			Private *struct {
 				KubeConfig string `json:"kubeConfig,omitempty"`
 			} `json:"private,omitempty"`
 			Upgrade struct {

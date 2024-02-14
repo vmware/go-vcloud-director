@@ -147,6 +147,9 @@ func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not retrieve the Kubeconfig, the Behavior invocation failed: %s", err)
 	}
+	if result.Capvcd.Status.Capvcd.Private == nil {
+		return "", fmt.Errorf("could not retrieve the Kubeconfig, the Behavior invocation succeeded but the Kubeconfig is nil")
+	}
 	if result.Capvcd.Status.Capvcd.Private.KubeConfig == "" {
 		return "", fmt.Errorf("could not retrieve the Kubeconfig, the Behavior invocation succeeded but the Kubeconfig is empty")
 	}
