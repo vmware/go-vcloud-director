@@ -212,18 +212,32 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 // described by the input parameters.
 // NOTE: This function doesn't modify the input, but returns a copy of the YAML with the added unmarshalled documents.
 func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernetesCluster, newWorkerPools []CseWorkerPoolSettings) ([]map[string]interface{}, error) {
+	if len(newWorkerPools) == 0 {
+		return docs, nil
+	}
 
-	// FIXME: Convert IDs -> Names
+	var computePolicyIds []string
+	var storageProfileIds []string
+	for _, w := range newWorkerPools {
+		computePolicyIds = append(computePolicyIds, w.SizingPolicyId, w.PlacementPolicyId, w.VGpuPolicyId)
+		storageProfileIds = append(storageProfileIds, w.StorageProfileId)
+	}
+
+	idToNameCache, err := idToNames(cluster.client, computePolicyIds, storageProfileIds)
+	if err != nil {
+		return nil, err
+	}
+
 	internalSettings := cseClusterSettingsInternal{WorkerPools: make([]cseWorkerPoolSettingsInternal, len(newWorkerPools))}
 	for i, workerPool := range newWorkerPools {
 		internalSettings.WorkerPools[i] = cseWorkerPoolSettingsInternal{
 			Name:                workerPool.Name,
 			MachineCount:        workerPool.MachineCount,
 			DiskSizeGi:          workerPool.DiskSizeGi,
-			SizingPolicyName:    workerPool.SizingPolicyId,
-			PlacementPolicyName: workerPool.PlacementPolicyId,
-			VGpuPolicyName:      workerPool.VGpuPolicyId,
-			StorageProfileName:  workerPool.StorageProfileId,
+			StorageProfileName:  idToNameCache[workerPool.StorageProfileId],
+			SizingPolicyName:    idToNameCache[workerPool.SizingPolicyId],
+			VGpuPolicyName:      idToNameCache[workerPool.VGpuPolicyId],
+			PlacementPolicyName: idToNameCache[workerPool.PlacementPolicyId],
 		}
 	}
 	internalSettings.Name = cluster.Name

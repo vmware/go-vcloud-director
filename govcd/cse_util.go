@@ -633,12 +633,6 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 	}
 	output.RdeType = rdeType.DefinedEntityType
 
-	// The input to create a cluster uses different entities IDs, but CSE cluster creation process uses Names.
-	// For that reason, we need to transform IDs to Names by querying VCD. This process is optimized with a tiny cache map.
-	idToNameCache := map[string]string{
-		"": "", // Default empty value to map optional values that were not set, to avoid extra checks. For example, an empty vGPU Policy.
-	}
-
 	// Gather all the IDs of the Compute Policies and Storage Profiles, so we can transform them to Names in bulk.
 	var computePolicyIds []string
 	var storageProfileIds []string
@@ -649,25 +643,9 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 	computePolicyIds = append(computePolicyIds, input.ControlPlane.SizingPolicyId, input.ControlPlane.PlacementPolicyId)
 	storageProfileIds = append(storageProfileIds, input.ControlPlane.StorageProfileId, input.DefaultStorageClass.StorageProfileId)
 
-	// Retrieve the Compute Policies and Storage Profiles names and put them in the cache. The cache
-	// reduces the calls to VCD. The URN format used by VCD guarantees that IDs are unique, so there is no possibility of clashes here.
-	for _, id := range storageProfileIds {
-		if _, alreadyPresent := idToNameCache[id]; !alreadyPresent {
-			storageProfile, err := getStorageProfileById(org.client, id)
-			if err != nil {
-				return nil, fmt.Errorf("could not retrieve Storage Profile with ID '%s': %s", id, err)
-			}
-			idToNameCache[id] = storageProfile.Name
-		}
-	}
-	for _, id := range computePolicyIds {
-		if _, alreadyPresent := idToNameCache[id]; !alreadyPresent {
-			computePolicy, err := getVdcComputePolicyV2ById(org.client, id)
-			if err != nil {
-				return nil, fmt.Errorf("could not retrieve Compute Policy with ID '%s': %s", id, err)
-			}
-			idToNameCache[id] = computePolicy.VdcComputePolicyV2.Name
-		}
+	idToNameCache, err := idToNames(org.client, computePolicyIds, storageProfileIds)
+	if err != nil {
+		return nil, err
 	}
 
 	// Now that everything is cached in memory, we can build the Node pools and Storage Class payloads in a trivial way.
@@ -856,6 +834,36 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, isNodeHealthCheck
 		result.NodeUnknownTimeout = mhc.(map[string]interface{})["nodeNotReadyTimeout"].(string)
 	}
 
+	return result, nil
+}
+
+// idToNames returns a map that associates Compute Policies/Storage Profiles IDs with their respective names.
+// This is useful as the input to create/update a cluster uses different entities IDs, but CSE cluster creation/update process uses Names.
+// For that reason, we need to transform IDs to Names by querying VCD
+func idToNames(client *Client, computePolicyIds, storageProfileIds []string) (map[string]string, error) {
+	result := map[string]string{
+		"": "", // Default empty value to map optional values that were not set, to avoid extra checks. For example, an empty vGPU Policy.
+	}
+	// Retrieve the Compute Policies and Storage Profiles names and put them in the cache. The cache
+	// reduces the calls to VCD. The URN format used by VCD guarantees that IDs are unique, so there is no possibility of clashes here.
+	for _, id := range storageProfileIds {
+		if _, alreadyPresent := result[id]; !alreadyPresent {
+			storageProfile, err := getStorageProfileById(client, id)
+			if err != nil {
+				return nil, fmt.Errorf("could not retrieve Storage Profile with ID '%s': %s", id, err)
+			}
+			result[id] = storageProfile.Name
+		}
+	}
+	for _, id := range computePolicyIds {
+		if _, alreadyPresent := result[id]; !alreadyPresent {
+			computePolicy, err := getVdcComputePolicyV2ById(client, id)
+			if err != nil {
+				return nil, fmt.Errorf("could not retrieve Compute Policy with ID '%s': %s", id, err)
+			}
+			result[id] = computePolicy.VdcComputePolicyV2.Name
+		}
+	}
 	return result, nil
 }
 
