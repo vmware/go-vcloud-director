@@ -94,11 +94,6 @@ type CseClusterUpdateInput struct {
 	NewWorkerPools          *[]CseWorkerPoolSettings
 	NodeHealthCheck         *bool
 	AutoRepairOnErrors      *bool
-
-	// Private fields that are computed, not requested to the consumer of this struct
-	vcdKeConfigVersion string
-	clusterName        string
-	cseVersion         semver.Version
 }
 
 // CseControlPlaneUpdateInput defines the required configuration that the Control Plane of the Container Service Extension (CSE) Kubernetes cluster

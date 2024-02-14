@@ -51,6 +51,13 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		}
 	}
 
+	if input.WorkerPools != nil {
+		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
+		if err != nil {
+			return cluster.capvcdType.Spec.CapiYaml, err
+		}
+	}
+
 	if input.NewWorkerPools != nil {
 		yamlDocs, err = cseAddWorkerPoolsInYaml(yamlDocs, *cluster, *input.NewWorkerPools)
 		if err != nil {
@@ -58,12 +65,19 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		}
 	}
 
+	if input.ControlPlane != nil {
+		err := cseUpdateControlPlaneInYaml(yamlDocs, *input.ControlPlane)
+		if err != nil {
+			return cluster.capvcdType.Spec.CapiYaml, err
+		}
+	}
+
 	if input.NodeHealthCheck != nil {
-		vcdKeConfig, err := getVcdKeConfig(cluster.client, input.vcdKeConfigVersion, *input.NodeHealthCheck)
+		vcdKeConfig, err := getVcdKeConfig(cluster.client, cluster.capvcdType.Status.VcdKe.VcdKeVersion, *input.NodeHealthCheck)
 		if err != nil {
 			return "", err
 		}
-		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, input.clusterName, input.cseVersion, vcdKeConfig)
+		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, cluster.Name, cluster.CseVersion, vcdKeConfig)
 		if err != nil {
 			return "", err
 		}

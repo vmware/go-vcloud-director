@@ -142,12 +142,13 @@ func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
 		Capvcd types.Capvcd `json:"entity,omitempty"`
 	}
 	result := invocationResult{}
+
 	err = rde.InvokeBehaviorAndMarshal(fmt.Sprintf("urn:vcloud:behavior-interface:getFullEntity:cse:capvcd:%s", versions.CseInterfaceVersion), types.BehaviorInvocation{}, &result)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not retrieve the Kubeconfig, the Behavior invocation failed: %s", err)
 	}
 	if result.Capvcd.Status.Capvcd.Private.KubeConfig == "" {
-		return "", fmt.Errorf("could not retrieve the Kubeconfig from the invocation of the Behavior")
+		return "", fmt.Errorf("could not retrieve the Kubeconfig, the Behavior invocation succeeded but the Kubeconfig is empty")
 	}
 	return result.Capvcd.Status.Capvcd.Private.KubeConfig, nil
 }
@@ -269,10 +270,6 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 		cluster.capvcdType.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
 	}
 
-	// Computed attributes that are required, such as the VcdKeConfig version
-	input.clusterName = cluster.Name
-	input.vcdKeConfigVersion = cluster.capvcdType.Status.VcdKe.VcdKeVersion
-	input.cseVersion = cluster.CseVersion
 	updatedCapiYaml, err := cluster.updateCapiYaml(input)
 	if err != nil {
 		return err

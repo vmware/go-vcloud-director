@@ -220,22 +220,14 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	cluster, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:2d137956-e702-474e-a4df-7a51c868f22c")
 	check.Assert(err, IsNil)
 
-	_, err = cluster.GetSupportedUpgrades(true)
-	check.Assert(err, IsNil)
-	//	check.Assert(len(upgrades) > 0, Equals, true)
-
 	workerPoolName := "node-pool-1"
 
-	//kubeconfig, err := cluster.GetKubeconfig()
-	//check.Assert(err, IsNil)
-	//check.Assert(true, Equals, strings.Contains(kubeconfig, cluster.Name))
-	//check.Assert(true, Equals, strings.Contains(kubeconfig, "client-certificate-data"))
-	//check.Assert(true, Equals, strings.Contains(kubeconfig, "certificate-authority-data"))
-	//check.Assert(true, Equals, strings.Contains(kubeconfig, "client-key-data"))
+	_, err = cluster.GetKubeconfig()
+	check.Assert(err, IsNil)
 
 	// Perform the update
-	//	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, true)
-	//	check.Assert(err, IsNil)
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, true)
+	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool := false
