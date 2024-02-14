@@ -16,7 +16,7 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	if cluster == nil {
 		return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("receiver cluster is nil")
 	}
-	if input.ControlPlane == nil && input.WorkerPools == nil && input.NodeHealthCheck == nil && input.KubernetesTemplateOvaId == nil {
+	if input.ControlPlane == nil && input.WorkerPools == nil && input.NodeHealthCheck == nil && input.KubernetesTemplateOvaId == nil && input.NewWorkerPools == nil {
 		return cluster.capvcdType.Spec.CapiYaml, nil
 	}
 
@@ -52,14 +52,6 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	}
 
 	if input.WorkerPools != nil {
-		// Worker pool names must be unique
-		for _, existingPool := range cluster.WorkerPools {
-			for _, newPool := range *input.NewWorkerPools {
-				if newPool.Name == existingPool.Name {
-					return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("there is an existing Worker Pool with name %s", existingPool.Name)
-				}
-			}
-		}
 		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, err
@@ -67,6 +59,15 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	}
 
 	if input.NewWorkerPools != nil {
+		// Worker pool names must be unique
+		for _, existingPool := range cluster.WorkerPools {
+			for _, newPool := range *input.NewWorkerPools {
+				if newPool.Name == existingPool.Name {
+					return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("there is an existing Worker Pool with name '%s'", existingPool.Name)
+				}
+			}
+		}
+
 		yamlDocs, err = cseAddWorkerPoolsInYaml(yamlDocs, *cluster, *input.NewWorkerPools)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, err
@@ -211,6 +212,8 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 // described by the input parameters.
 // NOTE: This function doesn't modify the input, but returns a copy of the YAML with the added unmarshalled documents.
 func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernetesCluster, newWorkerPools []CseWorkerPoolSettings) ([]map[string]interface{}, error) {
+
+	// FIXME: Convert IDs -> Names
 	internalSettings := cseClusterSettingsInternal{WorkerPools: make([]cseWorkerPoolSettingsInternal, len(newWorkerPools))}
 	for i, workerPool := range newWorkerPools {
 		internalSettings.WorkerPools[i] = cseWorkerPoolSettingsInternal{
