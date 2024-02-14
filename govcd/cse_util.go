@@ -844,8 +844,8 @@ func idToNames(client *Client, computePolicyIds, storageProfileIds []string) (ma
 	result := map[string]string{
 		"": "", // Default empty value to map optional values that were not set, to avoid extra checks. For example, an empty vGPU Policy.
 	}
-	// Retrieve the Compute Policies and Storage Profiles names and put them in the cache. The cache
-	// reduces the calls to VCD. The URN format used by VCD guarantees that IDs are unique, so there is no possibility of clashes here.
+	// Retrieve the Compute Policies and Storage Profiles names and put them in the resulting map. This map also can
+	// be used to reduce the calls to VCD. The URN format used by VCD guarantees that IDs are unique, so there is no possibility of clashes here.
 	for _, id := range storageProfileIds {
 		if _, alreadyPresent := result[id]; !alreadyPresent {
 			storageProfile, err := getStorageProfileById(client, id)
