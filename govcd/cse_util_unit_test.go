@@ -82,8 +82,8 @@ func Test_getTkgVersionBundleFromVAppTemplate(t *testing.T) {
 						ProductSection: &types.ProductSection{
 							Property: []*types.Property{
 								{
-									Key:   "VERSION",
-									Value: &types.Value{Value: "v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc"},
+									Key:          "VERSION",
+									DefaultValue: "v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc",
 								},
 							},
 						},

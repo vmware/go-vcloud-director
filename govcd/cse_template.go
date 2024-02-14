@@ -78,7 +78,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateNodePoolYaml() (strin
 	buf := &bytes.Buffer{}
 
 	// We can have many worker pools, we build a YAML object for each one of them.
-	for _, workerPool := range clusterSettings.WorkerPools {
+	for i, workerPool := range clusterSettings.WorkerPools {
 
 		// Check the correctness of the compute policies in the node pool block
 		if workerPool.PlacementPolicyName != "" && workerPool.VGpuPolicyName != "" {
@@ -105,7 +105,10 @@ func (clusterSettings *cseClusterSettingsInternal) generateNodePoolYaml() (strin
 		}); err != nil {
 			return "", fmt.Errorf("could not generate a correct Node Pool YAML: %s", err)
 		}
-		resultYaml += fmt.Sprintf("%s\n---\n", buf.String())
+		resultYaml += fmt.Sprintf("%s\n", buf.String())
+		if i < len(clusterSettings.WorkerPools)-1 {
+			resultYaml += "---\n"
+		}
 		buf.Reset()
 	}
 	return resultYaml, nil
@@ -140,7 +143,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateMemoryHealthCheckYaml
 	}); err != nil {
 		return "", fmt.Errorf("could not generate a correct Memory Health Check YAML: %s", err)
 	}
-	return fmt.Sprintf("%s\n---\n", buf.String()), nil
+	return fmt.Sprintf("%s\n", buf.String()), nil
 
 }
 
@@ -205,7 +208,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		return "", fmt.Errorf("could not generate a correct CAPI YAML: %s", err)
 	}
 	// The final "pretty" YAML. To embed it in the final payload it must be marshaled into a one-line JSON string
-	prettyYaml := fmt.Sprintf("%s\n%s\n%s", memoryHealthCheckYaml, nodePoolYaml, buf.String())
+	prettyYaml := fmt.Sprintf("%s\n---\n%s\n---\n%s", memoryHealthCheckYaml, nodePoolYaml, buf.String())
 
 	// We don't use a standard json.Marshal() as the YAML contains special
 	// characters that are not encoded properly, such as '<'.

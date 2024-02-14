@@ -27,6 +27,37 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("error unmarshaling YAML: %s", err)
 	}
 
+	if input.ControlPlane != nil {
+		err := cseUpdateControlPlaneInYaml(yamlDocs, *input.ControlPlane)
+		if err != nil {
+			return cluster.capvcdType.Spec.CapiYaml, err
+		}
+	}
+
+	if input.WorkerPools != nil {
+		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
+		if err != nil {
+			return cluster.capvcdType.Spec.CapiYaml, err
+		}
+	}
+
+	// Order matters. We need to add the new pools before updating the Kubernetes template.
+	if input.NewWorkerPools != nil {
+		// Worker pool names must be unique
+		for _, existingPool := range cluster.WorkerPools {
+			for _, newPool := range *input.NewWorkerPools {
+				if newPool.Name == existingPool.Name {
+					return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("there is an existing Worker Pool with name '%s'", existingPool.Name)
+				}
+			}
+		}
+
+		yamlDocs, err = cseAddWorkerPoolsInYaml(yamlDocs, *cluster, *input.NewWorkerPools)
+		if err != nil {
+			return cluster.capvcdType.Spec.CapiYaml, err
+		}
+	}
+
 	// As a side note, we can't optimize this one with "if <current value> equals <new value> do nothing" because
 	// in order to retrieve the current value we would need to explore the YAML anyway, which is what we also need to do to update it.
 	// Also, even if we did it, the current value obtained from YAML would be a Name, but the new value is an ID, so we would need to query VCD anyway
@@ -46,36 +77,6 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the new one '%s' has an older TKG/Kubernetes version (%s/%s)", vAppTemplate.VAppTemplate.Name, versions.TkgVersion, versions.KubernetesVersion)
 		}
 		err = cseUpdateKubernetesTemplateInYaml(yamlDocs, vAppTemplate.VAppTemplate)
-		if err != nil {
-			return cluster.capvcdType.Spec.CapiYaml, err
-		}
-	}
-
-	if input.WorkerPools != nil {
-		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
-		if err != nil {
-			return cluster.capvcdType.Spec.CapiYaml, err
-		}
-	}
-
-	if input.NewWorkerPools != nil {
-		// Worker pool names must be unique
-		for _, existingPool := range cluster.WorkerPools {
-			for _, newPool := range *input.NewWorkerPools {
-				if newPool.Name == existingPool.Name {
-					return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("there is an existing Worker Pool with name '%s'", existingPool.Name)
-				}
-			}
-		}
-
-		yamlDocs, err = cseAddWorkerPoolsInYaml(yamlDocs, *cluster, *input.NewWorkerPools)
-		if err != nil {
-			return cluster.capvcdType.Spec.CapiYaml, err
-		}
-	}
-
-	if input.ControlPlane != nil {
-		err := cseUpdateControlPlaneInYaml(yamlDocs, *input.ControlPlane)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, err
 		}
@@ -238,6 +239,23 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 			SizingPolicyName:    idToNameCache[workerPool.SizingPolicyId],
 			VGpuPolicyName:      idToNameCache[workerPool.VGpuPolicyId],
 			PlacementPolicyName: idToNameCache[workerPool.PlacementPolicyId],
+		}
+	}
+
+	// Extra information needed to render the YAML. As all the worker pools share the same
+	// Kubernetes OVA name, version and Catalog, we pick this info from any of the available ones.
+	for _, doc := range docs {
+		if internalSettings.CatalogName == "" && doc["kind"] == "VCDMachineTemplate" {
+			internalSettings.CatalogName = traverseMapAndGet[string](doc, "spec.template.spec.catalog")
+		}
+		if internalSettings.KubernetesTemplateOvaName == "" && doc["kind"] == "VCDMachineTemplate" {
+			internalSettings.KubernetesTemplateOvaName = traverseMapAndGet[string](doc, "spec.template.spec.template")
+		}
+		if internalSettings.TkgVersionBundle.KubernetesVersion == "" && doc["kind"] == "MachineDeployment" {
+			internalSettings.TkgVersionBundle.KubernetesVersion = traverseMapAndGet[string](doc, "spec.template.spec.version")
+		}
+		if internalSettings.CatalogName != "" && internalSettings.KubernetesTemplateOvaName != "" && internalSettings.TkgVersionBundle.KubernetesVersion != "" {
+			break
 		}
 	}
 	internalSettings.Name = cluster.Name

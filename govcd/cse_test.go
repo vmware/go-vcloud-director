@@ -217,10 +217,10 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 }
 
 func (vcd *TestVCD) Test_Deleteme(check *C) {
-	cluster, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:2d137956-e702-474e-a4df-7a51c868f22c")
+	cluster, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:fd8e63dc-9127-407f-bf7b-29357442b8b4")
 	check.Assert(err, IsNil)
 
-	workerPoolName := "node-pool-1"
+	workerPoolName := "test2-worker-node-pool-1"
 
 	_, err = cluster.GetKubeconfig()
 	check.Assert(err, IsNil)
@@ -255,7 +255,7 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	check.Assert(err, IsNil)
 
 	err = cluster.AddWorkerPools([]CseWorkerPoolSettings{{
-		Name:              "node-pool-2",
+		Name:              "node-pool-5",
 		MachineCount:      1,
 		DiskSizeGi:        20,
 		SizingPolicyId:    cluster.WorkerPools[0].SizingPolicyId,
