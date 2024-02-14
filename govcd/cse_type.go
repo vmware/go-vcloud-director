@@ -19,7 +19,6 @@ type CseKubernetesCluster struct {
 	CpiVersion                 semver.Version
 	CsiVersion                 semver.Version
 	State                      string
-	Upgradeable                bool
 	Events                     []CseClusterEvent
 
 	client            *Client
@@ -29,10 +28,12 @@ type CseKubernetesCluster struct {
 
 // CseClusterEvent is an event that has occurred during the lifetime of a Container Service Extension (CSE) Kubernetes cluster.
 type CseClusterEvent struct {
-	Name       string
-	Type       string
-	OccurredAt time.Time
-	Details    string
+	Name         string
+	Type         string
+	ResourceId   string
+	ResourceName string
+	OccurredAt   time.Time
+	Details      string
 }
 
 // CseClusterSettings defines the required configuration of a Container Service Extension (CSE) Kubernetes cluster.

@@ -204,7 +204,7 @@ func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*
 		}
 		targetVersions, err := getTkgVersionBundleFromVAppTemplate(vAppTemplate.VAppTemplate)
 		if err != nil {
-			continue // This means it's not a TKGm OVA, we skip it
+			continue // This means it's not a TKGm OVA, or it is not supported, so we skip it
 		}
 		if targetVersions.compareTkgVersion(cluster.TkgVersion.String()) == 1 && targetVersions.kubernetesVersionIsOneMinorHigher(cluster.KubernetesVersion.String()) {
 			tkgmOvas = append(tkgmOvas, vAppTemplate.VAppTemplate)
@@ -289,7 +289,7 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 		return err
 	}
 
-	// We do this loop to increase the chances that the Kubernetes cluster is successfully created, as the Go SDK is
+	// We do this loop to increase the chances that the Kubernetes cluster is successfully updated, as the Go SDK is
 	// "fighting" with the CSE Server
 	retries := 0
 	maxRetries := 5

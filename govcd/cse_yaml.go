@@ -33,9 +33,6 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	// as well.
 	// So in this special case this "optimization" would optimize nothing. The same happens with other YAML values.
 	if input.KubernetesTemplateOvaId != nil {
-		if !cluster.Upgradeable {
-			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the cluster is not upgradeable")
-		}
 		vAppTemplate, err := getVAppTemplateById(cluster.client, *input.KubernetesTemplateOvaId)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the Kubernetes Template OVA with ID '%s': %s", *input.KubernetesTemplateOvaId, err)
@@ -45,7 +42,7 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("could not retrieve the TKG versions of OVA '%s': %s", *input.KubernetesTemplateOvaId, err)
 		}
-		if versions.compareTkgVersion(cluster.capvcdType.Status.Capvcd.Upgrade.Target.TkgVersion) != 1 || !versions.kubernetesVersionIsOneMinorHigher(cluster.capvcdType.Status.Capvcd.Upgrade.Target.KubernetesVersion) {
+		if versions.compareTkgVersion(cluster.capvcdType.Status.Capvcd.Upgrade.Current.TkgVersion) != 1 || !versions.kubernetesVersionIsOneMinorHigher(cluster.capvcdType.Status.Capvcd.Upgrade.Current.KubernetesVersion) {
 			return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("cannot perform an OVA change as the new one '%s' has an older TKG/Kubernetes version (%s/%s)", vAppTemplate.VAppTemplate.Name, versions.TkgVersion, versions.KubernetesVersion)
 		}
 		err = cseUpdateKubernetesTemplateInYaml(yamlDocs, vAppTemplate.VAppTemplate)

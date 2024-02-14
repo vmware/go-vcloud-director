@@ -72,63 +72,173 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		ID:                         rde.DefinedEntity.ID,
 		Etag:                       rde.Etag,
 		ClusterResourceSetBindings: make([]string, len(capvcd.Status.Capvcd.ClusterResourceSetBindings)),
-		Upgradeable:                capvcd.Status.Capvcd.Upgrade.Target.KubernetesVersion != "" && capvcd.Status.Capvcd.Upgrade.Target.TkgVersion != "",
 		State:                      capvcd.Status.VcdKe.State,
 		Events:                     make([]CseClusterEvent, 0),
 		client:                     rde.client,
 		capvcdType:                 capvcd,
 	}
-	version, err := semver.NewVersion(capvcd.Status.Capvcd.Upgrade.Current.KubernetesVersion)
-	if err != nil {
-		return nil, fmt.Errorf("could not read Kubernetes version: %s", err)
-	}
-	result.KubernetesVersion = *version
 
-	version, err = semver.NewVersion(capvcd.Status.Capvcd.Upgrade.Current.TkgVersion)
-	if err != nil {
-		return nil, fmt.Errorf("could not read Tkg version: %s", err)
+	// Add all events to the resulting cluster
+	for _, s := range capvcd.Status.VcdKe.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "event",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.AdditionalDetails.DetailedEvent,
+		})
 	}
-	result.TkgVersion = *version
+	for _, s := range capvcd.Status.VcdKe.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "error",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.AdditionalDetails.DetailedError,
+		})
+	}
+	for _, s := range capvcd.Status.Capvcd.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "event",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.Name,
+		})
+	}
+	for _, s := range capvcd.Status.Capvcd.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "error",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.AdditionalDetails.DetailedError,
+		})
+	}
+	for _, s := range capvcd.Status.Cpi.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "event",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.Name,
+		})
+	}
+	for _, s := range capvcd.Status.Cpi.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "error",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.AdditionalDetails.DetailedError,
+		})
+	}
+	for _, s := range capvcd.Status.Csi.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "event",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.Name,
+		})
+	}
+	for _, s := range capvcd.Status.Csi.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "error",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.AdditionalDetails.DetailedError,
+		})
+	}
+	sort.SliceStable(result.Events, func(i, j int) bool {
+		return result.Events[i].OccurredAt.After(result.Events[j].OccurredAt)
+	})
 
-	version, err = semver.NewVersion(capvcd.Status.Capvcd.CapvcdVersion)
-	if err != nil {
-		return nil, fmt.Errorf("could not read Capvcd version: %s", err)
+	if capvcd.Status.Capvcd.Upgrade.Current.KubernetesVersion != "" {
+		version, err := semver.NewVersion(capvcd.Status.Capvcd.Upgrade.Current.KubernetesVersion)
+		if err != nil {
+			return nil, fmt.Errorf("could not read Kubernetes version: %s", err)
+		}
+		result.KubernetesVersion = *version
 	}
-	result.CapvcdVersion = *version
 
-	version, err = semver.NewVersion(strings.TrimSpace(capvcd.Status.Cpi.Version)) // Note: We use trim as the version comes with spacing characters
-	if err != nil {
-		return nil, fmt.Errorf("could not read CPI version: %s", err)
+	if capvcd.Status.Capvcd.Upgrade.Current.TkgVersion != "" {
+		version, err := semver.NewVersion(capvcd.Status.Capvcd.Upgrade.Current.TkgVersion)
+		if err != nil {
+			return nil, fmt.Errorf("could not read Tkg version: %s", err)
+		}
+		result.TkgVersion = *version
 	}
-	result.CpiVersion = *version
 
-	version, err = semver.NewVersion(capvcd.Status.Csi.Version)
-	if err != nil {
-		return nil, fmt.Errorf("could not read CSI version: %s", err)
+	if capvcd.Status.Capvcd.CapvcdVersion != "" {
+		version, err := semver.NewVersion(capvcd.Status.Capvcd.CapvcdVersion)
+		if err != nil {
+			return nil, fmt.Errorf("could not read Capvcd version: %s", err)
+		}
+		result.CapvcdVersion = *version
 	}
-	result.CsiVersion = *version
+
+	if capvcd.Status.Cpi.Version != "" {
+		version, err := semver.NewVersion(strings.TrimSpace(capvcd.Status.Cpi.Version)) // Note: We use trim as the version comes with spacing characters
+		if err != nil {
+			return nil, fmt.Errorf("could not read CPI version: %s", err)
+		}
+		result.CpiVersion = *version
+	}
+
+	if capvcd.Status.Csi.Version != "" {
+		version, err := semver.NewVersion(capvcd.Status.Csi.Version)
+		if err != nil {
+			return nil, fmt.Errorf("could not read CSI version: %s", err)
+		}
+		result.CsiVersion = *version
+	}
+
+	if capvcd.Status.VcdKe.VcdKeVersion != "" {
+		cseVersion, err := semver.NewVersion(capvcd.Status.VcdKe.VcdKeVersion)
+		if err != nil {
+			return nil, fmt.Errorf("could not read the CSE Version that the cluster uses: %s", err)
+		}
+		result.CseVersion = *cseVersion
+	}
+
+	// Retrieve the Owner
+	if rde.DefinedEntity.Owner != nil {
+		result.Owner = rde.DefinedEntity.Owner.Name
+	}
 
 	// Retrieve the Organization ID
 	for i, binding := range capvcd.Status.Capvcd.ClusterResourceSetBindings {
 		result.ClusterResourceSetBindings[i] = binding.Name
 	}
 
-	if len(capvcd.Status.Capvcd.ClusterApiStatus.ApiEndpoints) == 0 {
-		return nil, fmt.Errorf("could not get Control Plane endpoint")
+	if len(capvcd.Status.Capvcd.ClusterApiStatus.ApiEndpoints) > 0 {
+		result.ControlPlane.Ip = capvcd.Status.Capvcd.ClusterApiStatus.ApiEndpoints[0].Host
 	}
-	result.ControlPlane.Ip = capvcd.Status.Capvcd.ClusterApiStatus.ApiEndpoints[0].Host
 
-	if len(result.capvcdType.Status.Capvcd.VcdProperties.Organizations) == 0 {
-		return nil, fmt.Errorf("could not read Organizations from Capvcd type")
+	if len(result.capvcdType.Status.Capvcd.VcdProperties.Organizations) > 0 {
+		result.OrganizationId = result.capvcdType.Status.Capvcd.VcdProperties.Organizations[0].Id
 	}
-	result.OrganizationId = result.capvcdType.Status.Capvcd.VcdProperties.Organizations[0].Id
+
+	// If the Org/VDC information is not set, we can't continue retrieving information for the cluster.
+	// This scenario is when the cluster is not correctly provisioned (Error state)
+	if len(result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs) == 0 {
+		return result, nil
+	}
+
+	// NOTE: The code below, until the end of this function, requires the Org/VDC information
 
 	// Retrieve the VDC ID
-	if len(result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs) == 0 {
-		return nil, fmt.Errorf("could not read VDCs from Capvcd type")
-	}
 	result.VdcId = result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Id
-
 	// FIXME: This is a workaround, because for some reason the OrgVdcs[*].Id property contains the VDC name instead of the VDC ID.
 	//        Once this is fixed, this conditional should not be needed anymore.
 	if result.VdcId == result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].Name {
@@ -161,19 +271,6 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		return nil, fmt.Errorf("expected one Org VDC Network from Capvcd type, but got %d", len(networks))
 	}
 	result.NetworkId = networks[0].OpenApiOrgVdcNetwork.ID
-
-	// Get the CSE version
-	cseVersion, err := semver.NewVersion(capvcd.Status.VcdKe.VcdKeVersion)
-	if err != nil {
-		return nil, fmt.Errorf("could not read the CSE Version that the cluster uses: %s", err)
-	}
-	result.CseVersion = *cseVersion
-
-	// Retrieve the Owner
-	if rde.DefinedEntity.Owner == nil {
-		return nil, fmt.Errorf("could not read Owner from RDE")
-	}
-	result.Owner = rde.DefinedEntity.Owner.Name
 
 	// Here we retrieve several items that we need from now onwards, like Storage Profiles and Compute Policies
 	storageProfiles := map[string]string{}
@@ -342,76 +439,6 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		result.WorkerPools[i] = workerPool
 		i++
 	}
-
-	// Add all events to the resulting cluster
-	for _, s := range capvcd.Status.VcdKe.EventSet {
-		result.Events = append(result.Events, CseClusterEvent{
-			Name:       s.Name,
-			Type:       "event",
-			OccurredAt: s.OccurredAt,
-			Details:    s.AdditionalDetails.DetailedEvent,
-		})
-	}
-	for _, s := range capvcd.Status.VcdKe.ErrorSet {
-		result.Events = append(result.Events, CseClusterEvent{
-			Name:       s.Name,
-			Type:       "error",
-			OccurredAt: s.OccurredAt,
-			Details:    s.AdditionalDetails.DetailedError,
-		})
-	}
-	for _, s := range capvcd.Status.Capvcd.EventSet {
-		result.Events = append(result.Events, CseClusterEvent{
-			Name:       s.Name,
-			Type:       "event",
-			OccurredAt: s.OccurredAt,
-			Details:    s.Name,
-		})
-	}
-	for _, s := range capvcd.Status.Capvcd.ErrorSet {
-		result.Events = append(result.Events, CseClusterEvent{
-			Name:       s.Name,
-			Type:       "error",
-			OccurredAt: s.OccurredAt,
-			Details:    s.AdditionalDetails.DetailedError,
-		})
-	}
-	for _, s := range capvcd.Status.Cpi.EventSet {
-		result.Events = append(result.Events, CseClusterEvent{
-			Name:       s.Name,
-			Type:       "event",
-			OccurredAt: s.OccurredAt,
-			Details:    s.Name,
-		})
-	}
-	for _, s := range capvcd.Status.Cpi.ErrorSet {
-		result.Events = append(result.Events, CseClusterEvent{
-			Name:       s.Name,
-			Type:       "error",
-			OccurredAt: s.OccurredAt,
-			Details:    s.AdditionalDetails.DetailedError,
-		})
-	}
-	for _, s := range capvcd.Status.Csi.EventSet {
-		result.Events = append(result.Events, CseClusterEvent{
-			Name:       s.Name,
-			Type:       "event",
-			OccurredAt: s.OccurredAt,
-			Details:    s.Name,
-		})
-	}
-	for _, s := range capvcd.Status.Csi.ErrorSet {
-		result.Events = append(result.Events, CseClusterEvent{
-			Name:       s.Name,
-			Type:       "error",
-			OccurredAt: s.OccurredAt,
-			Details:    s.AdditionalDetails.DetailedError,
-		})
-	}
-
-	sort.SliceStable(result.Events, func(i, j int) bool {
-		return result.Events[i].OccurredAt.Before(result.Events[j].OccurredAt)
-	})
 
 	return result, nil
 }
@@ -767,20 +794,25 @@ func (tkgVersions tkgVersionBundle) compareTkgVersion(tkgVersion string) int {
 }
 
 func (tkgVersions tkgVersionBundle) kubernetesVersionIsOneMinorHigher(kubernetesVersion string) bool {
-	receiverVersionTokens := strings.Split(tkgVersions.KubernetesVersion, ".")
-	if len(receiverVersionTokens) < 3 {
+	receiverVersion, err := semver.NewVersion(tkgVersions.KubernetesVersion)
+	if err != nil {
 		return false
 	}
-	vTokens := strings.Split(kubernetesVersion, ".")
-	if len(vTokens) < 3 {
-		return false
-	}
-	minor, err := strconv.Atoi(receiverVersionTokens[1])
+	inputVersion, err := semver.NewVersion(kubernetesVersion)
 	if err != nil {
 		return false
 	}
 
-	return receiverVersionTokens[0] == vTokens[0] && fmt.Sprintf("%d", minor+1) == vTokens[1] && receiverVersionTokens[2] == vTokens[2]
+	receiverVersionSegments := receiverVersion.Segments()
+	if len(receiverVersionSegments) < 2 {
+		return false
+	}
+	inputSegments := inputVersion.Segments()
+	if len(inputSegments) < 2 {
+		return false
+	}
+
+	return receiverVersionSegments[0] == inputSegments[0] && receiverVersionSegments[1]-1 == inputSegments[1]
 }
 
 // getVcdKeConfig gets the required information from the CSE Server configuration RDE (VCDKEConfig), such as the

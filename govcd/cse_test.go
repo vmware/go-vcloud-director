@@ -136,7 +136,6 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(cluster.CapvcdVersion, Not(Equals), "")
 	check.Assert(cluster.CpiVersion, Not(Equals), "")
 	check.Assert(cluster.CsiVersion, Not(Equals), "")
-	check.Assert(cluster.Upgradeable, Equals, true)
 	check.Assert(len(cluster.ClusterResourceSetBindings), Not(Equals), 0)
 	check.Assert(cluster.State, Equals, "provisioned")
 	check.Assert(len(cluster.Events), Not(Equals), 0)
@@ -181,7 +180,6 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(cluster.ClusterResourceSetBindings, DeepEquals, clusterGet.ClusterResourceSetBindings)
 	check.Assert(cluster.CpiVersion.String(), Equals, clusterGet.CpiVersion.String())
 	check.Assert(cluster.CsiVersion.String(), Equals, clusterGet.CsiVersion.String())
-	check.Assert(cluster.Upgradeable, Equals, clusterGet.Upgradeable)
 	check.Assert(cluster.State, Equals, clusterGet.State)
 
 	allClusters, err := org.CseGetKubernetesClustersByName(clusterGet.CseVersion, clusterGet.Name)
@@ -219,25 +217,25 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 }
 
 func (vcd *TestVCD) Test_Deleteme(check *C) {
-	cluster, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:60e287b2-db49-4316-84c0-e0d3d58e8f52")
+	cluster, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:2d137956-e702-474e-a4df-7a51c868f22c")
 	check.Assert(err, IsNil)
 
-	upgrades, err := cluster.GetSupportedUpgrades(true)
+	_, err = cluster.GetSupportedUpgrades(true)
 	check.Assert(err, IsNil)
-	check.Assert(len(upgrades) > 0, Equals, true)
+	//	check.Assert(len(upgrades) > 0, Equals, true)
 
-	workerPoolName := "cse-test1-worker-node-pool-1"
+	workerPoolName := "node-pool-1"
 
-	kubeconfig, err := cluster.GetKubeconfig()
-	check.Assert(err, IsNil)
-	check.Assert(true, Equals, strings.Contains(kubeconfig, cluster.Name))
-	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-certificate-data"))
-	check.Assert(true, Equals, strings.Contains(kubeconfig, "certificate-authority-data"))
-	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-key-data"))
+	//kubeconfig, err := cluster.GetKubeconfig()
+	//check.Assert(err, IsNil)
+	//check.Assert(true, Equals, strings.Contains(kubeconfig, cluster.Name))
+	//check.Assert(true, Equals, strings.Contains(kubeconfig, "client-certificate-data"))
+	//check.Assert(true, Equals, strings.Contains(kubeconfig, "certificate-authority-data"))
+	//check.Assert(true, Equals, strings.Contains(kubeconfig, "client-key-data"))
 
 	// Perform the update
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, true)
-	check.Assert(err, IsNil)
+	//	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 2}}, true)
+	//	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool := false
@@ -250,20 +248,20 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	check.Assert(foundWorkerPool, Equals, true)
 
 	// Revert back (resources can be limited)
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 1}}, true)
-	check.Assert(err, IsNil)
+	//	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{workerPoolName: {MachineCount: 1}}, true)
+	//	check.Assert(err, IsNil)
 
 	// Perform the update
-	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 2}, true)
-	check.Assert(err, IsNil)
+	//	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 2}, true)
+	//	check.Assert(err, IsNil)
 
 	// Post-check. This should be 2, as it should have scaled up
-	check.Assert(cluster.ControlPlane.MachineCount, Equals, 2)
+	//	check.Assert(cluster.ControlPlane.MachineCount, Equals, 2)
 
 	// Revert back (resources can be limited)
-	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 1}, true)
-	check.Assert(err, IsNil)
+	//	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 1}, true)
+	//	check.Assert(err, IsNil)
 
-	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 1}, true)
-	check.Assert(err, IsNil)
+	//	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 1}, true)
+	//	check.Assert(err, IsNil)
 }

@@ -30,6 +30,7 @@ type Capvcd struct {
 				Name              string    `json:"name,omitempty"`
 				OccurredAt        time.Time `json:"occurredAt,omitempty"`
 				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
 				AdditionalDetails struct {
 					DetailedEvent string `json:"Detailed Event,omitempty"`
 				} `json:"additionalDetails,omitempty"`
@@ -50,6 +51,8 @@ type Capvcd struct {
 			EventSet []struct {
 				Name              string    `json:"name,omitempty"`
 				OccurredAt        time.Time `json:"occurredAt,omitempty"`
+				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
 				AdditionalDetails struct {
 					DetailedDescription string `json:"Detailed Description,omitempty"`
 				} `json:"additionalDetails,omitempty"`
@@ -70,6 +73,7 @@ type Capvcd struct {
 				Name              string    `json:"name,omitempty"`
 				OccurredAt        time.Time `json:"occurredAt,omitempty"`
 				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
+				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
 				AdditionalDetails struct {
 					DetailedEvent string `json:"Detailed Event,omitempty"`
 				} `json:"additionalDetails,omitempty"`
@@ -112,10 +116,6 @@ type Capvcd struct {
 					TkgVersion        string `json:"tkgVersion,omitempty"`
 					KubernetesVersion string `json:"kubernetesVersion,omitempty"`
 				} `json:"current,omitempty"`
-				Target struct {
-					TkgVersion        string `json:"tkgVersion,omitempty"`
-					KubernetesVersion string `json:"kubernetesVersion,omitempty"`
-				} `json:"target,omitempty"`
 			} `json:"upgrade,omitempty"`
 			EventSet []struct {
 				Name            string    `json:"name,omitempty"`
