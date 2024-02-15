@@ -185,7 +185,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 					if doc["kind"] == "VCDCluster" {
 						// Add the extra items to the document of the expected result
 						doc["spec"].(map[string]interface{})["controlPlaneEndpoint"] = map[string]interface{}{"host": "1.2.3.4"}
-						doc["spec"].(map[string]interface{})["controlPlaneEndpoint"].(map[string]interface{})["port"] = 6443
+						doc["spec"].(map[string]interface{})["controlPlaneEndpoint"].(map[string]interface{})["port"] = float64(6443)
 						doc["spec"].(map[string]interface{})["loadBalancerConfigSpec"] = map[string]interface{}{"vipSubnet": "6.7.8.9/24"}
 					}
 					result = append(result, doc)

@@ -126,8 +126,13 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 	if err := capiYamlEmpty.Execute(buf, args); err != nil {
 		return "", fmt.Errorf("could not generate a correct CAPI YAML: %s", err)
 	}
+
+	prettyYaml := ""
+	if memoryHealthCheckYaml != "" {
+		prettyYaml += fmt.Sprintf("%s\n---\n", memoryHealthCheckYaml)
+	}
 	// The final "pretty" YAML. To embed it in the final payload it must be marshaled into a one-line JSON string
-	prettyYaml := fmt.Sprintf("%s\n---\n%s\n---\n%s", memoryHealthCheckYaml, nodePoolYaml, buf.String())
+	prettyYaml += fmt.Sprintf("%s\n---\n%s", nodePoolYaml, buf.String())
 
 	// We don't use a standard json.Marshal() as the YAML contains special characters that are not encoded properly, such as '<'.
 	buf.Reset()
