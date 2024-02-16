@@ -1,6 +1,7 @@
 * Added a new type `CseKubernetesCluster` to manage Container Service Extension Kubernetes clusters [GH-645]
 * Added new methods `Org.CseCreateKubernetesCluster` and `Org.CseCreateKubernetesClusterAsync` to create Kubernetes clusters
-  in a VCD with Container Service Extension installed [GH-645]
+  in a VCD appliance with Container Service Extension installed [GH-645]
+* Added new methods `VCDClient.CseGetKubernetesClusterById` and `Org.CseGetKubernetesClustersByName` to retrieve a Container Service Extension Kubernetes cluster [GH-645]
 * Added a new method `CseKubernetesCluster.GetKubeconfig` to retrieve the *kubeconfig* from a provisioned Container Service Extension Kubernetes cluster [GH-645]
 * Added a new method `CseKubernetesCluster.Refresh` to refresh a Container Service Extension Kubernetes cluster [GH-645]
 * Added new methods to update a Container Service Extension Kubernetes cluster: `CseKubernetesCluster.UpdateWorkerPools`,
