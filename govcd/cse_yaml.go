@@ -83,7 +83,11 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	}
 
 	if input.NodeHealthCheck != nil {
-		vcdKeConfig, err := getVcdKeConfig(cluster.client, cluster.capvcdType.Status.VcdKe.VcdKeVersion, *input.NodeHealthCheck)
+		cseComponentsVersions, err := getCseComponentsVersions(cluster.CseVersion)
+		if err != nil {
+			return "", err
+		}
+		vcdKeConfig, err := getVcdKeConfig(cluster.client, cseComponentsVersions.VcdKeConfigRdeTypeVersion, *input.NodeHealthCheck)
 		if err != nil {
 			return "", err
 		}
@@ -278,7 +282,7 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 // cseUpdateNodeHealthCheckInYaml updates the Kubernetes cluster described in the given YAML documents by adding or removing
 // the MachineHealthCheck object.
 // NOTE: This function doesn't modify the input, but returns a copy of the YAML with the modifications.
-func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clusterName string, cseVersion semver.Version, vcdKeConfig *vcdKeConfig) ([]map[string]interface{}, error) {
+func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clusterName string, cseVersion semver.Version, vcdKeConfig vcdKeConfig) ([]map[string]interface{}, error) {
 	mhcPosition := -1
 	result := make([]map[string]interface{}, len(yamlDocuments))
 	for i, d := range yamlDocuments {
@@ -288,15 +292,18 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clus
 		result[i] = d
 	}
 
+	machineHealthCheckEnabled := vcdKeConfig.NodeUnknownTimeout != "" && vcdKeConfig.NodeStartupTimeout != "" && vcdKeConfig.NodeNotReadyTimeout != "" &&
+		vcdKeConfig.MaxUnhealthyNodesPercentage != 0
+
 	if mhcPosition < 0 {
 		// There is no MachineHealthCheck block
-		if vcdKeConfig == nil {
+		if !machineHealthCheckEnabled {
 			// We don't want it neither, so nothing to do
 			return result, nil
 		}
 
 		// We need to add the block to the slice of YAML documents
-		settings := &cseClusterSettingsInternal{CseVersion: cseVersion, Name: clusterName, VcdKeConfig: *vcdKeConfig}
+		settings := &cseClusterSettingsInternal{CseVersion: cseVersion, Name: clusterName, VcdKeConfig: vcdKeConfig}
 		mhcYaml, err := settings.generateMachineHealthCheckYaml()
 		if err != nil {
 			return nil, err
@@ -309,7 +316,7 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clus
 		result = append(result, mhc)
 	} else {
 		// There is a MachineHealthCheck block
-		if vcdKeConfig != nil {
+		if machineHealthCheckEnabled {
 			// We want it, but it is already there, so nothing to do
 			// TODO: What happens in UI if the VCDKEConfig MHC values are changed, does it get reflected in the cluster?
 			//       If that's the case, we might need to update this value always

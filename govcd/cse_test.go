@@ -220,9 +220,6 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 	cluster, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:7a09242a-ba6a-41d3-b918-bd3132f7f270")
 	check.Assert(err, IsNil)
 
-	ovas, err := cluster.GetSupportedUpgrades(true)
-	check.Assert(err, IsNil)
-
-	err = cluster.UpgradeCluster(ovas[0].ID, true)
+	err = cluster.SetHealthCheck(false, true)
 	check.Assert(err, IsNil)
 }

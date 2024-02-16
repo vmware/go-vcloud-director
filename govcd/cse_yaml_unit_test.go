@@ -269,7 +269,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 	}
 
 	// Deactivates Machine Health Check
-	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, nil)
+	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, vcdKeConfig{})
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
@@ -282,7 +282,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 	}
 
 	// Enables Machine Health Check
-	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, &vcdKeConfig{
+	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, vcdKeConfig{
 		MaxUnhealthyNodesPercentage: 12,
 		NodeStartupTimeout:          "34",
 		NodeNotReadyTimeout:         "56",

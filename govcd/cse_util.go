@@ -684,9 +684,7 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 	if err != nil {
 		return nil, err
 	}
-	if vcdKeConfig != nil {
-		output.VcdKeConfig = *vcdKeConfig
-	}
+	output.VcdKeConfig = vcdKeConfig
 
 	output.Owner = input.Owner
 	if input.Owner == "" {
@@ -802,24 +800,24 @@ func (tkgVersions tkgVersionBundle) kubernetesVersionIsOneMinorHigher(kubernetes
 
 // getVcdKeConfig gets the required information from the CSE Server configuration RDE (VCDKEConfig), such as the
 // Machine Health Check settings and the Container Registry URL.
-func getVcdKeConfig(client *Client, vcdKeConfigVersion string, retrieveMachineHealtchCheckInfo bool) (*vcdKeConfig, error) {
+func getVcdKeConfig(client *Client, vcdKeConfigVersion string, retrieveMachineHealtchCheckInfo bool) (vcdKeConfig, error) {
+	result := vcdKeConfig{}
 	rdes, err := getRdesByName(client, "vmware", "VCDKEConfig", vcdKeConfigVersion, "vcdKeConfig")
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	if len(rdes) != 1 {
-		return nil, fmt.Errorf("expected exactly one VCDKEConfig RDE with version '%s', but got %d", vcdKeConfigVersion, len(rdes))
+		return result, fmt.Errorf("expected exactly one VCDKEConfig RDE with version '%s', but got %d", vcdKeConfigVersion, len(rdes))
 	}
 
 	profiles, ok := rdes[0].DefinedEntity.Entity["profiles"].([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'profiles' array")
+		return result, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'profiles' array")
 	}
 	if len(profiles) == 0 {
-		return nil, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a non-empty 'profiles' element")
+		return result, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a non-empty 'profiles' element")
 	}
 
-	result := &vcdKeConfig{}
 	// We append /tkg as required, even in air-gapped environments:
 	// https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.2/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.2/GUID-B5C19221-2ECA-4DCD-8EA1-8E391F6217C1.html
 	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"])
