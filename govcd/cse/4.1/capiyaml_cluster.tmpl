@@ -1,7 +1,7 @@
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineHealthCheck
 metadata:
-  name: "{{.ClusterName}}"
+  name: "{{.ClusterName}}-mhc"
   namespace: "{{.TargetNamespace}}"
   labels:
     clusterctl.cluster.x-k8s.io: ""
