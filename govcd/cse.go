@@ -224,9 +224,9 @@ func (cluster *CseKubernetesCluster) UpgradeCluster(kubernetesTemplateOvaId stri
 	}, refresh)
 }
 
-// SetHealthCheck executes an update on the receiver cluster to enable or disable the machine health check capabilities.
+// SetNodeHealthCheck executes an update on the receiver cluster to enable or disable the machine health check capabilities.
 // If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
-func (cluster *CseKubernetesCluster) SetHealthCheck(healthCheckEnabled bool, refresh bool) error {
+func (cluster *CseKubernetesCluster) SetNodeHealthCheck(healthCheckEnabled bool, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		NodeHealthCheck: &healthCheckEnabled,
 	}, refresh)

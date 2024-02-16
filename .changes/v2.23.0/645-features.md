@@ -9,7 +9,7 @@
   Service Extension Kubernetes cluster [GH-645]
 * Added new methods to update a Container Service Extension Kubernetes cluster: `CseKubernetesCluster.UpdateWorkerPools`,
   `CseKubernetesCluster.AddWorkerPools`, `CseKubernetesCluster.UpdateControlPlane`, `CseKubernetesCluster.UpgradeCluster`,
-  `CseKubernetesCluster.SetHealthCheck` and `CseKubernetesCluster.SetAutoRepairOnErrors` [GH-645]
+  `CseKubernetesCluster.SetNodeHealthCheck` and `CseKubernetesCluster.SetAutoRepairOnErrors` [GH-645]
 * Added a new method  `CseKubernetesCluster.GetSupportedUpgrades` to retrieve all the valid TKGm OVAs that a given Container
   Service Extension Kubernetes cluster can use to be upgraded [GH-645]
 * Added a new method `CseKubernetesCluster.Delete` to delete a cluster [GH-645]
