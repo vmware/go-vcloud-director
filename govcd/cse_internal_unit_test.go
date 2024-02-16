@@ -63,7 +63,6 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 						StorageProfileName: "*",
 					},
 				},
-				MachineHealthCheckEnabled: true,
 				VcdKeConfig: vcdKeConfig{
 					MaxUnhealthyNodesPercentage: 100,
 					NodeStartupTimeout:          "900",
@@ -113,13 +112,8 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 						StorageProfileName: "*",
 					},
 				},
-				MachineHealthCheckEnabled: false,
 				VcdKeConfig: vcdKeConfig{
-					MaxUnhealthyNodesPercentage: 66,
-					NodeStartupTimeout:          "100s",
-					NodeNotReadyTimeout:         "200s",
-					NodeUnknownTimeout:          "300s",
-					ContainerRegistryUrl:        "projects.registry.vmware.com/tkg",
+					ContainerRegistryUrl: "projects.registry.vmware.com/tkg",
 				},
 				Owner:       "dummy",
 				ApiToken:    "dummy",
@@ -131,7 +125,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 				var result []map[string]interface{}
 				for _, doc := range baseUnmarshaledYaml {
 					if doc["kind"] == "MachineHealthCheck" {
-						doc["spec"].(map[string]interface{})["maxUnhealthy"] = "0%"
+						continue // Remove the MachineHealthCheck document from the expected result
 					}
 					result = append(result, doc)
 				}
@@ -171,7 +165,6 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 						StorageProfileName: "*",
 					},
 				},
-				MachineHealthCheckEnabled: true,
 				VcdKeConfig: vcdKeConfig{
 					MaxUnhealthyNodesPercentage: 100,
 					NodeStartupTimeout:          "900",

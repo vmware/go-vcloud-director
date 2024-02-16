@@ -88,7 +88,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		return "", err
 	}
 
-	memoryHealthCheckParameters, err := clusterSettings.getMachineHealthTemplateParameters()
+	memoryHealthCheckYaml, err := clusterSettings.generateMachineHealthCheckYaml()
 	if err != nil {
 		return "", err
 	}
@@ -121,9 +121,6 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		"SshPublicKey":                clusterSettings.SshPublicKey,
 		"VirtualIpSubnet":             clusterSettings.VirtualIpSubnet,
 	}
-	for k, v := range memoryHealthCheckParameters {
-		args[k] = v
-	}
 
 	buf := &bytes.Buffer{}
 	if err := capiYamlEmpty.Execute(buf, args); err != nil {
@@ -131,7 +128,11 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 	}
 
 	// The final "pretty" YAML. To embed it in the final payload it must be marshaled into a one-line JSON string
-	prettyYaml := fmt.Sprintf("%s\n---\n%s", nodePoolYaml, buf.String())
+	prettyYaml := ""
+	if memoryHealthCheckYaml != "" {
+		prettyYaml += fmt.Sprintf("%s\n---\n", memoryHealthCheckYaml)
+	}
+	prettyYaml += fmt.Sprintf("%s\n---\n%s", nodePoolYaml, buf.String())
 
 	// We don't use a standard json.Marshal() as the YAML contains special characters that are not encoded properly, such as '<'.
 	buf.Reset()
@@ -200,29 +201,40 @@ func (clusterSettings *cseClusterSettingsInternal) generateWorkerPoolsYaml() (st
 	return resultYaml, nil
 }
 
-// getMachineHealthTemplateParameters generates the required parameters for the YAML block corresponding to the cluster Machine Health Check.
-func (clusterSettings *cseClusterSettingsInternal) getMachineHealthTemplateParameters() (map[string]string, error) {
+// generateMachineHealthCheckYaml generates a YAML block corresponding to the cluster Machine Health Check.
+// The generated YAML does not contain a separator (---) at the end.
+func (clusterSettings *cseClusterSettingsInternal) generateMachineHealthCheckYaml() (string, error) {
 	if clusterSettings == nil {
-		return nil, fmt.Errorf("the receiver cluster settings is nil")
+		return "", fmt.Errorf("the receiver cluster settings is nil")
 	}
 
-	// If the Machine Health Check is deactivated, it is enough to set 'spec.maxUnhealthy' to '0%' in the YAML
-	// to deactivate health checks.
-	maxUnhealthy := clusterSettings.VcdKeConfig.MaxUnhealthyNodesPercentage
-	if !clusterSettings.MachineHealthCheckEnabled {
-		maxUnhealthy = 0
+	if clusterSettings.VcdKeConfig.NodeStartupTimeout == "" &&
+		clusterSettings.VcdKeConfig.NodeUnknownTimeout == "" &&
+		clusterSettings.VcdKeConfig.NodeNotReadyTimeout == "" &&
+		clusterSettings.VcdKeConfig.MaxUnhealthyNodesPercentage == 0 {
+		return "", nil
 	}
 
-	mhcSettings := map[string]string{
+	mhcTmpl, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_mhc")
+	if err != nil {
+		return "", err
+	}
+
+	mhcEmptyTmpl := template.Must(template.New(clusterSettings.Name + "-mhc").Parse(mhcTmpl))
+	buf := &bytes.Buffer{}
+
+	if err := mhcEmptyTmpl.Execute(buf, map[string]string{
 		"ClusterName":     clusterSettings.Name,
 		"TargetNamespace": clusterSettings.Name + "-ns",
 		// With the 'percentage' suffix
-		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", maxUnhealthy),
+		"MaxUnhealthyNodePercentage": fmt.Sprintf("%.0f%%", clusterSettings.VcdKeConfig.MaxUnhealthyNodesPercentage),
 		// These values coming from VCDKEConfig (CSE Server settings) may have an "s" suffix. We make sure we don't duplicate it
 		"NodeStartupTimeout":  fmt.Sprintf("%ss", strings.ReplaceAll(clusterSettings.VcdKeConfig.NodeStartupTimeout, "s", "")),
 		"NodeUnknownTimeout":  fmt.Sprintf("%ss", strings.ReplaceAll(clusterSettings.VcdKeConfig.NodeUnknownTimeout, "s", "")),
 		"NodeNotReadyTimeout": fmt.Sprintf("%ss", strings.ReplaceAll(clusterSettings.VcdKeConfig.NodeNotReadyTimeout, "s", "")),
+	}); err != nil {
+		return "", fmt.Errorf("could not generate a correct Machine Health Check YAML: %s", err)
 	}
-	return mhcSettings, nil
+	return fmt.Sprintf("%s\n", buf.String()), nil
 
 }

@@ -682,8 +682,7 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 		}
 	}
 
-	output.MachineHealthCheckEnabled = input.NodeHealthCheck
-	vcdKeConfig, err := getVcdKeConfig(org.client, cseComponentsVersions.VcdKeConfigRdeTypeVersion)
+	vcdKeConfig, err := getVcdKeConfig(org.client, cseComponentsVersions.VcdKeConfigRdeTypeVersion, input.NodeHealthCheck)
 	if err != nil {
 		return nil, err
 	}
@@ -805,7 +804,7 @@ func (tkgVersions tkgVersionBundle) kubernetesVersionIsOneMinorHigher(kubernetes
 
 // getVcdKeConfig gets the required information from the CSE Server configuration RDE (VCDKEConfig), such as the
 // Machine Health Check settings and the Container Registry URL.
-func getVcdKeConfig(client *Client, vcdKeConfigVersion string) (*vcdKeConfig, error) {
+func getVcdKeConfig(client *Client, vcdKeConfigVersion string, retrieveMachineHealtchCheckInfo bool) (*vcdKeConfig, error) {
 	rdes, err := getRdesByName(client, "vmware", "VCDKEConfig", vcdKeConfigVersion, "vcdKeConfig")
 	if err != nil {
 		return nil, err
@@ -827,15 +826,17 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string) (*vcdKeConfig, er
 	// https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.2/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.2/GUID-B5C19221-2ECA-4DCD-8EA1-8E391F6217C1.html
 	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"])
 
-	mhc, ok := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"]
-	if !ok {
-		// If there is no "mhc" entry in the VCDKEConfig JSON, we skip setting this part of the Kubernetes cluster configuration
-		return result, nil
+	if retrieveMachineHealtchCheckInfo {
+		mhc, ok := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"]
+		if !ok {
+			// If there is no "mhc" entry in the VCDKEConfig JSON, we skip setting this part of the Kubernetes cluster configuration
+			return result, nil
+		}
+		result.MaxUnhealthyNodesPercentage = mhc.(map[string]interface{})["maxUnhealthyNodes"].(float64)
+		result.NodeStartupTimeout = mhc.(map[string]interface{})["nodeStartupTimeout"].(string)
+		result.NodeNotReadyTimeout = mhc.(map[string]interface{})["nodeUnknownTimeout"].(string)
+		result.NodeUnknownTimeout = mhc.(map[string]interface{})["nodeNotReadyTimeout"].(string)
 	}
-	result.MaxUnhealthyNodesPercentage = mhc.(map[string]interface{})["maxUnhealthyNodes"].(float64)
-	result.NodeStartupTimeout = mhc.(map[string]interface{})["nodeStartupTimeout"].(string)
-	result.NodeNotReadyTimeout = mhc.(map[string]interface{})["nodeUnknownTimeout"].(string)
-	result.NodeUnknownTimeout = mhc.(map[string]interface{})["nodeNotReadyTimeout"].(string)
 
 	return result, nil
 }

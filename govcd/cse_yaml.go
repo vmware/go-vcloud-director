@@ -2,6 +2,7 @@ package govcd
 
 import (
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"sigs.k8s.io/yaml"
 	"strings"
@@ -82,11 +83,11 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	}
 
 	if input.NodeHealthCheck != nil {
-		vcdKeConfig, err := getVcdKeConfig(cluster.client, cluster.capvcdType.Status.VcdKe.VcdKeVersion)
+		vcdKeConfig, err := getVcdKeConfig(cluster.client, cluster.capvcdType.Status.VcdKe.VcdKeVersion, *input.NodeHealthCheck)
 		if err != nil {
 			return "", err
 		}
-		err = cseUpdateNodeHealthCheckInYaml(yamlDocs, vcdKeConfig, cluster.NodeHealthCheck)
+		yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, cluster.Name, cluster.CseVersion, vcdKeConfig)
 		if err != nil {
 			return "", err
 		}
@@ -277,32 +278,49 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 // cseUpdateNodeHealthCheckInYaml updates the Kubernetes cluster described in the given YAML documents by adding or removing
 // the MachineHealthCheck object.
 // NOTE: This function doesn't modify the input, but returns a copy of the YAML with the modifications.
-func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, vcdKeConfig *vcdKeConfig, mhcEnabled bool) error {
-	for _, d := range yamlDocuments {
-		if d["kind"] != "MachineHealthCheck" {
-			continue
+func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clusterName string, cseVersion semver.Version, vcdKeConfig *vcdKeConfig) ([]map[string]interface{}, error) {
+	mhcPosition := -1
+	result := make([]map[string]interface{}, len(yamlDocuments))
+	for i, d := range yamlDocuments {
+		if d["kind"] == "MachineHealthCheck" {
+			mhcPosition = i
 		}
-
-		maxUnhealthy := vcdKeConfig.MaxUnhealthyNodesPercentage
-		if !mhcEnabled {
-			maxUnhealthy = 0
-		}
-
-		// Replace them in the YAML
-		d["spec"].(map[string]interface{})["maxUnhealthy"] = fmt.Sprintf("%.0f%%", maxUnhealthy)
-		d["spec"].(map[string]interface{})["nodeStartupTimeout"] = fmt.Sprintf("%ss", strings.ReplaceAll(vcdKeConfig.NodeStartupTimeout, "s", ""))
-		unhealthyConditions := traverseMapAndGet[[]interface{}](d, "spec.unhealthyConditions")
-		for _, uc := range unhealthyConditions {
-			ucBlock := uc.(map[string]interface{})
-			if ucBlock["status"] == "Unknown" {
-				ucBlock["timeout"] = fmt.Sprintf("%ss", strings.ReplaceAll(vcdKeConfig.NodeUnknownTimeout, "s", ""))
-			}
-			if ucBlock["status"] == "\"Ready\"" {
-				ucBlock["timeout"] = fmt.Sprintf("%ss", strings.ReplaceAll(vcdKeConfig.NodeNotReadyTimeout, "s", ""))
-			}
-		}
+		result[i] = d
 	}
-	return nil
+
+	if mhcPosition < 0 {
+		// There is no MachineHealthCheck block
+		if vcdKeConfig == nil {
+			// We don't want it neither, so nothing to do
+			return result, nil
+		}
+
+		// We need to add the block to the slice of YAML documents
+		settings := &cseClusterSettingsInternal{CseVersion: cseVersion, Name: clusterName, VcdKeConfig: *vcdKeConfig}
+		mhcYaml, err := settings.generateMachineHealthCheckYaml()
+		if err != nil {
+			return nil, err
+		}
+		var mhc map[string]interface{}
+		err = yaml.Unmarshal([]byte(mhcYaml), &mhc)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, mhc)
+	} else {
+		// There is a MachineHealthCheck block
+		if vcdKeConfig != nil {
+			// We want it, but it is already there, so nothing to do
+			// TODO: What happens in UI if the VCDKEConfig MHC values are changed, does it get reflected in the cluster?
+			//       If that's the case, we might need to update this value always
+			return result, nil
+		}
+
+		// We don't want Machine Health Checks, we delete the YAML document
+		result[mhcPosition] = result[len(result)-1] // We override the MachineHealthCheck block with the last document
+		result = result[:len(result)-1]             // We remove the last document (now duplicated)
+	}
+	return result, nil
 }
 
 // marshalMultipleYamlDocuments takes a slice of maps representing multiple YAML documents (one per item in the slice) and
