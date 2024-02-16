@@ -184,12 +184,12 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 // As retrieving all OVAs one by one from VCD is expensive, the first time this method is called the returned OVAs are
 // cached to avoid querying VCD again multiple times.
 // If refreshOvas=true, this cache is cleared out and this method will query VCD for every vApp Template again.
-// Therefore, the refreshOvas flag should be set to true only when VCD has new OVAs that need to be considered.
+// Therefore, the refreshOvas flag should be set to true only when VCD has new OVAs that need to be considered or after a cluster upgrade.
 func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*types.VAppTemplate, error) {
 	if refreshOvas {
-		cluster.supportedUpgrades = nil
+		cluster.supportedUpgrades = make([]*types.VAppTemplate, 0)
 	}
-	if len(cluster.supportedUpgrades) != 0 {
+	if len(cluster.supportedUpgrades) > 0 {
 		return cluster.supportedUpgrades, nil
 	}
 
@@ -197,7 +197,6 @@ func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*
 	if err != nil {
 		return nil, fmt.Errorf("could not get vApp Templates: %s", err)
 	}
-	var tkgmOvas []*types.VAppTemplate
 	for _, template := range vAppTemplates {
 		// We can only know if the vApp Template is a TKGm OVA by inspecting its internals, hence we need to retrieve every one
 		// of them one by one. This is an expensive operation, hence the cache.
@@ -210,11 +209,10 @@ func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*
 			continue // This means it's not a TKGm OVA, or it is not supported, so we skip it
 		}
 		if targetVersions.compareTkgVersion(cluster.TkgVersion.String()) == 1 && targetVersions.kubernetesVersionIsOneMinorHigher(cluster.KubernetesVersion.String()) {
-			tkgmOvas = append(tkgmOvas, vAppTemplate.VAppTemplate)
+			cluster.supportedUpgrades = append(cluster.supportedUpgrades, vAppTemplate.VAppTemplate)
 		}
 	}
-	cluster.supportedUpgrades = tkgmOvas
-	return tkgmOvas, nil
+	return cluster.supportedUpgrades, nil
 }
 
 // UpgradeCluster executes an update on the receiver cluster to upgrade the Kubernetes template of the cluster.
@@ -253,10 +251,10 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 		}
 	}
 
-	if cluster.capvcdType.Status.VcdKe.State == "" {
+	if cluster.State == "" {
 		return fmt.Errorf("can't update a Kubernetes cluster that does not have any state")
 	}
-	if cluster.capvcdType.Status.VcdKe.State != "provisioned" {
+	if cluster.State != "provisioned" {
 		return fmt.Errorf("can't update a Kubernetes cluster that is not in 'provisioned' state, as it is in '%s'", cluster.capvcdType.Status.VcdKe.State)
 	}
 

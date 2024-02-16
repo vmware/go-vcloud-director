@@ -76,6 +76,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		Events:                     make([]CseClusterEvent, 0),
 		client:                     rde.client,
 		capvcdType:                 capvcd,
+		supportedUpgrades:          make([]*types.VAppTemplate, 0),
 	}
 
 	// Add all events to the resulting cluster
@@ -162,22 +163,6 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	sort.SliceStable(result.Events, func(i, j int) bool {
 		return result.Events[i].OccurredAt.After(result.Events[j].OccurredAt)
 	})
-
-	if capvcd.Status.Capvcd.Upgrade.Current.KubernetesVersion != "" {
-		version, err := semver.NewVersion(capvcd.Status.Capvcd.Upgrade.Current.KubernetesVersion)
-		if err != nil {
-			return nil, fmt.Errorf("could not read Kubernetes version: %s", err)
-		}
-		result.KubernetesVersion = *version
-	}
-
-	if capvcd.Status.Capvcd.Upgrade.Current.TkgVersion != "" {
-		version, err := semver.NewVersion(capvcd.Status.Capvcd.Upgrade.Current.TkgVersion)
-		if err != nil {
-			return nil, fmt.Errorf("could not read Tkg version: %s", err)
-		}
-		result.TkgVersion = *version
-	}
 
 	if capvcd.Status.Capvcd.CapvcdVersion != "" {
 		version, err := semver.NewVersion(capvcd.Status.Capvcd.CapvcdVersion)
@@ -337,6 +322,13 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			if len(keys) > 0 {
 				result.SshPublicKey = keys[0] // Optional field
 			}
+
+			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "spec.version"))
+			if err != nil {
+				return nil, fmt.Errorf("could not read Kubernetes version: %s", err)
+			}
+			result.KubernetesVersion = *version
+
 		case "VCDMachineTemplate":
 			name := traverseMapAndGet[string](yamlDocument, "metadata.name")
 			sizingPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy")
@@ -417,6 +409,12 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		case "VCDCluster":
 			result.VirtualIpSubnet = traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet")
 		case "Cluster":
+			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "metadata.annotations.TKGVERSION"))
+			if err != nil {
+				return nil, fmt.Errorf("could not read TKG version: %s", err)
+			}
+			result.TkgVersion = *version
+
 			cidrBlocks := traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.pods.cidrBlocks' item")
