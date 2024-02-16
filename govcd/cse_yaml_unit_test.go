@@ -3,7 +3,6 @@
 package govcd
 
 import (
-	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"os"
 	"reflect"
@@ -263,53 +262,76 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 		t.Fatal("could not find the cluster name in the CAPI YAML test file")
 	}
 
-	v, err := semver.NewVersion("4.1")
-	if err != nil {
-		t.Fatalf("incorrect version: %s", err)
-	}
-
 	// Deactivates Machine Health Check
-	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, nil)
+	err = cseUpdateNodeHealthCheckInYaml(yamlDocs, &vcdKeConfig{
+		MaxUnhealthyNodesPercentage: 66,
+		NodeStartupTimeout:          "100s",
+		NodeNotReadyTimeout:         "200s",
+		NodeUnknownTimeout:          "300s",
+	}, false)
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
 
-	// The resulting documents should not have that document
 	for _, document := range yamlDocs {
 		if document["kind"] == "MachineHealthCheck" {
-			t.Fatal("Expected the MachineHealthCheck to be deleted, but it is there")
+			if traverseMapAndGet[string](document, "spec.maxUnhealthy") != "0%" {
+				t.Fatalf("expected spec.maxUnhealthy to be updated to 0%%")
+			}
+			if traverseMapAndGet[string](document, "spec.nodeStartupTimeout") != "100s" {
+				t.Fatalf("expected spec.nodeStartupTimeout to remain at 100s")
+			}
+			unhealthyConditions := traverseMapAndGet[[]interface{}](document, "spec.unhealthyConditions")
+			for i, uc := range unhealthyConditions {
+				ucBlock := uc.(map[string]interface{})
+				if ucBlock["status"] == "Unknown" {
+					if ucBlock["timeout"] != "300s" {
+						t.Fatalf("expected spec.unhealthyConditions[%d].timeout of status unknown to remain at 300s", i)
+					}
+				}
+				if ucBlock["status"] == "\"Ready\"" {
+					if ucBlock["timeout"] != "200s" {
+						t.Fatalf("expected spec.unhealthyConditions[%d].timeout to status ready to remain at 200s", i)
+					}
+				}
+			}
 		}
 	}
 
 	// Enables Machine Health Check
-	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, &vcdKeConfig{
-		MaxUnhealthyNodesPercentage: 12,
-		NodeStartupTimeout:          "34",
-		NodeNotReadyTimeout:         "56",
-		NodeUnknownTimeout:          "78",
-	})
+	err = cseUpdateNodeHealthCheckInYaml(yamlDocs, &vcdKeConfig{
+		MaxUnhealthyNodesPercentage: 66,
+		NodeStartupTimeout:          "100s",
+		NodeNotReadyTimeout:         "200s",
+		NodeUnknownTimeout:          "300s",
+	}, true)
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
 
-	// The resulting documents should have a MachineHealthCheck
-	found := false
 	for _, document := range yamlDocs {
-		if document["kind"] != "MachineHealthCheck" {
-			continue
+		if document["kind"] == "MachineHealthCheck" {
+			if traverseMapAndGet[string](document, "spec.maxUnhealthy") != "66%" {
+				t.Fatalf("expected spec.maxUnhealthy to be updated to 66%%")
+			}
+			if traverseMapAndGet[string](document, "spec.nodeStartupTimeout") != "100s" {
+				t.Fatalf("expected spec.nodeStartupTimeout to remain at 100s")
+			}
+			unhealthyConditions := traverseMapAndGet[[]interface{}](document, "spec.unhealthyConditions")
+			for i, uc := range unhealthyConditions {
+				ucBlock := uc.(map[string]interface{})
+				if ucBlock["status"] == "Unknown" {
+					if ucBlock["timeout"] != "300s" {
+						t.Fatalf("expected spec.unhealthyConditions[%d].timeout of status unknown to remain at 300s", i)
+					}
+				}
+				if ucBlock["status"] == "\"Ready\"" {
+					if ucBlock["timeout"] != "200s" {
+						t.Fatalf("expected spec.unhealthyConditions[%d].timeout to status ready to remain at 200s", i)
+					}
+				}
+			}
 		}
-		maxUnhealthy := traverseMapAndGet[string](document, "spec.maxUnhealthy")
-		if maxUnhealthy != "12%" {
-			t.Fatalf("expected a 'spec.maxUnhealthy' = 12%%, but got %s", maxUnhealthy)
-		}
-		nodeStartupTimeout := traverseMapAndGet[string](document, "spec.nodeStartupTimeout")
-		if nodeStartupTimeout != "34s" {
-			t.Fatalf("expected a 'spec.nodeStartupTimeout' = 34s, but got %s", nodeStartupTimeout)
-		}
-		found = true
-	}
-	if !found {
-		t.Fatalf("expected a MachineHealthCheck block but got nothing")
 	}
 }
 

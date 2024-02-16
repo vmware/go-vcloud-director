@@ -127,7 +127,6 @@ type cseClusterSettingsInternal struct {
 	ControlPlane              cseControlPlaneSettingsInternal
 	WorkerPools               []cseWorkerPoolSettingsInternal
 	DefaultStorageClass       cseDefaultStorageClassInternal
-	VcdKeConfig               vcdKeConfig
 	Owner                     string
 	ApiToken                  string
 	VcdUrl                    string
@@ -135,7 +134,9 @@ type cseClusterSettingsInternal struct {
 	SshPublicKey              string
 	PodCidr                   string
 	ServiceCidr               string
+	MachineHealthCheckEnabled bool
 	AutoRepairOnErrors        bool
+	VcdKeConfig               vcdKeConfig
 }
 
 // tkgVersionBundle is a type that contains all the versions of the components of

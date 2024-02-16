@@ -225,4 +225,6 @@ func (vcd *TestVCD) Test_Deleteme(check *C) {
 
 	err = cluster.UpgradeCluster(ovas[0].ID, true)
 	check.Assert(err, IsNil)
+
+	cluster.SetHealthCheck(false, true)
 }
