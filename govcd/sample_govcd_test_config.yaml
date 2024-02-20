@@ -264,6 +264,8 @@ cse:
   routedNetwork: "tenant_net_routed"
   # The edge gateway which the Kubernetes clusters use
   edgeGateway: "tenant_edgegateway"
+  # The storage profile which the Kubernetes clusters use
+  storageProfile: "*"
   # The catalog which the Kubernetes clusters use
   ovaCatalog: "tkgm_catalog"
   # The TKGm OVA which the Kubernetes clusters use

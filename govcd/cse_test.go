@@ -26,7 +26,7 @@ func skipCseTests(testConfig TestConfig) bool {
 	}
 	return testConfig.Cse.SolutionsOrg == "" || testConfig.Cse.TenantOrg == "" || testConfig.Cse.OvaName == "" ||
 		testConfig.Cse.RoutedNetwork == "" || testConfig.Cse.EdgeGateway == "" || testConfig.Cse.OvaCatalog == "" || testConfig.Cse.TenantVdc == "" ||
-		testConfig.VCD.StorageProfile.SP1 == ""
+		testConfig.Cse.StorageProfile == ""
 }
 
 // Test_Cse
@@ -52,7 +52,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	net, err := vdc.GetOrgVdcNetworkByName(vcd.config.Cse.RoutedNetwork, false)
 	check.Assert(err, IsNil)
 
-	sp, err := vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
+	sp, err := vdc.FindStorageProfileReference(vcd.config.Cse.StorageProfile)
 	check.Assert(err, IsNil)
 
 	policies, err := vcd.client.GetAllVdcComputePoliciesV2(url.Values{
@@ -61,14 +61,18 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(policies), Equals, 1)
 
-	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName()+"124") // TODO: Remove number suffix
+	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
 	check.Assert(err, IsNil)
+	defer func() {
+		err = token.Delete()
+		check.Assert(err, IsNil)
+	}()
 	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTokens+token.Token.ID)
 
 	apiToken, err := token.GetInitialApiToken()
 	check.Assert(err, IsNil)
 
-	cseVersion, err := semver.NewVersion("4.1")
+	cseVersion, err := semver.NewVersion("4.2.0")
 	check.Assert(err, IsNil)
 	check.Assert(cseVersion, NotNil)
 
@@ -185,13 +189,41 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	allClusters, err := org.CseGetKubernetesClustersByName(clusterGet.CseVersion, clusterGet.Name)
 	check.Assert(err, IsNil)
 	check.Assert(len(allClusters), Equals, 1)
-	check.Assert(allClusters[0], DeepEquals, clusterGet)
+	check.Assert(cluster.CseVersion.String(), Equals, allClusters[0].CseVersion.String())
+	check.Assert(cluster.Name, Equals, allClusters[0].Name)
+	check.Assert(cluster.OrganizationId, Equals, allClusters[0].OrganizationId)
+	check.Assert(cluster.VdcId, Equals, allClusters[0].VdcId)
+	check.Assert(cluster.NetworkId, Equals, allClusters[0].NetworkId)
+	check.Assert(cluster.KubernetesTemplateOvaId, Equals, allClusters[0].KubernetesTemplateOvaId)
+	check.Assert(cluster.ControlPlane, DeepEquals, allClusters[0].ControlPlane)
+	check.Assert(cluster.WorkerPools, DeepEquals, allClusters[0].WorkerPools)
+	check.Assert(cluster.DefaultStorageClass, NotNil)
+	check.Assert(*cluster.DefaultStorageClass, DeepEquals, *allClusters[0].DefaultStorageClass)
+	check.Assert(cluster.Owner, Equals, allClusters[0].Owner)
+	check.Assert(cluster.ApiToken, Not(Equals), allClusters[0].ApiToken)
+	check.Assert(allClusters[0].ApiToken, Equals, "******") // This one can't be recovered
+	check.Assert(cluster.NodeHealthCheck, Equals, allClusters[0].NodeHealthCheck)
+	check.Assert(cluster.PodCidr, Equals, allClusters[0].PodCidr)
+	check.Assert(cluster.ServiceCidr, Equals, allClusters[0].ServiceCidr)
+	check.Assert(cluster.SshPublicKey, Equals, allClusters[0].SshPublicKey)
+	check.Assert(cluster.VirtualIpSubnet, Equals, allClusters[0].VirtualIpSubnet)
+	check.Assert(cluster.AutoRepairOnErrors, Equals, allClusters[0].AutoRepairOnErrors)
+	check.Assert(cluster.VirtualIpSubnet, Equals, allClusters[0].VirtualIpSubnet)
+	check.Assert(cluster.ID, Equals, allClusters[0].ID)
+	check.Assert(allClusters[0].Etag, Not(Equals), "")
+	check.Assert(cluster.KubernetesVersion, Equals, allClusters[0].KubernetesVersion)
+	check.Assert(cluster.TkgVersion.String(), Equals, allClusters[0].TkgVersion.String())
+	check.Assert(cluster.CapvcdVersion.String(), Equals, allClusters[0].CapvcdVersion.String())
+	check.Assert(cluster.ClusterResourceSetBindings, DeepEquals, allClusters[0].ClusterResourceSetBindings)
+	check.Assert(cluster.CpiVersion.String(), Equals, allClusters[0].CpiVersion.String())
+	check.Assert(cluster.CsiVersion.String(), Equals, allClusters[0].CsiVersion.String())
+	check.Assert(cluster.State, Equals, allClusters[0].State)
 
 	// Update worker pool from 1 node to 2
 	// Pre-check. This should be 1, as it was created with just 1 pool
-	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {
+	for _, nodePool := range cluster.WorkerPools {
 		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
-			check.Assert(nodePool.DesiredReplicas, Equals, 1)
+			check.Assert(nodePool.MachineCount, Equals, 1)
 		}
 	}
 	// Perform the update
@@ -200,20 +232,16 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 
 	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool := false
-	for _, nodePool := range cluster.capvcdType.Status.Capvcd.NodePool {
+	for _, nodePool := range cluster.WorkerPools {
 		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
 			foundWorkerPool = true
-			check.Assert(nodePool.DesiredReplicas, Equals, 2)
+			check.Assert(nodePool.MachineCount, Equals, 2)
 		}
 	}
 	check.Assert(foundWorkerPool, Equals, true)
 
 	err = cluster.Delete(0)
 	check.Assert(err, IsNil)
-
-	err = token.Delete()
-	check.Assert(err, IsNil)
-
 }
 
 func (vcd *TestVCD) Test_Deleteme(check *C) {

@@ -240,13 +240,14 @@ type TestConfig struct {
 		UiPluginPath     string `yaml:"uiPluginPath,omitempty"`
 	} `yaml:"media"`
 	Cse struct {
-		SolutionsOrg  string `yaml:"solutionsOrg,omitempty"`
-		TenantOrg     string `yaml:"tenantOrg,omitempty"`
-		TenantVdc     string `yaml:"tenantVdc,omitempty"`
-		RoutedNetwork string `yaml:"routedNetwork,omitempty"`
-		EdgeGateway   string `yaml:"edgeGateway,omitempty"`
-		OvaCatalog    string `yaml:"ovaCatalog,omitempty"`
-		OvaName       string `yaml:"ovaName,omitempty"`
+		SolutionsOrg   string `yaml:"solutionsOrg,omitempty"`
+		TenantOrg      string `yaml:"tenantOrg,omitempty"`
+		TenantVdc      string `yaml:"tenantVdc,omitempty"`
+		RoutedNetwork  string `yaml:"routedNetwork,omitempty"`
+		EdgeGateway    string `yaml:"edgeGateway,omitempty"`
+		StorageProfile string `yaml:"storageProfile,omitempty"`
+		OvaCatalog     string `yaml:"ovaCatalog,omitempty"`
+		OvaName        string `yaml:"ovaName,omitempty"`
 	} `yaml:"cse"`
 }
 

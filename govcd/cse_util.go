@@ -160,6 +160,26 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			Details:      s.AdditionalDetails.DetailedError,
 		})
 	}
+	for _, s := range capvcd.Status.Projector.EventSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "event",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.Name,
+		})
+	}
+	for _, s := range capvcd.Status.Projector.ErrorSet {
+		result.Events = append(result.Events, CseClusterEvent{
+			Name:         s.Name,
+			Type:         "error",
+			ResourceId:   s.VcdResourceId,
+			ResourceName: s.VcdResourceName,
+			OccurredAt:   s.OccurredAt,
+			Details:      s.AdditionalDetails.DetailedError,
+		})
+	}
 	sort.SliceStable(result.Events, func(i, j int) bool {
 		return result.Events[i].OccurredAt.After(result.Events[j].OccurredAt)
 	})

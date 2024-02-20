@@ -198,6 +198,7 @@ type Capvcd struct {
 			EventSet []struct {
 				Name              string    `json:"name,omitempty"`
 				OccurredAt        time.Time `json:"occurredAt,omitempty"`
+				VcdResourceId     string    `json:"vcdResourceId,omitempty"`
 				VcdResourceName   string    `json:"vcdResourceName,omitempty"`
 				AdditionalDetails struct {
 					Event string `json:"event,omitempty"`
