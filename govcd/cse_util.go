@@ -180,7 +180,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			Details:      s.AdditionalDetails.DetailedError,
 		})
 	}
-	sort.SliceStable(result.Events, func(i, j int) bool {
+	sort.Slice(result.Events, func(i, j int) bool {
 		return result.Events[i].OccurredAt.After(result.Events[j].OccurredAt)
 	})
 
