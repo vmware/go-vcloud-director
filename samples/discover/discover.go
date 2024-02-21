@@ -43,13 +43,11 @@ In Goland:
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"net/url"
 	"os"
 	"path/filepath"
-
-	"gopkg.in/yaml.v2"
-
-	"github.com/vmware/go-vcloud-director/v2/govcd"
+	"sigs.k8s.io/yaml"
 )
 
 type Config struct {

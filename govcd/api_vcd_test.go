@@ -22,11 +22,10 @@ import (
 	"testing"
 	"time"
 
-	. "gopkg.in/check.v1"
-	"gopkg.in/yaml.v2"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
+	. "gopkg.in/check.v1"
+	"sigs.k8s.io/yaml"
 )
 
 func init() {
@@ -138,6 +137,15 @@ type TestConfig struct {
 		MaxRetryTimeout int    `yaml:"maxRetryTimeout,omitempty"`
 		HttpTimeout     int64  `yaml:"httpTimeout,omitempty"`
 	}
+	Cse struct {
+		SolutionsOrg  string `yaml:"solutionsOrg,omitempty"`
+		TenantOrg     string `yaml:"tenantOrg,omitempty"`
+		TenantVdc     string `yaml:"tenantVdc,omitempty"`
+		RoutedNetwork string `yaml:"routedNetwork,omitempty"`
+		EdgeGateway   string `yaml:"edgeGateway,omitempty"`
+		OvaCatalog    string `yaml:"ovaCatalog,omitempty"`
+		OvaName       string `yaml:"ovaName,omitempty"`
+	} `yaml:"cse,omitempty"`
 	Tenants []Tenant `yaml:"tenants,omitempty"`
 	VCD     struct {
 		Org         string `yaml:"org"`
