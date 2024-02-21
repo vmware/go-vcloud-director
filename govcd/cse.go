@@ -326,7 +326,8 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error {
 	var elapsed time.Duration
 	start := time.Now()
-	vcdKe := map[string]interface{}{}
+	markForDelete := false
+	forceDelete := false
 	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
 		rde, err := getRdeById(cluster.client, cluster.ID)
 		if err != nil {
@@ -336,14 +337,13 @@ func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error 
 			return fmt.Errorf("could not retrieve the Kubernetes cluster with ID '%s': %s", cluster.ID, err)
 		}
 
-		markForDelete := traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.markForDelete")
-		forceDelete := traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.forceDelete")
+		markForDelete = traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.markForDelete")
+		forceDelete = traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.forceDelete")
 
 		if !markForDelete || !forceDelete {
 			// Mark the cluster for deletion
-			vcdKe["markForDelete"] = true
-			vcdKe["forceDelete"] = true
-			rde.DefinedEntity.Entity["spec"].(map[string]interface{})["vcdKe"] = vcdKe
+			rde.DefinedEntity.Entity["spec"].(map[string]interface{})["vcdKe"].(map[string]interface{})["markForDelete"] = true
+			rde.DefinedEntity.Entity["spec"].(map[string]interface{})["vcdKe"].(map[string]interface{})["forceDelete"] = true
 			err = rde.Update(*rde.DefinedEntity)
 			if err != nil {
 				// We ignore any ETag error. This just means a clash with the CSE Server, we just try again
@@ -359,7 +359,7 @@ func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error 
 	}
 
 	// We give a hint to the user about the deletion process result
-	if len(vcdKe) >= 2 && vcdKe["markForDelete"].(bool) && vcdKe["forceDelete"].(bool) {
+	if markForDelete && forceDelete {
 		return fmt.Errorf("timeout of %v minutes reached, the cluster was successfully marked for deletion but was not removed in time", timeoutMinutes)
 	}
 	return fmt.Errorf("timeout of %v minutes reached, the cluster was not marked for deletion, please try again", timeoutMinutes)
