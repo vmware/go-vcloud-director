@@ -234,7 +234,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		ControlPlane: &CseControlPlaneUpdateInput{MachineCount: 1},
 		WorkerPools: &map[string]CseWorkerPoolUpdateInput{
 			clusterSettings.WorkerPools[0].Name: {
-				MachineCount: 0,
+				MachineCount: 1,
 			},
 			"new-pool": {
 				MachineCount: 0,
@@ -243,7 +243,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	}, true)
 	check.Assert(err, IsNil)
 	check.Assert(cluster.ControlPlane.MachineCount, Equals, 1)
-	check.Assert(cluster.WorkerPools[0].MachineCount, Equals, 0)
+	check.Assert(cluster.WorkerPools[0].MachineCount, Equals, 1)
 	check.Assert(cluster.WorkerPools[1].MachineCount, Equals, 0)
 
 	err = cluster.Delete(0)
