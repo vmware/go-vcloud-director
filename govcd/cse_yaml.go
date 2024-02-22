@@ -157,8 +157,8 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, k
 
 // cseUpdateControlPlaneInYaml modifies the given Kubernetes cluster YAML contents by changing the Control Plane with the input parameters.
 func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]interface{}, input CseControlPlaneUpdateInput) error {
-	if input.MachineCount < 0 {
-		return fmt.Errorf("incorrect machine count for Control Plane: %d. Should be at least 0", input.MachineCount)
+	if input.MachineCount < 1 || input.MachineCount%2 == 0 {
+		return fmt.Errorf("incorrect machine count for Control Plane: %d. Should be at least 1 and an odd number", input.MachineCount)
 	}
 
 	updated := false

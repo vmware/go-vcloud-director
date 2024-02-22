@@ -254,6 +254,8 @@ media:
   # A valid UI Plugin to use in tests
   uiPluginPath: ../test-resources/ui_plugin.zip
 cse:
+  # The CSE version installed in VCD
+  version: "4.2.0"
   # The organization where Container Service Extension (CSE) Server is running
   solutionsOrg: "solutions_org"
   # The organization where the Kubernetes clusters are created

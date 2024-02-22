@@ -77,7 +77,8 @@ func (vcdClient *VCDClient) CseGetKubernetesClusterById(id string) (*CseKubernet
 	return getCseKubernetesClusterById(&vcdClient.Client, id)
 }
 
-// CseGetKubernetesClustersByName retrieves the CSE Kubernetes cluster from VCD with the given name
+// CseGetKubernetesClustersByName retrieves the CSE Kubernetes cluster from VCD with the given name.
+// Note: The clusters retrieved won't have a valid ETag to perform operations on them. Use VCDClient.CseGetKubernetesClusterById for that instead.
 func (org *Org) CseGetKubernetesClustersByName(cseVersion semver.Version, name string) ([]*CseKubernetesCluster, error) {
 	cseSubcomponents, err := getCseComponentsVersions(cseVersion)
 	if err != nil {

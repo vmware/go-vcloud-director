@@ -240,6 +240,7 @@ type TestConfig struct {
 		UiPluginPath     string `yaml:"uiPluginPath,omitempty"`
 	} `yaml:"media"`
 	Cse struct {
+		Version        string `yaml:"version,omitempty"`
 		SolutionsOrg   string `yaml:"solutionsOrg,omitempty"`
 		TenantOrg      string `yaml:"tenantOrg,omitempty"`
 		TenantVdc      string `yaml:"tenantVdc,omitempty"`
@@ -248,7 +249,10 @@ type TestConfig struct {
 		StorageProfile string `yaml:"storageProfile,omitempty"`
 		OvaCatalog     string `yaml:"ovaCatalog,omitempty"`
 		OvaName        string `yaml:"ovaName,omitempty"`
-	} `yaml:"cse"`
+	} `yaml:"cse,omitempty"`
+	Dse struct {
+		IsoName string `yaml:"isoName,omitempty"`
+	} `yaml:"dse,omitempty"`
 }
 
 // Test struct for vcloud-director.
