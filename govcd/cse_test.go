@@ -13,27 +13,28 @@ import (
 	. "gopkg.in/check.v1"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 )
 
-const (
-	TestRequiresCseConfiguration = "Test %s requires CSE configuration details"
-)
-
-func skipCseTests(testConfig TestConfig) bool {
+func requireCseConfig(check *C, testConfig TestConfig) {
+	skippedPrefix := fmt.Sprintf("skipped %s because:", check.TestName())
 	if cse := os.Getenv("TEST_VCD_CSE"); cse == "" {
-		return true
+		check.Skip(fmt.Sprintf("%s the environment variable TEST_VCD_CSE is not set", skippedPrefix))
 	}
-	return testConfig.Cse.Version == "" || testConfig.Cse.SolutionsOrg == "" || testConfig.Cse.TenantOrg == "" || testConfig.Cse.OvaName == "" ||
-		testConfig.Cse.RoutedNetwork == "" || testConfig.Cse.EdgeGateway == "" || testConfig.Cse.OvaCatalog == "" || testConfig.Cse.TenantVdc == "" ||
-		testConfig.Cse.StorageProfile == ""
+	cseConfigValues := reflect.ValueOf(testConfig.Cse)
+	cseConfigType := cseConfigValues.Type()
+	for i := 0; i < cseConfigValues.NumField(); i++ {
+		if cseConfigValues.Field(i).String() == "" {
+			check.Skip(fmt.Sprintf("%s the config value '%s' inside 'cse' block of govcd_test_config.yaml is not set", skippedPrefix, strings.ToLower(cseConfigType.Field(i).Name)))
+		}
+	}
+	check.Skip("foo")
 }
 
 // Test_Cse tests all possible combinations of the CSE CRUD operations.
 func (vcd *TestVCD) Test_Cse(check *C) {
-	if skipCseTests(vcd.config) {
-		check.Skip(fmt.Sprintf(TestRequiresCseConfiguration, check.TestName()))
-	}
+	requireCseConfig(check, vcd.config)
 
 	// Prerequisites: We need to read several items before creating the cluster.
 	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
