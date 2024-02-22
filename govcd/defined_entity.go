@@ -429,8 +429,8 @@ func createRde(client *Client, entity types.DefinedEntity, tenantContext *Tenant
 	return &task, nil
 }
 
-// getRdeFromTask polls VCD for a given amount of tries, to search for the RDE in the given Task that should have
-// been created as result of creating that RDE.
+// getRdeFromTask gets the Runtime Defined Entity from a given Task. This method is useful after RDE creation, as
+// the API just returns a Task with the RDE details inside.
 func getRdeFromTask(client *Client, task *Task) (*DefinedEntity, error) {
 	if task.Task == nil {
 		return nil, fmt.Errorf("could not retrieve the RDE from task, as it is nil")
