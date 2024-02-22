@@ -422,7 +422,7 @@ func createRde(client *Client, entity types.DefinedEntity, tenantContext *Tenant
 		return nil, err
 	}
 
-	task, err := client.OpenApiPutItemAsync(apiVersion, urlRef, nil, entity, getTenantContextHeader(tenantContext))
+	task, err := client.OpenApiPostItemAsyncWithHeaders(apiVersion, urlRef, nil, entity, getTenantContextHeader(tenantContext))
 	if err != nil {
 		return nil, err
 	}
