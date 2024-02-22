@@ -56,7 +56,7 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) 
 		return "", err
 	}
 
-	rde, err := createRdeAndPoll(org.client, "vmware", "capvcdCluster", cseSubcomponents.CapvcdRdeTypeVersion,
+	rde, err := createRdeAndGetFromTask(org.client, "vmware", "capvcdCluster", cseSubcomponents.CapvcdRdeTypeVersion,
 		types.DefinedEntity{
 			EntityType: internalSettings.RdeType.ID,
 			Name:       internalSettings.Name,

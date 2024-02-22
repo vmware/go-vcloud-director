@@ -375,26 +375,26 @@ func (rdeType *DefinedEntityType) CreateRde(entity types.DefinedEntity, tenantCo
 	if err != nil {
 		return nil, err
 	}
-	return pollCreatedRdeTask(rdeType.client, task)
+	return getRdeFromTask(rdeType.client, task)
 }
 
 // CreateRde creates an entity of the type of the given vendor, nss and version.
 // NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
 // and the generated VCD task will remain at 1% until resolved.
 func (vcdClient *VCDClient) CreateRde(vendor, nss, version string, entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
-	return createRdeAndPoll(&vcdClient.Client, vendor, nss, version, entity, tenantContext)
+	return createRdeAndGetFromTask(&vcdClient.Client, vendor, nss, version, entity, tenantContext)
 }
 
-// createRdeAndPoll creates an entity of the type of the given vendor, nss and version.
+// createRdeAndGetFromTask creates an entity of the type of the given vendor, nss and version.
 // NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
 // and the generated VCD task will remain at 1% until resolved.
-func createRdeAndPoll(client *Client, vendor, nss, version string, entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
+func createRdeAndGetFromTask(client *Client, vendor, nss, version string, entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
 	entity.EntityType = fmt.Sprintf("urn:vcloud:type:%s:%s:%s", vendor, nss, version)
 	task, err := createRde(client, entity, tenantContext)
 	if err != nil {
 		return nil, err
 	}
-	return pollCreatedRdeTask(client, task)
+	return getRdeFromTask(client, task)
 }
 
 // CreateRde creates an entity of the type of the receiver Runtime Defined Entity (RDE) type.
@@ -429,9 +429,9 @@ func createRde(client *Client, entity types.DefinedEntity, tenantContext *Tenant
 	return &task, nil
 }
 
-// pollCreatedRdeTask polls VCD for a given amount of tries, to search for the RDE in the given Task that should have
+// getRdeFromTask polls VCD for a given amount of tries, to search for the RDE in the given Task that should have
 // been created as result of creating that RDE.
-func pollCreatedRdeTask(client *Client, task *Task) (*DefinedEntity, error) {
+func getRdeFromTask(client *Client, task *Task) (*DefinedEntity, error) {
 	if task.Task == nil {
 		return nil, fmt.Errorf("could not retrieve the RDE from task, as it is nil")
 	}
