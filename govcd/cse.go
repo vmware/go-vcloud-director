@@ -77,7 +77,7 @@ func (vcdClient *VCDClient) CseGetKubernetesClusterById(id string) (*CseKubernet
 	return getCseKubernetesClusterById(&vcdClient.Client, id)
 }
 
-// CseGetKubernetesClustersByName retrieves the CSE Kubernetes cluster from VCD with the given name.
+// CseGetKubernetesClustersByName retrieves all the CSE Kubernetes clusters from VCD with the given name that belong to the receiver Organization.
 // Note: The clusters retrieved won't have a valid ETag to perform operations on them. Use VCDClient.CseGetKubernetesClusterById for that instead.
 func (org *Org) CseGetKubernetesClustersByName(cseVersion semver.Version, name string) ([]*CseKubernetesCluster, error) {
 	cseSubcomponents, err := getCseComponentsVersions(cseVersion)
@@ -111,7 +111,7 @@ func getCseKubernetesClusterById(client *Client, clusterId string) (*CseKubernet
 	return cseConvertToCseKubernetesClusterType(rde)
 }
 
-// Refresh gets the latest information about the receiver cluster and updates its properties.
+// Refresh gets the latest information about the receiver CSE Kubernetes cluster and updates its properties.
 // All cached fields such as the supported OVAs list (from CseKubernetesCluster.GetSupportedUpgrades) are also cleared.
 func (cluster *CseKubernetesCluster) Refresh() error {
 	refreshed, err := getCseKubernetesClusterById(cluster.client, cluster.ID)
@@ -122,8 +122,16 @@ func (cluster *CseKubernetesCluster) Refresh() error {
 	return nil
 }
 
-// GetKubeconfig retrieves the Kubeconfig from an available cluster.
-func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
+// GetKubeconfig retrieves the Kubeconfig from an existing CSE Kubernetes cluster that is in provisioned state.
+// If refresh=true, it retrieves the latest state of the cluster from VCD before requesting the Kubeconfig.
+func (cluster *CseKubernetesCluster) GetKubeconfig(refresh bool) (string, error) {
+	if refresh {
+		err := cluster.Refresh()
+		if err != nil {
+			return "", err
+		}
+	}
+
 	if cluster.State != "provisioned" {
 		return "", fmt.Errorf("cannot get a Kubeconfig of a Kubernetes cluster that is not in 'provisioned' state")
 	}
@@ -159,6 +167,7 @@ func (cluster *CseKubernetesCluster) GetKubeconfig() (string, error) {
 
 // UpdateWorkerPools executes an update on the receiver cluster to change the existing worker pools.
 // If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
+// WARNING: At least one worker pool must have one or more nodes running, otherwise the cluster will be left in an unusable state.
 func (cluster *CseKubernetesCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		WorkerPools: &input,
@@ -235,15 +244,15 @@ func (cluster *CseKubernetesCluster) SetNodeHealthCheck(healthCheckEnabled bool,
 
 // SetAutoRepairOnErrors executes an update on the receiver cluster to change the flag that controls the auto-repair
 // capabilities of CSE. If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
-// NOTE: This can only be used in CSE versions < 4.1.1
+// NOTE: This method can only be used in CSE versions < 4.1.1
 func (cluster *CseKubernetesCluster) SetAutoRepairOnErrors(autoRepairOnErrors bool, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
 		AutoRepairOnErrors: &autoRepairOnErrors,
 	}, refresh)
 }
 
-// Update executes an update on the receiver CSE Kubernetes Cluster on any of the allowed parameters defined in the input type. If refresh=true,
-// it retrieves the latest state of the cluster from VCD before updating.
+// Update executes an update on the receiver CSE Kubernetes Cluster on any of the allowed parameters defined in the input type.
+// If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh bool) error {
 	if refresh {
 		err := cluster.Refresh()

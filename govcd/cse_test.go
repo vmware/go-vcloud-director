@@ -117,7 +117,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(err, IsNil)
 	assertCseClusterCreation(check, cluster, clusterSettings, tkgBundle)
 
-	kubeconfig, err := cluster.GetKubeconfig()
+	kubeconfig, err := cluster.GetKubeconfig(false)
 	check.Assert(err, IsNil)
 	check.Assert(true, Equals, strings.Contains(kubeconfig, cluster.Name))
 	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-certificate-data"))
