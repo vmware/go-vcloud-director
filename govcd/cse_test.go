@@ -29,7 +29,6 @@ func requireCseConfig(check *C, testConfig TestConfig) {
 			check.Skip(fmt.Sprintf("%s the config value '%s' inside 'cse' block of govcd_test_config.yaml is not set", skippedPrefix, strings.ToLower(cseConfigType.Field(i).Name)))
 		}
 	}
-	check.Skip("foo")
 }
 
 // Test_Cse tests all possible combinations of the CSE CRUD operations.
