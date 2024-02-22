@@ -35,7 +35,7 @@ func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeo
 
 // CseCreateKubernetesClusterAsync creates a Kubernetes cluster with the data given as input (CseClusterSettings), but does not
 // wait for the creation process to finish, so it doesn't monitor for any errors during the process. It returns just the ID of
-// the created cluster. One can manually check the status of the cluster with Org.CseGetKubernetesClusterById and the result of this method.
+// the created cluster. One can manually check the status of the cluster with VCDClient.CseGetKubernetesClusterById and the result of this method.
 func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) (string, error) {
 	if org == nil {
 		return "", fmt.Errorf("CseCreateKubernetesClusterAsync cannot be called on a nil Organization receiver")
