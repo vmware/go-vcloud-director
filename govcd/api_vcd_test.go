@@ -250,9 +250,6 @@ type TestConfig struct {
 		OvaCatalog     string `yaml:"ovaCatalog,omitempty"`
 		OvaName        string `yaml:"ovaName,omitempty"`
 	} `yaml:"cse,omitempty"`
-	Dse struct {
-		IsoName string `yaml:"isoName,omitempty"`
-	} `yaml:"dse,omitempty"`
 }
 
 // Test struct for vcloud-director.

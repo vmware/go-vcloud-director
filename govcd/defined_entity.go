@@ -7,10 +7,9 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"time"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"net/url"
+	"strings"
 )
 
 const (
@@ -372,11 +371,11 @@ func getRdeById(client *Client, id string) (*DefinedEntity, error) {
 // and the generated VCD task will remain at 1% until resolved.
 func (rdeType *DefinedEntityType) CreateRde(entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
 	entity.EntityType = rdeType.DefinedEntityType.ID
-	err := createRde(rdeType.client, entity, tenantContext)
+	task, err := createRde(rdeType.client, entity, tenantContext)
 	if err != nil {
 		return nil, err
 	}
-	return pollPreCreatedRde(rdeType.client, rdeType.DefinedEntityType.Vendor, rdeType.DefinedEntityType.Nss, rdeType.DefinedEntityType.Version, entity.Name, 5)
+	return pollCreatedRdeTask(rdeType.client, task)
 }
 
 // CreateRde creates an entity of the type of the given vendor, nss and version.
@@ -391,11 +390,11 @@ func (vcdClient *VCDClient) CreateRde(vendor, nss, version string, entity types.
 // and the generated VCD task will remain at 1% until resolved.
 func createRdeAndPoll(client *Client, vendor, nss, version string, entity types.DefinedEntity, tenantContext *TenantContext) (*DefinedEntity, error) {
 	entity.EntityType = fmt.Sprintf("urn:vcloud:type:%s:%s:%s", vendor, nss, version)
-	err := createRde(client, entity, tenantContext)
+	task, err := createRde(client, entity, tenantContext)
 	if err != nil {
 		return nil, err
 	}
-	return pollPreCreatedRde(client, vendor, nss, version, entity.Name, 5)
+	return pollCreatedRdeTask(client, task)
 }
 
 // CreateRde creates an entity of the type of the receiver Runtime Defined Entity (RDE) type.
@@ -403,54 +402,53 @@ func createRdeAndPoll(client *Client, vendor, nss, version string, entity types.
 // it must match the type ID of the receiver RDE type.
 // NOTE: After RDE creation, some actor should Resolve it, otherwise the RDE state will be "PRE_CREATED"
 // and the generated VCD task will remain at 1% until resolved.
-func createRde(client *Client, entity types.DefinedEntity, tenantContext *TenantContext) error {
+func createRde(client *Client, entity types.DefinedEntity, tenantContext *TenantContext) (*Task, error) {
 	if entity.EntityType == "" {
-		return fmt.Errorf("ID of the Runtime Defined Entity type is empty")
+		return nil, fmt.Errorf("ID of the Runtime Defined Entity type is empty")
 	}
 
 	if entity.Entity == nil || len(entity.Entity) == 0 {
-		return fmt.Errorf("the entity JSON is empty")
+		return nil, fmt.Errorf("the entity JSON is empty")
 	}
 
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityTypes
 	apiVersion, err := client.getOpenApiHighestElevatedVersion(endpoint)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	urlRef, err := client.OpenApiBuildEndpoint(endpoint, entity.EntityType)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = client.OpenApiPostItemAsyncWithHeaders(apiVersion, urlRef, nil, entity, getTenantContextHeader(tenantContext))
+	task, err := client.OpenApiPutItemAsync(apiVersion, urlRef, nil, entity, getTenantContextHeader(tenantContext))
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &task, nil
 }
 
-// pollPreCreatedRde polls VCD for a given amount of tries, to search for the RDE in state PRE_CREATED
-// that corresponds to the given vendor, nss, version and name.
-// This function can be useful on RDE creation, as VCD just returns a task that remains at 1% until the RDE is resolved,
-// hence one needs to re-fetch the recently created RDE manually.
-func pollPreCreatedRde(client *Client, vendor, nss, version, name string, tries int) (*DefinedEntity, error) {
-	var rdes []*DefinedEntity
-	var err error
-	for i := 0; i < tries; i++ {
-		rdes, err = getRdesByName(client, vendor, nss, version, name)
-		if err == nil {
-			for _, rde := range rdes {
-				// This doesn't really guarantee that the chosen RDE is the one we want, but there's no other way of
-				// fine-graining
-				if rde.DefinedEntity.State != nil && *rde.DefinedEntity.State == "PRE_CREATED" {
-					return rde, nil
-				}
-			}
-		}
-		time.Sleep(3 * time.Second)
+// pollCreatedRdeTask polls VCD for a given amount of tries, to search for the RDE in the given Task that should have
+// been created as result of creating that RDE.
+func pollCreatedRdeTask(client *Client, task *Task) (*DefinedEntity, error) {
+	if task.Task == nil {
+		return nil, fmt.Errorf("could not retrieve the RDE from task, as it is nil")
 	}
-	return nil, fmt.Errorf("could not create RDE, failed during retrieval after creation: %s", err)
+	rdeId := ""
+	if task.Task.Owner == nil {
+		// Try to retrieve the ID from the "Operation" field
+		beginning := strings.LastIndex(task.Task.Operation, "(")
+		end := strings.LastIndex(task.Task.Operation, ")")
+		if beginning < 0 || end < 0 || beginning >= end {
+			return nil, fmt.Errorf("could not retrieve the RDE from the task with ID '%s'", task.Task.ID)
+		}
+		rdeId = task.Task.Operation[beginning+1 : end]
+	} else {
+		rdeId = task.Task.Owner.ID
+	}
+
+	return getRdeById(client, rdeId)
 }
 
 // Resolve needs to be called after an RDE is successfully created. It makes the receiver RDE usable if the JSON entity
