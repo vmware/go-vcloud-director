@@ -114,6 +114,16 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		AutoRepairOnErrors: true,
 	}
 	cluster, err := org.CseCreateKubernetesCluster(clusterSettings, 0)
+
+	// We assure that the cluster gets always deleted, even if the creation failed.
+	// Deletion process only needs the cluster ID
+	defer func() {
+		check.Assert(cluster, NotNil)
+		check.Assert(cluster.ID, Not(Equals), "")
+		err = cluster.Delete(0)
+		check.Assert(err, IsNil)
+	}()
+
 	check.Assert(err, IsNil)
 	assertCseClusterCreation(check, cluster, clusterSettings, tkgBundle)
 
@@ -169,10 +179,10 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	}
 	check.Assert(foundWorkerPool, Equals, true)
 
-	// Update control plane from 1 node to 2
-	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 2}, true)
+	// Update control plane from 1 node to 3 (needs to be an odd number)
+	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 3}, true)
 	check.Assert(err, IsNil)
-	check.Assert(cluster.ControlPlane.MachineCount, Equals, 2)
+	check.Assert(cluster.ControlPlane.MachineCount, Equals, 3)
 
 	// Turn off the node health check
 	err = cluster.SetNodeHealthCheck(false, true)
@@ -222,9 +232,6 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(cluster.ControlPlane.MachineCount, Equals, 1)
 	check.Assert(cluster.WorkerPools[0].MachineCount, Equals, 1)
 	check.Assert(cluster.WorkerPools[1].MachineCount, Equals, 0)
-
-	err = cluster.Delete(0)
-	check.Assert(err, IsNil)
 }
 
 func assertCseClusterCreation(check *C, createdCluster *CseKubernetesCluster, settings CseClusterSettings, expectedKubernetesData tkgVersionBundle) {

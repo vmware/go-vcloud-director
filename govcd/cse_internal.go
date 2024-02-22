@@ -21,14 +21,14 @@ var cseFiles embed.FS
 // a CSE Kubernetes cluster, by using the receiver information. This method uses all the Go Templates stored in cseFiles
 func (clusterSettings *cseClusterSettingsInternal) getUnmarshaledRdePayload() (map[string]interface{}, error) {
 	if clusterSettings == nil {
-		return nil, fmt.Errorf("the receiver cluster settings is nil")
+		return nil, fmt.Errorf("the receiver CSE Kubernetes cluster settings object is nil")
 	}
 	capiYaml, err := clusterSettings.generateCapiYamlAsJsonString()
 	if err != nil {
 		return nil, err
 	}
 
-	args := map[string]string{
+	templateArgs := map[string]string{
 		"Name":               clusterSettings.Name,
 		"Org":                clusterSettings.OrganizationName,
 		"VcdUrl":             clusterSettings.VcdUrl,
@@ -41,27 +41,27 @@ func (clusterSettings *cseClusterSettingsInternal) getUnmarshaledRdePayload() (m
 	}
 
 	if clusterSettings.DefaultStorageClass.StorageProfileName != "" {
-		args["DefaultStorageClassStorageProfile"] = clusterSettings.DefaultStorageClass.StorageProfileName
-		args["DefaultStorageClassName"] = clusterSettings.DefaultStorageClass.Name
-		args["DefaultStorageClassUseDeleteReclaimPolicy"] = strconv.FormatBool(clusterSettings.DefaultStorageClass.UseDeleteReclaimPolicy)
-		args["DefaultStorageClassFileSystem"] = clusterSettings.DefaultStorageClass.Filesystem
+		templateArgs["DefaultStorageClassStorageProfile"] = clusterSettings.DefaultStorageClass.StorageProfileName
+		templateArgs["DefaultStorageClassName"] = clusterSettings.DefaultStorageClass.Name
+		templateArgs["DefaultStorageClassUseDeleteReclaimPolicy"] = strconv.FormatBool(clusterSettings.DefaultStorageClass.UseDeleteReclaimPolicy)
+		templateArgs["DefaultStorageClassFileSystem"] = clusterSettings.DefaultStorageClass.Filesystem
 	}
 
-	rdeTmpl, err := getCseTemplate(clusterSettings.CseVersion, "rde")
+	rdeTemplate, err := getCseTemplate(clusterSettings.CseVersion, "rde")
 	if err != nil {
 		return nil, err
 	}
 
-	capvcdEmpty := template.Must(template.New(clusterSettings.Name).Parse(rdeTmpl))
+	rdePayload := template.Must(template.New(clusterSettings.Name).Parse(rdeTemplate))
 	buf := &bytes.Buffer{}
-	if err := capvcdEmpty.Execute(buf, args); err != nil {
-		return nil, fmt.Errorf("could not render the Go template with the CAPVCD JSON: %s", err)
+	if err := rdePayload.Execute(buf, templateArgs); err != nil {
+		return nil, fmt.Errorf("could not render the Go template with the RDE JSON: %s", err)
 	}
 
 	var result interface{}
 	err = json.Unmarshal(buf.Bytes(), &result)
 	if err != nil {
-		return nil, fmt.Errorf("could not generate a correct CAPVCD JSON: %s", err)
+		return nil, fmt.Errorf("could not generate a correct RDE payload: %s", err)
 	}
 
 	return result.(map[string]interface{}), nil
@@ -74,14 +74,14 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		return "", fmt.Errorf("the receiver cluster settings is nil")
 	}
 
-	clusterTmpl, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_cluster")
+	capiYamlTemplate, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_cluster")
 	if err != nil {
 		return "", err
 	}
 
 	// This YAML snippet contains special strings, such as "%,", that render wrong using the Go template engine
-	sanitizedTemplate := strings.NewReplacer("%", "%%").Replace(clusterTmpl)
-	capiYamlEmpty := template.Must(template.New(clusterSettings.Name + "-cluster").Parse(sanitizedTemplate))
+	sanitizedCapiYamlTemplate := strings.NewReplacer("%", "%%").Replace(capiYamlTemplate)
+	capiYaml := template.Must(template.New(clusterSettings.Name + "-cluster").Parse(sanitizedCapiYamlTemplate))
 
 	nodePoolYaml, err := clusterSettings.generateWorkerPoolsYaml()
 	if err != nil {
@@ -93,7 +93,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		return "", err
 	}
 
-	args := map[string]string{
+	templateArgs := map[string]string{
 		"ClusterName":                 clusterSettings.Name,
 		"TargetNamespace":             clusterSettings.Name + "-ns",
 		"TkrVersion":                  clusterSettings.TkgVersionBundle.TkrVersion,
@@ -123,7 +123,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 	}
 
 	buf := &bytes.Buffer{}
-	if err := capiYamlEmpty.Execute(buf, args); err != nil {
+	if err := capiYaml.Execute(buf, templateArgs); err != nil {
 		return "", fmt.Errorf("could not generate a correct CAPI YAML: %s", err)
 	}
 
@@ -140,7 +140,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 	enc.SetEscapeHTML(false)
 	err = enc.Encode(prettyYaml)
 	if err != nil {
-		return "", fmt.Errorf("could not encode the CAPI YAML into JSON: %s", err)
+		return "", fmt.Errorf("could not encode the CAPI YAML into a JSON string: %s", err)
 	}
 
 	// Removes trailing quotes from the final JSON string
@@ -151,46 +151,46 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 // the standard YAML separator (---), but does not add one at the end.
 func (clusterSettings *cseClusterSettingsInternal) generateWorkerPoolsYaml() (string, error) {
 	if clusterSettings == nil {
-		return "", fmt.Errorf("the receiver cluster settings is nil")
+		return "", fmt.Errorf("the receiver CSE Kubernetes cluster settings object is nil")
 	}
 
-	workerPoolTmpl, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_workerpool")
+	workerPoolsTemplate, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_workerpool")
 	if err != nil {
 		return "", err
 	}
 
-	nodePoolEmptyTmpl := template.Must(template.New(clusterSettings.Name + "-worker-pool").Parse(workerPoolTmpl))
+	workerPools := template.Must(template.New(clusterSettings.Name + "-worker-pool").Parse(workerPoolsTemplate))
 	resultYaml := ""
 	buf := &bytes.Buffer{}
 
 	// We can have many Worker Pools, we build a YAML object for each one of them.
-	for i, workerPool := range clusterSettings.WorkerPools {
+	for i, wp := range clusterSettings.WorkerPools {
 
 		// Check the correctness of the Compute Policies in the node pool block
-		if workerPool.PlacementPolicyName != "" && workerPool.VGpuPolicyName != "" {
-			return "", fmt.Errorf("the worker pool '%s' should have either a Placement Policy or a vGPU Policy, not both", workerPool.Name)
+		if wp.PlacementPolicyName != "" && wp.VGpuPolicyName != "" {
+			return "", fmt.Errorf("the Worker Pool '%s' should have either a Placement Policy or a vGPU Policy, not both", wp.Name)
 		}
-		placementPolicy := workerPool.PlacementPolicyName
-		if workerPool.VGpuPolicyName != "" {
+		placementPolicy := wp.PlacementPolicyName
+		if wp.VGpuPolicyName != "" {
 			// For convenience, we just use one of the variables as both cannot be set at same time
-			placementPolicy = workerPool.VGpuPolicyName
+			placementPolicy = wp.VGpuPolicyName
 		}
 
-		if err := nodePoolEmptyTmpl.Execute(buf, map[string]string{
+		if err := workerPools.Execute(buf, map[string]string{
 			"ClusterName":             clusterSettings.Name,
-			"NodePoolName":            workerPool.Name,
+			"NodePoolName":            wp.Name,
 			"TargetNamespace":         clusterSettings.Name + "-ns",
 			"Catalog":                 clusterSettings.CatalogName,
 			"VAppTemplate":            clusterSettings.KubernetesTemplateOvaName,
-			"NodePoolSizingPolicy":    workerPool.SizingPolicyName,
+			"NodePoolSizingPolicy":    wp.SizingPolicyName,
 			"NodePoolPlacementPolicy": placementPolicy, // Can be either Placement or vGPU policy
-			"NodePoolStorageProfile":  workerPool.StorageProfileName,
-			"NodePoolDiskSize":        fmt.Sprintf("%dGi", workerPool.DiskSizeGi),
-			"NodePoolEnableGpu":       strconv.FormatBool(workerPool.VGpuPolicyName != ""),
-			"NodePoolMachineCount":    strconv.Itoa(workerPool.MachineCount),
+			"NodePoolStorageProfile":  wp.StorageProfileName,
+			"NodePoolDiskSize":        fmt.Sprintf("%dGi", wp.DiskSizeGi),
+			"NodePoolEnableGpu":       strconv.FormatBool(wp.VGpuPolicyName != ""),
+			"NodePoolMachineCount":    strconv.Itoa(wp.MachineCount),
 			"KubernetesVersion":       clusterSettings.TkgVersionBundle.KubernetesVersion,
 		}); err != nil {
-			return "", fmt.Errorf("could not generate a correct Node Pool YAML: %s", err)
+			return "", fmt.Errorf("could not generate a correct Worker Pool '%s' YAML block: %s", wp.Name, err)
 		}
 		resultYaml += fmt.Sprintf("%s\n", buf.String())
 		if i < len(clusterSettings.WorkerPools)-1 {
@@ -205,7 +205,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateWorkerPoolsYaml() (st
 // The generated YAML does not contain a separator (---) at the end.
 func (clusterSettings *cseClusterSettingsInternal) generateMachineHealthCheckYaml() (string, error) {
 	if clusterSettings == nil {
-		return "", fmt.Errorf("the receiver cluster settings is nil")
+		return "", fmt.Errorf("the receiver CSE Kubernetes cluster settings object is nil")
 	}
 
 	if clusterSettings.VcdKeConfig.NodeStartupTimeout == "" &&
@@ -215,15 +215,15 @@ func (clusterSettings *cseClusterSettingsInternal) generateMachineHealthCheckYam
 		return "", nil
 	}
 
-	mhcTmpl, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_mhc")
+	mhcTemplate, err := getCseTemplate(clusterSettings.CseVersion, "capiyaml_mhc")
 	if err != nil {
 		return "", err
 	}
 
-	mhcEmptyTmpl := template.Must(template.New(clusterSettings.Name + "-mhc").Parse(mhcTmpl))
+	machineHealthCheck := template.Must(template.New(clusterSettings.Name + "-mhc").Parse(mhcTemplate))
 	buf := &bytes.Buffer{}
 
-	if err := mhcEmptyTmpl.Execute(buf, map[string]string{
+	if err := machineHealthCheck.Execute(buf, map[string]string{
 		"ClusterName":     clusterSettings.Name,
 		"TargetNamespace": clusterSettings.Name + "-ns",
 		// With the 'percentage' suffix
