@@ -230,8 +230,13 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	}, true)
 	check.Assert(err, IsNil)
 	check.Assert(cluster.ControlPlane.MachineCount, Equals, 1)
-	check.Assert(cluster.WorkerPools[0].MachineCount, Equals, 1)
-	check.Assert(cluster.WorkerPools[1].MachineCount, Equals, 0)
+	for _, pool := range cluster.WorkerPools {
+		if pool.Name == "new-pool" {
+			check.Assert(pool.MachineCount, Equals, 0)
+		} else {
+			check.Assert(pool.MachineCount, Equals, 1)
+		}
+	}
 }
 
 func assertCseClusterCreation(check *C, createdCluster *CseKubernetesCluster, settings CseClusterSettings, expectedKubernetesData tkgVersionBundle) {
