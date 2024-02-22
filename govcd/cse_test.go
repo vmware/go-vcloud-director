@@ -36,7 +36,6 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	}
 
 	// Prerequisites: We need to read several items before creating the cluster.
-
 	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
 	check.Assert(err, IsNil)
 
@@ -78,9 +77,6 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	cseVersion, err := semver.NewVersion(vcd.config.Cse.Version)
 	check.Assert(err, IsNil)
 	check.Assert(cseVersion, NotNil)
-
-	v411, err := semver.NewVersion("4.1.1")
-	check.Assert(err, IsNil)
 
 	// Create the cluster
 	clusterSettings := CseClusterSettings{
@@ -143,17 +139,8 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(allClusters[0].Etag, Equals, "") // Can't recover ETag by name
 
 	// Update worker pool from 1 node to 2
-	// Pre-check. This should be 1, as it was created with just 1 pool
-	for _, nodePool := range cluster.WorkerPools {
-		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
-			check.Assert(nodePool.MachineCount, Equals, 1)
-		}
-	}
-	// Perform the update
 	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {MachineCount: 2}}, true)
 	check.Assert(err, IsNil)
-
-	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool := false
 	for _, nodePool := range cluster.WorkerPools {
 		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
@@ -163,15 +150,13 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	}
 	check.Assert(foundWorkerPool, Equals, true)
 
-	// Perform the update
+	// Add a new worker pool
 	err = cluster.AddWorkerPools([]CseWorkerPoolSettings{{
 		Name:         "new-pool",
 		MachineCount: 1,
 		DiskSizeGi:   20,
 	}}, true)
 	check.Assert(err, IsNil)
-
-	// Post-check. This should be 2, as it should have scaled up
 	foundWorkerPool = false
 	for _, nodePool := range cluster.WorkerPools {
 		if nodePool.Name == "new-pool" {
@@ -185,35 +170,27 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(foundWorkerPool, Equals, true)
 
 	// Update control plane from 1 node to 2
-	// Pre-check. This should be 1, as it was created with just 1 pool
-	check.Assert(cluster.ControlPlane.MachineCount, Equals, 1)
-
-	// Perform the update
 	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 2}, true)
 	check.Assert(err, IsNil)
-
-	// Post-check. This should be 2, as it should have scaled up
 	check.Assert(cluster.ControlPlane.MachineCount, Equals, 2)
 
-	// Update the node health check.
-	// Pre-check. This should be true, as it was created
-	check.Assert(cluster.NodeHealthCheck, Equals, true)
-	// Perform the update
+	// Turn off the node health check
 	err = cluster.SetNodeHealthCheck(false, true)
 	check.Assert(err, IsNil)
-	// Post-check. This should be false now
 	check.Assert(cluster.NodeHealthCheck, Equals, false)
 
-	// Update the auto repair flag.
+	// Update the auto repair flag
+	v411, err := semver.NewVersion("4.1.1")
+	check.Assert(err, IsNil)
 	err = cluster.SetAutoRepairOnErrors(false, true)
-	if cluster.CseVersion.GreaterThanOrEqual(v411) {
-		check.Assert(err, IsNil)
-		check.Assert(cluster.NodeHealthCheck, Equals, false)
+	if cluster.CseVersion.GreaterThan(v411) {
+		check.Assert(err, NotNil) // Can't be changed since CSE 4.1.1
 	} else {
 		check.Assert(err, IsNil)
-		check.Assert(cluster.NodeHealthCheck, Equals, false)
 	}
+	check.Assert(cluster.NodeHealthCheck, Equals, false)
 
+	// Upgrade the cluster if possible
 	upgradeOvas, err := cluster.GetSupportedUpgrades(true)
 	check.Assert(err, IsNil)
 	if len(upgradeOvas) > 0 {
