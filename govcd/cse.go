@@ -36,22 +36,22 @@ func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeo
 // CseCreateKubernetesClusterAsync creates a Kubernetes cluster with the data given as input (CseClusterSettings), but does not
 // wait for the creation process to finish, so it doesn't monitor for any errors during the process. It returns just the ID of
 // the created cluster. One can manually check the status of the cluster with VCDClient.CseGetKubernetesClusterById and the result of this method.
-func (org *Org) CseCreateKubernetesClusterAsync(clusterData CseClusterSettings) (string, error) {
+func (org *Org) CseCreateKubernetesClusterAsync(clusterSettings CseClusterSettings) (string, error) {
 	if org == nil {
 		return "", fmt.Errorf("CseCreateKubernetesClusterAsync cannot be called on a nil Organization receiver")
 	}
 
-	internalSettings, err := clusterData.toCseClusterSettingsInternal(*org)
+	cseSubcomponents, err := getCseComponentsVersions(clusterSettings.CseVersion)
+	if err != nil {
+		return "", err
+	}
+
+	internalSettings, err := clusterSettings.toCseClusterSettingsInternal(*org)
 	if err != nil {
 		return "", fmt.Errorf("error creating the CSE Kubernetes cluster: %s", err)
 	}
 
 	payload, err := internalSettings.getUnmarshaledRdePayload()
-	if err != nil {
-		return "", err
-	}
-
-	cseSubcomponents, err := getCseComponentsVersions(clusterData.CseVersion)
 	if err != nil {
 		return "", err
 	}
@@ -195,6 +195,7 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 // cached to avoid querying VCD again multiple times.
 // If refreshOvas=true, this cache is cleared out and this method will query VCD for every vApp Template again.
 // Therefore, the refreshOvas flag should be set to true only when VCD has new OVAs that need to be considered or after a cluster upgrade.
+// NOTE: Any refresh operation from other methods will cause the cache to be cleared.
 func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*types.VAppTemplate, error) {
 	if refreshOvas {
 		cluster.supportedUpgrades = make([]*types.VAppTemplate, 0)
@@ -218,6 +219,7 @@ func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*
 		if err != nil {
 			continue // This means it's not a TKGm OVA, or it is not supported, so we skip it
 		}
+		// The OVA can be used if the TKG version is higher than the actual and the Kubernetes version is at most 1 minor higher.
 		if targetVersions.compareTkgVersion(cluster.TkgVersion.String()) == 1 && targetVersions.kubernetesVersionIsOneMinorHigher(cluster.KubernetesVersion.String()) {
 			cluster.supportedUpgrades = append(cluster.supportedUpgrades, vAppTemplate.VAppTemplate)
 		}
@@ -273,10 +275,10 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 		// automatically by the CSE Server.
 		v411, err := semver.NewVersion("4.1.1")
 		if err != nil {
-			return fmt.Errorf("can't update the Kubernetes cluster: %s", err)
+			return fmt.Errorf("can't update the  'Auto Repair on Errors' flag: %s", err)
 		}
 		if cluster.CseVersion.GreaterThanOrEqual(v411) {
-			return fmt.Errorf("the 'Auto Repair on Errors' feature can't be changed after the cluster is created since CSE 4.1.1")
+			return fmt.Errorf("the 'Auto Repair on Errors' flag can't be changed after the cluster is created since CSE 4.1.1")
 		}
 		cluster.capvcdType.Spec.VcdKe.AutoRepairOnErrors = *input.AutoRepairOnErrors
 	}
@@ -297,7 +299,7 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 		return err
 	}
 
-	// We do this loop to increase the chances that the Kubernetes cluster is successfully updated, as the Go SDK is
+	// We do this loop to increase the chances that the Kubernetes cluster is successfully updated, as this method will be
 	// "fighting" with the CSE Server
 	retries := 0
 	maxRetries := 5
