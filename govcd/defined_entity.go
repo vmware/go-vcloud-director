@@ -426,6 +426,11 @@ func createRde(client *Client, entity types.DefinedEntity, tenantContext *Tenant
 	if err != nil {
 		return nil, err
 	}
+	// The refresh is needed as the task only has the HREF at the moment
+	err = task.Refresh()
+	if err != nil {
+		return nil, err
+	}
 	return &task, nil
 }
 
