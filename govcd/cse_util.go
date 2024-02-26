@@ -796,6 +796,7 @@ func (tkgVersions tkgVersionBundle) compareTkgVersion(tkgVersion string) int {
 
 // kubernetesVersionIsOneMinorHigher returns true only if the receiver Kubernetes version is exactly one minor version higher
 // than the given input version, being the minor digit the 'Y' in 'X.Y.Z'.
+// Any malformed version returns false.
 // Examples:
 // * "1.19.2".kubernetesVersionIsOneMinorHigher("1.18.7") = true
 // * "1.19.10".kubernetesVersionIsOneMinorHigher("1.18.0") = true
