@@ -461,18 +461,18 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	return result, nil
 }
 
-// waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if timeoutMinutes = 0)
+// waitUntilClusterIsProvisioned waits for the Kubernetes cluster to be in "provisioned" state, either indefinitely (if timeout = 0)
 // or until the timeout is reached.
 // If one of the states of the cluster at a given point is "error", this function also checks whether the cluster has the "AutoRepairOnErrors" flag enabled,
 // so it keeps waiting if it's true.
 // If timeout is reached before the cluster is in "provisioned" state, it returns an error.
-func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinutes time.Duration) error {
+func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeout time.Duration) error {
 	var elapsed time.Duration
 	sleepTime := 10
 
 	start := time.Now()
 	capvcd := &types.Capvcd{}
-	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
+	for elapsed <= timeout || timeout == 0 { // If the user specifies timeout=0, we wait forever
 		rde, err := getRdeById(client, clusterId)
 		if err != nil {
 			return err
@@ -507,7 +507,7 @@ func waitUntilClusterIsProvisioned(client *Client, clusterId string, timeoutMinu
 		elapsed = time.Since(start)
 		time.Sleep(time.Duration(sleepTime) * time.Second)
 	}
-	return fmt.Errorf("timeout of %d minutes reached, latest cluster state obtained was '%s'", timeoutMinutes, capvcd.Status.VcdKe.State)
+	return fmt.Errorf("timeout of %s reached, latest cluster state obtained was '%s'", timeout, capvcd.Status.VcdKe.State)
 }
 
 // validate validates the receiver CseClusterSettings. Returns an error if any of the fields is empty or wrong.

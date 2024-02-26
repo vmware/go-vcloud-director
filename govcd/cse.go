@@ -19,13 +19,13 @@ import (
 //
 // If the cluster is created correctly, returns all the available data in CseKubernetesCluster or an error if some of the fields
 // of the created cluster cannot be calculated or retrieved.
-func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeoutMinutes time.Duration) (*CseKubernetesCluster, error) {
+func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeout time.Duration) (*CseKubernetesCluster, error) {
 	clusterId, err := org.CseCreateKubernetesClusterAsync(clusterData)
 	if err != nil {
 		return nil, err
 	}
 
-	err = waitUntilClusterIsProvisioned(org.client, clusterId, timeoutMinutes)
+	err = waitUntilClusterIsProvisioned(org.client, clusterId, timeout)
 	if err != nil {
 		return &CseKubernetesCluster{ID: clusterId}, err
 	}
@@ -334,14 +334,14 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 	return cluster.Refresh()
 }
 
-// Delete deletes a CSE Kubernetes cluster, waiting the specified amount of minutes. If the timeout is reached, this method
+// Delete deletes a CSE Kubernetes cluster, waiting the specified amount of time. If the timeout is reached, this method
 // returns an error, even if the cluster is already marked for deletion.
-func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error {
+func (cluster *CseKubernetesCluster) Delete(timeout time.Duration) error {
 	var elapsed time.Duration
 	start := time.Now()
 	markForDelete := false
 	forceDelete := false
-	for elapsed <= timeoutMinutes*time.Minute || timeoutMinutes == 0 { // If the user specifies timeoutMinutes=0, we wait forever
+	for elapsed <= timeout || timeout == 0 { // If the user specifies timeout=0, we wait forever
 		rde, err := getRdeById(cluster.client, cluster.ID)
 		if err != nil {
 			if ContainsNotFound(err) {
@@ -373,7 +373,7 @@ func (cluster *CseKubernetesCluster) Delete(timeoutMinutes time.Duration) error 
 
 	// We give a hint to the user about the deletion process result
 	if markForDelete && forceDelete {
-		return fmt.Errorf("timeout of %v minutes reached, the cluster was successfully marked for deletion but was not removed in time", timeoutMinutes)
+		return fmt.Errorf("timeout of %s reached, the cluster was successfully marked for deletion but was not removed in time", timeout)
 	}
-	return fmt.Errorf("timeout of %v minutes reached, the cluster was not marked for deletion, please try again", timeoutMinutes)
+	return fmt.Errorf("timeout of %s reached, the cluster was not marked for deletion, please try again", timeout)
 }
