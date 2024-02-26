@@ -208,7 +208,7 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 	}
 
 	// We call the function to update the old pools with the new ones
-	newReplicas := 66
+	newReplicas := 67
 	newControlPlane := CseControlPlaneUpdateInput{
 		MachineCount: newReplicas,
 	}
