@@ -17,13 +17,13 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sigs.k8s.io/yaml"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	. "gopkg.in/check.v1"
-	"gopkg.in/yaml.v2"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
