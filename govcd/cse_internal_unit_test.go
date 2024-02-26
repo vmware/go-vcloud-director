@@ -12,7 +12,7 @@ import (
 
 // Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString
 func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) {
-	v41, err := semver.NewVersion("4.2.0")
+	cseVersion, err := semver.NewVersion("4.2.0")
 	if err != nil {
 		t.Fatalf("%s", err)
 	}
@@ -34,7 +34,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 		{
 			name: "correct YAML without optionals",
 			input: cseClusterSettingsInternal{
-				CseVersion:                *v41,
+				CseVersion:                *cseVersion,
 				Name:                      "test1",
 				OrganizationName:          "tenant_org",
 				VdcName:                   "tenant_vdc",
@@ -83,7 +83,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 		{
 			name: "correct YAML without MachineHealthCheck",
 			input: cseClusterSettingsInternal{
-				CseVersion:                *v41,
+				CseVersion:                *cseVersion,
 				Name:                      "test1",
 				OrganizationName:          "tenant_org",
 				VdcName:                   "tenant_vdc",
@@ -135,7 +135,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 		{
 			name: "correct YAML with every possible option",
 			input: cseClusterSettingsInternal{
-				CseVersion:                *v41,
+				CseVersion:                *cseVersion,
 				Name:                      "test1",
 				OrganizationName:          "tenant_org",
 				VdcName:                   "tenant_vdc",
@@ -196,7 +196,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 		{
 			name: "wrong YAML with both Placement and vGPU policies in a Worker Pool",
 			input: cseClusterSettingsInternal{
-				CseVersion: *v41,
+				CseVersion: *cseVersion,
 				WorkerPools: []cseWorkerPoolSettingsInternal{
 					{
 						Name:                "node-pool-1",
