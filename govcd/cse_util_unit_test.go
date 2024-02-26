@@ -115,6 +115,112 @@ func Test_getTkgVersionBundleFromVAppTemplate(t *testing.T) {
 	}
 }
 
+func Test_tkgVersionBundle_compareTkgVersion(t *testing.T) {
+	tests := []struct {
+		name               string
+		receiverTkgVersion string
+		comparedTkgVersion string
+		want               int
+	}{
+		{
+			name:               "same TKG version",
+			receiverTkgVersion: "v1.4.3",
+			comparedTkgVersion: "v1.4.3",
+			want:               0,
+		},
+		{
+			name:               "receiver TKG version is higher",
+			receiverTkgVersion: "v1.4.4",
+			comparedTkgVersion: "v1.4.3",
+			want:               1,
+		},
+		{
+			name:               "receiver TKG version is lower",
+			receiverTkgVersion: "v1.4.2",
+			comparedTkgVersion: "v1.4.3",
+			want:               -1,
+		},
+		{
+			name:               "receiver TKG version is wrong",
+			receiverTkgVersion: "foo",
+			comparedTkgVersion: "v1.4.3",
+			want:               -2,
+		},
+		{
+			name:               "compared TKG version is wrong",
+			receiverTkgVersion: "v1.4.3",
+			comparedTkgVersion: "foo",
+			want:               -2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tkgVersions := tkgVersionBundle{
+				TkgVersion: tt.receiverTkgVersion,
+			}
+			if got := tkgVersions.compareTkgVersion(tt.comparedTkgVersion); got != tt.want {
+				t.Errorf("kubernetesVersionIsOneMinorHigher() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_tkgVersionBundle_kubernetesVersionIsOneMinorHigher(t *testing.T) {
+	tests := []struct {
+		name                      string
+		receiverKubernetesVersion string
+		comparedKubernetesVersion string
+		want                      bool
+	}{
+		{
+			name:                      "same Kubernetes versions",
+			receiverKubernetesVersion: "1.20.2+vmware.1",
+			comparedKubernetesVersion: "1.20.2+vmware.1",
+			want:                      false,
+		},
+		{
+			name:                      "one Kubernetes minor higher",
+			receiverKubernetesVersion: "1.21.9+vmware.1",
+			comparedKubernetesVersion: "1.20.2+vmware.1",
+			want:                      true,
+		},
+		{
+			name:                      "one Kubernetes minor lower",
+			receiverKubernetesVersion: "1.19.9+vmware.1",
+			comparedKubernetesVersion: "1.20.2+vmware.1",
+			want:                      false,
+		},
+		{
+			name:                      "several Kubernetes minors higher",
+			receiverKubernetesVersion: "1.22.9+vmware.1",
+			comparedKubernetesVersion: "1.20.2+vmware.1",
+			want:                      false,
+		},
+		{
+			name:                      "wrong receiver Kubernetes version",
+			receiverKubernetesVersion: "foo",
+			comparedKubernetesVersion: "1.20.2+vmware.1",
+			want:                      false,
+		},
+		{
+			name:                      "wrong compared Kubernetes version",
+			receiverKubernetesVersion: "1.20.2+vmware.1",
+			comparedKubernetesVersion: "foo",
+			want:                      false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tkgVersions := tkgVersionBundle{
+				KubernetesVersion: tt.receiverKubernetesVersion,
+			}
+			if got := tkgVersions.kubernetesVersionIsOneMinorHigher(tt.comparedKubernetesVersion); got != tt.want {
+				t.Errorf("kubernetesVersionIsOneMinorHigher() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_getCseTemplate(t *testing.T) {
 	v40, err := semver.NewVersion("4.0")
 	if err != nil {
