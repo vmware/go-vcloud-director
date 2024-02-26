@@ -165,7 +165,8 @@ func (cluster *CseKubernetesCluster) GetKubeconfig(refresh bool) (string, error)
 	return result.Capvcd.Status.Capvcd.Private.KubeConfig, nil
 }
 
-// UpdateWorkerPools executes an update on the receiver cluster to change the existing worker pools.
+// UpdateWorkerPools executes an update on the receiver cluster to change the existing Worker Pools.
+// The input is a map where the key is the Worker pool unique name, and the value is the update payload for that Worker Pool.
 // If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 // WARNING: At least one worker pool must have one or more nodes running, otherwise the cluster will be left in an unusable state.
 func (cluster *CseKubernetesCluster) UpdateWorkerPools(input map[string]CseWorkerPoolUpdateInput, refresh bool) error {
@@ -174,7 +175,7 @@ func (cluster *CseKubernetesCluster) UpdateWorkerPools(input map[string]CseWorke
 	}, refresh)
 }
 
-// AddWorkerPools executes an update on the receiver cluster to add new worker pools.
+// AddWorkerPools executes an update on the receiver cluster to add new Worker Pools.
 // If refresh=true, it retrieves the latest state of the cluster from VCD before updating.
 func (cluster *CseKubernetesCluster) AddWorkerPools(input []CseWorkerPoolSettings, refresh bool) error {
 	return cluster.Update(CseClusterUpdateInput{
