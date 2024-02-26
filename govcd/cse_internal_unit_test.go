@@ -209,7 +209,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 					},
 				},
 			},
-			wantErr: "the worker pool 'node-pool-1' should have either a Placement Policy or a vGPU Policy, not both",
+			wantErr: "the Worker Pool 'node-pool-1' should have either a Placement Policy or a vGPU Policy, not both",
 		},
 	}
 	for _, tt := range tests {
