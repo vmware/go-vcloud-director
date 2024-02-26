@@ -111,8 +111,7 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not unmarshal CAPI YAML test file: %s", err)
 	}
-	// We explore the YAML documents to get the OVA template name that will be updated
-	// with the new one.
+	// We explore the YAML documents to get the current Worker pool
 	oldNodePools := map[string]CseWorkerPoolUpdateInput{}
 	for _, document := range yamlDocs {
 		if document["kind"] != "MachineDeployment" {
@@ -191,8 +190,7 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not unmarshal CAPI YAML test file: %s", err)
 	}
-	// We explore the YAML documents to get the OVA template name that will be updated
-	// with the new one.
+	// We explore the YAML documents to get the current Control plane
 	oldControlPlane := CseControlPlaneUpdateInput{}
 	for _, document := range yamlDocs {
 		if document["kind"] != "KubeadmControlPlane" {
@@ -207,7 +205,7 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 		t.Fatalf("didn't get any valid Control Plane")
 	}
 
-	// We call the function to update the old pools with the new ones
+	// We call the function to update the control plane
 	newReplicas := 67
 	newControlPlane := CseControlPlaneUpdateInput{
 		MachineCount: newReplicas,
@@ -217,7 +215,7 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 		t.Fatalf("%s", err)
 	}
 
-	// The worker pools should have now the new details updated
+	// The control plane should have now the new details updated
 	for _, document := range yamlDocs {
 		if document["kind"] != "KubeadmControlPlane" {
 			continue
@@ -231,6 +229,15 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 
 	// Corner case: Wrong replicas
 	newReplicas = -1
+	newControlPlane = CseControlPlaneUpdateInput{
+		MachineCount: newReplicas,
+	}
+	err = cseUpdateControlPlaneInYaml(yamlDocs, newControlPlane)
+	if err == nil {
+		t.Fatal("Expected an error, but got none")
+	}
+
+	newReplicas = 2 // Should be odd, hence fails
 	newControlPlane = CseControlPlaneUpdateInput{
 		MachineCount: newReplicas,
 	}
