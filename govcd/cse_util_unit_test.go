@@ -13,6 +13,72 @@ import (
 	"testing"
 )
 
+func Test_getCseComponentsVersions(t *testing.T) {
+	tests := []struct {
+		name       string
+		cseVersion string
+		want       *cseComponentsVersions
+		wantErr    bool
+	}{
+		{
+			name:       "CSE 4.0 is not supported",
+			cseVersion: "4.0",
+			wantErr:    true,
+		},
+		{
+			name:       "CSE 4.1 is supported",
+			cseVersion: "4.1",
+			want: &cseComponentsVersions{
+				VcdKeConfigRdeTypeVersion: "1.1.0",
+				CapvcdRdeTypeVersion:      "1.2.0",
+				CseInterfaceVersion:       "1.0.0",
+			},
+			wantErr: false,
+		},
+		{
+			name:       "CSE 4.1.1 is supported",
+			cseVersion: "4.1.1",
+			want: &cseComponentsVersions{
+				VcdKeConfigRdeTypeVersion: "1.1.0",
+				CapvcdRdeTypeVersion:      "1.2.0",
+				CseInterfaceVersion:       "1.0.0",
+			},
+			wantErr: false,
+		},
+		{
+			name:       "CSE 4.2 is supported",
+			cseVersion: "4.2",
+			want: &cseComponentsVersions{
+				VcdKeConfigRdeTypeVersion: "1.1.0",
+				CapvcdRdeTypeVersion:      "1.3.0",
+				CseInterfaceVersion:       "1.0.0",
+			},
+			wantErr: false,
+		},
+		{
+			name:       "CSE 4.3 is not supported",
+			cseVersion: "4.3",
+			wantErr:    true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			version, err := semver.NewVersion(tt.cseVersion)
+			if err != nil {
+				t.Fatalf("could not parse test version: %s", err)
+			}
+			got, err := getCseComponentsVersions(*version)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getCseComponentsVersions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getCseComponentsVersions() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 // Test_getTkgVersionBundleFromVAppTemplate tests getTkgVersionBundleFromVAppTemplate function
 func Test_getTkgVersionBundleFromVAppTemplate(t *testing.T) {
 	tests := []struct {

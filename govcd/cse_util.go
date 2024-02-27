@@ -16,21 +16,26 @@ import (
 )
 
 // getCseComponentsVersions gets the versions of the subcomponents that are part of Container Service Extension.
+// NOTE: This function should be updated on every CSE release to update the supported versions.
 func getCseComponentsVersions(cseVersion semver.Version) (*cseComponentsVersions, error) {
-	v41, _ := semver.NewVersion("4.1.0")
-	v42, _ := semver.NewVersion("4.2.0")
 	v43, _ := semver.NewVersion("4.3.0")
+	v42, _ := semver.NewVersion("4.2.0")
+	v41, _ := semver.NewVersion("4.1.0")
 
-	if cseVersion.GreaterThanOrEqual(v41) && cseVersion.LessThan(v42) {
-		return &cseComponentsVersions{
-			VcdKeConfigRdeTypeVersion: "1.1.0",
-			CapvcdRdeTypeVersion:      "1.2.0",
-			CseInterfaceVersion:       "1.0.0",
-		}, nil
-	} else if cseVersion.GreaterThanOrEqual(v42) && cseVersion.LessThan(v43) {
+	if cseVersion.GreaterThanOrEqual(v43) {
+		return nil, fmt.Errorf("the Container Service Extension version '%s' is not supported", cseVersion.String())
+	}
+	if cseVersion.GreaterThanOrEqual(v42) {
 		return &cseComponentsVersions{
 			VcdKeConfigRdeTypeVersion: "1.1.0",
 			CapvcdRdeTypeVersion:      "1.3.0",
+			CseInterfaceVersion:       "1.0.0",
+		}, nil
+	}
+	if cseVersion.GreaterThanOrEqual(v41) {
+		return &cseComponentsVersions{
+			VcdKeConfigRdeTypeVersion: "1.1.0",
+			CapvcdRdeTypeVersion:      "1.2.0",
 			CseInterfaceVersion:       "1.0.0",
 		}, nil
 	}
