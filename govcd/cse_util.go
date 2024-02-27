@@ -21,9 +21,10 @@ func getCseComponentsVersions(cseVersion semver.Version) (*cseComponentsVersions
 	v43, _ := semver.NewVersion("4.3.0")
 	v42, _ := semver.NewVersion("4.2.0")
 	v41, _ := semver.NewVersion("4.1.0")
+	err := fmt.Errorf("the Container Service Extension version '%s' is not supported", cseVersion.String())
 
 	if cseVersion.GreaterThanOrEqual(v43) {
-		return nil, fmt.Errorf("the Container Service Extension version '%s' is not supported", cseVersion.String())
+		return nil, err
 	}
 	if cseVersion.GreaterThanOrEqual(v42) {
 		return &cseComponentsVersions{
@@ -39,7 +40,7 @@ func getCseComponentsVersions(cseVersion semver.Version) (*cseComponentsVersions
 			CseInterfaceVersion:       "1.0.0",
 		}, nil
 	}
-	return nil, fmt.Errorf("the Container Service Extension version '%s' is not supported", cseVersion.String())
+	return nil, err
 }
 
 // cseConvertToCseKubernetesClusterType takes a generic RDE that must represent an existing CSE Kubernetes cluster,
