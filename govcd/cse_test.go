@@ -15,6 +15,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 )
 
 func requireCseConfig(check *C, testConfig TestConfig) {
@@ -113,7 +114,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		ServiceCidr:        "100.64.0.0/13",
 		AutoRepairOnErrors: true,
 	}
-	cluster, err := org.CseCreateKubernetesCluster(clusterSettings, 150)
+	cluster, err := org.CseCreateKubernetesCluster(clusterSettings, 150*time.Minute)
 
 	// We assure that the cluster gets always deleted, even if the creation failed.
 	// Deletion process only needs the cluster ID
