@@ -304,8 +304,9 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 		return err
 	}
 
-	// We do this loop to increase the chances that the Kubernetes cluster is successfully updated, as this method will be
-	// "fighting" with the CSE Server
+	// We do this loop to increase the chances that the Kubernetes cluster is successfully updated, as the update operation
+	// can clash with the CSE Server updates on the same RDE. If the CSE Server does an update just before we do, the ETag
+	// verification will fail, so we must retry.
 	retries := 0
 	maxRetries := 5
 	updated := false
