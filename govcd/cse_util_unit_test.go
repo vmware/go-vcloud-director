@@ -321,15 +321,15 @@ func Test_getCseTemplate(t *testing.T) {
 
 	tmpl41, err := getCseTemplate(*v41, "rde")
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 	tmpl410, err := getCseTemplate(*v410, "rde")
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 	tmpl411, err := getCseTemplate(*v411, "rde")
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 	if tmpl41 == "" || tmpl41 != tmpl410 || tmpl41 != tmpl411 || tmpl410 != tmpl411 {
 		t.Fatalf("templates should be the same:\n4.1: %s\n4.1.0: %s\n4.1.1: %s", tmpl41, tmpl410, tmpl411)
@@ -337,7 +337,7 @@ func Test_getCseTemplate(t *testing.T) {
 
 	tmpl420, err := getCseTemplate(*v420, "rde")
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 	if tmpl420 == "" {
 		t.Fatalf("the obtained template for %s is empty", v420.String())

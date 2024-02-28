@@ -16,7 +16,7 @@ import (
 func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) {
 	cseVersion, err := semver.NewVersion("4.2.0")
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 	capiYaml, err := os.ReadFile("test-resources/capiYaml.yaml")
 	if err != nil {

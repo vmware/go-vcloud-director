@@ -44,7 +44,7 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 		}},
 	})
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 
 	// We call the function to update the old OVA with the new one
@@ -66,12 +66,12 @@ func Test_cseUpdateKubernetesTemplateInYaml(t *testing.T) {
 	}
 	newTkgBundle, err := getTkgVersionBundleFromVAppTemplate(newOva)
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 
 	err = cseUpdateKubernetesTemplateInYaml(yamlDocs, newOva)
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 
 	updatedYaml, err := marshalMultipleYamlDocuments(yamlDocs)
@@ -141,7 +141,7 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 	}
 	err = cseUpdateWorkerPoolsInYaml(yamlDocs, newNodePools)
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 
 	// The worker pools should have now the new details updated
@@ -212,7 +212,7 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 	}
 	err = cseUpdateControlPlaneInYaml(yamlDocs, newControlPlane)
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 
 	// The control plane should have now the new details updated
@@ -278,7 +278,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 	// Deactivates Machine Health Check
 	yamlDocs, err = cseUpdateNodeHealthCheckInYaml(yamlDocs, clusterName, *v, vcdKeConfig{})
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 
 	// The resulting documents should not have that document
@@ -296,7 +296,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 		NodeUnknownTimeout:          "78",
 	})
 	if err != nil {
-		t.Fatalf("%s", err)
+		t.Fatal(err)
 	}
 
 	// The resulting documents should have a MachineHealthCheck
