@@ -3,7 +3,6 @@ package govcd
 import (
 	"bytes"
 	"embed"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -98,8 +97,6 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		"TargetNamespace":             clusterSettings.Name + "-ns",
 		"TkrVersion":                  clusterSettings.TkgVersionBundle.TkrVersion,
 		"TkgVersion":                  clusterSettings.TkgVersionBundle.TkgVersion,
-		"UsernameB64":                 base64.StdEncoding.EncodeToString([]byte(clusterSettings.Owner)),
-		"ApiTokenB64":                 base64.StdEncoding.EncodeToString([]byte(clusterSettings.ApiToken)),
 		"PodCidr":                     clusterSettings.PodCidr,
 		"ServiceCidr":                 clusterSettings.ServiceCidr,
 		"VcdSite":                     clusterSettings.VcdUrl,

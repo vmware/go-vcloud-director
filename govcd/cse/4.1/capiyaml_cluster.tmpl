@@ -30,16 +30,6 @@ spec:
     name: "{{.ClusterName}}"
     namespace: "{{.TargetNamespace}}"
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: capi-user-credentials
-  namespace: {{.TargetNamespace}}
-type: Opaque
-data:
-  username: "{{.UsernameB64}}"
-  refreshToken: "{{.ApiTokenB64}}"
----
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: VCDCluster
 metadata:
