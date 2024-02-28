@@ -336,7 +336,7 @@ func Test_unmarshalMultplieYamlDocuments(t *testing.T) {
 		{
 			name:          "unmarshal correct amount of documents",
 			yamlDocuments: string(capiYaml),
-			want:          9,
+			want:          8,
 			wantErr:       false,
 		},
 		{
