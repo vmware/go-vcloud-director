@@ -318,8 +318,6 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clus
 		// There is a MachineHealthCheck block
 		if machineHealthCheckEnabled {
 			// We want it, but it is already there, so nothing to do
-			// TODO: What happens in UI if the VCDKEConfig MHC values are changed, does it get reflected in the cluster?
-			//       If that's the case, we might need to update this value always
 			return result, nil
 		}
 
