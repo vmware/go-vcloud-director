@@ -10,7 +10,9 @@ import (
 	"testing"
 )
 
-// Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString
+// Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString tests the generateCapiYamlAsJsonString method with a
+// cseClusterSettingsInternal receiver. Given some valid or invalid CSE Settings, the tests runs the generateCapiYamlAsJsonString
+// method and checks that the returned JSON string corresponds to the expected settings that were specified.
 func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) {
 	cseVersion, err := semver.NewVersion("4.2.0")
 	if err != nil {
@@ -121,6 +123,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 				PodCidr:     "100.96.0.0/11",
 				ServiceCidr: "100.64.0.0/13",
 			},
+			// The expected result is the base YAML without the MachineHealthCheck
 			expectedFunc: func() []map[string]interface{} {
 				var result []map[string]interface{}
 				for _, doc := range baseUnmarshaledYaml {
@@ -179,6 +182,7 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 				PodCidr:         "100.96.0.0/11",
 				ServiceCidr:     "100.64.0.0/13",
 			},
+			// The expected result is the base YAML with the Control Plane extra IPs
 			expectedFunc: func() []map[string]interface{} {
 				var result []map[string]interface{}
 				for _, doc := range baseUnmarshaledYaml {

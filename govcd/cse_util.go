@@ -48,10 +48,14 @@ func getCseComponentsVersions(cseVersion semver.Version) (*cseComponentsVersions
 // it is easy to explore and consume. If the input RDE is not a CSE Kubernetes cluster, this method
 // will obviously return an error.
 //
+// The transformation from a generic RDE to a CseKubernetesCluster is done by querying VCD for every needed item,
+// such as Network IDs, Compute Policies IDs, vApp Template IDs, etc. It deeply explores the RDE contents
+// (even the CAPI YAML) to retrieve information and getting the missing pieces from VCD.
+//
 // WARNING: Don't use this method inside loops or avoid calling it multiple times in a row, as it performs many queries
 // to VCD.
 func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesCluster, error) {
-	requiredType := "vmware:capvcdCluster"
+	requiredType := fmt.Sprintf("%s:%s", cseKubernetesClusterVendor, cseKubernetesClusterNamespace)
 
 	if !strings.Contains(rde.DefinedEntity.ID, requiredType) || !strings.Contains(rde.DefinedEntity.EntityType, requiredType) {
 		return nil, fmt.Errorf("the receiver RDE is not a '%s' entity, it is '%s'", requiredType, rde.DefinedEntity.EntityType)
@@ -71,7 +75,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	result := &CseKubernetesCluster{
 		CseClusterSettings: CseClusterSettings{
 			Name:               rde.DefinedEntity.Name,
-			ApiToken:           "******", // We can't return this one, we return the "standard" 6-asterisk value
+			ApiToken:           "******", // We must not return this one, we return the "standard" 6-asterisk value
 			AutoRepairOnErrors: capvcd.Spec.VcdKe.AutoRepairOnErrors,
 			ControlPlane:       CseControlPlaneSettings{},
 		},
@@ -651,7 +655,7 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 	if err != nil {
 		return nil, err
 	}
-	rdeType, err := getRdeType(org.client, "vmware", "capvcdCluster", cseComponentsVersions.CapvcdRdeTypeVersion)
+	rdeType, err := getRdeType(org.client, cseKubernetesClusterVendor, cseKubernetesClusterNamespace, cseComponentsVersions.CapvcdRdeTypeVersion)
 	if err != nil {
 		return nil, err
 	}

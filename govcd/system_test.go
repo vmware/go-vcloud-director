@@ -649,6 +649,19 @@ func (vcd *TestVCD) Test_QueryOrgVdcStorageProfileByID(check *C) {
 	}
 
 	check.Assert(storageProfileFound, Equals, true)
+
+	vdcStorageProfiles, err := queryOrgVdcStorageProfilesByVdcId(&vcd.client.Client, vcd.vdc.Vdc.ID)
+	check.Assert(err, IsNil)
+	storageProfileFound = false
+	for _, profile := range vdcStorageProfiles {
+		id, err := GetUuidFromHref(profile.HREF, true)
+		check.Assert(err, IsNil)
+		if id == storageProfileID {
+			storageProfileFound = true
+			break
+		}
+	}
+	check.Assert(storageProfileFound, Equals, true)
 }
 
 func (vcd *TestVCD) Test_QueryNetworkPoolByName(check *C) {

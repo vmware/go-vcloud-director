@@ -46,6 +46,16 @@ func Test_getCseComponentsVersions(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:       "CSE 4.1.1a is equivalent to 4.1.1",
+			cseVersion: "4.1.1a",
+			want: &cseComponentsVersions{
+				VcdKeConfigRdeTypeVersion: "1.1.0",
+				CapvcdRdeTypeVersion:      "1.2.0",
+				CseInterfaceVersion:       "1.0.0",
+			},
+			wantErr: false,
+		},
+		{
 			name:       "CSE 4.2 is supported",
 			cseVersion: "4.2",
 			want: &cseComponentsVersions{

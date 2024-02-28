@@ -194,3 +194,9 @@ type cseComponentsVersions struct {
 	CapvcdRdeTypeVersion      string
 	CseInterfaceVersion       string
 }
+
+// Constants that define the RDE Type of a CSE Kubernetes cluster
+const (
+	cseKubernetesClusterVendor    = "vmware"
+	cseKubernetesClusterNamespace = "capvcdCluster"
+)

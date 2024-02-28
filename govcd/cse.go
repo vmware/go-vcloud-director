@@ -56,7 +56,7 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterSettings CseClusterSettin
 		return "", err
 	}
 
-	rde, err := createRdeAndGetFromTask(org.client, "vmware", "capvcdCluster", cseSubcomponents.CapvcdRdeTypeVersion,
+	rde, err := createRdeAndGetFromTask(org.client, cseKubernetesClusterVendor, cseKubernetesClusterNamespace, cseSubcomponents.CapvcdRdeTypeVersion,
 		types.DefinedEntity{
 			EntityType: internalSettings.RdeType.ID,
 			Name:       internalSettings.Name,
@@ -85,7 +85,7 @@ func (org *Org) CseGetKubernetesClustersByName(cseVersion semver.Version, name s
 		return nil, err
 	}
 
-	rdes, err := getRdesByName(org.client, "vmware", "capvcdCluster", cseSubcomponents.CapvcdRdeTypeVersion, name)
+	rdes, err := getRdesByName(org.client, cseKubernetesClusterVendor, cseKubernetesClusterNamespace, cseSubcomponents.CapvcdRdeTypeVersion, name)
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +132,12 @@ func (cluster *CseKubernetesCluster) GetKubeconfig(refresh bool) (string, error)
 		}
 	}
 
+	if cluster.State == "" {
+		return "", fmt.Errorf("cannot get a Kubeconfig of a Kubernetes cluster that does not have a state (expected 'provisioned')")
+	}
+
 	if cluster.State != "provisioned" {
-		return "", fmt.Errorf("cannot get a Kubeconfig of a Kubernetes cluster that is not in 'provisioned' state")
+		return "", fmt.Errorf("cannot get a Kubeconfig of a Kubernetes cluster that is not in 'provisioned' state. It is '%s'", cluster.State)
 	}
 
 	rde, err := getRdeById(cluster.client, cluster.ID)
@@ -276,7 +280,7 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 		// automatically by the CSE Server.
 		v411, err := semver.NewVersion("4.1.1")
 		if err != nil {
-			return fmt.Errorf("can't update the  'Auto Repair on Errors' flag: %s", err)
+			return err
 		}
 		if cluster.CseVersion.GreaterThanOrEqual(v411) {
 			return fmt.Errorf("the 'Auto Repair on Errors' flag can't be changed after the cluster is created since CSE 4.1.1")
