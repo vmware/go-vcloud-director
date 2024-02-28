@@ -26,7 +26,7 @@ func requireCseConfig(check *C, testConfig TestConfig) {
 	cseConfigType := cseConfigValues.Type()
 	for i := 0; i < cseConfigValues.NumField(); i++ {
 		if cseConfigValues.Field(i).String() == "" {
-			check.Skip(fmt.Sprintf("%s the config value '%s' inside 'cse' block of govcd_test_config.yaml is not set", skippedPrefix, strings.ToLower(cseConfigType.Field(i).Name)))
+			check.Skip(fmt.Sprintf("%s the config value '%s' inside 'cse' block of govcd_test_config.yaml is not set", skippedPrefix, cseConfigType.Field(i).Name))
 		}
 	}
 }
@@ -113,7 +113,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		ServiceCidr:        "100.64.0.0/13",
 		AutoRepairOnErrors: true,
 	}
-	cluster, err := org.CseCreateKubernetesCluster(clusterSettings, 0)
+	cluster, err := org.CseCreateKubernetesCluster(clusterSettings, 150)
 
 	// We assure that the cluster gets always deleted, even if the creation failed.
 	// Deletion process only needs the cluster ID
