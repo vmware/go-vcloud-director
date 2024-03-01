@@ -1490,3 +1490,34 @@ func (vcd *TestVCD) Test_CatalogCreateCompleteness(check *C) {
 	err = catalog.Delete(true, true)
 	check.Assert(err, IsNil)
 }
+
+func (vcd *TestVCD) Test_CaptureVapp(check *C) {
+	fmt.Printf("Running: %s\n", check.TestName())
+
+	vapp, vm := createNsxtVAppAndVm(vcd, check)
+	check.Assert(vapp, NotNil)
+	check.Assert(vm, NotNil)
+
+	// retrieve NSX-T Catalog
+	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
+	check.Assert(cat, NotNil)
+
+	vAppCaptureParams := &types.CaptureVAppParams{
+		Name: check.TestName() + "vm-template",
+		Source: &types.Reference{
+			HREF: vapp.VApp.HREF,
+		},
+		CustomizationSection: types.CaptureVAppParamsCustomizationSection{
+			Info:                   "CustomizeOnInstantiate Settings",
+			CustomizeOnInstantiate: true,
+		},
+		CopyTpmOnInstantiate: addrOf(false),
+	}
+
+	templ, err := cat.CaptureVappTemplate(vAppCaptureParams)
+	check.Assert(err, IsNil)
+	check.Assert(templ, NotNil)
+
+	AddToCleanupList(templ.VAppTemplate.Name, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.NsxtBackedCatalogName, "Test_UploadOvf")
+}

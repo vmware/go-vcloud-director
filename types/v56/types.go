@@ -1604,6 +1604,45 @@ type VAppTemplateForUpdate struct {
 	Description string   `xml:"Description,omitempty"` // Optional description.
 }
 
+// CaptureVAppParams is a configuration that can be supplied for capturing a vApp template from
+// existing vApp
+type CaptureVAppParams struct {
+	XMLName xml.Name `xml:"CaptureVAppParams"`
+
+	Xmlns    string `xml:"xmlns,attr"`
+	XmlnsNs0 string `xml:"xmlns:ns0,attr,omitempty"`
+
+	// Name of vApp template
+	Name string `xml:"name,attr"`
+	// Description of vApp template
+	Description string `xml:"Description,omitempty"`
+
+	// Source vApp reference. At least HREF field must be set
+	Source *Reference `xml:"Source"`
+
+	// CustomizationSection section
+	CustomizationSection CaptureVAppParamsCustomizationSection `xml:"CustomizationSection"`
+
+	// TargetCatalogItem can be used to overwrite existing item. To overwrite an existing vApp
+	// template with the one created by this capture, place a reference to the existing template
+	// here. Otherwise, the operation creates a new vApp template.
+	TargetCatalogItem *Reference `xml:"TargetCatalogItem,omitempty"`
+	// CopyTpmOnInstantiate defines if TPM device is copied (`true`) to instantiated vApp from this
+	// template or `false` if a new TPM device is created for instantiated vApp.
+	// Note. Supported on VCD 10.4.2+
+	CopyTpmOnInstantiate *bool `xml:"CopyTpmOnInstantiate"`
+}
+
+// CaptureVAppParamsCustomizationSection settings for CaptureVAppParams type
+type CaptureVAppParamsCustomizationSection struct {
+	// This field must contain value "CustomizeOnInstantiate Settings" so that API does not reject
+	// the request
+	Info string `xml:"ns0:Info,omitempty"`
+	// CustomizeOnInstantiate marks if instantiating this template applies customization settings
+	// (`true`). `false` creates an identical copy.
+	CustomizeOnInstantiate bool `xml:"CustomizeOnInstantiate"`
+}
+
 // VMDiskChange represents a virtual machine only with Disk setting update part
 type VMDiskChange struct {
 	XMLName xml.Name `xml:"Vm"`

@@ -360,6 +360,36 @@ func (cat *Catalog) UploadOvfByLink(ovfUrl, itemName, description string) (Task,
 	return task, nil
 }
 
+// CaptureVappTemplate captures a vApp template from an existing vApp
+func (cat *Catalog) CaptureVappTemplate(captureParams *types.CaptureVAppParams) (*VAppTemplate, error) {
+	task, err := cat.CaptureVappTemplateAsync(captureParams)
+	if err != nil {
+		return nil, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+
+	// After the task is finished, owner field contains the resulting vApp template
+	return cat.GetVappTemplateByHref(task.Task.Owner.HREF)
+}
+
+func (cat *Catalog) CaptureVappTemplateAsync(captureParams *types.CaptureVAppParams) (Task, error) {
+	util.Logger.Printf("[TRACE] Capturing vApp template to catalog %s", cat.Catalog.Name)
+	captureTemplateHref := cat.client.VCDHREF
+	captureTemplateHref.Path += fmt.Sprintf("/catalog/%s/action/captureVApp", extractUuid(cat.Catalog.ID))
+
+	captureParams.Xmlns = types.XMLNamespaceVCloud
+	captureParams.XmlnsNs0 = types.XMLNamespaceOVF
+
+	util.Logger.Printf("[TRACE] Url for capturing vApp template: %s", captureTemplateHref.String())
+
+	return cat.client.ExecuteTaskRequest(captureTemplateHref.String(), http.MethodPost,
+		types.MimeCaptureVappTemplateParams, "error capturing vApp Template: %s", captureParams)
+}
+
 // Upload files for vCD created upload links. Different approach then vmdk file are
 // chunked (e.g. test.vmdk.000000000, test.vmdk.000000001 or test.vmdk). vmdk files are chunked if
 // in description file attribute ChunkSize is not zero.

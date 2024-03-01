@@ -60,7 +60,7 @@ type DhcpSettings struct {
 }
 
 // Returns the vdc where the vapp resides in.
-func (vapp *VApp) getParentVDC() (Vdc, error) {
+func (vapp *VApp) GetParentVDC() (Vdc, error) {
 	for _, link := range vapp.VApp.Link {
 		if (link.Type == types.MimeVDC || link.Type == types.MimeAdminVDC) && link.Rel == "up" {
 
@@ -620,7 +620,7 @@ func (vapp *VApp) ChangeStorageProfile(name string) (Task, error) {
 		return Task{}, fmt.Errorf("vApp doesn't contain any children, interrupting customization")
 	}
 
-	vdc, err := vapp.getParentVDC()
+	vdc, err := vapp.GetParentVDC()
 	if err != nil {
 		return Task{}, fmt.Errorf("error retrieving parent VDC for vApp %s", vapp.VApp.Name)
 	}
@@ -1442,7 +1442,7 @@ func (vapp *VApp) getOrgInfo() (*TenantContext, error) {
 		return previous, nil
 	}
 	var err error
-	vdc, err := vapp.getParentVDC()
+	vdc, err := vapp.GetParentVDC()
 	if err != nil {
 		return nil, err
 	}
@@ -1514,7 +1514,7 @@ func (vapp *VApp) Rename(newName string) error {
 }
 
 func (vapp *VApp) getTenantContext() (*TenantContext, error) {
-	parentVdc, err := vapp.getParentVDC()
+	parentVdc, err := vapp.GetParentVDC()
 	if err != nil {
 		return nil, err
 	}
