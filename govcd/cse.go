@@ -27,7 +27,10 @@ func (org *Org) CseCreateKubernetesCluster(clusterData CseClusterSettings, timeo
 
 	err = waitUntilClusterIsProvisioned(org.client, clusterId, timeout)
 	if err != nil {
-		return &CseKubernetesCluster{ID: clusterId}, err
+		return &CseKubernetesCluster{
+			client: org.client,
+			ID:     clusterId,
+		}, err
 	}
 
 	return getCseKubernetesClusterById(org.client, clusterId)
@@ -204,6 +207,10 @@ func (cluster *CseKubernetesCluster) UpdateControlPlane(input CseControlPlaneUpd
 func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*types.VAppTemplate, error) {
 	if refreshOvas {
 		cluster.supportedUpgrades = make([]*types.VAppTemplate, 0)
+	}
+	if cluster.State != "provisioned" {
+		cluster.supportedUpgrades = make([]*types.VAppTemplate, 0)
+		return cluster.supportedUpgrades, nil
 	}
 	if len(cluster.supportedUpgrades) > 0 {
 		return cluster.supportedUpgrades, nil

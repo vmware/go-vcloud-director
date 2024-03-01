@@ -7,6 +7,7 @@ import (
 	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
+	"net"
 	"net/url"
 	"regexp"
 	"sort"
@@ -597,8 +598,24 @@ func (input *CseClusterSettings) validate() error {
 	if input.PodCidr == "" {
 		return fmt.Errorf("the Pod CIDR is required")
 	}
+	if _, _, err := net.ParseCIDR(input.PodCidr); err != nil {
+		return fmt.Errorf("the Pod CIDR is malformed: %s", err)
+	}
 	if input.ServiceCidr == "" {
 		return fmt.Errorf("the Service CIDR is required")
+	}
+	if _, _, err := net.ParseCIDR(input.ServiceCidr); err != nil {
+		return fmt.Errorf("the Service CIDR is malformed: %s", err)
+	}
+	if input.VirtualIpSubnet != "" {
+		if _, _, err := net.ParseCIDR(input.VirtualIpSubnet); err != nil {
+			return fmt.Errorf("the Virtual IP Subnet is malformed: %s", err)
+		}
+	}
+	if input.ControlPlane.Ip != "" {
+		if r := net.ParseIP(input.ControlPlane.Ip); r == nil {
+			return fmt.Errorf("the Control Plane IP is malformed: %s", input.ControlPlane.Ip)
+		}
 	}
 	return nil
 }
@@ -669,7 +686,10 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 		storageProfileIds = append(storageProfileIds, w.StorageProfileId)
 	}
 	computePolicyIds = append(computePolicyIds, input.ControlPlane.SizingPolicyId, input.ControlPlane.PlacementPolicyId)
-	storageProfileIds = append(storageProfileIds, input.ControlPlane.StorageProfileId, input.DefaultStorageClass.StorageProfileId)
+	storageProfileIds = append(storageProfileIds, input.ControlPlane.StorageProfileId)
+	if input.DefaultStorageClass != nil {
+		storageProfileIds = append(storageProfileIds, input.DefaultStorageClass.StorageProfileId)
+	}
 
 	idToNameCache, err := idToNames(org.client, computePolicyIds, storageProfileIds)
 	if err != nil {
