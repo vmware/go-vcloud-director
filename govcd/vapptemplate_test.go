@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -45,6 +46,14 @@ func (vcd *TestVCD) Test_RefreshVAppTemplate(check *C) {
 	check.Assert(oldVAppTemplate.VAppTemplate.ID, Equals, vAppTemplate.VAppTemplate.ID)
 	check.Assert(oldVAppTemplate.VAppTemplate.Name, Equals, vAppTemplate.VAppTemplate.Name)
 	check.Assert(oldVAppTemplate.VAppTemplate.HREF, Equals, vAppTemplate.VAppTemplate.HREF)
+
+	catalogItemHref, err := vAppTemplate.GetCatalogItemHref()
+	check.Assert(err, IsNil)
+	check.Assert(catalogItemHref, Not(Equals), "")
+
+	catalogItemId, err := vAppTemplate.GetCatalogItemId()
+	check.Assert(err, IsNil)
+	check.Assert(catalogItemId, Not(Equals), "")
 }
 
 func (vcd *TestVCD) Test_UpdateAndDeleteVAppTemplateFromOvaFile(check *C) {

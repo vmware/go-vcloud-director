@@ -35,6 +35,25 @@ func (vcd *TestVCD) TestGetParentVDC(check *C) {
 	check.Assert(vdc.Vdc.Name, Equals, vcd.vdc.Vdc.Name)
 }
 
+func (vcd *TestVCD) TestGetVappByHref(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp was not successfully created at setup")
+	}
+	vapp, err := vcd.vdc.GetVAppByName(vcd.vapp.VApp.Name, false)
+	check.Assert(err, IsNil)
+
+	vdc, err := vapp.GetParentVDC()
+	check.Assert(err, IsNil)
+
+	orgVappByHref, err := vcd.org.GetVAppByHref(vapp.VApp.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(orgVappByHref.VApp, DeepEquals, vapp.VApp)
+
+	vdcVappByHref, err := vdc.GetVAppByHref(vapp.VApp.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(vdcVappByHref.VApp, DeepEquals, vapp.VApp)
+}
+
 // Tests Powering On and Powering Off a VApp. Also tests Deletion
 // of a VApp
 func (vcd *TestVCD) Test_PowerOn(check *C) {
