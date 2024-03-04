@@ -20,4 +20,7 @@ require (
 	golang.org/x/text v0.14.0
 )
 
-replace gopkg.in/check.v1 => github.com/go-check/check v0.0.0-20201130134442-10cb98267c6c
+replace (
+	gopkg.in/check.v1 => github.com/go-check/check v0.0.0-20201130134442-10cb98267c6c
+	gopkg.in/yaml.v2 => github.com/go-yaml/yaml/v2 v2.2.2
+)
