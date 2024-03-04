@@ -375,7 +375,7 @@ func (vAppTemplate *VAppTemplate) GetCatalogItemHref() (string, error) {
 	return "", fmt.Errorf("error finding Catalog Item link in vApp template %s", vAppTemplate.VAppTemplate.ID)
 }
 
-// GetCatalogItemHref looks up Href for catalog item in vApp template
+// GetCatalogItemId returns ID for catalog item in vApp template
 func (vAppTemplate *VAppTemplate) GetCatalogItemId() (string, error) {
 	href, err := vAppTemplate.GetCatalogItemHref()
 	if err != nil {

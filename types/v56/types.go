@@ -1627,6 +1627,7 @@ type CaptureVAppParams struct {
 	// template with the one created by this capture, place a reference to the existing template
 	// here. Otherwise, the operation creates a new vApp template.
 	TargetCatalogItem *Reference `xml:"TargetCatalogItem,omitempty"`
+
 	// CopyTpmOnInstantiate defines if TPM device is copied (`true`) to instantiated vApp from this
 	// template or `false` if a new TPM device is created for instantiated vApp.
 	// Note. Supported on VCD 10.4.2+

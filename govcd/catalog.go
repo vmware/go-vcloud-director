@@ -376,6 +376,7 @@ func (cat *Catalog) CaptureVappTemplate(captureParams *types.CaptureVAppParams) 
 	return cat.GetVappTemplateByHref(task.Task.Owner.HREF)
 }
 
+// CaptureVappTemplateAsync triggers vApp template capturing task and returns it
 func (cat *Catalog) CaptureVappTemplateAsync(captureParams *types.CaptureVAppParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Capturing vApp template to catalog %s", cat.Catalog.Name)
 	captureTemplateHref := cat.client.VCDHREF
