@@ -1522,5 +1522,8 @@ func (vcd *TestVCD) Test_CaptureVapp(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(templ, NotNil)
 
-	AddToCleanupList(templ.VAppTemplate.Name, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.NsxtBackedCatalogName, "Test_UploadOvf")
+	err = templ.Delete()
+	check.Assert(err, IsNil)
+
+	AddToCleanupList(templ.VAppTemplate.Name, "catalogItem", vcd.org.Org.Name+"|"+vcd.config.VCD.Catalog.NsxtBackedCatalogName, check.TestName())
 }
