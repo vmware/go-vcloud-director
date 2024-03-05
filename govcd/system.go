@@ -1192,7 +1192,7 @@ func queryAdminOrgVdcStorageProfilesByVdcId(client *Client, vdcId string) ([]*ty
 // queryOrgVdcStorageProfilesByVdcId finds all Storage Profiles of a VDC
 func queryOrgVdcStorageProfilesByVdcId(client *Client, vdcId string) ([]*types.QueryResultOrgVdcStorageProfileRecordType, error) {
 	if client.IsSysAdmin {
-		return nil, errors.New("can't query type QtOrgVdcStorageProfile as System administrator")
+		return nil, errors.New("can't query type QueryResultAdminOrgVdcStorageProfileRecordType as System administrator")
 	}
 	results, err := client.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":          types.QtOrgVdcStorageProfile,
