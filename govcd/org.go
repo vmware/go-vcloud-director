@@ -601,7 +601,7 @@ func queryCatalogList(client *Client, filterFields map[string]string) ([]*types.
 	return catalogs, nil
 }
 
-// GetVappByHref returns a vApp reference by running a vCD API call
+// GetVappByHref returns a vApp reference by running a VCD API call
 // If no valid vApp is found, it returns a nil VApp reference and an error
 func (org *Org) GetVAppByHref(vappHref string) (*VApp, error) {
 	newVapp := NewVApp(org.client)
