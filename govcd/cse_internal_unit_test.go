@@ -14,7 +14,7 @@ import (
 // cseClusterSettingsInternal receiver. Given some valid or invalid CSE Settings, the tests runs the generateCapiYamlAsJsonString
 // method and checks that the returned JSON string corresponds to the expected settings that were specified.
 func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) {
-	cseVersion, err := semver.NewVersion("4.2.0")
+	cseVersion, err := semver.NewVersion("4.2.1")
 	if err != nil {
 		t.Fatal(err)
 	}

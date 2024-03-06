@@ -314,9 +314,9 @@ func Test_getCseTemplate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not create 4.1.1 version object")
 	}
-	v420, err := semver.NewVersion("4.2.0")
+	v421, err := semver.NewVersion("4.2.1")
 	if err != nil {
-		t.Fatalf("could not create 4.2.0 version object")
+		t.Fatalf("could not create 4.2.1 version object")
 	}
 
 	tmpl41, err := getCseTemplate(*v41, "rde")
@@ -335,12 +335,12 @@ func Test_getCseTemplate(t *testing.T) {
 		t.Fatalf("templates should be the same:\n4.1: %s\n4.1.0: %s\n4.1.1: %s", tmpl41, tmpl410, tmpl411)
 	}
 
-	tmpl420, err := getCseTemplate(*v420, "rde")
+	tmpl420, err := getCseTemplate(*v421, "rde")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if tmpl420 == "" {
-		t.Fatalf("the obtained template for %s is empty", v420.String())
+		t.Fatalf("the obtained template for %s is empty", v421.String())
 	}
 
 	_, err = getCseTemplate(*v40, "rde")

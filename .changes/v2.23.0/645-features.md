@@ -1,4 +1,5 @@
-* Added the type `CseKubernetesCluster` to manage Container Service Extension Kubernetes clusters [GH-645]
+* Added the type `CseKubernetesCluster` to manage Container Service Extension Kubernetes clusters for versions 4.1.0, 4.1.1,
+  4.2.0 and 4.2.1 [GH-645]
 * Added methods `Org.CseCreateKubernetesCluster` and `Org.CseCreateKubernetesClusterAsync` to create Kubernetes clusters
   in a VCD appliance with Container Service Extension installed [GH-645]
 * Added methods `VCDClient.CseGetKubernetesClusterById` and `Org.CseGetKubernetesClustersByName` to retrieve a
