@@ -377,8 +377,15 @@ func (cat *Catalog) CaptureVappTemplate(captureParams *types.CaptureVAppParams) 
 }
 
 // CaptureVappTemplateAsync triggers vApp template capturing task and returns it
+//
+// Note. If 'CaptureVAppParams.CopyTpmOnInstantiate' is set, it will be unset for VCD versions
+// before 10.4.2 as it would break API call
 func (cat *Catalog) CaptureVappTemplateAsync(captureParams *types.CaptureVAppParams) (Task, error) {
 	util.Logger.Printf("[TRACE] Capturing vApp template to catalog %s", cat.Catalog.Name)
+	if captureParams == nil {
+		return Task{}, fmt.Errorf("input CaptureVAppParams cannot be nil")
+	}
+
 	captureTemplateHref := cat.client.VCDHREF
 	captureTemplateHref.Path += fmt.Sprintf("/catalog/%s/action/captureVApp", extractUuid(cat.Catalog.ID))
 
@@ -386,6 +393,11 @@ func (cat *Catalog) CaptureVappTemplateAsync(captureParams *types.CaptureVAppPar
 	captureParams.XmlnsNs0 = types.XMLNamespaceOVF
 
 	util.Logger.Printf("[TRACE] Url for capturing vApp template: %s", captureTemplateHref.String())
+
+	if cat.client.APIVCDMaxVersionIs("< 37.2") {
+		captureParams.CopyTpmOnInstantiate = nil
+		util.Logger.Println("[TRACE] Explicitly unsetting 'CopyTpmOnInstantiate' because it was not supported before VCD 10.4.2")
+	}
 
 	return cat.client.ExecuteTaskRequest(captureTemplateHref.String(), http.MethodPost,
 		types.MimeCaptureVappTemplateParams, "error capturing vApp Template: %s", captureParams)

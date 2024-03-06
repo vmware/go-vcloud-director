@@ -1512,10 +1512,7 @@ func (vcd *TestVCD) Test_CaptureVapp(check *C) {
 			Info:                   "CustomizeOnInstantiate Settings",
 			CustomizeOnInstantiate: true,
 		},
-	}
-
-	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.2") {
-		vAppCaptureParams.CopyTpmOnInstantiate = addrOf(false)
+		CopyTpmOnInstantiate: addrOf(false),
 	}
 
 	templ, err := cat.CaptureVappTemplate(vAppCaptureParams)
