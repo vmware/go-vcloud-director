@@ -282,9 +282,10 @@ func (cluster *CseKubernetesCluster) Update(input CseClusterUpdateInput, refresh
 		return fmt.Errorf("can't update a Kubernetes cluster that is not in 'provisioned' state, as it is in '%s'", cluster.capvcdType.Status.VcdKe.State)
 	}
 
-	if input.AutoRepairOnErrors != nil {
+	if input.AutoRepairOnErrors != nil && *input.AutoRepairOnErrors != cluster.AutoRepairOnErrors {
 		// Since CSE 4.1.1, the AutoRepairOnError toggle can't be modified and is turned off
 		// automatically by the CSE Server.
+
 		v411, err := semver.NewVersion("4.1.1")
 		if err != nil {
 			return err

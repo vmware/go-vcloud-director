@@ -192,15 +192,10 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(cluster.NodeHealthCheck, Equals, false)
 
 	// Update the auto repair flag
-	v411, err := semver.NewVersion("4.1.1")
 	check.Assert(err, IsNil)
 	err = cluster.SetAutoRepairOnErrors(false, true)
-	if cluster.CseVersion.GreaterThan(v411) {
-		check.Assert(err, NotNil) // Can't be changed since CSE 4.1.1
-	} else {
-		check.Assert(err, IsNil)
-	}
-	check.Assert(cluster.NodeHealthCheck, Equals, false)
+	check.Assert(err, IsNil) // It won't fail in CSE >4.1.0 as the flag is already false, so we update nothing.
+	check.Assert(cluster.AutoRepairOnErrors, Equals, false)
 
 	// Upgrade the cluster if possible
 	upgradeOvas, err := cluster.GetSupportedUpgrades(true)
