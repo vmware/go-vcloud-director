@@ -44,6 +44,11 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterSettings CseClusterSettin
 		return "", fmt.Errorf("CseCreateKubernetesClusterAsync cannot be called on a nil Organization receiver")
 	}
 
+	tenantContext, err := org.getTenantContext()
+	if err != nil {
+		return "", fmt.Errorf("error creating the CSE Kubernetes cluster: %s", err)
+	}
+
 	cseSubcomponents, err := getCseComponentsVersions(clusterSettings.CseVersion)
 	if err != nil {
 		return "", err
@@ -54,7 +59,7 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterSettings CseClusterSettin
 		return "", fmt.Errorf("error creating the CSE Kubernetes cluster: %s", err)
 	}
 
-	payload, err := internalSettings.getUnmarshaledRdePayload()
+	payload, err := internalSettings.getUnmarshalledRdePayload()
 	if err != nil {
 		return "", err
 	}
@@ -64,10 +69,7 @@ func (org *Org) CseCreateKubernetesClusterAsync(clusterSettings CseClusterSettin
 			EntityType: internalSettings.RdeType.ID,
 			Name:       internalSettings.Name,
 			Entity:     payload,
-		}, &TenantContext{
-			OrgId:   org.Org.ID,
-			OrgName: org.Org.Name,
-		})
+		}, tenantContext)
 	if err != nil {
 		return "", fmt.Errorf("error creating the CSE Kubernetes cluster: %s", err)
 	}

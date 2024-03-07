@@ -13,9 +13,10 @@ import (
 // If some of the values of the input is not provided, it doesn't change them.
 // If none of the values is provided, it just returns the same untouched YAML.
 func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput) (string, error) {
-	if cluster == nil {
-		return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("receiver cluster is nil")
+	if cluster == nil || cluster.capvcdType == nil {
+		return "", fmt.Errorf("receiver cluster is nil")
 	}
+
 	if input.ControlPlane == nil && input.WorkerPools == nil && input.NodeHealthCheck == nil && input.KubernetesTemplateOvaId == nil && input.NewWorkerPools == nil {
 		return cluster.capvcdType.Spec.CapiYaml, nil
 	}

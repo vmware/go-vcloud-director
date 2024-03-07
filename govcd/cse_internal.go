@@ -16,9 +16,9 @@ import (
 //go:embed cse
 var cseFiles embed.FS
 
-// getUnmarshaledRdePayload gets the unmarshaled JSON payload to create the Runtime Defined Entity that represents
+// getUnmarshalledRdePayload gets the unmarshalled JSON payload to create the Runtime Defined Entity that represents
 // a CSE Kubernetes cluster, by using the receiver information. This method uses all the Go Templates stored in cseFiles
-func (clusterSettings *cseClusterSettingsInternal) getUnmarshaledRdePayload() (map[string]interface{}, error) {
+func (clusterSettings *cseClusterSettingsInternal) getUnmarshalledRdePayload() (map[string]interface{}, error) {
 	if clusterSettings == nil {
 		return nil, fmt.Errorf("the receiver CSE Kubernetes cluster settings object is nil")
 	}
