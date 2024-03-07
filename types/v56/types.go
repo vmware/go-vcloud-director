@@ -2564,6 +2564,7 @@ type QueryResultVMRecordType struct {
 	OwnerName                string    `xml:"ownerName,attr,omitempty"`
 	Owner                    string    `xml:"owner,attr,omitempty"`
 	VdcHREF                  string    `xml:"vdc,attr,omitempty"`
+	VdcName                  string    `xml:"vdcName,attr,omitempty"`
 	VAppTemplate             bool      `xml:"isVAppTemplate,attr,omitempty"`
 	Deleted                  bool      `xml:"isDeleted,attr,omitempty"`
 	GuestOS                  string    `xml:"guestOs,attr,omitempty"`

@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -855,4 +856,59 @@ func (vcd *TestVCD) checkSkipWhenApiToken(check *C) {
 	if vcd.client.Client.UsingAccessToken {
 		check.Skip("This test can't run on API token")
 	}
+}
+
+// makeVappGroup creates multiple vApps, each with several VMs,
+// as defined in `groupDefinition`.
+// Returns a list of vApps
+func makeVappGroup(label string, vdc *Vdc, groupDefinition map[string][]string) ([]*VApp, error) {
+	var vappList []*VApp
+	for vappName, vmNames := range groupDefinition {
+		existingVapp, err := vdc.GetVAppByName(vappName, false)
+		if err == nil {
+
+			if existingVapp.VApp.Children == nil || len(existingVapp.VApp.Children.VM) == 0 {
+				return nil, fmt.Errorf("found vApp %s but without VMs", vappName)
+			}
+			foundVms := 0
+			for _, vmName := range vmNames {
+				for _, existingVM := range existingVapp.VApp.Children.VM {
+					if existingVM.Name == vmName {
+						foundVms++
+					}
+				}
+			}
+			if foundVms < 2 {
+				return nil, fmt.Errorf("found vApp %s but with %d VMs instead of 2 ", vappName, foundVms)
+			}
+
+			vappList = append(vappList, existingVapp)
+			if testVerbose {
+				fmt.Printf("Using existing vApp %s\n", vappName)
+			}
+			continue
+		}
+
+		if testVerbose {
+			fmt.Printf("Creating vApp %s\n", vappName)
+		}
+		vapp, err := makeEmptyVapp(vdc, vappName, "")
+		if err != nil {
+			return nil, err
+		}
+		if os.Getenv("GOVCD_KEEP_TEST_OBJECTS") == "" {
+			AddToCleanupList(vappName, "vapp", vdc.Vdc.Name, label)
+		}
+		for _, vmName := range vmNames {
+			if testVerbose {
+				fmt.Printf("\tCreating VM %s/%s\n", vappName, vmName)
+			}
+			_, err := makeEmptyVm(vapp, vmName)
+			if err != nil {
+				return nil, err
+			}
+		}
+		vappList = append(vappList, vapp)
+	}
+	return vappList, nil
 }
