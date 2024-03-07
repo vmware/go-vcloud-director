@@ -372,6 +372,10 @@ func (cat *Catalog) CaptureVappTemplate(captureParams *types.CaptureVAppParams) 
 		return nil, err
 	}
 
+	if task.Task == nil || task.Task.Owner == nil || task.Task.Owner.HREF == "" {
+		return nil, fmt.Errorf("task does not have Owner HREF populated: %#v", task)
+	}
+
 	// After the task is finished, owner field contains the resulting vApp template
 	return cat.GetVappTemplateByHref(task.Task.Owner.HREF)
 }
