@@ -184,11 +184,6 @@ func (client Client) buildLandingZoneRDE(isoFileName, user, catalogItemId string
 	licenseText := foundFiles[eulaKey].contents
 	manifestText := foundFiles[manifestKey].contents
 
-	certificates, err := client.GetAllCertificatesFromLibrary(nil)
-	if err != nil {
-		return nil, "", err
-	}
-
 	jsonManifestText, err := yaml.YAMLToJSON(manifestText)
 	if err != nil {
 		return nil, "", fmt.Errorf("error converting manifest file '%s' to JSON: %s", foundFiles[manifestKey].foundFileName, err)
@@ -211,13 +206,11 @@ func (client Client) buildLandingZoneRDE(isoFileName, user, catalogItemId string
 	if !ok {
 		return nil, "", fmt.Errorf("missing 'version' information from manifest file retrieved from '%s'", isoFileName)
 	}
-	foundCertificate := false
-	for _, existingCert := range certificates {
-		if existingCert.CertificateLibrary.Certificate == string(certificateText) {
-			foundCertificate = true
-		}
+	foundCertificateInLibrary, err := client.FoundCertificateInLibrary(string(certificateText))
+	if err != nil {
+		return nil, "", err
 	}
-	if !foundCertificate {
+	if foundCertificateInLibrary == 0 {
 		addonCertificateName := fmt.Sprintf("addon.%s_%s", vendor, time.Now().Format("2006-01-02T15:04:05.000Z"))
 
 		certificateConfig := types.CertificateLibraryItem{
@@ -228,7 +221,7 @@ func (client Client) buildLandingZoneRDE(isoFileName, user, catalogItemId string
 		}
 		_, err = client.AddCertificateToLibrary(&certificateConfig)
 		if err != nil {
-			return nil, "", fmt.Errorf("error adding certificate '%s' to library", addonCertificateName)
+			return nil, "", fmt.Errorf("error adding certificate '%s' to library: %s", addonCertificateName, err)
 		}
 	}
 

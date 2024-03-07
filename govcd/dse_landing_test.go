@@ -8,11 +8,12 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
 	"os"
 )
 
-func (vcd *TestVCD) Test_BuildLandingZoneRde(check *C) {
+func (vcd *TestVCD) Test_CreateLandingZoneRde(check *C) {
 
 	isoFileName := os.Getenv("DSE_ISO") //"vmware-vcd-ds-1.3.0-22829404.iso"
 	if isoFileName == "" {
@@ -29,4 +30,15 @@ func (vcd *TestVCD) Test_BuildLandingZoneRde(check *C) {
 		fmt.Printf("%-15s: %-30s %d\n", k, v.foundFileName, len(v.contents))
 	}
 
+}
+
+func (vcd *TestVCD) Test_BuildLandingZoneRde(check *C) {
+	isoFileName := os.Getenv("DSE_ISO") //"vmware-vcd-ds-1.3.0-22829404.iso"
+	if isoFileName == "" {
+		check.Skip("no .ISO defined")
+	}
+	solutionEntity, rdeName, err := vcd.client.Client.buildLandingZoneRDE(isoFileName, "administrator", "TBA")
+	check.Assert(err, IsNil)
+	fmt.Println(rdeName)
+	fmt.Printf("%# v\n", pretty.Formatter(solutionEntity))
 }
