@@ -453,12 +453,13 @@ const (
 	OpenApiEndpointNsxtSegmentSecurityProfiles              = "nsxTResources/segmentSecurityProfiles"
 
 	// IP Spaces
-	OpenApiEndpointIpSpaces               = "ipSpaces/"
-	OpenApiEndpointIpSpaceSummaries       = "ipSpaces/summaries"
-	OpenApiEndpointIpSpaceUplinks         = "ipSpaceUplinks/"
-	OpenApiEndpointIpSpaceUplinksAllocate = "ipSpaces/%s/allocate"     // '%s' is IP Space ID
-	OpenApiEndpointIpSpaceIpAllocations   = "ipSpaces/%s/allocations/" // '%s' is IP Space ID
-	OpenApiEndpointIpSpaceOrgAssignments  = "ipSpaces/orgAssignments/" // '%s' is IP Space ID
+	OpenApiEndpointIpSpaces                     = "ipSpaces/"
+	OpenApiEndpointIpSpaceSummaries             = "ipSpaces/summaries"
+	OpenApiEndpointIpSpaceUplinks               = "ipSpaceUplinks/"
+	OpenApiEndpointIpSpaceUplinksAllocate       = "ipSpaces/%s/allocate"     // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceIpAllocations         = "ipSpaces/%s/allocations/" // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceOrgAssignments        = "ipSpaces/orgAssignments/" // '%s' is IP Space ID
+	OpenApiEndpointIpSpaceFloatingIpSuggestions = "ipSpaces/floatingIpSuggestions/"
 
 	// NSX-T ALB related endpoints
 
