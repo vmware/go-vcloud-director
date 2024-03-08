@@ -793,7 +793,7 @@ func getTkgVersionBundleFromVAppTemplate(template *types.VAppTemplate) (tkgVersi
 	versionsMap := map[string]interface{}{}
 	err = json.Unmarshal(cseTkgVersionsJson, &versionsMap)
 	if err != nil {
-		return result, fmt.Errorf("failed unmarshaling %s: %s", tkgVersionsMap, err)
+		return result, fmt.Errorf("failed unmarshalling %s: %s", tkgVersionsMap, err)
 	}
 	versionMap, ok := versionsMap[id]
 	if !ok {

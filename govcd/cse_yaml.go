@@ -25,7 +25,7 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	// document it finds.
 	yamlDocs, err := unmarshalMultipleYamlDocuments(cluster.capvcdType.Spec.CapiYaml)
 	if err != nil {
-		return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("error unmarshaling YAML: %s", err)
+		return cluster.capvcdType.Spec.CapiYaml, fmt.Errorf("error unmarshalling YAML: %s", err)
 	}
 
 	if input.ControlPlane != nil {
@@ -347,7 +347,7 @@ func marshalMultipleYamlDocuments(yamlDocuments []map[string]interface{}) (strin
 }
 
 // unmarshalMultipleYamlDocuments takes a multi-document YAML (multiple YAML documents are separated by "---") and
-// unmarshals all of them into a slice of generic maps with the corresponding content.
+// unmarshalls all of them into a slice of generic maps with the corresponding content.
 func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[string]interface{}, error) {
 	if len(strings.TrimSpace(yamlDocuments)) == 0 {
 		return []map[string]interface{}{}, nil
