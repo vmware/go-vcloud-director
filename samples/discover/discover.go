@@ -46,8 +46,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 )

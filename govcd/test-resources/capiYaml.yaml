@@ -1,0 +1,200 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineHealthCheck
+metadata:
+  name: "test1"
+  namespace: "test1-ns"
+  labels:
+    clusterctl.cluster.x-k8s.io: ""
+    clusterctl.cluster.x-k8s.io/move: ""
+spec:
+  clusterName: "test1"
+  maxUnhealthy: "100%"
+  nodeStartupTimeout: "900s"
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: "test1"
+  unhealthyConditions:
+    - type: Ready
+      status: Unknown
+      timeout: "200s"
+    - type: Ready
+      status: "False"
+      timeout: "300s"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: VCDMachineTemplate
+metadata:
+  name: "node-pool-1"
+  namespace: "test1-ns"
+spec:
+  template:
+    spec:
+      catalog: "tkgm_catalog"
+      template: "ubuntu-2004-kube-v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc"
+      sizingPolicy: "TKG small"
+      placementPolicy: ""
+      storageProfile: "*"
+      diskSize: "20Gi"
+      enableNvidiaGPU: false
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: "node-pool-1"
+  namespace: "test1-ns"
+spec:
+  clusterName: "test1"
+  replicas: 1
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: "test1-kct"
+          namespace: "test1-ns"
+      clusterName: "test1"
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+        kind: VCDMachineTemplate
+        name: "node-pool-1"
+        namespace: "test1-ns"
+      version: "v1.25.7+vmware.2"
+---
+
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: "test1"
+  namespace: "test1-ns"
+  labels:
+    cluster-role.tkg.tanzu.vmware.com/management: ""
+    tanzuKubernetesRelease: "v1.25.7---vmware.2-tkg.1"
+    tkg.tanzu.vmware.com/cluster-name: "test1"
+  annotations:
+    osInfo: "ubuntu,20.04,amd64"
+    TKGVERSION: "v2.2.0"
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - "100.96.0.0/11"
+    serviceDomain: cluster.local
+    services:
+      cidrBlocks:
+        - "100.64.0.0/13"
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: "test1-control-plane-node-pool"
+    namespace: "test1-ns"
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: VCDCluster
+    name: "test1"
+    namespace: "test1-ns"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: VCDCluster
+metadata:
+  name: "test1"
+  namespace: "test1-ns"
+spec:
+  site: "https://www.my-vcd-instance.com"
+  org: "tenant_org"
+  ovdc: "tenant_vdc"
+  ovdcNetwork: "tenant_net_routed"
+  useAsManagementCluster: false
+  userContext:
+    secretRef:
+      name: capi-user-credentials
+      namespace: "test1-ns"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+kind: VCDMachineTemplate
+metadata:
+  name: "test1-control-plane-node-pool"
+  namespace: "test1-ns"
+spec:
+  template:
+    spec:
+      catalog: "tkgm_catalog"
+      template: "ubuntu-2004-kube-v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc"
+      sizingPolicy: "TKG small"
+      placementPolicy: ""
+      storageProfile: "*"
+      diskSize: 20Gi
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: "test1-control-plane-node-pool"
+  namespace: "test1-ns"
+spec:
+  kubeadmConfigSpec:
+    preKubeadmCommands:
+      - mv /etc/ssl/certs/custom_certificate_*.crt /usr/local/share/ca-certificates && update-ca-certificates
+    clusterConfiguration:
+      apiServer:
+        certSANs:
+          - localhost
+          - 127.0.0.1
+      controllerManager:
+        extraArgs:
+          enable-hostpath-provisioner: "true"
+      dns:
+        imageRepository: "projects.registry.vmware.com/tkg"
+        imageTag: "v1.9.3_vmware.8"
+      etcd:
+        local:
+          imageRepository: "projects.registry.vmware.com/tkg"
+          imageTag: "v3.5.6_vmware.9"
+      imageRepository: "projects.registry.vmware.com/tkg"
+    users:
+      - name: root
+        sshAuthorizedKeys:
+          - ""
+    initConfiguration:
+      nodeRegistration:
+        criSocket: /run/containerd/containerd.sock
+        kubeletExtraArgs:
+          eviction-hard: nodefs.available<0%%,nodefs.inodesFree<0%%,imagefs.available<0%%
+          cloud-provider: external
+    joinConfiguration:
+      nodeRegistration:
+        criSocket: /run/containerd/containerd.sock
+        kubeletExtraArgs:
+          eviction-hard: nodefs.available<0%%,nodefs.inodesFree<0%%,imagefs.available<0%%
+          cloud-provider: external
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: VCDMachineTemplate
+      name: "test1-control-plane-node-pool"
+      namespace: "test1-ns"
+  replicas: 1
+  version: "v1.25.7+vmware.2"
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: "test1-kct"
+  namespace: "test1-ns"
+spec:
+  template:
+    spec:
+      users:
+        - name: root
+          sshAuthorizedKeys:
+            - ""
+      useExperimentalRetryJoin: true
+      preKubeadmCommands:
+        - mv /etc/ssl/certs/custom_certificate_*.crt /usr/local/share/ca-certificates && update-ca-certificates
+      joinConfiguration:
+        nodeRegistration:
+          criSocket: /run/containerd/containerd.sock
+          kubeletExtraArgs:
+            eviction-hard: nodefs.available<0%%,nodefs.inodesFree<0%%,imagefs.available<0%%
+            cloud-provider: external

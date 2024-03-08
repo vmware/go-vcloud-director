@@ -204,6 +204,10 @@ func hideSensitive(in string, onScreen bool) string {
 	re9 := regexp.MustCompile(`("refresh_token":\s*)"[^"]*`)
 	out = re9.ReplaceAllString(out, `${1}*******`)
 
+	// API Token inside CSE JSON payloads
+	re10 := regexp.MustCompile(`("apiToken":\s*)"[^"]*`)
+	out = re10.ReplaceAllString(out, `${1}*******`)
+
 	return out
 }
 

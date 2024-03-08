@@ -1,4 +1,4 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || cse || ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -23,7 +24,6 @@ import (
 	"time"
 
 	. "gopkg.in/check.v1"
-	"gopkg.in/yaml.v2"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -239,6 +239,17 @@ type TestConfig struct {
 		MediaUdfTypePath string `yaml:"mediaUdfTypePath,omitempty"`
 		UiPluginPath     string `yaml:"uiPluginPath,omitempty"`
 	} `yaml:"media"`
+	Cse struct {
+		Version        string `yaml:"version,omitempty"`
+		SolutionsOrg   string `yaml:"solutionsOrg,omitempty"`
+		TenantOrg      string `yaml:"tenantOrg,omitempty"`
+		TenantVdc      string `yaml:"tenantVdc,omitempty"`
+		RoutedNetwork  string `yaml:"routedNetwork,omitempty"`
+		EdgeGateway    string `yaml:"edgeGateway,omitempty"`
+		StorageProfile string `yaml:"storageProfile,omitempty"`
+		OvaCatalog     string `yaml:"ovaCatalog,omitempty"`
+		OvaName        string `yaml:"ovaName,omitempty"`
+	} `yaml:"cse,omitempty"`
 }
 
 // Test struct for vcloud-director.
