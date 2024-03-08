@@ -925,7 +925,7 @@ func (vm *VM) GetParentVdc() (*Vdc, error) {
 		return nil, fmt.Errorf("could not find parent vApp for VM %s: %s", vm.VM.Name, err)
 	}
 
-	vdc, err := vapp.getParentVDC()
+	vdc, err := vapp.GetParentVDC()
 	if err != nil {
 		return nil, fmt.Errorf("could not find parent vApp for VM %s: %s", vm.VM.Name, err)
 	}

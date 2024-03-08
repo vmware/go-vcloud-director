@@ -600,3 +600,17 @@ func queryCatalogList(client *Client, filterFields map[string]string) ([]*types.
 	util.Logger.Printf("[DEBUG] QueryCatalogList returned with : %#v and error: %s", catalogs, err)
 	return catalogs, nil
 }
+
+// GetVappByHref returns a vApp reference by running a VCD API call
+// If no valid vApp is found, it returns a nil VApp reference and an error
+func (org *Org) GetVAppByHref(vappHref string) (*VApp, error) {
+	newVapp := NewVApp(org.client)
+
+	_, err := org.client.ExecuteRequest(vappHref, http.MethodGet,
+		"", "error retrieving vApp: %s", nil, newVapp.VApp)
+
+	if err != nil {
+		return nil, err
+	}
+	return newVapp, nil
+}

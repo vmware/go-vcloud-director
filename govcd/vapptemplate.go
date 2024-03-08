@@ -6,10 +6,11 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"net/url"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 type VAppTemplate struct {
@@ -362,4 +363,24 @@ func (vAppTemplate *VAppTemplate) GetLease() (*types.LeaseSettingsSection, error
 		return nil, err
 	}
 	return &leaseSettings, nil
+}
+
+// GetCatalogItemHref looks up Href for catalog item in vApp template
+func (vAppTemplate *VAppTemplate) GetCatalogItemHref() (string, error) {
+	for _, link := range vAppTemplate.VAppTemplate.Link {
+		if link.Rel == "catalogItem" && link.Type == types.MimeCatalogItem {
+			return link.HREF, nil
+		}
+	}
+	return "", fmt.Errorf("error finding Catalog Item link in vApp template %s", vAppTemplate.VAppTemplate.ID)
+}
+
+// GetCatalogItemId returns ID for catalog item in vApp template
+func (vAppTemplate *VAppTemplate) GetCatalogItemId() (string, error) {
+	href, err := vAppTemplate.GetCatalogItemHref()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("urn:vcloud:catalogitem:%s", extractUuid(href)), nil
 }
