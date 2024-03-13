@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -12,8 +13,10 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	semver "github.com/hashicorp/go-version"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -98,6 +101,20 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 			util.Logger.Printf("error closing response Body [vcdCloudApiAuthorize]: %s", err)
 		}
 	}(resp.Body)
+
+	// read from resp.Body io.Reader for debug output if it has body
+	var bodyBytes []byte
+	if resp.Body != nil {
+		bodyBytes, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return &http.Response{}, fmt.Errorf("could not read response body: %s", err)
+		}
+		// Restore the io.ReadCloser to its original state with no-op closer
+		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))
+	debugShowResponse(resp, bodyBytes)
 
 	// Catch HTTP 401 (Status Unauthorized) to return an error as otherwise this library would return
 	// odd errors while doing lookup of resources and confuse user.
@@ -347,4 +364,55 @@ func WithIgnoredMetadata(ignoredMetadata []IgnoredMetadata) VCDClientOption {
 		vcdClient.Client.IgnoredMetadata = ignoredMetadata
 		return nil
 	}
+}
+
+// WithVcloudRequestIdFunc enables sending 'X-VMWARE-VCLOUD-CLIENT-REQUEST-ID' header by supplying a
+// function that will return unique value for each time it is executed. The code of this SDK will
+// make sure that the header is populated every time.
+//
+// The X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header must contain only alpha-numeric characters or
+// dashes. The header must contain at least one alpha-numeric character, and VMware Cloud Director
+// shortens it if it's longer than 128 characters long. The X-VMWARE-VCLOUD-REQUEST-ID response
+// header is formed from the first 128 characters of X-VMWARE-VCLOUD-CLIENT-REQUEST-ID, followed by
+// a dash and a random UUID that the server generates. If the X-VMWARE-VCLOUD-CLIENT-REQUEST-ID
+// header is invalid, null, or empty, the X-VMWARE-VCLOUD-REQUEST-ID is a random UUID. VMware Cloud
+// Director adds this value to every VMware Cloud Director, vCenter Server, and ESXi log message
+// related to processing the request, and provides a way to correlate the processing of a request
+// across all participating systems. If a request does not supply a
+// X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header, the response contains an X-VMWARE-VCLOUD-REQUEST-ID
+// header with a generated value that cannot be used for log correlation.
+func WithVcloudRequestIdFunc(vcloudRequestItBuilder func() string) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.RequestIdFunc = vcloudRequestItBuilder
+		return nil
+	}
+}
+
+// VcloudRequestIdBuilderFunc can be used in 'WithVcloudRequestIdFunc'
+// It would populate 'X-Vmware-Vcloud-Client-Request-Id' formatted so: {sequence-number}-UUIDv4
+// (e.g. 1-44c8efac-2489-4d08-98c8-81e2c0f6a7dd)
+func VcloudRequestIdBuilderFunc() string {
+	incrementCounter := requestCounter.inc()
+	return fmt.Sprintf("%d-%s", incrementCounter, uuid.NewString())
+}
+
+func init() {
+	// Initialize global request counter
+	d := apiRequestCount(0)
+	requestCounter = &d
+}
+
+// requestCounter
+var requestCounter *apiRequestCount
+
+type apiRequestCount uint64
+
+// inc increments counter by one and returns new value
+func (c *apiRequestCount) inc() uint64 {
+	return atomic.AddUint64((*uint64)(c), 1)
+}
+
+// get retrieves value
+func (c *apiRequestCount) get() uint64 {
+	return atomic.LoadUint64((*uint64)(c))
 }

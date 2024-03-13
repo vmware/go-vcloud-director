@@ -762,6 +762,7 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 	}
 
 	setHttpUserAgent(client.UserAgent, req)
+	setVcloudClientRequestId(client.RequestIdFunc, req)
 
 	// Avoids passing data if the logging of requests is disabled
 	if util.LogHttpRequest {

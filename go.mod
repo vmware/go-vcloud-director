@@ -13,6 +13,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
+require github.com/google/uuid v1.6.0 // indirect
+
 require (
 	github.com/kr/text v0.1.0 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
