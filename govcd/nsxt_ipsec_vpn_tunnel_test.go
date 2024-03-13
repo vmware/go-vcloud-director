@@ -253,7 +253,7 @@ func (vcd *TestVCD) Test_NsxtIpSecVpnCertificateAuth(check *C) {
 	edge, err := nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
 	check.Assert(err, IsNil)
 
-	// Upload Base64Certificates to use in the test
+	// Upload Certificates to use in the test
 	aliasForPrivateKey := check.TestName() + "cert-with-private-key"
 	privateKeyPassphrase := "test"
 	certificateWithPrivateKeyConfig := &types.CertificateLibraryItem{

@@ -1241,7 +1241,7 @@ type NsxtAlbPool struct {
 	// VirtualServiceRefs holds list of Load Balancer Virtual Services associated with this Load balancer Pool.
 	VirtualServiceRefs []OpenApiReference `json:"virtualServiceRefs,omitempty"`
 
-	// SslEnabled is required when CA Base64Certificates are used starting with API V37.0
+	// SslEnabled is required when CA Certificates are used starting with API V37.0
 	SslEnabled *bool `json:"sslEnabled,omitempty"`
 }
 
