@@ -186,6 +186,7 @@ type vcdKeConfig struct {
 	NodeNotReadyTimeout         string
 	NodeUnknownTimeout          string
 	ContainerRegistryUrl        string
+	Base64Certificates          []string
 }
 
 // cseComponentsVersions is a type that registers the versions of the subcomponents of a specific CSE Version

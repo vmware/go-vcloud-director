@@ -2,6 +2,7 @@ package govcd
 
 import (
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	semver "github.com/hashicorp/go-version"
@@ -878,6 +879,19 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, retrieveMachineHe
 	// We append /tkg as required, even in air-gapped environments:
 	// https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.2/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.2/GUID-B5C19221-2ECA-4DCD-8EA1-8E391F6217C1.html
 	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"])
+
+	k8sConfig, ok := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})
+	if !ok {
+		return result, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'K8Config' object")
+	}
+	certificates, ok := k8sConfig["certificateAuthorities"].([]interface{})
+	if !ok {
+		return result, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'K8Config.certificateAuthorities' object")
+	}
+	result.Base64Certificates = make([]string, len(certificates))
+	for i, certificate := range certificates {
+		result.Base64Certificates[i] = base64.StdEncoding.EncodeToString([]byte(certificate.(string)))
+	}
 
 	if retrieveMachineHealtchCheckInfo {
 		mhc, ok := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"]
