@@ -891,13 +891,12 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, retrieveMachineHe
 	if !ok {
 		return result, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'K8Config' object")
 	}
-	certificates, ok := k8sConfig["certificateAuthorities"].([]interface{})
-	if !ok {
-		return result, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'K8Config.certificateAuthorities' object")
-	}
-	result.Base64Certificates = make([]string, len(certificates))
-	for i, certificate := range certificates {
-		result.Base64Certificates[i] = base64.StdEncoding.EncodeToString([]byte(certificate.(string)))
+	certificates, ok := k8sConfig["certificateAuthorities"]
+	if ok {
+		result.Base64Certificates = make([]string, len(certificates.([]interface{})))
+		for i, certificate := range certificates.([]interface{}) {
+			result.Base64Certificates[i] = base64.StdEncoding.EncodeToString([]byte(certificate.(string)))
+		}
 	}
 
 	if retrieveMachineHealtchCheckInfo {
