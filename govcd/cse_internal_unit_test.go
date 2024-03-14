@@ -174,6 +174,10 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 					NodeNotReadyTimeout:         "300",
 					NodeUnknownTimeout:          "200",
 					ContainerRegistryUrl:        "projects.registry.vmware.com/tkg",
+					Base64Certificates: []string{
+						"Zm9vCg==",
+						"Zm9vMgo=",
+					},
 				},
 				VirtualIpSubnet: "6.7.8.9/24",
 				Owner:           "dummy",
@@ -191,6 +195,42 @@ func Test_cseClusterSettingsInternal_generateCapiYamlAsJsonString(t *testing.T) 
 						doc["spec"].(map[string]interface{})["controlPlaneEndpoint"] = map[string]interface{}{"host": "1.2.3.4"}
 						doc["spec"].(map[string]interface{})["controlPlaneEndpoint"].(map[string]interface{})["port"] = float64(6443)
 						doc["spec"].(map[string]interface{})["loadBalancerConfigSpec"] = map[string]interface{}{"vipSubnet": "6.7.8.9/24"}
+					}
+					if doc["kind"] == "KubeadmControlPlane" {
+						doc["spec"].(map[string]interface{})["kubeadmConfigSpec"].(map[string]interface{})["files"] = []interface{}{
+							map[string]interface{}{
+								"encoding":    "base64",
+								"content":     "Zm9vCg==",
+								"owner":       "root",
+								"permissions": "0644",
+								"path":        "/etc/ssl/certs/custom_certificate_0.crt",
+							},
+							map[string]interface{}{
+								"encoding":    "base64",
+								"content":     "Zm9vMgo=",
+								"owner":       "root",
+								"permissions": "0644",
+								"path":        "/etc/ssl/certs/custom_certificate_1.crt",
+							},
+						}
+					}
+					if doc["kind"] == "KubeadmConfigTemplate" {
+						doc["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["files"] = []interface{}{
+							map[string]interface{}{
+								"encoding":    "base64",
+								"content":     "Zm9vCg==",
+								"owner":       "root",
+								"permissions": "0644",
+								"path":        "/etc/ssl/certs/custom_certificate_0.crt",
+							},
+							map[string]interface{}{
+								"encoding":    "base64",
+								"content":     "Zm9vMgo=",
+								"owner":       "root",
+								"permissions": "0644",
+								"path":        "/etc/ssl/certs/custom_certificate_1.crt",
+							},
+						}
 					}
 					result = append(result, doc)
 				}

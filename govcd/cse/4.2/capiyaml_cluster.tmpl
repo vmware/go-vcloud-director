@@ -79,6 +79,16 @@ spec:
   kubeadmConfigSpec:
     preKubeadmCommands:
       - mv /etc/ssl/certs/custom_certificate_*.crt /usr/local/share/ca-certificates && update-ca-certificates
+    {{- if .Base64Certificates}}
+    files:
+      {{- range $i, $cert := .Base64Certificates}}
+      - encoding: base64
+        content: {{$cert}}
+        owner: root
+        permissions: "0644"
+        path: /etc/ssl/certs/custom_certificate_{{$i}}.crt
+      {{- end}}
+    {{- end}}
     clusterConfiguration:
       apiServer:
         certSANs:
@@ -135,6 +145,16 @@ spec:
       useExperimentalRetryJoin: true
       preKubeadmCommands:
         - mv /etc/ssl/certs/custom_certificate_*.crt /usr/local/share/ca-certificates && update-ca-certificates
+      {{- if .Base64Certificates}}
+      files:
+        {{- range $i, $cert := .Base64Certificates}}
+        - encoding: base64
+          content: {{$cert}}
+          owner: root
+          permissions: "0644"
+          path: /etc/ssl/certs/custom_certificate_{{$i}}.crt
+        {{- end}}
+      {{- end}}
       joinConfiguration:
         nodeRegistration:
           criSocket: /run/containerd/containerd.sock
