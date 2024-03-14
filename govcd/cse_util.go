@@ -225,6 +225,13 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 		if err != nil {
 			return nil, fmt.Errorf("could not read the CSE Version that the cluster uses: %s", err)
 		}
+		// Remove the possible version suffixes as we just want MAJOR.MINOR.PATCH
+		// TODO: This can be replaced with (*cseVersion).Core() in newer versions of the library
+		cseVersionSegs := (*cseVersion).Segments()
+		cseVersion, err = semver.NewVersion(fmt.Sprintf("%d.%d.%d", cseVersionSegs[0], cseVersionSegs[1], cseVersionSegs[2]))
+		if err != nil {
+			return nil, fmt.Errorf("could not read the CSE Version that the cluster uses: %s", err)
+		}
 		result.CseVersion = *cseVersion
 	}
 
