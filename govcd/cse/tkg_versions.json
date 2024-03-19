@@ -115,6 +115,7 @@
   },
   "v1.20.14+vmware.1-tkg.2-5a5027ce2528a6229acb35b38ff8084e": {
     "tkg": "v1.4.3",
+    "tkr": "v1.20.14---vmware.1-tkg.2",
     "etcd": "v3.4.13_vmware.23",
     "coreDns": "v1.7.0_vmware.15"
   },
