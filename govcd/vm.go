@@ -93,6 +93,21 @@ func (vm *VM) GetVirtualHardwareSection() (*types.VirtualHardwareSection, error)
 	return virtualHardwareSection, err
 }
 
+// GetVirtualHardwareSection returns the virtual hardware items attached to a VM
+func (vm *VM) UpdateVirtualHardwareSection(config *types.VirtualHardwareSection) (*types.VirtualHardwareSection, error) {
+	virtualHardwareSection := &types.VirtualHardwareSection{}
+
+	if vm.VM.HREF == "" {
+		return nil, fmt.Errorf("cannot refresh, invalid reference url")
+	}
+
+	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodPut,
+		types.MimeVirtualHardwareSection, "error updating virtual hardware: %s", config, virtualHardwareSection)
+
+	// The request was successful
+	return virtualHardwareSection, err
+}
+
 // GetNetworkConnectionSection returns current networks attached to VM
 //
 // The slice of NICs is not necessarily ordered by NIC index
@@ -2103,4 +2118,34 @@ func (vm *VM) ConsolidateDisks() error {
 		return err
 	}
 	return task.WaitTaskCompletion()
+}
+
+func (vm *VM) ReconfigureAsync(config *types.Vm) (Task, error) {
+	if vm.VM.HREF == "" {
+		return Task{}, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
+	}
+
+	// Since 37.1 there is a Firmware field in VmSpecSection
+	return vm.client.ExecuteTaskRequestWithApiVersion(vm.VM.HREF+"/action/reconfigureVm",
+		http.MethodPost, types.MimeVM, "error reconfiguring VM: %s", config,
+		vm.client.GetSpecificApiVersionOnCondition(">=37.1", "37.1"))
+}
+
+func (vm *VM) Reconfigure(config *types.Vm) (*VM, error) {
+	task, err := vm.ReconfigureAsync(config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vm.Refresh()
+	if err != nil {
+		return nil, err
+	}
+
+	return vm, nil
 }

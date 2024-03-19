@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kr/pretty"
 	. "gopkg.in/check.v1"
 
@@ -2224,4 +2225,57 @@ func (vcd *TestVCD) Test_VmConsolidateDisks(check *C) {
 
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_VmExtraConfig(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	vapp := vcd.findFirstVapp()
+	if vapp.VApp.Name == "" {
+		check.Skip("Disabled: No suitable vApp found in vDC")
+	}
+	vm, vmName := vcd.findFirstVm(vapp)
+	if vm.Name == "" {
+		check.Skip("Disabled: No suitable VM found in vDC")
+	}
+
+	newVM, err := vcd.client.Client.GetVMByHref(vm.HREF)
+	check.Assert(err, IsNil)
+	check.Assert(newVM.VM.Name, Equals, vmName)
+	check.Assert(newVM.VM.VirtualHardwareSection.Item, NotNil)
+
+	//
+
+	// hwhw := &types.VirtualHardwareSection{
+	// 	Item: newVM.VM.VirtualHardwareSection.Item,
+
+	// }
+
+	// a := make([]*types.VmVirtualHardwareSectionExtraConfig, 0)
+
+	// b := &types.VmVirtualHardwareSectionExtraConfig{
+	// 	Key:      "sched.cpu.latencySensitivity",
+	// 	Value:    "high",
+	// 	Required: false,
+	// }
+
+	// c := &types.VmVirtualHardwareSectionExtraConfig{
+	// 	Key:      "sched.cpu.latencySensitivity",
+	// 	Value:    "high",
+	// 	Required: false,
+	// }
+
+	// a = append(a, b)
+	// a = append(a, c)
+
+	// newVM.VM.VirtualHardwareSection.ExtraConfig = a
+
+	hw, err := newVM.Reconfigure(newVM.VM)
+	check.Assert(err, IsNil)
+	check.Assert(hw, NotNil)
+
+	spew.Dump(hw.VM.VirtualHardwareSection.ExtraConfig)
 }
