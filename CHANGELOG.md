@@ -2,25 +2,25 @@
 
 ### FEATURES
 * Added the type `CseKubernetesCluster` to manage Container Service Extension Kubernetes clusters for versions 4.1.0, 4.1.1,
-  4.2.0 and 4.2.1 ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  4.2.0 and 4.2.1 ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added methods `Org.CseCreateKubernetesCluster` and `Org.CseCreateKubernetesClusterAsync` to create Kubernetes clusters
-  in a VCD appliance with Container Service Extension installed ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  in a VCD appliance with Container Service Extension installed ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added methods `VCDClient.CseGetKubernetesClusterById` and `Org.CseGetKubernetesClustersByName` to retrieve a
-  Container Service Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  Container Service Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added the method `CseKubernetesCluster.GetKubeconfig` to retrieve the *kubeconfig* of a provisioned Container Service
-  Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added the method `CseKubernetesCluster.Refresh` to refresh the information and properties of an existing Container
-  Service Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  Service Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added methods to update a Container Service Extension Kubernetes cluster: `CseKubernetesCluster.UpdateWorkerPools`,
   `CseKubernetesCluster.AddWorkerPools`, `CseKubernetesCluster.UpdateControlPlane`, `CseKubernetesCluster.UpgradeCluster`,
-  `CseKubernetesCluster.SetNodeHealthCheck` and `CseKubernetesCluster.SetAutoRepairOnErrors` ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  `CseKubernetesCluster.SetNodeHealthCheck` and `CseKubernetesCluster.SetAutoRepairOnErrors` ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added the method  `CseKubernetesCluster.GetSupportedUpgrades` to retrieve all the valid TKGm OVAs that a given Container
-  Service Extension Kubernetes cluster can use to be upgraded ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
-* Added the method `CseKubernetesCluster.Delete` to delete a cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  Service Extension Kubernetes cluster can use to be upgraded ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added the method `CseKubernetesCluster.Delete` to delete a cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added types `CseClusterSettings`, `CseControlPlaneSettings`, `CseWorkerPoolSettings` and `CseDefaultStorageClassSettings`
-  to configure the Container Service Extension Kubernetes clusters creation process ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  to configure the Container Service Extension Kubernetes clusters creation process ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added types `CseClusterUpdateInput`, `CseControlPlaneUpdateInput` and `CseWorkerPoolUpdateInput` to configure the
-  Container Service Extension Kubernetes clusters update process ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653))
+  Container Service Extension Kubernetes clusters update process ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
 * Added method `client.QueryVmList` to search VMs across VDCs ([#646](https://github.com/vmware/go-vcloud-director/pull/646))
 
 ### IMPROVEMENTS
