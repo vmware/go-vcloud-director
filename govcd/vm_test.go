@@ -8,7 +8,9 @@
 package govcd
 
 import (
+	"encoding/xml"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -2247,6 +2249,127 @@ func (vcd *TestVCD) Test_VmExtraConfig(check *C) {
 	check.Assert(newVM.VM.Name, Equals, vmName)
 	check.Assert(newVM.VM.VirtualHardwareSection.Item, NotNil)
 
+	vmHwSection, err := newVM.GetVirtualHardwareSection()
+	check.Assert(err, IsNil)
+	check.Assert(vmHwSection, NotNil)
+	spew.Dump(vmHwSection)
+
+	type ResponseVirtualHardwareSection struct {
+		// Extends OVF Section_Type
+		XMLName xml.Name `xml:"VirtualHardwareSection"`
+		// Xmlns   string   `xml:"vcloud,attr,omitempty"`
+		Ovf  string `xml:"xmlns:ovf,attr"`
+		Ns4  string `xml:"xmlns:ns4,attr"`
+		Vssd string `xml:"xmlns:vssd,attr"`
+		Rasd string `xml:"xmlns:rasd,attr"`
+		Vmw  string `xml:"xmlns:vmw,attr"`
+		// xmlns:vssd
+
+		Info string `xml:"Info"`
+		HREF string `xml:"href,attr,omitempty"`
+		Type string `xml:"type,attr,omitempty"`
+
+		System []types.InnerXML `xml:"System,omitempty"`
+		Item   []types.InnerXML `xml:"Item,omitempty"`
+
+		ExtraConfigs []*ExtraConfig `xml:"ExtraConfig,omitempty"`
+	}
+
+	type RequestVirtualHardwareSection struct {
+		// Extends OVF Section_Type
+		XMLName xml.Name `xml:"ovf:VirtualHardwareSection"`
+		// Xmlns   string   `xml:"vcloud,attr,omitempty"`
+		Ovf  string `xml:"xmlns:ovf,attr"`
+		Vssd string `xml:"xmlns:vssd,attr"`
+		Rasd string `xml:"xmlns:rasd,attr"`
+		Ns4  string `xml:"xmlns:ns4,attr"`
+		Vmw  string `xml:"xmlns:vmw,attr"`
+		// ovf:Info
+
+		Info   string           `xml:"ovf:Info"`
+		HREF   string           `xml:"href,attr,omitempty"`
+		Type   string           `xml:"type,attr,omitempty"`
+		System []types.InnerXML `xml:"ovf:System,omitempty"`
+		Item   []types.InnerXML `xml:"ovf:Item,omitempty"`
+
+		ExtraConfigs []*ExtraConfigMarshal `xml:"vmw:ExtraConfig,omitempty"`
+	}
+
+	virtualHardwareSection := &ResponseVirtualHardwareSection{}
+
+	// if vm.VM.HREF == "" {
+	// 	return nil, fmt.Errorf("cannot refresh, invalid reference url")
+	// }
+
+	_, err = newVM.client.ExecuteRequest(newVM.VM.HREF+"/virtualHardwareSection/", http.MethodGet, types.MimeVirtualHardwareSection, "error retrieving virtual hardware: %s", nil, virtualHardwareSection)
+
+	check.Assert(err, IsNil)
+
+	// spew.Dump(virtualHardwareSection)
+
+	// virtualHardwareSection := &types.VirtualHardwareSection{}
+
+	// if vm.VM.HREF == "" {
+	// 	return nil, fmt.Errorf("cannot refresh, invalid reference url")
+	// }
+
+	convertedExtraConfig := convertExtraConfig(virtualHardwareSection.ExtraConfigs)
+
+	// b := &ExtraConfigMarshal{
+	// 	Key:      "sched.cpu.latencySensitivity",
+	// 	Value:    "high",
+	// 	Required: false,
+	// }
+	// convertedExtraConfig = append(convertedExtraConfig, b)
+
+	// c := &ExtraConfigMarshal{
+	// 	Key:      "someOtherThing",
+	// 	Value:    "high",
+	// 	Required: false,
+	// }
+	// convertedExtraConfig = append(convertedExtraConfig, c)
+
+	requestVirtualHardwareSection := &RequestVirtualHardwareSection{
+		Info: "Virtual hardware requirements",
+		// Xmlns: virtualHardwareSection.Xmlns,
+		Ovf:  types.XMLNamespaceOVF,
+		Rasd: types.XMLNamespaceRASD,
+		Vssd: types.XMLNamespaceVSSD,
+		Ns4:  types.XMLNamespaceVCloud,
+		Vmw:  types.XMLNamespaceVMW,
+
+		Type:   virtualHardwareSection.Type,
+		System: virtualHardwareSection.System,
+		Item:   virtualHardwareSection.Item,
+
+		ExtraConfigs: convertedExtraConfig,
+	}
+
+	// respVirtualHardwareSection := &ResponseVirtualHardwareSection{}
+
+	// _, err = newVM.client.ExecuteRequest(newVM.VM.HREF+"/virtualHardwareSection/", http.MethodPut,
+	// 	types.MimeVirtualHardwareSection, "error updating virtual hardware: %s", requestVirtualHardwareSection, respVirtualHardwareSection)
+	// check.Assert(err, IsNil)
+
+	task, err := newVM.client.ExecuteTaskRequest(newVM.VM.HREF+"/virtualHardwareSection/", http.MethodPut,
+		types.MimeVirtualHardwareSection, "error updating VM spec section: %s", requestVirtualHardwareSection)
+	check.Assert(err, IsNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	vmHwSection2, err := newVM.GetVirtualHardwareSection()
+	check.Assert(err, IsNil)
+	check.Assert(vmHwSection2, NotNil)
+	spew.Dump(vmHwSection2)
+
+	// spew.Dump(respVirtualHardwareSection)
+	// The request was successful
+	// return virtualHardwareSection, err
+
+	// The request was successful
+	// return virtualHardwareSection, err
+
 	//
 
 	// hwhw := &types.VirtualHardwareSection{
@@ -2273,9 +2396,48 @@ func (vcd *TestVCD) Test_VmExtraConfig(check *C) {
 
 	// newVM.VM.VirtualHardwareSection.ExtraConfig = a
 
-	hw, err := newVM.Reconfigure(newVM.VM)
-	check.Assert(err, IsNil)
-	check.Assert(hw, NotNil)
+	// a := &types.ExtraConfigVirtualHardwareSectionMarshal{}
 
-	spew.Dump(hw.VM.VirtualHardwareSection.ExtraConfig)
+	// newVM.VM.VirtualHardwareSection.
+
+	// asd := &types.ExtraConfigVirtualHardwareSectionMarshal{
+	// 	// NS10:         extraConfigVm.ExtraConfigVirtualHardwareSection.NS10,
+	// 	Items:        convertItemsToMarshalItems(extraConfigVm.ExtraConfigVirtualHardwareSection.Items),
+	// 	Info:         extraConfigVm.ExtraConfigVirtualHardwareSection.Info,
+	// 	ExtraConfigs: newExtraConfig,
+	// }
+
+	// hw, err := newVM.UpdateVirtualHardwareSection(a)
+	// // hw, err := newVM.Reconfigure(newVM.VM)
+	// check.Assert(err, IsNil)
+	// check.Assert(hw, NotNil)
+
+	// spew.Dump(hw.VM.VirtualHardwareSection.ExtraConfig)
+}
+
+func (vcd *TestVCD) Test_VmExtraConfig222(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	vapp := vcd.findFirstVapp()
+	if vapp.VApp.Name == "" {
+		check.Skip("Disabled: No suitable vApp found in vDC")
+	}
+	vm, _ := vcd.findFirstVm(vapp)
+	if vm.Name == "" {
+		check.Skip("Disabled: No suitable VM found in vDC")
+	}
+
+	newVM, err := vcd.client.Client.GetVMByHref(vm.HREF)
+	check.Assert(err, IsNil)
+
+	xtraConfig, err := newVM.GetExtraConfig()
+	check.Assert(err, IsNil)
+	spew.Dump(xtraConfig)
+
+	updatedCfg, err := newVM.UpdateExtraConfig(xtraConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedCfg, NotNil)
 }

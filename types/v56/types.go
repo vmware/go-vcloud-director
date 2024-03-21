@@ -1742,8 +1742,8 @@ type VirtualHardwareSection struct {
 	Type string                 `xml:"type,attr,omitempty"`
 	Item []*VirtualHardwareItem `xml:"Item,omitempty"`
 
-	ExtraConfig []*VmVirtualHardwareSectionExtraConfig `xml:"ExtraConfig,omitempty"`
-	Link        []*Link                                `xml:"Link,omitempty"`
+	// ExtraConfig []*VmVirtualHardwareSectionExtraConfig `xml:"ExtraConfig,omitempty"`
+	// Link        []*Link                                `xml:"Link,omitempty"`
 }
 
 type VmVirtualHardwareSectionExtraConfig struct {
