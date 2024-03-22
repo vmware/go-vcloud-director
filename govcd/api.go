@@ -53,8 +53,8 @@ type Client struct {
 	// "User-Agent: <product> / <product-version> <comment>"
 	UserAgent string
 
-	// RequestIdFunc is a function that would return unique string that would be used for
-	// 'X-Vmware-Vcloud-Client-Request-Id'
+	// RequestIdFunc is a function that would return unique string to be used for
+	// 'X-Vmware-Vcloud-Client-Request-Id' which helps log tracing
 	// Function `WithVcloudRequestIdFunc` contains more details
 	RequestIdFunc func() string
 

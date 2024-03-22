@@ -23,6 +23,12 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+func init() {
+	// Initialize global API request counter that is used by VcloudRequestIdBuilderFunc
+	counter := apiRequestCount(0)
+	requestCounter = &counter
+}
+
 // VCDClientOption defines signature for customizing VCDClient using
 // functional options pattern.
 type VCDClientOption func(*VCDClient) error
@@ -381,6 +387,9 @@ func WithIgnoredMetadata(ignoredMetadata []IgnoredMetadata) VCDClientOption {
 // across all participating systems. If a request does not supply a
 // X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header, the response contains an X-VMWARE-VCLOUD-REQUEST-ID
 // header with a generated value that cannot be used for log correlation.
+//
+// There is a builtin function VcloudRequestIdBuilderFunc that can be used to add sequence number
+// and UUID for each request
 func WithVcloudRequestIdFunc(vcloudRequestItBuilder func() string) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
 		vcdClient.Client.RequestIdFunc = vcloudRequestItBuilder
@@ -396,15 +405,12 @@ func VcloudRequestIdBuilderFunc() string {
 	return fmt.Sprintf("%d-%s", incrementCounter, uuid.NewString())
 }
 
-func init() {
-	// Initialize global request counter
-	d := apiRequestCount(0)
-	requestCounter = &d
-}
-
-// requestCounter
+// requestCounter is used by VcloudRequestIdBuilderFunc
+// it is being initalized to 0 in `init`
 var requestCounter *apiRequestCount
 
+// apiRequestCount is a type used to count number of API calls performed in the code when
+// VcloudRequestIdBuilderFunc is used
 type apiRequestCount uint64
 
 // inc increments counter by one and returns new value
@@ -412,7 +418,7 @@ func (c *apiRequestCount) inc() uint64 {
 	return atomic.AddUint64((*uint64)(c), 1)
 }
 
-// get retrieves value
+// get retrieves current value
 func (c *apiRequestCount) get() uint64 {
 	return atomic.LoadUint64((*uint64)(c))
 }
