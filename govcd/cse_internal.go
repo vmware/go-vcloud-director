@@ -92,7 +92,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		return "", err
 	}
 
-	templateArgs := map[string]string{
+	templateArgs := map[string]interface{}{
 		"ClusterName":                 clusterSettings.Name,
 		"TargetNamespace":             clusterSettings.Name + "-ns",
 		"TkrVersion":                  clusterSettings.TkgVersionBundle.TkrVersion,
@@ -117,6 +117,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		"KubernetesVersion":           clusterSettings.TkgVersionBundle.KubernetesVersion,
 		"SshPublicKey":                clusterSettings.SshPublicKey,
 		"VirtualIpSubnet":             clusterSettings.VirtualIpSubnet,
+		"Base64Certificates":          clusterSettings.VcdKeConfig.Base64Certificates,
 	}
 
 	buf := &bytes.Buffer{}

@@ -2,6 +2,7 @@ package govcd
 
 import (
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	semver "github.com/hashicorp/go-version"
@@ -221,6 +222,13 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 
 	if capvcd.Status.VcdKe.VcdKeVersion != "" {
 		cseVersion, err := semver.NewVersion(capvcd.Status.VcdKe.VcdKeVersion)
+		if err != nil {
+			return nil, fmt.Errorf("could not read the CSE Version that the cluster uses: %s", err)
+		}
+		// Remove the possible version suffixes as we just want MAJOR.MINOR.PATCH
+		// TODO: This can be replaced with (*cseVersion).Core() in newer versions of the library
+		cseVersionSegs := (*cseVersion).Segments()
+		cseVersion, err = semver.NewVersion(fmt.Sprintf("%d.%d.%d", cseVersionSegs[0], cseVersionSegs[1], cseVersionSegs[2]))
 		if err != nil {
 			return nil, fmt.Errorf("could not read the CSE Version that the cluster uses: %s", err)
 		}
@@ -803,7 +811,7 @@ func getTkgVersionBundleFromVAppTemplate(template *types.VAppTemplate) (tkgVersi
 	// We don't need to check the Split result because the map checking above guarantees that the ID is well-formed.
 	idParts := strings.Split(id, "-")
 	result.KubernetesVersion = idParts[0]
-	result.TkrVersion = strings.ReplaceAll(idParts[0], "+", "---") + "-" + idParts[1]
+	result.TkrVersion = versionMap.(map[string]interface{})["tkr"].(string)
 	result.TkgVersion = versionMap.(map[string]interface{})["tkg"].(string)
 	result.EtcdVersion = versionMap.(map[string]interface{})["etcd"].(string)
 	result.CoreDnsVersion = versionMap.(map[string]interface{})["coreDns"].(string)
@@ -878,6 +886,18 @@ func getVcdKeConfig(client *Client, vcdKeConfigVersion string, retrieveMachineHe
 	// We append /tkg as required, even in air-gapped environments:
 	// https://docs.vmware.com/en/VMware-Cloud-Director-Container-Service-Extension/4.2/VMware-Cloud-Director-Container-Service-Extension-Install-provider-4.2/GUID-B5C19221-2ECA-4DCD-8EA1-8E391F6217C1.html
 	result.ContainerRegistryUrl = fmt.Sprintf("%s/tkg", profiles[0].(map[string]interface{})["containerRegistryUrl"])
+
+	k8sConfig, ok := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})
+	if !ok {
+		return result, fmt.Errorf("wrong format of VCDKEConfig RDE contents, expected a 'K8Config' object")
+	}
+	certificates, ok := k8sConfig["certificateAuthorities"]
+	if ok {
+		result.Base64Certificates = make([]string, len(certificates.([]interface{})))
+		for i, certificate := range certificates.([]interface{}) {
+			result.Base64Certificates[i] = base64.StdEncoding.EncodeToString([]byte(certificate.(string)))
+		}
+	}
 
 	if retrieveMachineHealtchCheckInfo {
 		mhc, ok := profiles[0].(map[string]interface{})["K8Config"].(map[string]interface{})["mhc"]
