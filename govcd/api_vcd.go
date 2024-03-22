@@ -417,8 +417,3 @@ type apiRequestCount uint64
 func (c *apiRequestCount) inc() uint64 {
 	return atomic.AddUint64((*uint64)(c), 1)
 }
-
-// get retrieves current value
-func (c *apiRequestCount) get() uint64 {
-	return atomic.LoadUint64((*uint64)(c))
-}
