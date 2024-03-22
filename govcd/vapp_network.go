@@ -9,6 +9,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
+	"strings"
 )
 
 // UpdateNetworkFirewallRules updates vApp networks firewall rules. It will overwrite existing ones as there is
@@ -299,4 +300,49 @@ func (vapp *VApp) RemoveAllNetworkStaticRoutes(networkId string) error {
 		return fmt.Errorf("%s", combinedTaskErrorMessage(task.Task, err))
 	}
 	return nil
+}
+
+// queryVappNetwork returns a list of vApp networks with an optional filter
+func queryVappNetworks(client *Client, values map[string]string) ([]*types.QueryResultVappNetworkRecordType, error) {
+
+	vAppNetworkType := types.QtVappNetwork
+	if client.IsSysAdmin {
+		vAppNetworkType = types.QtAdminVappNetwork
+	}
+
+	params := map[string]string{
+		"type": vAppNetworkType,
+	}
+	filterValue := ""
+	if len(values) > 0 {
+		var filterElements []string
+		for k, v := range values {
+			item := fmt.Sprintf("%s==%s", k, v)
+			filterElements = append(filterElements, item)
+		}
+		filterValue = strings.Join(filterElements, ";")
+	}
+	if filterValue != "" {
+		params["filter"] = filterValue
+	}
+	results, err := client.cumulativeQuery(vAppNetworkType, nil, params)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving vApp networks %s", err)
+	}
+
+	if client.IsSysAdmin {
+		return results.Results.AdminVappNetworkRecord, nil
+	}
+	return results.Results.VappNetworkRecord, nil
+}
+
+// QueryVappNetwork returns all vApp networks visible to the client
+func (client *Client) QueryVappNetworks() ([]*types.QueryResultVappNetworkRecordType, error) {
+	return queryVappNetworks(client, nil)
+}
+
+// QueryVappNetwork returns all vApp networks belonging to the current vApp
+func (vapp *VApp) QueryVappNetworks() ([]*types.QueryResultVappNetworkRecordType, error) {
+	// Note: when querying a field that contains a UUID, the system compares only the UUIDs, even if the full field contains more than that.
+	return queryVappNetworks(vapp.client, map[string]string{"vApp": extractUuid(vapp.VApp.ID)})
 }
