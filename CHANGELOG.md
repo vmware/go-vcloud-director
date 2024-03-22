@@ -1,4 +1,4 @@
-## 2.23.0 (Pending)
+## 2.23.0 (March 22, 2024)
 
 ### FEATURES
 * Added the type `CseKubernetesCluster` to manage Container Service Extension Kubernetes clusters for versions 4.1.0, 4.1.1,
