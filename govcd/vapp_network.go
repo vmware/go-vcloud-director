@@ -302,7 +302,7 @@ func (vapp *VApp) RemoveAllNetworkStaticRoutes(networkId string) error {
 	return nil
 }
 
-// queryVappNetwork returns a list of vApp networks with an optional filter
+// queryVappNetworks returns a list of vApp networks with an optional filter
 func queryVappNetworks(client *Client, values map[string]string) ([]*types.QueryResultVappNetworkRecordType, error) {
 
 	vAppNetworkType := types.QtVappNetwork
@@ -336,13 +336,43 @@ func queryVappNetworks(client *Client, values map[string]string) ([]*types.Query
 	return results.Results.VappNetworkRecord, nil
 }
 
-// QueryVappNetwork returns all vApp networks visible to the client
-func (client *Client) QueryVappNetworks() ([]*types.QueryResultVappNetworkRecordType, error) {
-	return queryVappNetworks(client, nil)
+// QueryVappNetworks returns all vApp networks visible to the client
+func (client *Client) QueryVappNetworks(values map[string]string) ([]*types.QueryResultVappNetworkRecordType, error) {
+	return queryVappNetworks(client, values)
 }
 
-// QueryVappNetwork returns all vApp networks belonging to the current vApp
-func (vapp *VApp) QueryVappNetworks() ([]*types.QueryResultVappNetworkRecordType, error) {
+// QueryAllVappNetworks returns all vApp networks and vApp Org Networks belonging to the current vApp
+func (vapp *VApp) QueryAllVappNetworks(values map[string]string) ([]*types.QueryResultVappNetworkRecordType, error) {
 	// Note: when querying a field that contains a UUID, the system compares only the UUIDs, even if the full field contains more than that.
-	return queryVappNetworks(vapp.client, map[string]string{"vApp": extractUuid(vapp.VApp.ID)})
+	allValues := map[string]string{"vApp": extractUuid(vapp.VApp.ID)}
+	for k, v := range values {
+		allValues[k] = v
+	}
+	return queryVappNetworks(vapp.client, allValues)
+}
+
+// QueryVappNetworks returns all vApp networks belonging to the current vApp
+func (vapp *VApp) QueryVappNetworks(values map[string]string) ([]*types.QueryResultVappNetworkRecordType, error) {
+	// Note: when querying a field that contains a UUID, the system compares only the UUIDs, even if the full field contains more than that.
+	allValues := map[string]string{
+		"vApp":     extractUuid(vapp.VApp.ID),
+		"isLinked": "false",
+	}
+	for k, v := range values {
+		allValues[k] = v
+	}
+	return queryVappNetworks(vapp.client, allValues)
+}
+
+// QueryVappOrgNetworks returns all vApp networks belonging to the current vApp
+func (vapp *VApp) QueryVappOrgNetworks(values map[string]string) ([]*types.QueryResultVappNetworkRecordType, error) {
+	// Note: when querying a field that contains a UUID, the system compares only the UUIDs, even if the full field contains more than that.
+	allValues := map[string]string{
+		"vApp":     extractUuid(vapp.VApp.ID),
+		"isLinked": "true",
+	}
+	for k, v := range values {
+		allValues[k] = v
+	}
+	return queryVappNetworks(vapp.client, allValues)
 }

@@ -386,7 +386,7 @@ func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
 
 func (vcd *TestVCD) Test_QueryVappNetwork(check *C) {
 
-	vappNetworks, err := vcd.client.Client.QueryVappNetworks()
+	vappNetworks, err := vcd.client.Client.QueryVappNetworks(nil)
 	check.Assert(err, IsNil)
 	check.Assert(vappNetworks, NotNil)
 	for i, net := range vappNetworks {
@@ -400,7 +400,7 @@ func (vcd *TestVCD) Test_QueryVappNetwork(check *C) {
 		check.Assert(err, IsNil)
 		vapp, err := vdc.GetVAppByName(TestSetUpSuite, false)
 		check.Assert(err, IsNil)
-		vappNetworks, err = vapp.QueryVappNetworks()
+		vappNetworks, err = vapp.QueryAllVappNetworks(nil)
 		check.Assert(err, IsNil)
 		check.Assert(vappNetworks, NotNil)
 		check.Assert(len(vappNetworks) > 0, Equals, true)
