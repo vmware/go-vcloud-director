@@ -184,3 +184,38 @@ func (vcd *TestVCD) Test_GetVcdVersion(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(result, Equals, false)
 }
+
+func (vcd *TestVCD) TestClient_GetSpecificApiVersionOnCondition(check *C) {
+
+	clientApiVersion := vcd.client.Client.APIVersion
+	maxApiSupportVersion, err := vcd.client.Client.MaxSupportedVersion()
+	check.Assert(err, IsNil)
+
+	fmt.Println("# API minimum required:" + vcd.client.Client.APIVersion)
+	fmt.Println("# API maximum:" + maxApiSupportVersion)
+
+	type args struct {
+		versionCondition string
+		wantedVersion    string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "ClientHigherThanRequired", args: args{versionCondition: ">=32", wantedVersion: "32"}, want: clientApiVersion},
+		{name: "ClientLowerThanRequired", args: args{versionCondition: ">=72.0", wantedVersion: "72.0"}, want: clientApiVersion},
+		{name: "ElevateToMaximumSupported", args: args{versionCondition: ">= " + maxApiSupportVersion, wantedVersion: maxApiSupportVersion}, want: maxApiSupportVersion},
+	}
+
+	for _, tt := range tests {
+		fmt.Printf("## " + tt.name + ": ")
+
+		if got := vcd.client.Client.GetSpecificApiVersionOnCondition(tt.args.versionCondition, tt.args.wantedVersion); got != tt.want {
+			check.Errorf("Client.GetSpecificApiVersionOnCondition() = %v, want %v", got, tt.want)
+		} else {
+			fmt.Printf("Got %s from GetSpecificApiVersionOnCondition(\"%s\", \"%s\")\n",
+				got, tt.args.versionCondition, tt.args.wantedVersion)
+		}
+	}
+}
