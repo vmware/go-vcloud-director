@@ -186,7 +186,6 @@ func (vcd *TestVCD) Test_GetVcdVersion(check *C) {
 }
 
 func (vcd *TestVCD) TestClient_GetSpecificApiVersionOnCondition(check *C) {
-
 	clientApiVersion := vcd.client.Client.APIVersion
 	maxApiSupportVersion, err := vcd.client.Client.MaxSupportedVersion()
 	check.Assert(err, IsNil)
