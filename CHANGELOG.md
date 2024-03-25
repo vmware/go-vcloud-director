@@ -1,6 +1,56 @@
-## 2.23.0 (Unreleased)
+## 2.23.0 (March 22, 2024)
 
-Changes in progress for v2.23.0 are available at [.changes/v2.23.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.23.0) until the release.
+### FEATURES
+* Added the type `CseKubernetesCluster` to manage Container Service Extension Kubernetes clusters for versions 4.1.0, 4.1.1,
+  4.2.0 and 4.2.1 ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added methods `Org.CseCreateKubernetesCluster` and `Org.CseCreateKubernetesClusterAsync` to create Kubernetes clusters
+  in a VCD appliance with Container Service Extension installed ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added methods `VCDClient.CseGetKubernetesClusterById` and `Org.CseGetKubernetesClustersByName` to retrieve a
+  Container Service Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added the method `CseKubernetesCluster.GetKubeconfig` to retrieve the *kubeconfig* of a provisioned Container Service
+  Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added the method `CseKubernetesCluster.Refresh` to refresh the information and properties of an existing Container
+  Service Extension Kubernetes cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added methods to update a Container Service Extension Kubernetes cluster: `CseKubernetesCluster.UpdateWorkerPools`,
+  `CseKubernetesCluster.AddWorkerPools`, `CseKubernetesCluster.UpdateControlPlane`, `CseKubernetesCluster.UpgradeCluster`,
+  `CseKubernetesCluster.SetNodeHealthCheck` and `CseKubernetesCluster.SetAutoRepairOnErrors` ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added the method  `CseKubernetesCluster.GetSupportedUpgrades` to retrieve all the valid TKGm OVAs that a given Container
+  Service Extension Kubernetes cluster can use to be upgraded ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added the method `CseKubernetesCluster.Delete` to delete a cluster ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added types `CseClusterSettings`, `CseControlPlaneSettings`, `CseWorkerPoolSettings` and `CseDefaultStorageClassSettings`
+  to configure the Container Service Extension Kubernetes clusters creation process ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added types `CseClusterUpdateInput`, `CseControlPlaneUpdateInput` and `CseWorkerPoolUpdateInput` to configure the
+  Container Service Extension Kubernetes clusters update process ([#645](https://github.com/vmware/go-vcloud-director/pull/645), [#653](https://github.com/vmware/go-vcloud-director/pull/653), [#655](https://github.com/vmware/go-vcloud-director/pull/655))
+* Added method `client.QueryVmList` to search VMs across VDCs ([#646](https://github.com/vmware/go-vcloud-director/pull/646))
+
+### IMPROVEMENTS
+* Added missing field `vdcName` to `types.QueryResultVMRecordType` ([#646](https://github.com/vmware/go-vcloud-director/pull/646))
+* Added `VCDClient.GetAllIpSpaceFloatingIpSuggestions` and `types.IpSpaceFloatingIpSuggestion` to
+  retrieve IP Space IP suggestions ([#648](https://github.com/vmware/go-vcloud-director/pull/648))
+* Added support for VM disk consolidation using `vm.ConsolidateDisksAsync` and `vm.ConsolidateDisks`
+  ([#650](https://github.com/vmware/go-vcloud-director/pull/650))
+* Added public method `VApp.GetParentVDC` to retrieve parent VDC of vApp (previously it was private)
+  ([#652](https://github.com/vmware/go-vcloud-director/pull/652))
+* Added methods `Catalog.CaptureVappTemplate`, `Catalog.CaptureVappTemplateAsync` and type
+  `types.CaptureVAppParams` that add support for creating catalog template from existing vApp
+  ([#652](https://github.com/vmware/go-vcloud-director/pull/652))
+* Added method `Org.GetVAppByHref` to retrieve a vApp by given HREF ([#652](https://github.com/vmware/go-vcloud-director/pull/652))
+* Added methods `VAppTemplate.GetCatalogItemHref` and `VAppTemplate.GetCatalogItemId` that can return
+  related catalog item ID and HREF ([#652](https://github.com/vmware/go-vcloud-director/pull/652))
+
+### NOTES
+* Removed the conditional API call with outdated API version from `Client.GetStorageProfileByHref` so it works
+  with the newest VCD versions ([#639](https://github.com/vmware/go-vcloud-director/pull/639))
+* Added a delay for all LDAP tests `Test_LDAP` after LDAP configuration, but before using them
+  ([#643](https://github.com/vmware/go-vcloud-director/pull/643))
+ 
+* Added internal generic functions to handle CRUD operations for inner and outer entities ([#644](https://github.com/vmware/go-vcloud-director/pull/644))
+* Added section about OpenAPI CRUD functions to `CODING_GUIDELINES.md` [[#644](https://github.com/vmware/go-vcloud-director/pull/644)] 
+* Converted `DefinedEntityType`, `DefinedEntity`, `DefinedInterface`, `IpSpace`, `IpSpaceUplink`,
+  `DistributedFirewall`, `DistributedFirewallRule`, `NsxtSegmentProfileTemplate`,
+  `GetAllIpDiscoveryProfiles`, `GetAllMacDiscoveryProfiles`, `GetAllSpoofGuardProfiles`,
+  `GetAllQoSProfiles`, `GetAllSegmentSecurityProfiles` to use newly introduced generic CRUD
+  functions ([#644](https://github.com/vmware/go-vcloud-director/pull/644))
 
 ## 2.22.0 (December 12, 2023)
 

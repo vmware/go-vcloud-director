@@ -811,7 +811,7 @@ func getTkgVersionBundleFromVAppTemplate(template *types.VAppTemplate) (tkgVersi
 	// We don't need to check the Split result because the map checking above guarantees that the ID is well-formed.
 	idParts := strings.Split(id, "-")
 	result.KubernetesVersion = idParts[0]
-	result.TkrVersion = strings.ReplaceAll(idParts[0], "+", "---") + "-" + idParts[1]
+	result.TkrVersion = versionMap.(map[string]interface{})["tkr"].(string)
 	result.TkgVersion = versionMap.(map[string]interface{})["tkg"].(string)
 	result.EtcdVersion = versionMap.(map[string]interface{})["etcd"].(string)
 	result.CoreDnsVersion = versionMap.(map[string]interface{})["coreDns"].(string)
