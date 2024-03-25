@@ -8,8 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/kr/pretty"
-
 	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -382,30 +380,4 @@ func (vcd *TestVCD) Test_UpdateNetworkStaticRoutes(check *C) {
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
-}
-
-func (vcd *TestVCD) Test_QueryVappNetwork(check *C) {
-
-	vappNetworks, err := vcd.client.Client.QueryVappNetworks(nil)
-	check.Assert(err, IsNil)
-	check.Assert(vappNetworks, NotNil)
-	for i, net := range vappNetworks {
-		printVerbose("%d %# v\n", i, pretty.Formatter(net))
-	}
-
-	if !skipVappCreation && vcd.config.VCD.Org != "" && vcd.config.VCD.Vdc != "" {
-		org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-		check.Assert(err, IsNil)
-		vdc, err := org.GetVDCByName(vcd.config.VCD.Vdc, false)
-		check.Assert(err, IsNil)
-		vapp, err := vdc.GetVAppByName(TestSetUpSuite, false)
-		check.Assert(err, IsNil)
-		vappNetworks, err = vapp.QueryAllVappNetworks(nil)
-		check.Assert(err, IsNil)
-		check.Assert(vappNetworks, NotNil)
-		check.Assert(len(vappNetworks) > 0, Equals, true)
-		for i, net := range vappNetworks {
-			printVerbose("%d %# v\n", i, pretty.Formatter(net))
-		}
-	}
 }
