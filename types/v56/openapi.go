@@ -107,6 +107,20 @@ type ExternalNetworkV2 struct {
 	// be used to dedicate this external network to the specified Organization.
 	DedicatedOrg *OpenApiReference `json:"dedicatedOrg,omitempty"`
 
+	// NatAndFirewallServiceIntention defines different types of intentions to configure NAT and
+	// firewall rules:
+	// * PROVIDER_GATEWAY - Allow management of NAT and firewall rules only on Provider Gateways.
+	// * EDGE_GATEWAY - Allow management of NAT and firewall rules only on Edge Gateways.
+	// * PROVIDER_AND_EDGE_GATEWAY - Allow management of NAT and firewall rules on both the Provider
+	// and Edge gateways.
+	// This only applies to external networks backed by NSX-T Tier-0 router (i.e. Provider Gateway)
+	// and is unset otherwise. Public Provider Gateway supports only EDGE_GATEWAY_ONLY. All other
+	// values are ignored. Private Provider Gateway can support all the intentions and if unset, the
+	// default is EDGE_GATEWAY_ONLY.
+	//
+	// This field requires VCD 10.5.1+ (API 38.1+)
+	NatAndFirewallServiceIntention string `json:"natAndFirewallServiceIntention,omitempty"`
+
 	// TotalIpCount contains the number of IP addresses defined by the static ip pools. If the
 	// network contains any IPv6 subnets, the total ip count will be null.
 	TotalIpCount *int `json:"totalIpCount,omitempty"`
