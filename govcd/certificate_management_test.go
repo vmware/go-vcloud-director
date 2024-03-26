@@ -9,7 +9,6 @@ package govcd
 import (
 	_ "embed"
 	"fmt"
-
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
 	. "gopkg.in/check.v1"
@@ -38,6 +37,10 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(createdCertificate.CertificateLibrary.Id, Not(Equals), "")
 	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
 	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
+
+	matchesCert, err := createdCertificate.Same(certificate)
+	check.Assert(err, IsNil)
+	check.Assert(matchesCert, Equals, true)
 
 	fetchedCertificate, err := vcd.client.Client.GetCertificateFromLibraryById(createdCertificate.CertificateLibrary.Id)
 	check.Assert(err, IsNil)
@@ -84,6 +87,15 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	allOrgCertificates, err := adminOrg.GetAllCertificatesFromLibrary(nil)
 	check.Assert(err, IsNil)
 	check.Assert(allOrgCertificates, NotNil)
+
+	matchingCertificates, err := vcd.client.Client.MatchingCertificatesInLibrary(certificate)
+	check.Assert(err, IsNil)
+	check.Assert(matchingCertificates, NotNil)
+
+	foundCertificates, err := vcd.client.Client.FoundCertificateInLibrary(certificate)
+	check.Assert(err, IsNil)
+	check.Assert(foundCertificates, Equals, len(matchingCertificates))
+	check.Assert(foundCertificates, Equals, 1)
 
 	if testVerbose {
 		fmt.Printf("(org) how many certificates: %d\n", len(allOrgCertificates))
