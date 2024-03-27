@@ -119,7 +119,7 @@ type ExternalNetworkV2 struct {
 	// This only applies to external networks backed by NSX-T Tier-0 router (i.e. Provider Gateway)
 	// and is unset otherwise. Public Provider Gateway supports only EDGE_GATEWAY_ONLY. All other
 	// values are ignored. Private Provider Gateway can support all the intentions and if unset, the
-	// default is EDGE_GATEWAY_ONLY.
+	// default is EDGE_GATEWAY.
 	//
 	// This field requires VCD 10.5.1+ (API 38.1+)
 	NatAndFirewallServiceIntention string `json:"natAndFirewallServiceIntention,omitempty"`
