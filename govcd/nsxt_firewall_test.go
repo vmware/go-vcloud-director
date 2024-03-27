@@ -5,11 +5,12 @@ package govcd
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	"math/big"
 	"os"
 	"strconv"
 	"text/tabwriter"
+
+	"github.com/vmware/go-vcloud-director/v2/util"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
@@ -57,7 +58,7 @@ func (vcd *TestVCD) Test_NsxtFirewall(check *C) {
 		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].Direction, Equals, randomizedFwRuleDefs[index].Direction)
 		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].IpProtocol, Equals, randomizedFwRuleDefs[index].IpProtocol)
 		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].Enabled, Equals, randomizedFwRuleDefs[index].Enabled)
-		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].Action, Equals, randomizedFwRuleDefs[index].Action)
+		check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].ActionValue, Equals, randomizedFwRuleDefs[index].ActionValue)
 		if vcd.client.Client.IsSysAdmin {
 			// Only system administrator can handle logging
 			check.Assert(fwCreated.NsxtFirewallRuleContainer.UserDefinedRules[index].Logging, Equals, randomizedFwRuleDefs[index].Logging)
@@ -135,7 +136,7 @@ func createFirewallDefinitions(check *C, vcd *TestVCD) []*types.NsxtFirewallRule
 
 		firewallRules[a] = &types.NsxtFirewallRule{
 			Name:                      check.TestName() + strconv.Itoa(a),
-			Action:                    pickRandomString([]string{"ALLOW", "DROP"}),
+			ActionValue:               pickRandomString([]string{"ALLOW", "DROP", "REJECT"}),
 			Enabled:                   a%2 == 0,
 			SourceFirewallGroups:      srcValue,
 			DestinationFirewallGroups: dstValue,
@@ -238,7 +239,7 @@ func dumpFirewallRulesToScreen(rules []*types.NsxtFirewallRule) {
 
 	for _, rule := range rules {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%t\t%s\t%t\t%d\t%d\t%d\n", rule.Name, rule.Direction, rule.IpProtocol,
-			rule.Enabled, rule.Action, rule.Logging, len(rule.SourceFirewallGroups), len(rule.DestinationFirewallGroups), len(rule.ApplicationPortProfiles))
+			rule.Enabled, rule.ActionValue, rule.Logging, len(rule.SourceFirewallGroups), len(rule.DestinationFirewallGroups), len(rule.ApplicationPortProfiles))
 	}
 	err := w.Flush()
 	if err != nil {
