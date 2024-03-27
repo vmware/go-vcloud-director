@@ -156,7 +156,7 @@ var endpointElevatedApiVersions = map[string][]string{
 		"35.0", // Deprecates field BackingType in favor of BackingTypeValue
 		"36.0", // Adds support new type of BackingTypeValue - IMPORTED_T_LOGICAL_SWITCH (backed by NSX-T segment)
 		"37.1", // Adds support for IP Spaces with new fields - UsingIpSpace, DedicatedOrg
-		"38.1", // Adds support for NAT and Firewall rule intentions - NatAndFirewallServiceIntention
+		"38.1", // Adds support for NAT, Firewall and Route Advertisement intention configuration
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules: {
 		//"35.0", // Basic minimum required version

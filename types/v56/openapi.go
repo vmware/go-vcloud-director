@@ -110,9 +110,12 @@ type ExternalNetworkV2 struct {
 	// NatAndFirewallServiceIntention defines different types of intentions to configure NAT and
 	// firewall rules:
 	// * PROVIDER_GATEWAY - Allow management of NAT and firewall rules only on Provider Gateways.
+	//
 	// * EDGE_GATEWAY - Allow management of NAT and firewall rules only on Edge Gateways.
+	//
 	// * PROVIDER_AND_EDGE_GATEWAY - Allow management of NAT and firewall rules on both the Provider
 	// and Edge gateways.
+	//
 	// This only applies to external networks backed by NSX-T Tier-0 router (i.e. Provider Gateway)
 	// and is unset otherwise. Public Provider Gateway supports only EDGE_GATEWAY_ONLY. All other
 	// values are ignored. Private Provider Gateway can support all the intentions and if unset, the
@@ -120,6 +123,33 @@ type ExternalNetworkV2 struct {
 	//
 	// This field requires VCD 10.5.1+ (API 38.1+)
 	NatAndFirewallServiceIntention string `json:"natAndFirewallServiceIntention,omitempty"`
+
+	// NetworkRouteAdvertisementIntention configures different types of route advertisement
+	// intentions for routed Org VDC network connected to Edge Gateway that is connected to this
+	// Provider Gateway. Possible values are:
+	//
+	// * IP_SPACE_UPLINKS_ADVERTISED_STRICT - All networks within IP Space associated with IP Space
+	// Uplink will be advertised by default. This can be changed on an individual network level
+	// later, if necessary. All other networks outside of IP Spaces associated with IP Space Uplinks
+	// cannot be configured to be advertised.
+	//
+	// * IP_SPACE_UPLINKS_ADVERTISED_FLEXIBLE - All networks within IP Space associated with IP
+	// Space Uplink will be advertised by default. This can be changed on an individual network
+	// level later, if necessary. All other networks outside of IP Spaces associated with IP Space
+	// Uplinks are not advertised by default but can be configured to be advertised after creation.
+	//
+	// * ALL_NETWORKS_ADVERTISED - All networks, regardless on whether they fall inside of any IP
+	// Spaces associated with IP Space Uplinks, will be advertised by default. This can be changed
+	// on an individual network level later, if necessary.
+	//
+	// This only applies to external networks backed by NSX-T Tier-0 router (i.e. Provider Gateway)
+	// and is unset otherwise. Public Provider Gateway supports only
+	// IP_SPACE_UPLINKS_ADVERTISED_STRICT. All other values are ignored. Private Provider Gateway
+	// can support all the intentions and if unset, the default is also
+	// IP_SPACE_UPLINKS_ADVERTISED_STRICT.
+	//
+	// This field requires VCD 10.5.1+ (API 38.1+)
+	NetworkRouteAdvertisementIntention string `json:"networkRouteAdvertisementIntention,omitempty"`
 
 	// TotalIpCount contains the number of IP addresses defined by the static ip pools. If the
 	// network contains any IPv6 subnets, the total ip count will be null.
