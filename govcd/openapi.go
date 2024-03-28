@@ -548,6 +548,13 @@ func (client *Client) OpenApiDeleteItem(apiVersion string, urlRef *url.URL, para
 		return err
 	}
 
+	bodyBytes, err := rewrapRespBodyNoopCloser(resp)
+	if err != nil {
+		return err
+	}
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))
+	debugShowResponse(resp, bodyBytes)
+
 	// resp is ignored below because it would be the same as above
 	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.OpenApiError{})
 	if err != nil {

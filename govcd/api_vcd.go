@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -109,16 +110,10 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 	}(resp.Body)
 
 	// read from resp.Body io.Reader for debug output if it has body
-	var bodyBytes []byte
-	if resp.Body != nil {
-		bodyBytes, err = io.ReadAll(resp.Body)
-		if err != nil {
-			return &http.Response{}, fmt.Errorf("could not read response body: %s", err)
-		}
-		// Restore the io.ReadCloser to its original state with no-op closer
-		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	bodyBytes, err := rewrapRespBodyNoopCloser(resp)
+	if err != nil {
+		return resp, err
 	}
-
 	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))
 	debugShowResponse(resp, bodyBytes)
 
@@ -424,5 +419,23 @@ type apiRequestCount uint64
 
 // inc increments counter by one and returns new value
 func (c *apiRequestCount) inc() uint64 {
+	// prevent overflowing counter
+	if *c == math.MaxUint64 {
+		*c = 0
+	}
 	return atomic.AddUint64((*uint64)(c), 1)
+}
+
+func rewrapRespBodyNoopCloser(resp *http.Response) ([]byte, error) {
+	var bodyBytes []byte
+	if resp.Body != nil {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return bodyBytes, fmt.Errorf("could not read response body: %s", err)
+		}
+		// Restore the io.ReadCloser to its original state with no-op closer
+		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
+	return bodyBytes, nil
 }

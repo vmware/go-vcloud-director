@@ -1178,11 +1178,11 @@ func (vcd *TestVCD) Test_CatalogAccessAsOrgUsers(check *C) {
 	}
 	check.Assert(err, IsNil)
 	check.Assert(org2AsSystem, NotNil)
-	vcdClient1 := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	vcdClient1 := newVCDClient(vcd.client.Client.VCDHREF, true)
 	err = vcdClient1.Authenticate(user1Name, password1, org1Name)
 	check.Assert(err, IsNil)
 
-	vcdClient2 := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	vcdClient2 := newVCDClient(vcd.client.Client.VCDHREF, true)
 	err = vcdClient2.Authenticate(user2Name, password2, org2Name)
 	check.Assert(err, IsNil)
 
@@ -1323,11 +1323,11 @@ func (vcd *TestVCD) Test_CatalogAccessAsOrgUsersReadOnly(check *C) {
 	user2Name := vcd.config.Tenants[1].User
 	password2 := vcd.config.Tenants[1].Password
 
-	vcdClient1 := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	vcdClient1 := newVCDClient(vcd.client.Client.VCDHREF, true)
 	err := vcdClient1.Authenticate(user1Name, password1, org1Name)
 	check.Assert(err, IsNil)
 
-	vcdClient2 := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	vcdClient2 := newVCDClient(vcd.client.Client.VCDHREF, true)
 	err = vcdClient2.Authenticate(user2Name, password2, org2Name)
 	check.Assert(err, IsNil)
 
