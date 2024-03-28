@@ -5,20 +5,30 @@
 package govcd
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	semver "github.com/hashicorp/go-version"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
+
+func init() {
+	// Initialize global API request counter that is used by VcloudRequestIdBuilderFunc
+	counter := apiRequestCount(0)
+	requestCounter = &counter
+}
 
 // VCDClientOption defines signature for customizing VCDClient using
 // functional options pattern.
@@ -98,6 +108,14 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 			util.Logger.Printf("error closing response Body [vcdCloudApiAuthorize]: %s", err)
 		}
 	}(resp.Body)
+
+	// read from resp.Body io.Reader for debug output if it has body
+	bodyBytes, err := rewrapRespBodyNoopCloser(resp)
+	if err != nil {
+		return resp, err
+	}
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))
+	debugShowResponse(resp, bodyBytes)
 
 	// Catch HTTP 401 (Status Unauthorized) to return an error as otherwise this library would return
 	// odd errors while doing lookup of resources and confuse user.
@@ -347,4 +365,77 @@ func WithIgnoredMetadata(ignoredMetadata []IgnoredMetadata) VCDClientOption {
 		vcdClient.Client.IgnoredMetadata = ignoredMetadata
 		return nil
 	}
+}
+
+// WithVcloudRequestIdFunc enables sending 'X-VMWARE-VCLOUD-CLIENT-REQUEST-ID' header by supplying a
+// function that will return unique value for each time it is executed. The code of this SDK will
+// make sure that the header is populated every time.
+//
+// The X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header must contain only alpha-numeric characters or
+// dashes. The header must contain at least one alpha-numeric character, and VMware Cloud Director
+// shortens it if it's longer than 128 characters long. The X-VMWARE-VCLOUD-REQUEST-ID response
+// header is formed from the first 128 characters of X-VMWARE-VCLOUD-CLIENT-REQUEST-ID, followed by
+// a dash and a random UUID that the server generates. If the X-VMWARE-VCLOUD-CLIENT-REQUEST-ID
+// header is invalid, null, or empty, the X-VMWARE-VCLOUD-REQUEST-ID is a random UUID. VMware Cloud
+// Director adds this value to every VMware Cloud Director, vCenter Server, and ESXi log message
+// related to processing the request, and provides a way to correlate the processing of a request
+// across all participating systems. If a request does not supply a
+// X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header, the response contains an X-VMWARE-VCLOUD-REQUEST-ID
+// header with a generated value that cannot be used for log correlation.
+//
+// There is a builtin function VcloudRequestIdBuilderFunc that can be used to add sequence number
+// and UUID for each request
+func WithVcloudRequestIdFunc(vcloudRequestItBuilder func() string) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.RequestIdFunc = vcloudRequestItBuilder
+		return nil
+	}
+}
+
+// VcloudRequestIdBuilderFunc can be used in 'WithVcloudRequestIdFunc'
+// It would populate 'X-Vmware-Vcloud-Client-Request-Id' formatted so: {sequence-number}-UUIDv4
+// (e.g. 1-44c8efac-2489-4d08-98c8-81e2c0f6a7dd)
+func VcloudRequestIdBuilderFunc() string {
+	incrementCounter := requestCounter.inc()
+	var uuidString string
+	genUuid, err := uuid.NewRandom()
+	// It is very unlikelly that uuid ever returns an error, but if it does
+	// we will have sequence number followed by UUID of all zeroes.
+	if err != nil {
+		uuidString = "00000000-0000-0000-0000-000000000000"
+	}
+	uuidString = genUuid.String()
+
+	return fmt.Sprintf("%d-%s", incrementCounter, uuidString)
+}
+
+// requestCounter is used by VcloudRequestIdBuilderFunc
+// it is being initalized to 0 in `init`
+var requestCounter *apiRequestCount
+
+// apiRequestCount is a type used to count number of API calls performed in the code when
+// VcloudRequestIdBuilderFunc is used
+type apiRequestCount uint64
+
+// inc increments counter by one and returns new value
+func (c *apiRequestCount) inc() uint64 {
+	// prevent overflowing counter
+	if *c == math.MaxUint64 {
+		*c = 0
+	}
+	return atomic.AddUint64((*uint64)(c), 1)
+}
+
+func rewrapRespBodyNoopCloser(resp *http.Response) ([]byte, error) {
+	var bodyBytes []byte
+	if resp.Body != nil {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return bodyBytes, fmt.Errorf("could not read response body: %s", err)
+		}
+		// Restore the io.ReadCloser to its original state with no-op closer
+		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
+	return bodyBytes, nil
 }

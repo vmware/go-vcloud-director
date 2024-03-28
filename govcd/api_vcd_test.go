@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,6 +21,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	. "gopkg.in/check.v1"
 
@@ -313,6 +314,12 @@ var ignoreCleanupFile bool
 var connectAsOrgUser bool
 var connectTenantNum int
 
+// newVCDClient initializes NewVCDClient for testing purposes with additional settings
+func newVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
+	options = append(options, WithVcloudRequestIdFunc(VcloudRequestIdBuilderFunc))
+	return NewVCDClient(vcdEndpoint, insecure, options...)
+}
+
 // Makes the name for the cleanup entities persistent file
 // Using a name for each vCD allows us to run tests with different servers
 // and persist the cleanup list for all.
@@ -527,7 +534,7 @@ func GetTestVCDFromYaml(testConfig TestConfig, options ...VCDClientOption) (*VCD
 		options = append(options, WithSamlAdfs(true, testConfig.Provider.CustomAdfsRptId))
 	}
 
-	return NewVCDClient(*configUrl, true, options...), nil
+	return newVCDClient(*configUrl, true, options...), nil
 }
 
 // Necessary to enable the suite tests with TestVCD
@@ -1918,6 +1925,12 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 
 	check.Assert(resp.Header.Get("Content-Type"), Equals, types.MimeQueryRecords+";version="+apiVersion)
 
+	bodyBytes, err := rewrapRespBodyNoopCloser(resp)
+	check.Assert(err, IsNil)
+
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))
+	debugShowResponse(resp, bodyBytes)
+
 	// Repeats the call without API version change
 	req = vcd.client.Client.NewRequestWitNotEncodedParams(nil, map[string]string{"type": "media",
 		"filter": "name==any"}, http.MethodGet, queryUlr, nil)
@@ -1927,6 +1940,11 @@ func (vcd *TestVCD) Test_NewRequestWitNotEncodedParamsWithApiVersion(check *C) {
 
 	// Checks that the regularAPI version was not affected by the previous call
 	check.Assert(resp.Header.Get("Content-Type"), Equals, types.MimeQueryRecords+";version="+vcd.client.Client.APIVersion)
+
+	bodyBytes, err = rewrapRespBodyNoopCloser(resp)
+	check.Assert(err, IsNil)
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))
+	debugShowResponse(resp, bodyBytes)
 
 	fmt.Printf("Test: %s run with api Version: %s\n", check.TestName(), apiVersion)
 }
@@ -2078,7 +2096,7 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 	AddToCleanupList(userName, "user", adminOrg.AdminOrg.Name, "newOrgUserConnection")
 
 	_ = adminOrg.Refresh()
-	vcdClient := NewVCDClient(*u, insecure)
+	vcdClient := newVCDClient(*u, insecure)
 	err = vcdClient.Authenticate(userName, password, adminOrg.AdminOrg.Name)
 	if err != nil {
 		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to authenticate: %s", err)

@@ -140,7 +140,7 @@ func (vcd *TestVCD) Test_GetFilteredTokensOrg(check *C) {
 	userName := vcd.config.Tenants[0].User
 	password := vcd.config.Tenants[0].Password
 
-	vcdClient1 := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	vcdClient1 := newVCDClient(vcd.client.Client.VCDHREF, true)
 	err = vcdClient1.Authenticate(userName, password, orgName)
 	check.Assert(err, IsNil)
 

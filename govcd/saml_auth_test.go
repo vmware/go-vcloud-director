@@ -38,7 +38,7 @@ func (vcd *TestVCD) Test_SamlAdfsAuth(check *C) {
 	check.Assert(err, IsNil)
 
 	// Get new vCD session and client using specifically SAML credentials
-	samlVcdCli := NewVCDClient(vcd.client.Client.VCDHREF, true,
+	samlVcdCli := newVCDClient(vcd.client.Client.VCDHREF, true,
 		WithSamlAdfs(true, cfg.Provider.SamlCustomRptId))
 	err = samlVcdCli.Authenticate(cfg.Provider.SamlUser, cfg.Provider.SamlPassword, cfg.VCD.Org)
 	check.Assert(err, IsNil)
@@ -57,7 +57,7 @@ func (vcd *TestVCD) Test_SamlAdfsAuth(check *C) {
 		samlEntityId, err := getSamlEntityId(vcd.client, cfg.VCD.Org)
 		check.Assert(err, IsNil)
 
-		samlCustomRptVcdCli := NewVCDClient(vcd.client.Client.VCDHREF, true,
+		samlCustomRptVcdCli := newVCDClient(vcd.client.Client.VCDHREF, true,
 			WithSamlAdfs(true, samlEntityId))
 		err = samlCustomRptVcdCli.Authenticate(cfg.Provider.SamlUser, cfg.Provider.SamlPassword, cfg.VCD.Org)
 		check.Assert(err, IsNil)
