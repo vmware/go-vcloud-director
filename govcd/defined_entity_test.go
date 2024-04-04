@@ -38,7 +38,7 @@ func (vcd *TestVCD) Test_RdeAndRdeType(check *C) {
 
 	// Creates the clients for the System admin and the Tenant user
 	systemAdministratorClient := vcd.client
-	tenantUserClient := newVCDClient(vcd.client.Client.VCDHREF, true)
+	tenantUserClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
 	err := tenantUserClient.Authenticate(vcd.config.Tenants[0].User, vcd.config.Tenants[0].Password, vcd.config.Tenants[0].SysOrg)
 	check.Assert(err, IsNil)
 

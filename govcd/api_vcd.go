@@ -172,6 +172,12 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 		},
 	}
 
+	// Attach function that will generate unique 'X-VMWARE-VCLOUD-CLIENT-REQUEST-ID' headers for
+	// each request unless it is specifically disabled
+	if os.Getenv("GOVCD_SKIP_LOG_TRACING") == "" {
+		vcdClient.Client.RequestIdFunc = VcloudRequestIdBuilderFunc
+	}
+
 	// Override defaults with functional options
 	for _, option := range options {
 		err := option(vcdClient)
