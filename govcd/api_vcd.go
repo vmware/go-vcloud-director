@@ -399,20 +399,20 @@ func WithVcloudRequestIdFunc(vcloudRequestItBuilder func() string) VCDClientOpti
 }
 
 // VcloudRequestIdBuilderFunc can be used in 'WithVcloudRequestIdFunc'
-// It would populate 'X-Vmware-Vcloud-Client-Request-Id' formatted so: {sequence-number}-UUIDv4
+// It would populate 'X-Vmware-Vcloud-Client-Request-Id' formatted so: {sequence-number}-UUIDv4-
 // (e.g. 1-44c8efac-2489-4d08-98c8-81e2c0f6a7dd)
 func VcloudRequestIdBuilderFunc() string {
 	incrementCounter := requestCounter.inc()
 	var uuidString string
 	genUuid, err := uuid.NewRandom()
-	// It is very unlikelly that uuid ever returns an error, but if it does
-	// we will have sequence number followed by UUID of all zeroes.
+	// It is very unlikelly that uuid ever returns an error, but if it does - we can simply return
+	// a sequence number
 	if err != nil {
-		uuidString = "00000000-0000-0000-0000-000000000000"
+		return fmt.Sprintf("%d-", incrementCounter)
 	}
 	uuidString = genUuid.String()
 
-	return fmt.Sprintf("%d-%s", incrementCounter, uuidString)
+	return fmt.Sprintf("%d-%s-", incrementCounter, uuidString)
 }
 
 // requestCounter is used by VcloudRequestIdBuilderFunc
