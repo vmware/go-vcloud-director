@@ -17,7 +17,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/uuid"
 	semver "github.com/hashicorp/go-version"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -399,20 +398,17 @@ func WithVcloudRequestIdFunc(vcloudRequestItBuilder func() string) VCDClientOpti
 }
 
 // VcloudRequestIdBuilderFunc can be used in 'WithVcloudRequestIdFunc'
-// It would populate 'X-Vmware-Vcloud-Client-Request-Id' formatted so: {sequence-number}-UUIDv4-
-// (e.g. 1-44c8efac-2489-4d08-98c8-81e2c0f6a7dd)
+// It would populate 'X-Vmware-Vcloud-Client-Request-Id' formatted so:
+// {sequence-number}-{date-time-hyphen-separated}
+// (e.g. 1-2024-04-13-01-58-25-733-)
 func VcloudRequestIdBuilderFunc() string {
 	incrementCounter := requestCounter.inc()
-	var uuidString string
-	genUuid, err := uuid.NewRandom()
-	// It is very unlikelly that uuid ever returns an error, but if it does - we can simply return
-	// a sequence number
-	if err != nil {
-		return fmt.Sprintf("%d-", incrementCounter)
-	}
-	uuidString = genUuid.String()
 
-	return fmt.Sprintf("%d-%s-", incrementCounter, uuidString)
+	timeNow := time.Now()
+	// milliseconds include a "." by default that is not allowed in header so it is replaced with hyphen
+	// Sample time is "2024-04-13-01-58-25-733"
+	timeString := strings.ReplaceAll(timeNow.Format("2006-01-15-03-04-05.000"), ".", "-")
+	return fmt.Sprintf("%d-%s-", incrementCounter, timeString)
 }
 
 // requestCounter is used by VcloudRequestIdBuilderFunc

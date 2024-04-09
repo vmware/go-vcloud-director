@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/araddon/dateparse v0.0.0-20190622164848-0fb0a474d195
 	github.com/davecgh/go-spew v1.1.0
-	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.2.0
 	github.com/kr/pretty v0.2.1
 	github.com/peterhellberg/link v1.1.0
