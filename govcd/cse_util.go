@@ -832,35 +832,46 @@ func (tkgVersions tkgVersionBundle) compareTkgVersion(tkgVersion string) int {
 	return receiverVersion.Compare(inputVersion)
 }
 
-// kubernetesVersionIsOneMinorHigher returns true only if the receiver Kubernetes version is exactly one minor version higher
+// kubernetesVersionIsUpgradeableFrom returns true only if the receiver Kubernetes version is exactly one minor version higher
 // than the given input version, being the minor digit the 'Y' in 'X.Y.Z'.
 // Any malformed version returns false.
 // Examples:
-// * "1.19.2".kubernetesVersionIsOneMinorHigher("1.18.7") = true
-// * "1.19.10".kubernetesVersionIsOneMinorHigher("1.18.0") = true
-// * "1.20.2".kubernetesVersionIsOneMinorHigher("1.18.7") = false
-// * "1.21.2".kubernetesVersionIsOneMinorHigher("1.18.7") = false
-// * "1.18.0".kubernetesVersionIsOneMinorHigher("1.18.7") = false
-func (tkgVersions tkgVersionBundle) kubernetesVersionIsOneMinorHigher(kubernetesVersion string) bool {
-	receiverVersion, err := semver.NewVersion(tkgVersions.KubernetesVersion)
+// * "1.19.2".kubernetesVersionIsUpgradeableFrom("1.18.7") = true
+// * "1.19.2".kubernetesVersionIsUpgradeableFrom("1.19.2") = false
+// * "1.19.2".kubernetesVersionIsUpgradeableFrom("1.19.0") = true
+// * "1.19.10".kubernetesVersionIsUpgradeableFrom("1.18.0") = true
+// * "1.20.2".kubernetesVersionIsUpgradeableFrom("1.18.7") = false
+// * "1.21.2".kubernetesVersionIsUpgradeableFrom("1.18.7") = false
+// * "1.18.0".kubernetesVersionIsUpgradeableFrom("1.18.7") = false
+func (tkgVersions tkgVersionBundle) kubernetesVersionIsUpgradeableFrom(kubernetesVersion string) bool {
+	upgradeToVersion, err := semver.NewVersion(tkgVersions.KubernetesVersion)
 	if err != nil {
 		return false
 	}
-	inputVersion, err := semver.NewVersion(kubernetesVersion)
+	fromVersion, err := semver.NewVersion(kubernetesVersion)
 	if err != nil {
 		return false
 	}
 
-	receiverVersionSegments := receiverVersion.Segments()
-	if len(receiverVersionSegments) < 2 {
-		return false
-	}
-	inputSegments := inputVersion.Segments()
-	if len(inputSegments) < 2 {
+	if upgradeToVersion.Equal(fromVersion) {
 		return false
 	}
 
-	return receiverVersionSegments[0] == inputSegments[0] && receiverVersionSegments[1]-1 == inputSegments[1]
+	upgradeToVersionSegments := upgradeToVersion.Segments()
+	if len(upgradeToVersionSegments) < 2 {
+		return false
+	}
+	fromVersionSegments := fromVersion.Segments()
+	if len(fromVersionSegments) < 2 {
+		return false
+	}
+
+	majorIsEqual := upgradeToVersionSegments[0] == fromVersionSegments[0]
+	minorIsJustOneHigher := upgradeToVersionSegments[1]-1 == fromVersionSegments[1]
+	minorIsEqual := upgradeToVersionSegments[1] == fromVersionSegments[1]
+	patchIsHigher := upgradeToVersionSegments[2] > fromVersionSegments[2]
+
+	return majorIsEqual && (minorIsJustOneHigher || (minorIsEqual && patchIsHigher))
 }
 
 // getVcdKeConfig gets the required information from the CSE Server configuration RDE (VCDKEConfig), such as the
