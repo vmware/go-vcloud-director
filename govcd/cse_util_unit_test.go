@@ -235,7 +235,7 @@ func Test_tkgVersionBundle_compareTkgVersion(t *testing.T) {
 				TkgVersion: tt.receiverTkgVersion,
 			}
 			if got := tkgVersions.compareTkgVersion(tt.comparedTkgVersion); got != tt.want {
-				t.Errorf("kubernetesVersionIsUpgradeableFrom() = %v, want %v", got, tt.want)
+				t.Errorf("compareTkgVersion() = %v, want %v", got, tt.want)
 			}
 		})
 	}
