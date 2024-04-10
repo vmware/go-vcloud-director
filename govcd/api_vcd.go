@@ -389,7 +389,7 @@ func WithIgnoredMetadata(ignoredMetadata []IgnoredMetadata) VCDClientOption {
 // header with a generated value that cannot be used for log correlation.
 //
 // There is a builtin function VcloudRequestIdBuilderFunc that can be used to add sequence number
-// and UUID for each request
+// and time-id for each request
 func WithVcloudRequestIdFunc(vcloudRequestItBuilder func() string) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
 		vcdClient.Client.RequestIdFunc = vcloudRequestItBuilder
