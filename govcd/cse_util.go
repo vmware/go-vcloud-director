@@ -832,8 +832,9 @@ func (tkgVersions tkgVersionBundle) compareTkgVersion(tkgVersion string) int {
 	return receiverVersion.Compare(inputVersion)
 }
 
-// kubernetesVersionIsUpgradeableFrom returns true only if the receiver Kubernetes version is exactly one minor version higher
-// than the given input version, being the minor digit the 'Y' in 'X.Y.Z'.
+// kubernetesVersionIsUpgradeableFrom returns true either if the receiver Kubernetes version is exactly one minor version higher
+// than the given input version (being the minor digit the 'Y' in 'X.Y.Z') or if the minor is the same, but the patch is higher
+// (being the minor digit the 'Z' in 'X.Y.Z').
 // Any malformed version returns false.
 // Examples:
 // * "1.19.2".kubernetesVersionIsUpgradeableFrom("1.18.7") = true
