@@ -7,9 +7,10 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 const (
@@ -478,6 +479,17 @@ func (rde *DefinedEntity) Resolve() error {
 		return amendRdeApiError(client, err)
 	}
 	rde.Etag = headers.Get("Etag")
+
+	return nil
+}
+
+func (rde *DefinedEntity) Refresh() error {
+	client := rde.client
+
+	rde, err := getRdeById(client, rde.DefinedEntity.ID)
+	if err != nil {
+		return fmt.Errorf("error refreshing RDE: %s", err)
+	}
 
 	return nil
 }
