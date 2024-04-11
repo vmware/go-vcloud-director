@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,6 +21,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	. "gopkg.in/check.v1"
 
@@ -198,6 +199,7 @@ type TestConfig struct {
 			VdcGroupEdgeGateway       string `yaml:"vdcGroupEdgeGateway"`
 			NsxtEdgeCluster           string `yaml:"nsxtEdgeCluster"`
 			RoutedNetwork             string `yaml:"routedNetwork"`
+			IsolatedNetwork           string `yaml:"isolatedNetwork"`
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
