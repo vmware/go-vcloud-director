@@ -407,7 +407,7 @@ func VcloudRequestIdBuilderFunc() string {
 	timeNow := time.Now()
 	// milliseconds include a "." by default that is not allowed in header so it is replaced with hyphen
 	// Sample time is "2024-04-13-01-58-25-733"
-	timeString := strings.ReplaceAll(timeNow.Format("2006-01-15-03-04-05.000"), ".", "-")
+	timeString := strings.ReplaceAll(timeNow.Format("2006-01-02-15-04-05.000"), ".", "-")
 	return fmt.Sprintf("%d-%s-", incrementCounter, timeString)
 }
 
