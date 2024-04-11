@@ -21,7 +21,7 @@
     "tkg": "v2.5.0",
     "tkr": "v1.26.11---vmware.1-tkg.1-rc.5",
     "etcd": "v3.5.10_vmware.1",
-    "coreDns": "v1.9.3_vmware.19"
+    "coreDns": "v1.10.1_vmware.12"
   },
   "v1.26.8+vmware.1-tkg.1-b8c57a6c8c98d227f74e7b1a9eef27st": {
     "tkg": "v2.4.0",
@@ -39,7 +39,7 @@
     "tkg": "v2.4.0",
     "tkr": "v1.25.13---vmware.1-tkg.1",
     "etcd": "v3.5.6_vmware.20",
-    "coreDns": "v1.9.3_vmware.16"
+    "coreDns": "v1.10.1_vmware.7"
   },
   "v1.25.13+vmware.1-tkg.1-6f7650434fd3787d751e8fb3c9e2153d": {
     "tkg": "v2.3.1",
