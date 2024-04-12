@@ -37,7 +37,7 @@ type OrgOAuthSettingsType struct {
 	MaxClockSkew              *int                            `xml:"MaxClockSkew,omitempty"`              // Allowed difference between token expiration and vCD system time in seconds
 	OAuthKeyConfigurations    *OAuthKeyConfigurationsListType `xml:"OAuthKeyConfigurations,omitempty"`    // A list of OAuth Key configurations
 	OIDCAttributeMapping      *OIDCAttributeMappingType       `xml:"OIDCAttributeMapping,omitempty"`      // Custom claim keys for the /userinfo endpoint
-	OrgRedirectUri            *string                         `xml:"OrgRedirectUri,omitempty"`            // OAuth redirect URI for this org. This value is read only
+	OrgRedirectUri            string                          `xml:"OrgRedirectUri,omitempty"`            // OAuth redirect URI for this org. This value is read only
 	ScimEndpoint              *url.URL                        `xml:"ScimEndpoint,omitempty"`              // Identity Provider's SCIM user information endpoint
 	Scope                     *string                         `xml:"Scope,omitempty"`                     // Scope that VCD needs access to for authenticating the user
 	UserAuthorizationEndpoint *url.URL                        `xml:"UserAuthorizationEndpoint,omitempty"` // Identity Provider's OpenID Connect user authorization endpoint

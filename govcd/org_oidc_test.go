@@ -29,6 +29,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	settings, err := adminOrg.GetOpenIdConnectSettings()
 	check.Assert(err, IsNil)
 	check.Assert(settings, NotNil)
+	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 
 	err = adminOrg.Delete(true, true)
 	check.Assert(err, IsNil)
