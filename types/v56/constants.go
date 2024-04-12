@@ -154,6 +154,9 @@ const (
 	// Mime to identify organization federation settings (SAML) XML and JSON
 	MimeFederationSettingsXml  = "application/vnd.vmware.admin.organizationFederationSettings+xml"
 	MimeFederationSettingsJson = "application/vnd.vmware.admin.organizationFederationSettings+json"
+	// Mime to identify organization federation settings (SAML) XML and JSON
+	MimeOAuthSettingsXml  = "application/vnd.vmware.admin.organizationoauthsettings+xml"
+	MimeOAuthSettingsJson = "application/vnd.vmware.admin.organizationoauthsettings+json"
 	// Mime to handle virtual hardware versions
 	MimeVirtualHardwareVersion = "application/vnd.vmware.vcloud.virtualHardwareVersion+xml"
 )
