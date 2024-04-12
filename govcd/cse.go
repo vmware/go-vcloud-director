@@ -233,7 +233,7 @@ func (cluster *CseKubernetesCluster) GetSupportedUpgrades(refreshOvas bool) ([]*
 		if err != nil {
 			continue // This means it's not a TKGm OVA, or it is not supported, so we skip it
 		}
-		// The OVA can be used if the TKG version is higher or equal than the actual and the Kubernetes version is at most 1 minor higher.
+		// The OVA can be used if the TKG version is equal to the actual or higher, and the Kubernetes version is at most 1 minor higher.
 		if targetVersions.compareTkgVersion(cluster.TkgVersion.String()) >= 0 && targetVersions.kubernetesVersionIsUpgradeableFrom(cluster.KubernetesVersion.String()) {
 			cluster.supportedUpgrades = append(cluster.supportedUpgrades, vAppTemplate.VAppTemplate)
 		}
