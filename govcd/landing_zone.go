@@ -111,6 +111,18 @@ func (vcdClient *VCDClient) GetAllSolutionLandingZones(queryParameters url.Value
 	return results, nil
 }
 
+// GetExactlyOneSolutionLandingZone will get single Solution Landing Zone RDE or fail.
+// There can be only one Solution Landing Zone in VCD, but because it is backed by RDE - it can
+// occur that due to some error there is more than one RDE Entity
+func (vcdClient *VCDClient) GetExactlyOneSolutionLandingZone() (*SolutionLandingZone, error) {
+	allSlzs, err := vcdClient.GetAllSolutionLandingZones(nil)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving all Solution Landing Zones: %s", err)
+	}
+
+	return oneOrError("rde", "vmware:solutions_organization:1.0.0", allSlzs)
+}
+
 // GetSolutionLandingZoneById retrieves Solution Landing Zone by ID
 //
 // Note: defined entity ID must be used that can be accessed either by `SolutionLandingZone.Id()`
