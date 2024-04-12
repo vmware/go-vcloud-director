@@ -1,1 +1,2 @@
-* `types.NsxtFirewallRule` adds field `ActionValue` instead of `Action` that is deprecated VCD API. It allows users to use `REJECT` option [GH-661]
+* Added field `ActionValue` to `types.NsxtFirewallRule` instead of `Action` that is deprecated in
+  VCD API. It allows users to use `REJECT` option [GH-661]
