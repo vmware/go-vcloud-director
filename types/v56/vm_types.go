@@ -222,16 +222,15 @@ type Adapter struct {
 	UnitNumber string `xml:"unitNumber,attr"`
 }
 
+// RequestVirtualHardwareSection is used to start a request in VM Extra Configuration set
 type RequestVirtualHardwareSection struct {
 	// Extends OVF Section_Type
 	XMLName xml.Name `xml:"ovf:VirtualHardwareSection"`
-	// Xmlns   string   `xml:"vcloud,attr,omitempty"`
-	Ovf  string `xml:"xmlns:ovf,attr"`
-	Vssd string `xml:"xmlns:vssd,attr"`
-	Rasd string `xml:"xmlns:rasd,attr"`
-	Ns4  string `xml:"xmlns:ns4,attr"`
-	Vmw  string `xml:"xmlns:vmw,attr"`
-	// ovf:Info
+	Ovf     string   `xml:"xmlns:ovf,attr"`
+	Vssd    string   `xml:"xmlns:vssd,attr"`
+	Rasd    string   `xml:"xmlns:rasd,attr"`
+	Ns4     string   `xml:"xmlns:ns4,attr"`
+	Vmw     string   `xml:"xmlns:vmw,attr"`
 
 	Info   string     `xml:"ovf:Info"`
 	HREF   string     `xml:"href,attr,omitempty"`
@@ -242,6 +241,7 @@ type RequestVirtualHardwareSection struct {
 	ExtraConfigs []*ExtraConfigMarshal `xml:"vmw:ExtraConfig,omitempty"`
 }
 
+// ResponseVirtualHardwareSection is used to get a response
 type ResponseVirtualHardwareSection struct {
 	// Extends OVF Section_Type
 	XMLName xml.Name `xml:"VirtualHardwareSection"`
@@ -251,7 +251,6 @@ type ResponseVirtualHardwareSection struct {
 	Vssd    string   `xml:"xmlns:vssd,attr"`
 	Rasd    string   `xml:"xmlns:rasd,attr"`
 	Vmw     string   `xml:"xmlns:vmw,attr"`
-	// xmlns:vssd
 
 	Info string `xml:"Info"`
 	HREF string `xml:"href,attr,omitempty"`
@@ -263,6 +262,7 @@ type ResponseVirtualHardwareSection struct {
 	ExtraConfigs []*ExtraConfig `xml:"ExtraConfig,omitempty"`
 }
 
+// ExtraConfig describes an Extra Configuration item
 type ExtraConfig struct {
 	Key      string `xml:"key,attr"`
 	Value    string `xml:"value,attr"`

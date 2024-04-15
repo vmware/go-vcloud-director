@@ -2111,27 +2111,6 @@ func (vm *VM) GetExtraConfig() ([]*types.ExtraConfigMarshal, error) {
 		return nil, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
 	}
 
-	//type ResponseVirtualHardwareSection struct {
-	//	// Extends OVF Section_Type
-	//	XMLName xml.Name `xml:"VirtualHardwareSection"`
-	//	Xmlns   string   `xml:"vcloud,attr,omitempty"`
-	//	Ovf     string   `xml:"xmlns:ovf,attr"`
-	//	Ns4     string   `xml:"xmlns:ns4,attr"`
-	//	Vssd    string   `xml:"xmlns:vssd,attr"`
-	//	Rasd    string   `xml:"xmlns:rasd,attr"`
-	//	Vmw     string   `xml:"xmlns:vmw,attr"`
-	//	// xmlns:vssd
-	//
-	//	Info string `xml:"Info"`
-	//	HREF string `xml:"href,attr,omitempty"`
-	//	Type string `xml:"type,attr,omitempty"`
-	//
-	//	System []types.InnerXML `xml:"System,omitempty"`
-	//	Item   []types.InnerXML `xml:"Item,omitempty"`
-	//
-	//	ExtraConfigs []*types.ExtraConfig `xml:"ExtraConfig,omitempty"`
-	//}
-
 	virtualHardwareSection := &types.ResponseVirtualHardwareSection{}
 	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet, types.MimeVirtualHardwareSection, "error retrieving virtual hardware: %s", nil, virtualHardwareSection)
 	if err != nil {
@@ -2143,41 +2122,24 @@ func (vm *VM) GetExtraConfig() ([]*types.ExtraConfigMarshal, error) {
 	return convertedExtraConfig, nil
 }
 
+// UpdateExtraConfig adds or changes items in the VM Extra Configuration set
+// Returns the modified set
+// Note: an item with an empty `Value` will be deleted.
 func (vm *VM) UpdateExtraConfig(update []*types.ExtraConfigMarshal) ([]*types.ExtraConfigMarshal, error) {
 	return vm.updateExtraConfig(update, false)
 }
 
+// DeleteExtraConfig removes items from the VM Extra Configuration set
+// Returns the modified set
 func (vm *VM) DeleteExtraConfig(deleteItems []*types.ExtraConfigMarshal) ([]*types.ExtraConfigMarshal, error) {
 	return vm.updateExtraConfig(deleteItems, true)
 }
 
+// updateExtraConfig adds, changes, or delete items in the VM Extra Configuration set
 func (vm *VM) updateExtraConfig(update []*types.ExtraConfigMarshal, wantDelete bool) ([]*types.ExtraConfigMarshal, error) {
 	if vm.VM.HREF == "" {
 		return nil, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
 	}
-
-	//type ResponseVirtualHardwareSection struct {
-	//	// Extends OVF Section_Type
-	//	XMLName xml.Name `xml:"VirtualHardwareSection"`
-	//	Xmlns   string   `xml:"vcloud,attr,omitempty"`
-	//	Ovf     string   `xml:"xmlns:ovf,attr"`
-	//	Ns4     string   `xml:"xmlns:ns4,attr"`
-	//	Vssd    string   `xml:"xmlns:vssd,attr"`
-	//	Rasd    string   `xml:"xmlns:rasd,attr"`
-	//	Vmw     string   `xml:"xmlns:vmw,attr"`
-	//	// xmlns:vssd
-	//
-	//	Info string `xml:"Info"`
-	//	HREF string `xml:"href,attr,omitempty"`
-	//	Type string `xml:"type,attr,omitempty"`
-	//
-	//	// Using types.InnerXML so that these elements are processed as strings
-	//	// and no missing fields are lost while converting these types
-	//	System []types.InnerXML `xml:"System,omitempty"`
-	//	Item   []types.InnerXML `xml:"Item,omitempty"`
-	//
-	//	ExtraConfigs []*types.ExtraConfig `xml:"ExtraConfig,omitempty"`
-	//}
 
 	virtualHardwareSection := &types.ResponseVirtualHardwareSection{}
 	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet, types.MimeVirtualHardwareSection, "error retrieving virtual hardware: %s", nil, virtualHardwareSection)
@@ -2185,27 +2147,6 @@ func (vm *VM) updateExtraConfig(update []*types.ExtraConfigMarshal, wantDelete b
 		return nil, err
 	}
 
-	//type RequestVirtualHardwareSection struct {
-	//	// Extends OVF Section_Type
-	//	XMLName xml.Name `xml:"ovf:VirtualHardwareSection"`
-	//	// Xmlns   string   `xml:"vcloud,attr,omitempty"`
-	//	Ovf  string `xml:"xmlns:ovf,attr"`
-	//	Vssd string `xml:"xmlns:vssd,attr"`
-	//	Rasd string `xml:"xmlns:rasd,attr"`
-	//	Ns4  string `xml:"xmlns:ns4,attr"`
-	//	Vmw  string `xml:"xmlns:vmw,attr"`
-	//	// ovf:Info
-	//
-	//	Info   string           `xml:"ovf:Info"`
-	//	HREF   string           `xml:"href,attr,omitempty"`
-	//	Type   string           `xml:"type,attr,omitempty"`
-	//	System []types.InnerXML `xml:"ovf:System,omitempty"`
-	//	Item   []types.InnerXML `xml:"ovf:Item,omitempty"`
-	//
-	//	ExtraConfigs []*types.ExtraConfigMarshal `xml:"vmw:ExtraConfig,omitempty"`
-	//}
-
-	//convertedExtraConfig := convertExtraConfig(virtualHardwareSection.ExtraConfigs)
 	var newExtraConfig []*types.ExtraConfigMarshal
 
 	var invalidKeys []string
@@ -2237,8 +2178,6 @@ func (vm *VM) updateExtraConfig(update []*types.ExtraConfigMarshal, wantDelete b
 		Vmw:  types.XMLNamespaceVMW,
 
 		Type: virtualHardwareSection.Type,
-		//System: []types.InnerXML{},
-		//Item:   []types.InnerXML{},
 
 		ExtraConfigs: newExtraConfig,
 	}
@@ -2261,238 +2200,6 @@ func (vm *VM) updateExtraConfig(update []*types.ExtraConfigMarshal, wantDelete b
 
 	return xtraCfg, nil
 }
-
-/*
-func (vm *VM) updateExtraConfig(update []*ExtraConfigMarshal, wantDelete bool) ([]*ExtraConfigMarshal, error) {
-	if vm.VM.HREF == "" {
-		return nil, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
-	}
-
-	//// The API does not return an error if we attempt updating the VM while it is powered ON, but the operation is not performed.
-	//// Therefore, we check for the VM status, and return a meaningful error if the VM is not properly powered off.
-	//vmStatus, err := vm.GetStatus()
-	//if err != nil {
-	//	return nil, fmt.Errorf("error getting status of VM '%s': %s", vm.VM.Name, err)
-	//}
-	//if vmStatus != "POWERED_OFF" {
-	//	return nil, fmt.Errorf("[extra config update] this operation requires the VM '%s' to be powered off. Current status detected: '%s'", vm.VM.Name, vmStatus)
-	//}
-
-	type ResponseVirtualHardwareSection struct {
-		// Extends OVF Section_Type
-		XMLName xml.Name `xml:"VirtualHardwareSection"`
-		Xmlns   string   `xml:"vcloud,attr,omitempty"`
-		Ovf     string   `xml:"xmlns:ovf,attr"`
-		Ns4     string   `xml:"xmlns:ns4,attr"`
-		Vssd    string   `xml:"xmlns:vssd,attr"`
-		Rasd    string   `xml:"xmlns:rasd,attr"`
-		Vmw     string   `xml:"xmlns:vmw,attr"`
-		// xmlns:vssd
-
-		Info string `xml:"Info"`
-		HREF string `xml:"href,attr,omitempty"`
-		Type string `xml:"type,attr,omitempty"`
-
-		// Using types.InnerXML so that these elements are processed as strings
-		// and no missing fields are lost while converting these types
-		System []types.InnerXML `xml:"System,omitempty"`
-		Item   []types.InnerXML `xml:"Item,omitempty"`
-
-		ExtraConfigs []*ExtraConfig `xml:"ExtraConfig,omitempty"`
-	}
-
-	virtualHardwareSection := &ResponseVirtualHardwareSection{}
-	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet, types.MimeVirtualHardwareSection, "error retrieving virtual hardware: %s", nil, virtualHardwareSection)
-	if err != nil {
-		return nil, err
-	}
-
-	type RequestVirtualHardwareSection struct {
-		// Extends OVF Section_Type
-		XMLName xml.Name `xml:"ovf:VirtualHardwareSection"`
-		// Xmlns   string   `xml:"vcloud,attr,omitempty"`
-		Ovf  string `xml:"xmlns:ovf,attr"`
-		Vssd string `xml:"xmlns:vssd,attr"`
-		Rasd string `xml:"xmlns:rasd,attr"`
-		Ns4  string `xml:"xmlns:ns4,attr"`
-		Vmw  string `xml:"xmlns:vmw,attr"`
-		// ovf:Info
-
-		Info   string           `xml:"ovf:Info"`
-		HREF   string           `xml:"href,attr,omitempty"`
-		Type   string           `xml:"type,attr,omitempty"`
-		System []types.InnerXML `xml:"ovf:System,omitempty"`
-		Item   []types.InnerXML `xml:"ovf:Item,omitempty"`
-
-		ExtraConfigs []*ExtraConfigMarshal `xml:"vmw:ExtraConfig,omitempty"`
-	}
-
-	convertedExtraConfig := convertExtraConfig(virtualHardwareSection.ExtraConfigs)
-	var newExtraConfig []*ExtraConfigMarshal
-
-	var invalidKeys []string
-
-	if wantDelete {
-		for _, ec := range convertedExtraConfig {
-			if slices.ContainsFunc(update, func(marshal *ExtraConfigMarshal) bool {
-				return ec.Key == marshal.Key
-			}) {
-				// To delete an item, we must remove its value
-				ec.Value = ""
-			}
-			newExtraConfig = append(newExtraConfig, ec)
-		}
-
-	} else {
-		newExtraConfig = convertedExtraConfig
-		for _, ec := range update {
-			if strings.Contains(ec.Key, " ") {
-				invalidKeys = append(invalidKeys, ec.Key)
-			}
-			index := slices.IndexFunc(newExtraConfig, func(marshal *ExtraConfigMarshal) bool {
-				return ec.Key == marshal.Key
-			})
-			// if the item already exists, we overwrite it in place
-			if index >= 0 {
-				newExtraConfig[index] = ec
-			} else {
-				// if not, we add it
-				newExtraConfig = append(newExtraConfig, ec)
-			}
-		}
-		if len(invalidKeys) > 0 {
-			return nil, fmt.Errorf("[vm.UpdateExtraConfig] invalid keys provided: [%s]", strings.Join(invalidKeys, ","))
-		}
-		//newExtraConfig = update
-	}
-
-	requestVirtualHardwareSection := &RequestVirtualHardwareSection{
-		Info: "Virtual hardware requirements",
-		// Xmlns: virtualHardwareSection.Xmlns,
-		Ovf:  types.XMLNamespaceOVF,
-		Rasd: types.XMLNamespaceRASD,
-		Vssd: types.XMLNamespaceVSSD,
-		Ns4:  types.XMLNamespaceVCloud,
-		Vmw:  types.XMLNamespaceVMW,
-
-		Type:   virtualHardwareSection.Type,
-		System: virtualHardwareSection.System,
-		Item:   virtualHardwareSection.Item,
-
-		ExtraConfigs: newExtraConfig,
-	}
-
-	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodPut,
-		types.MimeVirtualHardwareSection, "error updating VM spec section: %s", requestVirtualHardwareSection)
-	if err != nil {
-		return nil, err
-	}
-
-	err = task.WaitTaskCompletion()
-	if err != nil {
-		return nil, fmt.Errorf("error waiting task: %s", err)
-	}
-
-	xtraCfg, err := vm.GetExtraConfig()
-	if err != nil {
-		return nil, fmt.Errorf("got error while retrieving extra config: %s", err)
-	}
-
-	return xtraCfg, nil
-}
-
-*/
-
-/*
-func (vm *VM) UpdateExtraConfig2(update []*ExtraConfigMarshal) ([]*ExtraConfigMarshal, error) {
-	return vm.updateExtraConfig2(update, false)
-}
-
-func (vm *VM) DeleteExtraConfig2(deleteItems []*ExtraConfigMarshal) ([]*ExtraConfigMarshal, error) {
-	return vm.updateExtraConfig2(deleteItems, true)
-}
-
-func (vm *VM) updateExtraConfig2(update []*ExtraConfigMarshal, wantDelete bool) ([]*ExtraConfigMarshal, error) {
-	if vm.VM.HREF == "" {
-		return nil, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
-	}
-
-	extraConfig := vm.VM.VirtualHardwareSection.ExtraConfig
-	var newExtraConfig []*types.VmVirtualHardwareSectionExtraConfig
-
-	var invalidKeys []string
-
-	if wantDelete {
-		fmt.Printf("%#v\n", update)
-		for _, ec := range extraConfig {
-			if slices.ContainsFunc(update, func(marshal *ExtraConfigMarshal) bool {
-				return ec.Key == marshal.Key
-			}) {
-				fmt.Printf("-- found %s\n", ec.Key)
-				continue
-			}
-			extraConfig = append(extraConfig, ec)
-		}
-
-	} else {
-		newExtraConfig = extraConfig
-		for _, ec := range update {
-			if strings.Contains(ec.Key, " ") {
-				invalidKeys = append(invalidKeys, ec.Key)
-			}
-			index := slices.IndexFunc(newExtraConfig, func(marshal *types.VmVirtualHardwareSectionExtraConfig) bool {
-				return ec.Key == marshal.Key
-			})
-			// if the item already exists, we overwrite it in place
-			if index >= 0 {
-				newExtraConfig[index] = &types.VmVirtualHardwareSectionExtraConfig{
-					Key:      ec.Key,
-					Value:    ec.Value,
-					Required: ec.Required,
-				}
-			} else {
-				// if not, we add it
-				newExtraConfig = append(newExtraConfig, &types.VmVirtualHardwareSectionExtraConfig{
-					Key:      ec.Key,
-					Value:    ec.Value,
-					Required: ec.Required,
-				})
-			}
-		}
-		if len(invalidKeys) > 0 {
-			return nil, fmt.Errorf("[vm.UpdateExtraConfig] invalid keys provided: [%s]", strings.Join(invalidKeys, ","))
-		}
-		//newExtraConfig = update
-	}
-
-	vm.VM.VirtualHardwareSection.ExtraConfig = newExtraConfig
-
-	var err error
-	vm, err = vm.Reconfigure(vm.VM)
-	if err != nil {
-		return nil, err
-	}
-
-	xtraCfg, err := vm.GetExtraConfig()
-	if err != nil {
-		return nil, fmt.Errorf("got error while retrieving extra config: %s", err)
-	}
-
-	return xtraCfg, nil
-}
-*/
-
-//type ExtraConfig struct {
-//	Key      string `xml:"key,attr"`
-//	Value    string `xml:"value,attr"`
-//	Required bool   `xml:"required,attr"`
-//}
-
-//type ExtraConfigMarshal struct {
-//	Key      string `xml:"vmw:key,attr"`
-//	Value    string `xml:"vmw:value,attr"`
-//	Required bool   `xml:"ovf:required,attr"`
-//}
 
 func convertExtraConfig(source []*types.ExtraConfig) []*types.ExtraConfigMarshal {
 	resp := make([]*types.ExtraConfigMarshal, len(source))
