@@ -3,8 +3,10 @@ package types
 // SolutionLandingZoneType defines the configuration of Solution Landing Zone.
 // It uses RDE so this body must be inserted into `types.DefinedEntity.State` field
 type SolutionLandingZoneType struct {
+	// ID is the Org ID that the Solution Landing Zone is configured for
+	ID string `json:"id"`
+	// Name is the Org name that the Solution Landing Zone is configured for
 	Name     string                       `json:"name,omitempty"`
-	ID       string                       `json:"id"`
 	Catalogs []SolutionLandingZoneCatalog `json:"catalogs"`
 	Vdcs     []SolutionLandingZoneVdc     `json:"vdcs"`
 }
