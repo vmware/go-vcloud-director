@@ -357,9 +357,9 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			if len(users) == 0 {
 				return nil, fmt.Errorf("expected 'spec.kubeadmConfigSpec.users' slice to not to be empty")
 			}
-			keys := traverseMapAndGet[[]string](users[0], "sshAuthorizedKeys")
+			keys := traverseMapAndGet[[]interface{}](users[0], "sshAuthorizedKeys")
 			if len(keys) > 0 {
-				result.SshPublicKey = keys[0] // Optional field
+				result.SshPublicKey = keys[0].(string) // Optional field
 			}
 
 			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "spec.version"))
