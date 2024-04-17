@@ -110,10 +110,12 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 	if settings.MaxClockSkew == nil || *settings.MaxClockSkew < 0 {
 		return nil, fmt.Errorf("the Max Clock Skew is mandatory to configure OpenID Connect")
 	}
-	if settings.OIDCAttributeMapping == nil {
-		return nil, fmt.Errorf("the OIDC Attribute (Claims) Mapping is mandatory to configure OpenID Connect")
+	if settings.OIDCAttributeMapping == nil || settings.OIDCAttributeMapping.SubjectAttributeName == "" ||
+		settings.OIDCAttributeMapping.EmailAttributeName == "" || settings.OIDCAttributeMapping.FullNameAttributeName == "" ||
+		settings.OIDCAttributeMapping.FirstNameAttributeName == "" || settings.OIDCAttributeMapping.LastNameAttributeName == "" {
+		return nil, fmt.Errorf("the Subject, Email, Full name, First Name and Last name are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect")
 	}
-	if settings.OAuthKeyConfigurations == nil {
+	if settings.OAuthKeyConfigurations == nil || len(settings.OAuthKeyConfigurations.OAuthKeyConfiguration) == 0 {
 		return nil, fmt.Errorf("the OIDC Key Configuration is mandatory to configure OpenID Connect")
 	}
 

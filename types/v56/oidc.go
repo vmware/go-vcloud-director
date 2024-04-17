@@ -75,7 +75,7 @@ type OIDCAttributeMapping struct {
 	SubjectAttributeName   string    `xml:"SubjectAttributeName,omitempty"`   // The name of the OIDC attribute used to get the username from the IDP's userInfo
 	EmailAttributeName     string    `xml:"EmailAttributeName,omitempty"`     // The name of the OIDC attribute used to get the email from the IDP's userInfo
 	FullNameAttributeName  string    `xml:"FullNameAttributeName,omitempty"`  // The name of the OIDC attribute used to get the full name from the IDP's userInfo. The full name attribute overrides the use of the firstName and lastName attributes
-	FirstNameAttributeName *string   `xml:"FirstNameAttributeName,omitempty"` // The name of the OIDC attribute used to get the first name from the IDP's userInfo. This is only used if the Full Name key is not specified
+	FirstNameAttributeName string    `xml:"FirstNameAttributeName,omitempty"` // The name of the OIDC attribute used to get the first name from the IDP's userInfo. This is only used if the Full Name key is not specified
 	LastNameAttributeName  string    `xml:"LastNameAttributeName,omitempty"`  // The name of the OIDC attribute used to get the last name from the IDP's userInfo. This is only used if the Full Name key is not specified
 	GroupsAttributeName    *string   `xml:"GroupsAttributeName,omitempty"`    // The name of the OIDC attribute used to get the full name from the IDP's userInfo. The full name attribute overrides the use of the firstName and lastName attributes
 	RolesAttributeName     *string   `xml:"RolesAttributeName,omitempty"`     // The name of the OIDC attribute used to get the user's roles from the IDP's userInfo

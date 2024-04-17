@@ -36,7 +36,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	check.Assert(settings, NotNil)
 	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 
-	testFailures(check, adminOrg, oidcServerUrl)
+	testValidationErrors(check, adminOrg, oidcServerUrl)
 
 	// To avoid test failures due to bad connectivity with the OIDC Provider server, we put some retries in place
 	tries := 0
@@ -66,7 +66,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	//check.Assert(err, IsNil)
 }
 
-func testFailures(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
+func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 	tests := []struct {
 		wrongConfig types.OrgOAuthSettings
 		errorMsg    string
@@ -114,6 +114,147 @@ func testFailures(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
 			},
 			errorMsg: "the User Info Endpoint is mandatory to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+			},
+			errorMsg: "the Max Clock Skew is mandatory to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				MaxClockSkew:              addrOf(-1),
+			},
+			errorMsg: "the Max Clock Skew is mandatory to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				MaxClockSkew:              addrOf(60),
+				OIDCAttributeMapping:      &types.OIDCAttributeMapping{},
+			},
+			errorMsg: "the Subject, Email, Full name, First Name and Last name are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				MaxClockSkew:              addrOf(60),
+				OIDCAttributeMapping: &types.OIDCAttributeMapping{
+					SubjectAttributeName: "a",
+				},
+			},
+			errorMsg: "the Subject, Email, Full name, First Name and Last name are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				MaxClockSkew:              addrOf(60),
+				OIDCAttributeMapping: &types.OIDCAttributeMapping{
+					SubjectAttributeName: "a",
+					EmailAttributeName:   "b",
+				},
+			},
+			errorMsg: "the Subject, Email, Full name, First Name and Last name are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				MaxClockSkew:              addrOf(60),
+				OIDCAttributeMapping: &types.OIDCAttributeMapping{
+					SubjectAttributeName:  "a",
+					EmailAttributeName:    "b",
+					FullNameAttributeName: "c",
+				},
+			},
+			errorMsg: "the Subject, Email, Full name, First Name and Last name are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				MaxClockSkew:              addrOf(60),
+				OIDCAttributeMapping: &types.OIDCAttributeMapping{
+					SubjectAttributeName:   "a",
+					EmailAttributeName:     "b",
+					FullNameAttributeName:  "c",
+					FirstNameAttributeName: "d",
+				},
+			},
+			errorMsg: "the Subject, Email, Full name, First Name and Last name are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				MaxClockSkew:              addrOf(60),
+				OIDCAttributeMapping: &types.OIDCAttributeMapping{
+					SubjectAttributeName:   "a",
+					EmailAttributeName:     "b",
+					FullNameAttributeName:  "c",
+					FirstNameAttributeName: "d",
+					LastNameAttributeName:  "e",
+				},
+			},
+			errorMsg: "the OIDC Key Configuration is mandatory to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				MaxClockSkew:              addrOf(60),
+				OIDCAttributeMapping: &types.OIDCAttributeMapping{
+					SubjectAttributeName:   "a",
+					EmailAttributeName:     "b",
+					FullNameAttributeName:  "c",
+					FirstNameAttributeName: "d",
+					LastNameAttributeName:  "e",
+				},
+				OAuthKeyConfigurations: &types.OAuthKeyConfigurationsList{},
+			},
+			errorMsg: "the OIDC Key Configuration is mandatory to configure OpenID Connect",
 		},
 	}
 
