@@ -48,7 +48,7 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		return nil, fmt.Errorf("the Client Secret is mandatory to configure OpenID Connect")
 	}
 	if settings.Enabled == nil {
-		return nil, fmt.Errorf("the OpenID Connect input settings must specify either enabled=true or enabled=false")
+		return nil, fmt.Errorf("the OpenID Connect input settings must specify either Enabled=true or Enabled=false")
 	}
 	if settings.WellKnownEndpoint != nil {
 		err := oidcValidateConnection(adminOrg.client, *settings.WellKnownEndpoint)
@@ -94,16 +94,36 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 			settings.OAuthKeyConfigurations = wellKnownSettings.OAuthKeyConfigurations
 		}
 	}
+	// Perform early validations. These are required in UI before sending the payload.
+	if settings.UserAuthorizationEndpoint == nil || *settings.UserAuthorizationEndpoint == "" {
+		return nil, fmt.Errorf("the User Authorization Endpoint is mandatory to configure OpenID Connect")
+	}
+	if settings.AccessTokenEndpoint == nil || *settings.AccessTokenEndpoint == "" {
+		return nil, fmt.Errorf("the Access Token Endpoint is mandatory to configure OpenID Connect")
+	}
+	if settings.UserInfoEndpoint == nil || *settings.UserInfoEndpoint == "" {
+		return nil, fmt.Errorf("the User Info Endpoint is mandatory to configure OpenID Connect")
+	}
+	if settings.MaxClockSkew == nil || *settings.MaxClockSkew < 0 {
+		return nil, fmt.Errorf("the Max Clock Skew is mandatory to configure OpenID Connect")
+	}
+	if settings.MaxClockSkew == nil || *settings.MaxClockSkew < 0 {
+		return nil, fmt.Errorf("the Max Clock Skew is mandatory to configure OpenID Connect")
+	}
+	if settings.OIDCAttributeMapping == nil {
+		return nil, fmt.Errorf("the OIDC Attribute (Claims) Mapping is mandatory to configure OpenID Connect")
+	}
+	if settings.OAuthKeyConfigurations == nil {
+		return nil, fmt.Errorf("the OIDC Key Configuration is mandatory to configure OpenID Connect")
+	}
+
+	// The namespace must be set for all structures, otherwise the API call fails
 	settings.Xmlns = types.XMLNamespaceVCloud
-	if settings.OAuthKeyConfigurations != nil { // TODO: Can be nil? Check UI
-		settings.OAuthKeyConfigurations.Xmlns = types.XMLNamespaceVCloud
-		for i := range settings.OAuthKeyConfigurations.OAuthKeyConfiguration {
-			settings.OAuthKeyConfigurations.OAuthKeyConfiguration[i].Xmlns = types.XMLNamespaceVCloud
-		}
+	settings.OAuthKeyConfigurations.Xmlns = types.XMLNamespaceVCloud
+	for i := range settings.OAuthKeyConfigurations.OAuthKeyConfiguration {
+		settings.OAuthKeyConfigurations.OAuthKeyConfiguration[i].Xmlns = types.XMLNamespaceVCloud
 	}
-	if settings.OIDCAttributeMapping != nil { // TODO: Can be nil? Check UI
-		settings.OIDCAttributeMapping.Xmlns = types.XMLNamespaceVCloud
-	}
+	settings.OIDCAttributeMapping.Xmlns = types.XMLNamespaceVCloud
 
 	var createdSettings types.OrgOAuthSettings
 	_, err := adminOrg.client.ExecuteRequestWithApiVersion(adminOrg.AdminOrg.HREF+"/settings/oauth", http.MethodPut,
