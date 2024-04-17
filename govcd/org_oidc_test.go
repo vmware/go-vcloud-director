@@ -36,51 +36,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	check.Assert(settings, NotNil)
 	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 
-	// Assert failures
-	// TODO: This can be a loop
-	_, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettings{})
-	check.Assert(err, NotNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "the Client ID is mandatory to configure OpenID Connect"))
-
-	_, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettings{
-		ClientId: addrOf("clientId"),
-	})
-	check.Assert(err, NotNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "the Client Secret is mandatory to configure OpenID Connect"))
-
-	_, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettings{
-		ClientId:     addrOf("clientId"),
-		ClientSecret: addrOf("clientSecret"),
-	})
-	check.Assert(err, NotNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "the OpenID Connect input settings must specify either Enabled=true or Enabled=false"))
-
-	_, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettings{
-		ClientId:     addrOf("clientId"),
-		ClientSecret: addrOf("clientSecret"),
-		Enabled:      addrOf(true),
-	})
-	check.Assert(err, NotNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "the User Authorization Endpoint is mandatory to configure OpenID Connect"))
-
-	_, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettings{
-		ClientId:                  addrOf("clientId"),
-		ClientSecret:              addrOf("clientSecret"),
-		Enabled:                   addrOf(true),
-		UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-	})
-	check.Assert(err, NotNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "the Access Token Endpoint is mandatory to configure OpenID Connect"))
-
-	_, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettings{
-		ClientId:                  addrOf("clientId"),
-		ClientSecret:              addrOf("clientSecret"),
-		Enabled:                   addrOf(true),
-		UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-		AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-	})
-	check.Assert(err, NotNil)
-	check.Assert(true, Equals, strings.Contains(err.Error(), "the User Info Endpoint is mandatory to configure OpenID Connect"))
+	testFailures(check, adminOrg, oidcServerUrl)
 
 	// To avoid test failures due to bad connectivity with the OIDC Provider server, we put some retries in place
 	tries := 0
@@ -108,4 +64,63 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 
 	//err = adminOrg.Delete(true, true)
 	//check.Assert(err, IsNil)
+}
+
+func testFailures(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
+	tests := []struct {
+		wrongConfig types.OrgOAuthSettings
+		errorMsg    string
+	}{
+		{
+			wrongConfig: types.OrgOAuthSettings{},
+			errorMsg:    "the Client ID is mandatory to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId: addrOf("clientId"),
+			},
+			errorMsg: "the Client Secret is mandatory to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:     addrOf("clientId"),
+				ClientSecret: addrOf("clientSecret"),
+			},
+			errorMsg: "the OpenID Connect input settings must specify either Enabled=true or Enabled=false",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:     addrOf("clientId"),
+				ClientSecret: addrOf("clientSecret"),
+				Enabled:      addrOf(true),
+			},
+			errorMsg: "the User Authorization Endpoint is mandatory to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+			},
+			errorMsg: "the Access Token Endpoint is mandatory to configure OpenID Connect",
+		},
+		{
+			wrongConfig: types.OrgOAuthSettings{
+				ClientId:                  addrOf("clientId"),
+				ClientSecret:              addrOf("clientSecret"),
+				Enabled:                   addrOf(true),
+				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+			},
+			errorMsg: "the User Info Endpoint is mandatory to configure OpenID Connect",
+		},
+	}
+
+	for _, test := range tests {
+		_, err := adminOrg.SetOpenIdConnectSettings(test.wrongConfig)
+		check.Assert(err, NotNil)
+		check.Assert(true, Equals, strings.Contains(err.Error(), test.errorMsg))
+	}
+
 }
