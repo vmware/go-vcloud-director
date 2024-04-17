@@ -31,7 +31,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	check.Assert(settings, NotNil)
 	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 
-	settings, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettingsType{
+	settings, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettings{
 		ClientId:          addrOf("a"),
 		ClientSecret:      addrOf("b"),
 		Enabled:           addrOf(true),

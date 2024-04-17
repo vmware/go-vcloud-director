@@ -14,12 +14,12 @@ import (
 )
 
 // GetOpenIdConnectSettings retrieves the current OpenID Connect settings for a given Organization
-func (adminOrg *AdminOrg) GetOpenIdConnectSettings() (*types.OrgOAuthSettingsType, error) {
+func (adminOrg *AdminOrg) GetOpenIdConnectSettings() (*types.OrgOAuthSettings, error) {
 	if strings.TrimSpace(adminOrg.AdminOrg.HREF) == "" {
 		return nil, fmt.Errorf("the HREF of the Organization is required to retrieve its OpenID Connect settings")
 	}
 
-	var settings types.OrgOAuthSettingsType
+	var settings types.OrgOAuthSettings
 
 	_, err := adminOrg.client.ExecuteRequestWithApiVersion(adminOrg.AdminOrg.HREF+"/settings/oauth", http.MethodGet,
 		types.MimeOAuthSettingsXml, "error getting Organization OpenID Connect settings: %s", nil, &settings,
@@ -32,12 +32,12 @@ func (adminOrg *AdminOrg) GetOpenIdConnectSettings() (*types.OrgOAuthSettingsTyp
 }
 
 // SetOpenIdConnectSettings sets the OpenID Connect configuration for a given Organization. If the well-known configuration
-// endpoint is provided, the configuration is automatically retrieved from that URL and overridden with other fields that may
-// have been set in the input structure. If there are no fields informed, the configuration retrieved from the well-known
-// configuration endpoint is applied as-is.
-// Client ID and Client Secret are always mandatory, with and without well-known endpoint.
-// This method returns an error if the settings can't be saved in VCD for any reason.
-func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettingsType) (*types.OrgOAuthSettingsType, error) {
+// endpoint is provided, the configuration is automatically retrieved from that URL.
+// If other fields have been set in the input structure, the well-known configuration is overridden with these.
+// If there are no fields informed, the configuration retrieved from the well-known configuration endpoint is applied as-is.
+// ClientId, ClientSecret and Enabled properties are always mandatory, with and without well-known endpoint.
+// This method returns an error if the settings can't be saved in VCD for any reason or if the provided settings are wrong.
+func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettings) (*types.OrgOAuthSettings, error) {
 	if strings.TrimSpace(adminOrg.AdminOrg.HREF) == "" {
 		return nil, fmt.Errorf("the HREF of the Organization is required to configure its OpenID Connect settings")
 	}
@@ -59,23 +59,30 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		if err != nil {
 			return nil, err
 		}
-		// This allows users to override the well-known automatic configuration values with their own.
-		// If the given attribute was not set, we choose the well-known one, but if it was
-		// explicitly set by the user in the input, we take that one.
-		if settings.UserAuthorizationEndpoint == nil && *settings.UserAuthorizationEndpoint == "" {
-			settings.UserAuthorizationEndpoint = wellKnownSettings.UserAuthorizationEndpoint
-		}
-		if settings.AccessTokenEndpoint == nil && *settings.AccessTokenEndpoint == "" {
+		// The following conditionals allow users to override the well-known automatic configuration values with their own,
+		// mimicking what users can do in UI.
+		// If an attribute was not set in the input settings, we pick the value that the well-known endpoint gave for that attribute,
+		// but if it was explicitly set by the user, we take that one instead (overriding the well-known one).
+		if settings.AccessTokenEndpoint == nil || *settings.AccessTokenEndpoint == "" {
 			settings.AccessTokenEndpoint = wellKnownSettings.AccessTokenEndpoint
 		}
-		if settings.IssuerId == nil && *settings.IssuerId == "" {
+		if settings.IssuerId == nil || *settings.IssuerId == "" {
 			settings.IssuerId = wellKnownSettings.IssuerId
-		}
-		if settings.UserInfoEndpoint == nil && *settings.UserInfoEndpoint == "" {
-			settings.UserInfoEndpoint = wellKnownSettings.UserInfoEndpoint
 		}
 		if settings.MaxClockSkew == nil {
 			settings.MaxClockSkew = addrOf(60) // This is not returned, but a default value set in UI
+		}
+		if settings.JwksUri == nil || *settings.JwksUri == "" {
+			settings.JwksUri = wellKnownSettings.JwksUri
+		}
+		if settings.UserInfoEndpoint == nil || *settings.UserInfoEndpoint == "" {
+			settings.UserInfoEndpoint = wellKnownSettings.UserInfoEndpoint
+		}
+		if settings.UserAuthorizationEndpoint == nil || *settings.UserAuthorizationEndpoint == "" {
+			settings.UserAuthorizationEndpoint = wellKnownSettings.UserAuthorizationEndpoint
+		}
+		if settings.ScimEndpoint == nil || *settings.ScimEndpoint == "" {
+			settings.ScimEndpoint = wellKnownSettings.ScimEndpoint
 		}
 		if settings.Scope == nil || len(settings.Scope) == 0 {
 			settings.Scope = wellKnownSettings.Scope
@@ -83,13 +90,23 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		if settings.OIDCAttributeMapping == nil {
 			settings.OIDCAttributeMapping = wellKnownSettings.OIDCAttributeMapping
 		}
-		if settings.OAuthKeyConfigurations == nil {
+		if settings.OAuthKeyConfigurations == nil || len(settings.OAuthKeyConfigurations.OAuthKeyConfiguration) == 0 {
 			settings.OAuthKeyConfigurations = wellKnownSettings.OAuthKeyConfigurations
 		}
 	}
+	settings.Xmlns = types.XMLNamespaceVCloud
+	if settings.OAuthKeyConfigurations != nil { // TODO: Can be nil? Check UI
+		settings.OAuthKeyConfigurations.Xmlns = types.XMLNamespaceVCloud
+		for i := range settings.OAuthKeyConfigurations.OAuthKeyConfiguration {
+			settings.OAuthKeyConfigurations.OAuthKeyConfiguration[i].Xmlns = types.XMLNamespaceVCloud
+		}
+	}
+	if settings.OIDCAttributeMapping != nil { // TODO: Can be nil? Check UI
+		settings.OIDCAttributeMapping.Xmlns = types.XMLNamespaceVCloud
+	}
 
-	var createdSettings types.OrgOAuthSettingsType
-	_, err := adminOrg.client.ExecuteRequestWithApiVersion(adminOrg.AdminOrg.HREF+"/settings/oauth", http.MethodPost,
+	var createdSettings types.OrgOAuthSettings
+	_, err := adminOrg.client.ExecuteRequestWithApiVersion(adminOrg.AdminOrg.HREF+"/settings/oauth", http.MethodPut,
 		types.MimeOAuthSettingsXml, "error creating Organization OpenID Connect settings: %s", settings, &createdSettings,
 		getHighestOidcApiVersion(adminOrg.client))
 	if err != nil {
@@ -151,9 +168,12 @@ func oidcValidateConnection(client *Client, endpoint string) error {
 }
 
 // oidcConfigureWithEndpoint uses the given endpoint to retrieve an OpenID Connect configuration
-func oidcConfigureWithEndpoint(client *Client, orgHref, endpoint string) (*types.OrgOAuthSettingsType, error) {
-	payload := types.OpenIdProviderInfoType{OpenIdProviderConfigurationEndpoint: endpoint}
-	var result types.OpenIdProviderConfigurationType
+func oidcConfigureWithEndpoint(client *Client, orgHref, endpoint string) (*types.OrgOAuthSettings, error) {
+	payload := types.OpenIdProviderInfo{
+		Xmlns:                               types.XMLNamespaceVCloud,
+		OpenIdProviderConfigurationEndpoint: endpoint,
+	}
+	var result types.OpenIdProviderConfiguration
 
 	_, err := client.ExecuteRequestWithApiVersion(orgHref+"/settings/oauth/openIdProviderConfig", http.MethodPost,
 		types.MimeOpenIdProviderInfoXml, "error getting OpenID Connect settings from endpoint: %s", payload, &result,
@@ -170,13 +190,13 @@ func oidcConfigureWithEndpoint(client *Client, orgHref, endpoint string) (*types
 
 // getHighestOidcApiVersion tries to get the highest possible version for the OpenID Connect endpoint
 func getHighestOidcApiVersion(client *Client) string {
-	// v38.1 adds customUiButtonLabel
+	// v38.1 adds CustomUiButtonLabel
 	targetVersion := client.GetSpecificApiVersionOnCondition(">= 38.1", "38.1")
 	if targetVersion != "38.1" {
-		// v38.0 adds sendClientCredentialsAsAuthorizationHeader, usePKCE,
+		// v38.0 adds SendClientCredentialsAsAuthorizationHeader, UsePKCE,
 		targetVersion = client.GetSpecificApiVersionOnCondition(">= 38.0", "38.0")
 		if targetVersion != "38.0" {
-			// v37.1 adds enableIdTokenClaims
+			// v37.1 adds EnableIdTokenClaims
 			targetVersion = client.GetSpecificApiVersionOnCondition(">= 37.1", "37.1")
 		}
 	} // Otherwise we get the default API version
