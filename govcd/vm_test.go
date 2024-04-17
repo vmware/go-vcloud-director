@@ -2283,19 +2283,16 @@ func testVmExtraConfig(vcd *TestVCD, label string, vm *VM, check *C, wantPowerOn
 	printVerbose("vm extra config %# v\n", pretty.Formatter(vm.VM.VirtualHardwareSection.ExtraConfig))
 
 	configSimilar := types.ExtraConfigMarshal{
-		Key:      "hpet1.present",
-		Value:    "TRUE",
-		Required: false,
+		Key:   "hpet1.present",
+		Value: "TRUE",
 	}
 	configWithValidKey := types.ExtraConfigMarshal{
-		Key:      "Norwegian.wood",
-		Value:    "With a little help from my friends",
-		Required: false,
+		Key:   "Norwegian.wood",
+		Value: "With a little help from my friends",
 	}
 	configWithInvalidKey := types.ExtraConfigMarshal{
-		Key:      "Eleanor Rigby", // invalid key: contains a space
-		Value:    "The long and winding road",
-		Required: false,
+		Key:   "Eleanor Rigby", // invalid key: contains a space
+		Value: "The long and winding road",
 	}
 
 	xtraConfig, err := vm.GetExtraConfig()
@@ -2313,6 +2310,12 @@ func testVmExtraConfig(vcd *TestVCD, label string, vm *VM, check *C, wantPowerOn
 			return marshal.Key == key
 		})
 	}
+	containsKeyValue := func(items []*types.ExtraConfigMarshal, key, value string) bool {
+		return slices.ContainsFunc(items, func(marshal *types.ExtraConfigMarshal) bool {
+			return marshal.Key == key && marshal.Value == value
+		})
+	}
+
 	// Adds two items
 	updatedCfg, err := vm.UpdateExtraConfig([]*types.ExtraConfigMarshal{&configSimilar, &configWithValidKey})
 	check.Assert(err, IsNil)
@@ -2325,6 +2328,17 @@ func testVmExtraConfig(vcd *TestVCD, label string, vm *VM, check *C, wantPowerOn
 
 	check.Assert(containsKey(updatedXtraConfig, configWithValidKey.Key), Equals, true)
 	check.Assert(containsKey(updatedXtraConfig, configSimilar.Key), Equals, true)
+
+	// Change the value of an existing key
+	modifiedValue := "modified value"
+	configSimilar.Value = modifiedValue
+	configWithValidKey.Value = modifiedValue
+	modifiedExtraCfg, err := vm.UpdateExtraConfig([]*types.ExtraConfigMarshal{&configSimilar, &configWithValidKey})
+	check.Assert(err, IsNil)
+	check.Assert(modifiedExtraCfg, NotNil)
+	printVerbose(" after modification %# v\n", pretty.Formatter(modifiedExtraCfg))
+	check.Assert(containsKeyValue(modifiedExtraCfg, configSimilar.Key, modifiedValue), Equals, true)
+	check.Assert(containsKeyValue(modifiedExtraCfg, configWithValidKey.Key, modifiedValue), Equals, true)
 
 	// Delete the recently inserted items
 	afterDeleteXtraConfig, err := vm.DeleteExtraConfig([]*types.ExtraConfigMarshal{&configSimilar, &configWithValidKey})
