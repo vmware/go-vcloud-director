@@ -13,16 +13,16 @@ import (
 )
 
 func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
-	orgName := check.TestName()
+	//orgName := check.TestName()
+	//
+	//task, err := CreateOrg(vcd.client, orgName, orgName, orgName, &types.OrgSettings{}, true)
+	//check.Assert(err, IsNil)
+	//check.Assert(task, NotNil)
+	//AddToCleanupList(orgName, "org", "", check.TestName())
+	//err = task.WaitTaskCompletion()
+	//check.Assert(err, IsNil)
 
-	task, err := CreateOrg(vcd.client, orgName, orgName, orgName, &types.OrgSettings{}, true)
-	check.Assert(err, IsNil)
-	check.Assert(task, NotNil)
-	AddToCleanupList(orgName, "org", "", check.TestName())
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	adminOrg, err := vcd.client.GetAdminOrgByName(orgName)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
@@ -31,6 +31,18 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	check.Assert(settings, NotNil)
 	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 
-	err = adminOrg.Delete(true, true)
+	settings, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettingsType{
+		ClientId:          addrOf("a"),
+		ClientSecret:      addrOf("b"),
+		Enabled:           addrOf(true),
+		WellKnownEndpoint: addrOf("http://10.196.34.27:8080/stf-oidc-server/.well-known/openid-configuration"),
+	})
 	check.Assert(err, IsNil)
+	check.Assert(settings, NotNil)
+
+	err = adminOrg.DeleteOpenIdConnectSettings()
+	check.Assert(err, IsNil)
+
+	//err = adminOrg.Delete(true, true)
+	//check.Assert(err, IsNil)
 }
