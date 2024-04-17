@@ -2177,7 +2177,9 @@ func (vm *VM) updateExtraConfig(update []*types.ExtraConfigMarshal, wantDelete b
 		Ns4:  types.XMLNamespaceVCloud,
 		Vmw:  types.XMLNamespaceVMW,
 
-		Type: virtualHardwareSection.Type,
+		Type:   virtualHardwareSection.Type,
+		System: virtualHardwareSection.System,
+		Item:   virtualHardwareSection.Item,
 
 		ExtraConfigs: newExtraConfig,
 	}

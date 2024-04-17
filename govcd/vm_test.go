@@ -2246,12 +2246,23 @@ func (vcd *TestVCD) Test_VmExtraConfig(check *C) {
 	poweredOffVm, err := vcd.client.Client.GetVMByHref(vm.HREF)
 	check.Assert(err, IsNil)
 
-	_, poweredOnVm := createNsxtVAppAndVm(vcd, check)
+	newVapp, poweredOnVm := createNsxtVAppAndVm(vcd, check)
 
 	testVmExtraConfig(vcd, "powered OFF VM", poweredOffVm, check, false, false)
 	testVmExtraConfig(vcd, "formerly powered OFF VM, now powered ON", poweredOffVm, check, true, false)
 	testVmExtraConfig(vcd, "powered ON VM", poweredOnVm, check, true, false)
 	testVmExtraConfig(vcd, "formerly powered ON VM, now powered OFF", poweredOnVm, check, false, true)
+
+	// poweredOffVm should be brought back to its original state
+	task, err := poweredOffVm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	// Removing the newly created VM and its vApp
+	task, err = newVapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
 }
 
 func testVmExtraConfig(vcd *TestVCD, label string, vm *VM, check *C, wantPowerOn, wantPowerOff bool) {
