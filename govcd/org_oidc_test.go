@@ -66,6 +66,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	//check.Assert(err, IsNil)
 }
 
+// testValidationErrors tests the validation rules when setting OpenID Connect Settings with AdminOrg.SetOpenIdConnectSettings
 func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 	tests := []struct {
 		wrongConfig types.OrgOAuthSettings
