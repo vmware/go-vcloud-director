@@ -8,7 +8,6 @@ package govcd
 
 import (
 	_ "embed"
-	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"strings"
@@ -25,8 +24,6 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	//err = task.WaitTaskCompletion()
 	//check.Assert(err, IsNil)
 
-	oidcServerUrl := fmt.Sprintf("http://%s:8080/stf-oidc-server", vcd.config.VCD.LdapServer)
-
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
@@ -36,7 +33,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	check.Assert(settings, NotNil)
 	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 
-	testValidationErrors(check, adminOrg, oidcServerUrl)
+	testValidationErrors(check, adminOrg)
 
 	// To avoid test failures due to bad connectivity with the OIDC Provider server, we put some retries in place
 	tries := 0
@@ -46,7 +43,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 			ClientId:          addrOf("a"),
 			ClientSecret:      addrOf("b"),
 			Enabled:           addrOf(true),
-			WellKnownEndpoint: addrOf(oidcServerUrl + "/.well-known/openid-configuration"),
+			WellKnownEndpoint: addrOf(vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint),
 		})
 		if err != nil {
 			check.Assert(true, Equals, strings.Contains(err.Error(), "could not establish a connection") || strings.Contains(err.Error(), "connect timed out"))
@@ -67,7 +64,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 }
 
 // testValidationErrors tests the validation rules when setting OpenID Connect Settings with AdminOrg.SetOpenIdConnectSettings
-func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
+func testValidationErrors(check *C, adminOrg *AdminOrg) {
 	tests := []struct {
 		wrongConfig types.OrgOAuthSettings
 		errorMsg    string
@@ -102,7 +99,7 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
 			},
 			errorMsg: "the Access Token Endpoint is mandatory to configure OpenID Connect",
 		},
@@ -111,8 +108,8 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
 			},
 			errorMsg: "the User Info Endpoint is mandatory to configure OpenID Connect",
 		},
@@ -121,9 +118,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 			},
 			errorMsg: "the Max Clock Skew is mandatory to configure OpenID Connect",
 		},
@@ -132,9 +129,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 				MaxClockSkew:              addrOf(-1),
 			},
 			errorMsg: "the Max Clock Skew is mandatory to configure OpenID Connect",
@@ -144,9 +141,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 				MaxClockSkew:              addrOf(60),
 				OIDCAttributeMapping:      &types.OIDCAttributeMapping{},
 			},
@@ -157,9 +154,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 				MaxClockSkew:              addrOf(60),
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName: "a",
@@ -172,9 +169,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 				MaxClockSkew:              addrOf(60),
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName: "a",
@@ -188,9 +185,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 				MaxClockSkew:              addrOf(60),
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName:  "a",
@@ -205,9 +202,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 				MaxClockSkew:              addrOf(60),
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName:   "a",
@@ -223,9 +220,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 				MaxClockSkew:              addrOf(60),
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName:   "a",
@@ -242,9 +239,9 @@ func testValidationErrors(check *C, adminOrg *AdminOrg, oidcServerUrl string) {
 				ClientId:                  addrOf("clientId"),
 				ClientSecret:              addrOf("clientSecret"),
 				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf(oidcServerUrl + "/authorize"),
-				AccessTokenEndpoint:       addrOf(oidcServerUrl + "/token"),
-				UserInfoEndpoint:          addrOf(oidcServerUrl + "/userinfo"),
+				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
 				MaxClockSkew:              addrOf(60),
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName:   "a",
