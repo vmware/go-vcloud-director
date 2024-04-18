@@ -14,15 +14,13 @@ import (
 	"time"
 )
 
-func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
-	//orgName := check.TestName()
-	//
-	//task, err := CreateOrg(vcd.client, orgName, orgName, orgName, &types.OrgSettings{}, true)
-	//check.Assert(err, IsNil)
-	//check.Assert(task, NotNil)
-	//AddToCleanupList(orgName, "org", "", check.TestName())
-	//err = task.WaitTaskCompletion()
-	//check.Assert(err, IsNil)
+func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCRUD(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("test requires system administrator privileges")
+	}
+	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
+		check.Skip("test requires OIDC configuration")
+	}
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -56,11 +54,18 @@ func (vcd *TestVCD) Test_OrgOidcSettingsCRUD(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(settings, NotNil)
 
-	err = adminOrg.DeleteOpenIdConnectSettings()
-	check.Assert(err, IsNil)
+	// Be sure that the settings are always deleted
+	defer func() {
+		err = adminOrg.DeleteOpenIdConnectSettings()
+		check.Assert(err, IsNil)
+	}()
 
-	//err = adminOrg.Delete(true, true)
-	//check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_OrgOidcSettingsTenantCRUD(check *C) {
+	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
+		check.Skip("test requires OIDC configuration")
+	}
 }
 
 // testValidationErrors tests the validation rules when setting OpenID Connect Settings with AdminOrg.SetOpenIdConnectSettings
