@@ -2428,6 +2428,8 @@ type QueryResultRecordsType struct {
 	VmGroupsRecord                  []*QueryResultVmGroupsRecordType                  `xml:"VmGroupsRecord"`                  // A record representing a VM Group
 	TaskRecord                      []*QueryResultTaskRecordType                      `xml:"TaskRecord"`                      // A record representing a Task
 	AdminTaskRecord                 []*QueryResultTaskRecordType                      `xml:"AdminTaskRecord"`                 // A record representing an Admin Task
+	VappNetworkRecord               []*QueryResultVappNetworkRecordType               `xml:"VAppNetworkRecord"`               // A record representing a vApp network
+	AdminVappNetworkRecord          []*QueryResultVappNetworkRecordType               `xml:"AdminVAppNetworkRecord"`          // A record representing an admin vApp network
 }
 
 // QueryResultVmGroupsRecordType represent a VM Groups record
@@ -2439,6 +2441,32 @@ type QueryResultVmGroupsRecordType struct {
 	ClusterName    string `xml:"clusterName,attr,omitempty"`
 	VcenterId      string `xml:"vcId,attr,omitempty"`
 	NamedVmGroupId string `xml:"namedVmGroupId,attr,omitempty"`
+}
+
+type QueryResultVappNetworkRecordType struct {
+	HREF                   string    `xml:"href,attr,omitempty"`
+	ID                     string    `xml:"id,attr,omitempty"`
+	Name                   string    `xml:"name,attr,omitempty"`
+	Type                   string    `xml:"linkType,attr,omitempty"`
+	IpScopeId              string    `xml:"ipScopeId,attr,omitempty"`
+	IpScopeInherited       bool      `xml:"ipScopeInherited,attr,omitempty"`
+	Gateway                string    `xml:"gateway,attr,omitempty"`
+	Netmask                string    `xml:"netmask,attr,omitempty"`
+	SubnetPrefixLength     int       `xml:"subnetPrefixLength,attr,omitempty"`
+	Dns1                   string    `xml:"dns1,attr,omitempty"`
+	Dns2                   string    `xml:"dns2,attr,omitempty"`
+	DnsSuffix              string    `xml:"dnsSuffix,attr,omitempty"`
+	Vapp                   string    `xml:"vApp,attr,omitempty"`            // the HREF of the parent vApp
+	VappName               string    `xml:"vAppName,attr,omitempty"`        // the name of the parent vApp
+	LinkNetworkName        string    `xml:"linkNetworkName,attr,omitempty"` // this field is filled when called in tenant context
+	RealNetworkName        string    `xml:"realNetworkName,attr,omitempty"`
+	RealNetworkPortgroupId string    `xml:"realNetworkPortgroupId,attr,omitempty"`
+	VCenterName            string    `xml:"vcName,attr,omitempty"`
+	VCenter                string    `xml:"vc,attr,omitempty"`
+	IsBusy                 bool      `xml:"isBusy,attr,omitempty"`
+	IsLinked               bool      `xml:"isLinked,attr,omitempty"`
+	RetainNicResources     bool      `xml:"retainNicResources,attr,omitempty"`
+	Metadata               *Metadata `xml:"Metadata,omitempty"`
 }
 
 // QueryResultResourcePoolRecordType represent a Resource Pool record
