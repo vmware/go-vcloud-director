@@ -6,7 +6,8 @@ type SolutionLandingZoneType struct {
 	// ID is the Org ID that the Solution Landing Zone is configured for
 	ID string `json:"id"`
 	// Name is the Org name that the Solution Landing Zone is configured for
-	Name     string                       `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
+	// Catalogs
 	Catalogs []SolutionLandingZoneCatalog `json:"catalogs"`
 	Vdcs     []SolutionLandingZoneVdc     `json:"vdcs"`
 }
@@ -32,4 +33,19 @@ type SolutionLandingZoneVdcChild struct {
 	Name         string   `json:"name,omitempty"`
 	IsDefault    bool     `json:"isDefault"`
 	Capabilities []string `json:"capabilities"`
+}
+
+type SolutionEntity struct {
+	Eula     string          `json:"eula"`
+	Icon     string          `json:"icon"`
+	Manifest map[string]any  `json:"manifest"`
+	Origin   SolutionsOrigin `json:"origin"`
+	Status   string          `json:"status"`
+}
+
+type SolutionsOrigin struct {
+	Type          string `json:"type"`
+	AcceptedBy    string `json:"acceptedBy"`
+	AcceptedOn    string `json:"acceptedOn"`
+	CatalogItemId string `json:"catalogItemId"`
 }
