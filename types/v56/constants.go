@@ -156,6 +156,8 @@ const (
 	MimeFederationSettingsJson = "application/vnd.vmware.admin.organizationFederationSettings+json"
 	// Mime to handle virtual hardware versions
 	MimeVirtualHardwareVersion = "application/vnd.vmware.vcloud.virtualHardwareVersion+xml"
+	// Mime to handle org associations
+	MimeOrgAssociation = "application/vnd.vmware.admin.organizationAssociations+xml"
 )
 
 const (
@@ -286,6 +288,8 @@ const (
 	QtProviderVdcStorageProfile = "providerVdcStorageProfile" // StorageProfile of Provider VDC
 	QtVappNetwork               = "vAppNetwork"
 	QtAdminVappNetwork          = "adminVAppNetwork"
+	QtSiteAssociation           = "siteAssociation"
+	QtOrgAssociation            = "orgAssociation"
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type

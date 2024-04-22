@@ -2421,6 +2421,8 @@ type QueryResultRecordsType struct {
 	AdminTaskRecord                 []*QueryResultTaskRecordType                      `xml:"AdminTaskRecord"`                 // A record representing an Admin Task
 	VappNetworkRecord               []*QueryResultVappNetworkRecordType               `xml:"VAppNetworkRecord"`               // A record representing a vApp network
 	AdminVappNetworkRecord          []*QueryResultVappNetworkRecordType               `xml:"AdminVAppNetworkRecord"`          // A record representing an admin vApp network
+	SiteAssociationRecord           []*QueryResultSiteAssociationRecord               `xml:"SiteAssociationRecord"`           // A record representing a site association
+	OrgAssociationRecord            []*QueryResultOrgAssociationRecord                `xml:"OrgAssociationRecord"`            // A record representing an Org association
 }
 
 // QueryResultVmGroupsRecordType represent a VM Groups record

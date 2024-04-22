@@ -181,6 +181,12 @@ func addResults(queryType string, cumulativeResults, newResults Results) (Result
 	case types.QtAdminVappNetwork:
 		cumulativeResults.Results.AdminVappNetworkRecord = append(cumulativeResults.Results.AdminVappNetworkRecord, newResults.Results.AdminVappNetworkRecord...)
 		size = len(newResults.Results.AdminVappNetworkRecord)
+	case types.QtSiteAssociation:
+		cumulativeResults.Results.SiteAssociationRecord = append(cumulativeResults.Results.SiteAssociationRecord, newResults.Results.SiteAssociationRecord...)
+		size = len(newResults.Results.SiteAssociationRecord)
+	case types.QtOrgAssociation:
+		cumulativeResults.Results.OrgAssociationRecord = append(cumulativeResults.Results.OrgAssociationRecord, newResults.Results.OrgAssociationRecord...)
+		size = len(newResults.Results.OrgAssociationRecord)
 
 	default:
 		return Results{}, 0, fmt.Errorf("query type %s not supported", queryType)
@@ -220,6 +226,8 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 		types.QtProviderVdcStorageProfile,
 		types.QtVappNetwork,
 		types.QtAdminVappNetwork,
+		types.QtSiteAssociation,
+		types.QtOrgAssociation,
 	}
 	// Make sure the query type is supported
 	// We need to check early, as queries that would return less than 25 items (default page size) would succeed,
