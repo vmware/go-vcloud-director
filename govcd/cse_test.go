@@ -79,6 +79,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cseVersion, NotNil)
 
+	sshPublicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrCI+QkLjgQVqR7c7dJfawJqCslVomo5I25JdolqlteX7RCUq0yncWyS+8MTYWCS03sm1jOroLOeuji8CDKCDCcKwQerJiOFoJS+VOK5xCjJ2u8RBGlIpXNcmIh2VriRJrV7TCKrFMSKLNF4/n83q4gWI/YPf6/dRhpPB72HYrdI4omvRlU4GG09jMmgiz+5Yb8wJEXYMsJni+MwPzFKe6TbMcqjBusDyeFGAhgyN7QJGpdNhAn1sqvqZrW2QjaE8P+4t8RzBo8B2ucyQazd6+lbYmOHq9366LjG160snzXrFzlARc4hhpjMzu9Bcm6i3ZZI70qhIbmi5IonbbVh8t"
 	// Create the cluster
 	clusterSettings := CseClusterSettings{
 		Name:                    "test-cse",
@@ -112,6 +113,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		NodeHealthCheck:    true,
 		PodCidr:            "100.96.0.0/11",
 		ServiceCidr:        "100.64.0.0/13",
+		SshPublicKey:       sshPublicKey,
 		AutoRepairOnErrors: true,
 	}
 	cluster, err := org.CseCreateKubernetesCluster(clusterSettings, 150*time.Minute)
@@ -409,6 +411,7 @@ func assertCseClusterCreation(check *C, createdCluster *CseKubernetesCluster, se
 	check.Assert(createdCluster.ServiceCidr, Equals, settings.ServiceCidr)
 	check.Assert(createdCluster.SshPublicKey, Equals, settings.SshPublicKey)
 	check.Assert(createdCluster.VirtualIpSubnet, Equals, settings.VirtualIpSubnet)
+	check.Assert(createdCluster.SshPublicKey, Equals, settings.SshPublicKey)
 
 	v411, err := semver.NewVersion("4.1.1")
 	check.Assert(err, IsNil)

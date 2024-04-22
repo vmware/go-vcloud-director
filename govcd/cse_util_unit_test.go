@@ -235,63 +235,75 @@ func Test_tkgVersionBundle_compareTkgVersion(t *testing.T) {
 				TkgVersion: tt.receiverTkgVersion,
 			}
 			if got := tkgVersions.compareTkgVersion(tt.comparedTkgVersion); got != tt.want {
-				t.Errorf("kubernetesVersionIsOneMinorHigher() = %v, want %v", got, tt.want)
+				t.Errorf("compareTkgVersion() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_tkgVersionBundle_kubernetesVersionIsOneMinorHigher(t *testing.T) {
+func Test_tkgVersionBundle_kubernetesVersionIsUpgradeableFrom(t *testing.T) {
 	tests := []struct {
-		name                      string
-		receiverKubernetesVersion string
-		comparedKubernetesVersion string
-		want                      bool
+		name             string
+		upgradeToVersion string
+		fromVersion      string
+		want             bool
 	}{
 		{
-			name:                      "same Kubernetes versions",
-			receiverKubernetesVersion: "1.20.2+vmware.1",
-			comparedKubernetesVersion: "1.20.2+vmware.1",
-			want:                      false,
+			name:             "same Kubernetes versions",
+			upgradeToVersion: "1.20.2+vmware.1",
+			fromVersion:      "1.20.2+vmware.1",
+			want:             false,
 		},
 		{
-			name:                      "one Kubernetes minor higher",
-			receiverKubernetesVersion: "1.21.9+vmware.1",
-			comparedKubernetesVersion: "1.20.2+vmware.1",
-			want:                      true,
+			name:             "the Kubernetes patch is higher",
+			upgradeToVersion: "1.21.9+vmware.1",
+			fromVersion:      "1.21.7+vmware.1",
+			want:             true,
 		},
 		{
-			name:                      "one Kubernetes minor lower",
-			receiverKubernetesVersion: "1.19.9+vmware.1",
-			comparedKubernetesVersion: "1.20.2+vmware.1",
-			want:                      false,
+			name:             "one Kubernetes minor higher",
+			upgradeToVersion: "1.21.9+vmware.1",
+			fromVersion:      "1.20.2+vmware.1",
+			want:             true,
 		},
 		{
-			name:                      "several Kubernetes minors higher",
-			receiverKubernetesVersion: "1.22.9+vmware.1",
-			comparedKubernetesVersion: "1.20.2+vmware.1",
-			want:                      false,
+			name:             "the Kubernetes patch is lower",
+			upgradeToVersion: "1.20.0+vmware.1",
+			fromVersion:      "1.20.7+vmware.1",
+			want:             false,
 		},
 		{
-			name:                      "wrong receiver Kubernetes version",
-			receiverKubernetesVersion: "foo",
-			comparedKubernetesVersion: "1.20.2+vmware.1",
-			want:                      false,
+			name:             "one Kubernetes minor lower",
+			upgradeToVersion: "1.19.9+vmware.1",
+			fromVersion:      "1.20.2+vmware.1",
+			want:             false,
 		},
 		{
-			name:                      "wrong compared Kubernetes version",
-			receiverKubernetesVersion: "1.20.2+vmware.1",
-			comparedKubernetesVersion: "foo",
-			want:                      false,
+			name:             "several Kubernetes minors higher",
+			upgradeToVersion: "1.22.9+vmware.1",
+			fromVersion:      "1.20.2+vmware.1",
+			want:             false,
+		},
+		{
+			name:             "wrong receiver Kubernetes version",
+			upgradeToVersion: "foo",
+			fromVersion:      "1.20.2+vmware.1",
+			want:             false,
+		},
+		{
+			name:             "wrong compared Kubernetes version",
+			upgradeToVersion: "1.20.2+vmware.1",
+			fromVersion:      "foo",
+			want:             false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tkgVersions := tkgVersionBundle{
-				KubernetesVersion: tt.receiverKubernetesVersion,
+				KubernetesVersion: tt.upgradeToVersion,
 			}
-			if got := tkgVersions.kubernetesVersionIsOneMinorHigher(tt.comparedKubernetesVersion); got != tt.want {
-				t.Errorf("kubernetesVersionIsOneMinorHigher() = %v, want %v", got, tt.want)
+			if got := tkgVersions.kubernetesVersionIsUpgradeableFrom(tt.fromVersion); got != tt.want {
+				t.Errorf("kubernetesVersionIsUpgradeableFrom() = %v, want %v", got, tt.want)
 			}
 		})
 	}
