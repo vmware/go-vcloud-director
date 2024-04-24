@@ -44,7 +44,10 @@ func (client Client) QueryAllSiteAssociations(params, notEncodedParams map[strin
 
 // GetSiteAssociationData retrieves the data needed to start an association with another site
 func (client Client) GetSiteAssociationData() (*types.SiteAssociationMember, error) {
-	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations", "localAssociationData")
+	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations", "site/associations/localAssociationData")
+	if err != nil {
+		return nil, fmt.Errorf("error setting the URL path for localAssociationData: %s", err)
+	}
 	var associationData types.SiteAssociationMember
 	_, err = client.ExecuteRequest(href, http.MethodGet, types.MimeSiteAssociation,
 		"error retrieving site associations: %s", nil, &associationData)
@@ -60,6 +63,9 @@ func (client Client) GetSiteAssociationData() (*types.SiteAssociationMember, err
 func (client Client) GetSiteAssociations() ([]*types.SiteAssociationMember, error) {
 
 	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations")
+	if err != nil {
+		return nil, fmt.Errorf("error setting the URL path for site/associations: %s", err)
+	}
 	var associations types.SiteAssociations
 	_, err = client.ExecuteRequest(href, http.MethodGet, types.MimeSiteAssociation,
 		"error retrieving site associations: %s", nil, &associations)
