@@ -190,6 +190,9 @@ func addResults(queryType string, cumulativeResults, newResults Results) (Result
 	case types.QtOrgAssociation:
 		cumulativeResults.Results.OrgAssociationRecord = append(cumulativeResults.Results.OrgAssociationRecord, newResults.Results.OrgAssociationRecord...)
 		size = len(newResults.Results.OrgAssociationRecord)
+	case types.QtOrg:
+		cumulativeResults.Results.OrgRecord = append(cumulativeResults.Results.OrgRecord, newResults.Results.OrgRecord...)
+		size = len(newResults.Results.OrgRecord)
 
 	default:
 		return Results{}, 0, fmt.Errorf("query type %s not supported", queryType)
