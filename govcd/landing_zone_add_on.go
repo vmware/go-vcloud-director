@@ -57,10 +57,36 @@ var iconTypes = map[string]string{
 	".ico":  "image/x-icon",
 }
 
-type SolutionEntity struct {
-	SolutionEntity *types.SolutionEntity
+type SolutionAddOn struct {
+	SolutionEntity *types.SolutionAddOn
 	DefinedEntity  *DefinedEntity
 	vcdClient      *VCDClient
+}
+
+// SolutionAddOnConfig defines configuration for Solution Add-On creation which is used for
+// 'VCDClient.CreateSolutionAddOn'.
+type SolutionAddOnConfig struct {
+	IsoFilePath          string
+	User                 string
+	CatalogItemId        string
+	AcceptEula           bool
+	AutoTrustCertificate bool
+}
+
+func createSolutionAddOnValidator(cfg SolutionAddOnConfig) error {
+	if cfg.IsoFilePath == "" {
+		return fmt.Errorf("'isoFilePath' must be specified")
+	}
+
+	if cfg.User == "" {
+		return fmt.Errorf("'user' must be specified")
+	}
+
+	if cfg.CatalogItemId == "" {
+		return fmt.Errorf("'catalogItemId' must be specified")
+	}
+
+	return nil
 }
 
 // CreateSolutionAddOn creates Solution Add-On instance in VCD based on given
@@ -75,27 +101,23 @@ type SolutionEntity struct {
 // 6. Lookup RDE type 'vmware:solutions_add_on:1.0.0'
 // 7. Create an RDE entity with payload from the 'isoFilePath' contents
 // 8.
-func (vcdClient *VCDClient) CreateSolutionAddOn(isoFilePath, user string, catalogItemId string, acceptEula, autoTrustCertificate bool) (*SolutionEntity, error) {
-	if catalogItemId == "" {
-		return nil, fmt.Errorf("the catalog item must be already uploaded and cannot be empty")
-	}
-
-	isoFileName, err := filepath.Abs(isoFilePath)
+func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*SolutionAddOn, error) {
+	err := createSolutionAddOnValidator(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("error building filename from path: %s", isoFileName)
+		return nil, err
 	}
 
-	foundFiles, err := getContentsFromIsoFiles(isoFilePath, wantedFiles)
+	foundFiles, err := getContentsFromIsoFiles(cfg.IsoFilePath, wantedFiles)
 	if err != nil {
-		return nil, fmt.Errorf("error reading contents of '%s': %s", isoFilePath, err)
+		return nil, fmt.Errorf("error reading contents of '%s': %s", cfg.IsoFilePath, err)
 	}
 
-	if !acceptEula {
+	if !cfg.AcceptEula {
 		eula := string(foundFiles[eulaKey].contents)
 		return nil, fmt.Errorf("unable to create when acceptEula is false.\nEULA:%s", eula)
 	}
 
-	solutionAddOnEntityRde, err := buildSolutionAddonRdeEntity(foundFiles, "administrator", catalogItemId)
+	solutionAddOnEntityRde, err := buildSolutionAddonRdeEntity(foundFiles, "administrator", cfg.CatalogItemId)
 	if err != nil {
 		return nil, fmt.Errorf("error building Solution Add-On RDE: %s", err)
 	}
@@ -105,12 +127,12 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(isoFilePath, user string, catalo
 		return nil, fmt.Errorf("error finding RDE Entity Name: %s", err)
 	}
 
-	if autoTrustCertificate {
+	if cfg.AutoTrustCertificate {
 		certificateText, err := extractSolutionAddOnCertificate(foundFiles)
 		if err != nil {
 			return nil, fmt.Errorf("error extracting Certificate from Add-On image: %s", err)
 		}
-
+		isoFileName := filepath.Base(cfg.IsoFilePath)
 		err = vcdClient.TrustAddOnImageCertificate(certificateText, isoFileName)
 		if err != nil {
 			return nil, fmt.Errorf("certificate trust was request, but it failed: %s", err)
@@ -150,12 +172,12 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(isoFilePath, user string, catalo
 		return nil, fmt.Errorf("error resolving Solutions Add-On after creating: %s", err)
 	}
 
-	result, err := convertRdeEntityToAny[types.SolutionEntity](createdRdeEntity.DefinedEntity.Entity)
+	result, err := convertRdeEntityToAny[types.SolutionAddOn](createdRdeEntity.DefinedEntity.Entity)
 	if err != nil {
 		return nil, err
 	}
 
-	returnType := SolutionEntity{
+	returnType := SolutionAddOn{
 		SolutionEntity: result,
 		vcdClient:      vcdClient,
 		DefinedEntity:  createdRdeEntity,
@@ -164,20 +186,20 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(isoFilePath, user string, catalo
 	return &returnType, nil
 }
 
-func (vcdClient *VCDClient) GetAllSolutionAddons(queryParameters url.Values) ([]*SolutionEntity, error) {
+func (vcdClient *VCDClient) GetAllSolutionAddons(queryParameters url.Values) ([]*SolutionAddOn, error) {
 	allAddons, err := vcdClient.GetAllRdes("vmware", "solutions_add_on", "1.0.0", queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving all Solution Add-ons: %s", err)
 	}
 
-	results := make([]*SolutionEntity, len(allAddons))
+	results := make([]*SolutionAddOn, len(allAddons))
 	for index, rde := range allAddons {
-		addon, err := convertRdeEntityToAny[types.SolutionEntity](rde.DefinedEntity.Entity)
+		addon, err := convertRdeEntityToAny[types.SolutionAddOn](rde.DefinedEntity.Entity)
 		if err != nil {
 			return nil, fmt.Errorf("error converting RDE to Solution Add-on: %s", err)
 		}
 
-		results[index] = &SolutionEntity{
+		results[index] = &SolutionAddOn{
 			vcdClient:      vcdClient,
 			DefinedEntity:  rde,
 			SolutionEntity: addon,
@@ -187,7 +209,7 @@ func (vcdClient *VCDClient) GetAllSolutionAddons(queryParameters url.Values) ([]
 	return results, nil
 }
 
-func (vcdClient *VCDClient) GetSolutionAddonById(id string) (*SolutionEntity, error) {
+func (vcdClient *VCDClient) GetSolutionAddonById(id string) (*SolutionAddOn, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id must be specified")
 	}
@@ -196,12 +218,12 @@ func (vcdClient *VCDClient) GetSolutionAddonById(id string) (*SolutionEntity, er
 		return nil, fmt.Errorf("error retrieving Solution Add-On by ID: %s", err)
 	}
 
-	result, err := convertRdeEntityToAny[types.SolutionEntity](rde.DefinedEntity.Entity)
+	result, err := convertRdeEntityToAny[types.SolutionAddOn](rde.DefinedEntity.Entity)
 	if err != nil {
 		return nil, err
 	}
 
-	packages := &SolutionEntity{
+	packages := &SolutionAddOn{
 		SolutionEntity: result,
 		vcdClient:      vcdClient,
 		DefinedEntity:  rde,
@@ -210,7 +232,34 @@ func (vcdClient *VCDClient) GetSolutionAddonById(id string) (*SolutionEntity, er
 	return packages, nil
 }
 
-func (s *SolutionEntity) Delete() error {
+func (s *SolutionAddOn) Update(saoCfg *types.SolutionAddOn) (*SolutionAddOn, error) {
+	unmarshalledRdeEntityJson, err := convertAnyToRdeEntity(saoCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	s.DefinedEntity.DefinedEntity.Entity = unmarshalledRdeEntityJson
+
+	err = s.DefinedEntity.Update(*s.DefinedEntity.DefinedEntity)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := convertRdeEntityToAny[types.SolutionAddOn](s.DefinedEntity.DefinedEntity.Entity)
+	if err != nil {
+		return nil, err
+	}
+
+	packages := SolutionAddOn{
+		SolutionEntity: result,
+		vcdClient:      s.vcdClient,
+		DefinedEntity:  s.DefinedEntity,
+	}
+
+	return &packages, nil
+}
+
+func (s *SolutionAddOn) Delete() error {
 	if s.DefinedEntity == nil {
 		return fmt.Errorf("error DefineEntity is nil")
 	}
@@ -218,7 +267,7 @@ func (s *SolutionEntity) Delete() error {
 }
 
 // Id is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
-func (s *SolutionEntity) Id() string {
+func (s *SolutionAddOn) Id() string {
 	if s == nil || s.DefinedEntity == nil || s.DefinedEntity.DefinedEntity == nil {
 		return ""
 	}
@@ -317,7 +366,7 @@ func getContentsFromIsoFiles(isoFileName string, wanted map[string]isoFileDef) (
 	return result, nil
 }
 
-func buildSolutionAddonRdeEntity(foundFiles map[string]isoFileDef, user, catalogItemId string) (*types.SolutionEntity, error) {
+func buildSolutionAddonRdeEntity(foundFiles map[string]isoFileDef, user, catalogItemId string) (*types.SolutionAddOn, error) {
 	iconContents := foundFiles[iconKey].contents
 	iconText := base64.StdEncoding.EncodeToString(iconContents)
 	licenseText := foundFiles[eulaKey].contents
@@ -342,12 +391,12 @@ func buildSolutionAddonRdeEntity(foundFiles map[string]isoFileDef, user, catalog
 	}
 	iconEntry = fmt.Sprintf("data:%s;base64,%s", iconDef, iconText)
 
-	solutionEntity := &types.SolutionEntity{
+	solutionEntity := &types.SolutionAddOn{
 		Eula:     string(licenseText),
 		Status:   "READY",
 		Manifest: manifestStruct,
 		Icon:     iconEntry,
-		Origin: types.SolutionsOrigin{
+		Origin: types.SolutionAddOnOrigin{
 			Type:          "CATALOG",
 			AcceptedBy:    user,
 			AcceptedOn:    time.Now().UTC().Format(time.RFC3339),

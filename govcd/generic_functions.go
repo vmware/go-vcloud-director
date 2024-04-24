@@ -98,7 +98,7 @@ func localFilterOneOrError[E any](entityLabel string, entities []*E, fieldName, 
 	return oneOrError(fieldName, expectedFieldValue, filteredValues)
 }
 
-// convertAnyToRdeEntity unmarshalls any entity to map[string]interface{}
+// convertAnyToRdeEntity unmarshals any entity to map[string]interface{}
 func convertAnyToRdeEntity[E any](entityCfg *E) (map[string]interface{}, error) {
 	jsonText, err := json.Marshal(entityCfg)
 	if err != nil {

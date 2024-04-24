@@ -26,7 +26,6 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 
 	// Upload image
 	isoFileName := filepath.Base(isoPath)
-
 	org, err := vcd.client.GetOrgById(slz.SolutionLandingZoneType.ID)
 	check.Assert(err, IsNil)
 	catalog, err := org.GetCatalogById(slz.SolutionLandingZoneType.Catalogs[0].ID, false)
@@ -43,7 +42,14 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 		check.Assert(err, IsNil)
 	}
 
-	solutionAddOn, err := vcd.client.CreateSolutionAddOn(isoPath, "administrator", catItem.CatalogItem.ID, true, false)
+	createCfg := SolutionAddOnConfig{
+		IsoFilePath:          isoPath,
+		User:                 "administrator",
+		CatalogItemId:        catItem.CatalogItem.ID,
+		AcceptEula:           true,
+		AutoTrustCertificate: true,
+	}
+	solutionAddOn, err := vcd.client.CreateSolutionAddOn(createCfg)
 	check.Assert(err, IsNil)
 	PrependToCleanupListOpenApi(solutionAddOn.DefinedEntity.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntities+solutionAddOn.DefinedEntity.DefinedEntity.ID)
 

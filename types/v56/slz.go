@@ -35,15 +35,15 @@ type SolutionLandingZoneVdcChild struct {
 	Capabilities []string `json:"capabilities"`
 }
 
-type SolutionEntity struct {
-	Eula     string          `json:"eula"`
-	Icon     string          `json:"icon"`
-	Manifest map[string]any  `json:"manifest"`
-	Origin   SolutionsOrigin `json:"origin"`
-	Status   string          `json:"status"`
+type SolutionAddOn struct {
+	Eula     string              `json:"eula"`
+	Icon     string              `json:"icon"`
+	Manifest map[string]any      `json:"manifest"`
+	Origin   SolutionAddOnOrigin `json:"origin"`
+	Status   string              `json:"status"`
 }
 
-type SolutionsOrigin struct {
+type SolutionAddOnOrigin struct {
 	Type          string `json:"type"`
 	AcceptedBy    string `json:"acceptedBy"`
 	AcceptedOn    string `json:"acceptedOn"`
