@@ -9,7 +9,9 @@ package govcd
 import (
 	"fmt"
 	"github.com/kr/pretty"
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+	"time"
 )
 
 func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
@@ -61,5 +63,24 @@ func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
 	orgRawAssociationData, err := org.GetOrgRawAssociationData()
 	check.Assert(err, IsNil)
 	fmt.Printf("---- %s\n", orgRawAssociationData)
+
+	// TODO: change the test to be more generic
+	fileName := "./multi-site/datacloud-1.xml"
+	settingData, err := ReadXmlDataFromFile[types.OrgAssociationMember](fileName)
+	check.Assert(err, IsNil)
+	check.Assert(settingData, NotNil)
+
+	err = org.SetOrgAssociation(*settingData)
+	check.Assert(err, IsNil)
+	time.Sleep(10 * time.Second)
+	newOrgAssociations, err := org.GetOrgAssociations()
+	check.Assert(err, IsNil)
+	for i, s := range newOrgAssociations {
+		fmt.Printf("NEW %d %# v\n", i, pretty.Formatter(s))
+	}
+	associationToDelete, err := org.GetOrgAssociationByOrgId(settingData.OrgID)
+	check.Assert(err, IsNil)
+	err = org.RemoveOrgAssociation(associationToDelete.Href)
+	check.Assert(err, IsNil)
 
 }

@@ -1,10 +1,13 @@
 package govcd
 
 import (
+	"encoding/xml"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
 )
 
 /*
@@ -115,6 +118,51 @@ func (org AdminOrg) GetOrgAssociations() ([]*types.OrgAssociationMember, error) 
 	return associations.OrgAssociations, nil
 }
 
+// SetOrgAssociationAsync sets a new Org association without waiting for completion
+func (org *AdminOrg) SetOrgAssociationAsync(associationData types.OrgAssociationMember) (Task, error) {
+	href, err := org.getAssociationLink(false)
+	if err != nil {
+		return Task{}, fmt.Errorf("error retrieving association URL: %s", err)
+	}
+	associationData.Xmlns = types.XMLNamespaceVCloud
+	task, err := org.client.ExecuteTaskRequest(href, http.MethodPost, "application/*+xml",
+		"error setting org association: %s", &associationData)
+	if err != nil {
+		return Task{}, err
+	}
+
+	return task, nil
+}
+
+// SetOrgAssociation sets a new Org association, waiting for completion
+func (org *AdminOrg) SetOrgAssociation(associationData types.OrgAssociationMember) error {
+	task, err := org.SetOrgAssociationAsync(associationData)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// RemoveOrgAssociationAsync removes an Org association without waiting for completion
+func (org *AdminOrg) RemoveOrgAssociationAsync(associationHref string) (Task, error) {
+	task, err := org.client.ExecuteTaskRequest(associationHref, http.MethodDelete, "",
+		"error removing org association: %s", nil)
+	if err != nil {
+		return Task{}, err
+	}
+
+	return task, nil
+}
+
+// RemoveOrgAssociation removes an Org association, waiting for completion
+func (org *AdminOrg) RemoveOrgAssociation(associationHref string) error {
+	task, err := org.RemoveOrgAssociationAsync(associationHref)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
 // GetOrgAssociationById retrieves a single Org association by its ID
 func (org AdminOrg) GetOrgAssociationById(id string) (*types.OrgAssociationMember, error) {
 	href, err := org.getAssociationLink(false)
@@ -135,6 +183,24 @@ func (org AdminOrg) GetOrgAssociationById(id string) (*types.OrgAssociationMembe
 	return &association, nil
 }
 
+// GetOrgAssociationByOrgId retrieves a single Org association by the ID of the associated Org
+func (org AdminOrg) GetOrgAssociationByOrgId(orgId string) (*types.OrgAssociationMember, error) {
+	associations, err := org.GetOrgAssociations()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving associations for org '%s': %s", org.AdminOrg.Name, err)
+	}
+
+	for _, a := range associations {
+		if equalIds(orgId, a.OrgID, "") {
+			return a, nil
+		}
+	}
+	return nil, fmt.Errorf("no association found for Org ID %s", orgId)
+}
+
+// getAssociationLink retrieves the URL needed to run associations operations with an Org.
+// If the 'localData' parameter is true, it returns the URL needed to download the association
+// data needed to create a new association
 func (org AdminOrg) getAssociationLink(localData bool) (string, error) {
 	href := getUrlFromLink(org.AdminOrg.Link, "down", types.MimeOrgAssociation)
 	if href == "" {
@@ -174,4 +240,18 @@ func (org AdminOrg) GetOrgRawAssociationData() ([]byte, error) {
 		return nil, fmt.Errorf("error retrieving association URL: %s", err)
 	}
 	return org.client.RetrieveRemoteDocument(href)
+}
+
+// ReadXmlDataFromFile reads the contents of a file and attempts decoding an expected data type
+func ReadXmlDataFromFile[dataType any](fileName string) (*dataType, error) {
+	contents, err := os.ReadFile(path.Clean(fileName))
+	if err != nil {
+		return nil, fmt.Errorf("error reading file '%s': %s", fileName, err)
+	}
+	var localData dataType
+	err = xml.Unmarshal(contents, &localData)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding data from file '%s': %s", fileName, err)
+	}
+	return &localData, nil
 }
