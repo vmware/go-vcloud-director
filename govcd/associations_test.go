@@ -34,6 +34,10 @@ func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
 	check.Assert(err, IsNil)
 	fmt.Printf("---- %# v\n", pretty.Formatter(associationData))
 
+	rawAssociationData, err := vcd.client.Client.GetSiteRawAssociationData()
+	check.Assert(err, IsNil)
+	fmt.Printf("%s\n", rawAssociationData)
+
 	fmt.Println()
 	siteAssociations, err := vcd.client.Client.GetSiteAssociations()
 	check.Assert(err, IsNil)
@@ -42,12 +46,20 @@ func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
 	}
 
 	fmt.Println()
-	org, err := vcd.client.GetAdminOrgByName("gmaxia")
+	//org, err := vcd.client.GetAdminOrgByName("gmaxia")
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
 	orgAssociations, err := org.GetOrgAssociations()
 	check.Assert(err, IsNil)
 	for i, s := range orgAssociations {
 		fmt.Printf("%d %# v\n", i, pretty.Formatter(s))
 	}
+
+	orgAssociationData, err := org.GetOrgAssociationData()
+	check.Assert(err, IsNil)
+	fmt.Printf("---- %# v\n", pretty.Formatter(orgAssociationData))
+	orgRawAssociationData, err := org.GetOrgRawAssociationData()
+	check.Assert(err, IsNil)
+	fmt.Printf("---- %s\n", orgRawAssociationData)
 
 }

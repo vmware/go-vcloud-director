@@ -42,9 +42,9 @@ func (client Client) QueryAllSiteAssociations(params, notEncodedParams map[strin
 	return result.Results.SiteAssociationRecord, nil
 }
 
-// GetSiteAssociationData retrieves the data needed to start an association with another site
+// GetSiteAssociationData retrieves the structured data needed to start an association with another site
 func (client Client) GetSiteAssociationData() (*types.SiteAssociationMember, error) {
-	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations", "site/associations/localAssociationData")
+	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations", "localAssociationData")
 	if err != nil {
 		return nil, fmt.Errorf("error setting the URL path for localAssociationData: %s", err)
 	}
@@ -56,6 +56,15 @@ func (client Client) GetSiteAssociationData() (*types.SiteAssociationMember, err
 	}
 
 	return &associationData, nil
+}
+
+// GetSiteRawAssociationData retrieves the raw (XML) data needed to start an association with another site
+func (client Client) GetSiteRawAssociationData() ([]byte, error) {
+	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations", "localAssociationData")
+	if err != nil {
+		return nil, fmt.Errorf("error setting the URL path for site/associations/localAssociationData: %s", err)
+	}
+	return client.RetrieveRemoteDocument(href)
 }
 
 // GetSiteAssociations retrieves all current site associations
@@ -92,13 +101,12 @@ func (client Client) QueryAllOrgAssociations(params, notEncodedParams map[string
 
 // GetOrgAssociations retrieves all associations available for the given Org
 func (org AdminOrg) GetOrgAssociations() ([]*types.OrgAssociationMember, error) {
-	href := getUrlFromLink(org.AdminOrg.Link, "down", types.MimeOrgAssociation)
-	if href == "" {
-		return nil, fmt.Errorf("no HREF found to get Org associations for Org '%s'", org.AdminOrg.Name)
+	href, err := org.getAssociationLink(false)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving association URL: %s", err)
 	}
-
 	var associations types.OrgAssociations
-	_, err := org.client.ExecuteRequest(href, http.MethodGet, types.MimeOrgAssociation,
+	_, err = org.client.ExecuteRequest(href, http.MethodGet, types.MimeOrgAssociation,
 		"error retrieving org associations: %s", nil, &associations)
 	if err != nil {
 		return nil, err
@@ -109,12 +117,10 @@ func (org AdminOrg) GetOrgAssociations() ([]*types.OrgAssociationMember, error) 
 
 // GetOrgAssociationById retrieves a single Org association by its ID
 func (org AdminOrg) GetOrgAssociationById(id string) (*types.OrgAssociationMember, error) {
-	href := getUrlFromLink(org.AdminOrg.Link, "down", types.MimeOrgAssociation)
-	if href == "" {
-		return nil, fmt.Errorf("no HREF found to get Org associations for Org '%s'", org.AdminOrg.Name)
+	href, err := org.getAssociationLink(false)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving association URL: %s", err)
 	}
-
-	var err error
 	href, err = url.JoinPath(href, id)
 	if err != nil {
 		return nil, fmt.Errorf("error joining URL path with ID: %s", err)
@@ -127,4 +133,45 @@ func (org AdminOrg) GetOrgAssociationById(id string) (*types.OrgAssociationMembe
 	}
 
 	return &association, nil
+}
+
+func (org AdminOrg) getAssociationLink(localData bool) (string, error) {
+	href := getUrlFromLink(org.AdminOrg.Link, "down", types.MimeOrgAssociation)
+	if href == "" {
+		return "", fmt.Errorf("no HREF found to get Org association data for Org '%s'", org.AdminOrg.Name)
+	}
+
+	if localData {
+		var err error
+		href, err = url.JoinPath(href, "localAssociationData")
+		if err != nil {
+			return "", err
+		}
+	}
+	return href, nil
+}
+
+// GetOrgAssociationData retrieves the structured data needed to start an association with another Org
+func (org AdminOrg) GetOrgAssociationData() (*types.OrgAssociationMember, error) {
+	href, err := org.getAssociationLink(true)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving association URL: %s", err)
+	}
+	var associationData types.OrgAssociationMember
+	_, err = org.client.ExecuteRequest(href, http.MethodGet, types.MimeOrgAssociation,
+		"error retrieving org association data: %s", nil, &associationData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &associationData, nil
+}
+
+// GetOrgRawAssociationData retrieves the raw (XML) data needed to start an association with another Org
+func (org AdminOrg) GetOrgRawAssociationData() ([]byte, error) {
+	href, err := org.getAssociationLink(true)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving association URL: %s", err)
+	}
+	return org.client.RetrieveRemoteDocument(href)
 }
