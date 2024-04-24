@@ -833,3 +833,83 @@ func (vcd *TestVCD) Test_NsxtGlobalDefaultSegmentProfileTemplate(check *C) {
 	err = createdSegmentProfileTemplate.Delete()
 	check.Assert(err, IsNil)
 }
+
+// Test retrieval of all Orgs
+func (vcd *TestVCD) Test_QueryAllOrgs(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_QueryOrgByName: Org Name not given")
+		return
+	}
+
+	orgs, err := vcd.client.QueryAllOrgs()
+	check.Assert(err, IsNil)
+	check.Assert(orgs, NotNil)
+
+	if vcd.config.VCD.Org != "" {
+		foundOrg := false
+		for _, org := range orgs {
+			if org.Name == vcd.config.VCD.Org {
+				foundOrg = true
+			}
+		}
+		check.Assert(foundOrg, Equals, true)
+	}
+}
+
+// Tests Org retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_QueryOrgByName(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_QueryOrgByName: Org Name not given")
+		return
+	}
+
+	org, err := vcd.client.QueryOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	orgFound := false
+	if vcd.config.VCD.Org == org.Name {
+		orgFound = true
+	}
+
+	if testVerbose {
+		fmt.Printf("Org %s\n", org.Name)
+		fmt.Printf("\t href    %s\n", org.HREF)
+		fmt.Printf("\t enabled %v\n", org.IsEnabled)
+		fmt.Println("")
+	}
+
+	check.Assert(orgFound, Equals, true)
+}
+
+// Tests Org retrieval by name, by ID, and by a combination of name and ID
+func (vcd *TestVCD) Test_QueryOrgById(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	if vcd.config.VCD.Org == "" {
+		check.Skip("Test_QueryOrgByName: Org Name not given")
+		return
+	}
+
+	namedOrg, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	orgFound := false
+	if vcd.config.VCD.Org == namedOrg.Org.Name {
+
+		idOrg, err := vcd.client.QueryOrgByID(namedOrg.Org.ID)
+		check.Assert(err, IsNil)
+
+		if idOrg.HREF == namedOrg.Org.HREF {
+			orgFound = true
+		}
+
+		if testVerbose {
+			fmt.Printf("Org %s\n", namedOrg.Org.Name)
+			fmt.Printf("\t Org HREF (by Name): %s\n", namedOrg.Org.HREF)
+			fmt.Printf("\t Org HREF (by ID): %s\n", idOrg.HREF)
+			fmt.Println("")
+		}
+	}
+	check.Assert(orgFound, Equals, true)
+}

@@ -78,6 +78,8 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			"cpuOverheadMhz", "isVCEnabled", "memoryReservedMB", "cpuReservedMhz", "storageOverheadMB", "memoryOverheadMB", "vc"}
 		taskFields = []string{"href", "id", "type", "org", "orgName", "name", "operationFull", "message", "startDate",
 			"endDate", "status", "progress", "ownerName", "object", "objectType", "objectName", "serviceNamespace"}
+		orgFields = []string{"href", "id", "type", "name", "displayName", "isEnabled", "isReadOnly", "canPublishCatalogs",
+			"deployedVMQuota", "storedVMQuota", "numberOfCatalogs", "numberOfVdcs", "numberOfVApps", "numberOfGroups", "numberOfDisks"}
 		fieldsOnDemand = map[string][]string{
 			types.QtVappTemplate:      vappTemplatefields,
 			types.QtAdminVappTemplate: vappTemplatefields,
@@ -97,6 +99,7 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			types.QtAdminOrgVdc:       orgVdcFields,
 			types.QtTask:              taskFields,
 			types.QtAdminTask:         taskFields,
+			types.QtOrg:               orgFields,
 		}
 	)
 
@@ -228,6 +231,7 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 		types.QtAdminVappNetwork,
 		types.QtSiteAssociation,
 		types.QtOrgAssociation,
+		types.QtOrg,
 	}
 	// Make sure the query type is supported
 	// We need to check early, as queries that would return less than 25 items (default page size) would succeed,
