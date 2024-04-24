@@ -42,6 +42,35 @@ func (client Client) QueryAllSiteAssociations(params, notEncodedParams map[strin
 	return result.Results.SiteAssociationRecord, nil
 }
 
+// GetSiteAssociationData retrieves the data needed to start an association with another site
+func (client Client) GetSiteAssociationData() (*types.SiteAssociationMember, error) {
+	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations", "localAssociationData")
+	var associationData types.SiteAssociationMember
+	_, err = client.ExecuteRequest(href, http.MethodGet, types.MimeSiteAssociation,
+		"error retrieving site associations: %s", nil, &associationData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &associationData, nil
+}
+
+// GetSiteAssociations retrieves all current site associations
+// If no associations are available, it returns an empty slice with no error
+func (client Client) GetSiteAssociations() ([]*types.SiteAssociationMember, error) {
+
+	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations")
+	var associations types.SiteAssociations
+	_, err = client.ExecuteRequest(href, http.MethodGet, types.MimeSiteAssociation,
+		"error retrieving site associations: %s", nil, &associations)
+	if err != nil {
+		return nil, err
+	}
+
+	return associations.SiteAssociations, nil
+}
+
+// QueryAllOrgAssociations retrieve all site associations with optional search parameters
 func (client Client) QueryAllOrgAssociations(params, notEncodedParams map[string]string) ([]*types.QueryResultOrgAssociationRecord, error) {
 	if !client.IsSysAdmin {
 		return nil, fmt.Errorf("system administrator privileges are needed to handle Org associations")
@@ -55,7 +84,8 @@ func (client Client) QueryAllOrgAssociations(params, notEncodedParams map[string
 	return result.Results.OrgAssociationRecord, nil
 }
 
-func (org *AdminOrg) GetOrgAssociations() ([]*types.OrgAssociationMember, error) {
+// GetOrgAssociations retrieves all associations available for the given Org
+func (org AdminOrg) GetOrgAssociations() ([]*types.OrgAssociationMember, error) {
 	href := getUrlFromLink(org.AdminOrg.Link, "down", types.MimeOrgAssociation)
 	if href == "" {
 		return nil, fmt.Errorf("no HREF found to get Org associations for Org '%s'", org.AdminOrg.Name)
@@ -63,15 +93,16 @@ func (org *AdminOrg) GetOrgAssociations() ([]*types.OrgAssociationMember, error)
 
 	var associations types.OrgAssociations
 	_, err := org.client.ExecuteRequest(href, http.MethodGet, types.MimeOrgAssociation,
-		"error retrieving associations: %s", nil, &associations)
+		"error retrieving org associations: %s", nil, &associations)
 	if err != nil {
 		return nil, err
 	}
 
-	return associations.OrgAssociationMember, nil
+	return associations.OrgAssociations, nil
 }
 
-func (org *AdminOrg) GetOrgAssociationById(id string) (*types.OrgAssociationMember, error) {
+// GetOrgAssociationById retrieves a single Org association by its ID
+func (org AdminOrg) GetOrgAssociationById(id string) (*types.OrgAssociationMember, error) {
 	href := getUrlFromLink(org.AdminOrg.Link, "down", types.MimeOrgAssociation)
 	if href == "" {
 		return nil, fmt.Errorf("no HREF found to get Org associations for Org '%s'", org.AdminOrg.Name)
