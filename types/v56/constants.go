@@ -158,6 +158,8 @@ const (
 	MimeVirtualHardwareVersion = "application/vnd.vmware.vcloud.virtualHardwareVersion+xml"
 	// Mime to handle org associations
 	MimeOrgAssociation = "application/vnd.vmware.admin.organizationAssociations+xml"
+	// Mime to handle site associations
+	MimeSiteAssociation = "application/vnd.vmware.admin.siteAssociation+xml"
 )
 
 const (
