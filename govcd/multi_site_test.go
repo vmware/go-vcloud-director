@@ -65,12 +65,30 @@ func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
 	fmt.Printf("---- %s\n", orgRawAssociationData)
 
 	// TODO: change the test to be more generic
-	fileName := "./multi-site/datacloud-1.xml"
-	settingData, err := ReadXmlDataFromFile[types.OrgAssociationMember](fileName)
-	check.Assert(err, IsNil)
-	check.Assert(settingData, NotNil)
 
-	err = org.SetOrgAssociation(*settingData)
+	siteFileName := "./multi-site/sc1-vcd-22-29.eng.vmware.com.xml"
+	siteSettingData, err := ReadXmlDataFromFile[types.SiteAssociationMember](siteFileName)
+	check.Assert(err, IsNil)
+	check.Assert(siteSettingData, NotNil)
+	err = vcd.client.Client.SetSiteAssociation(*siteSettingData)
+	check.Assert(err, IsNil)
+	time.Sleep(10 * time.Second)
+	newSiteAssociations, err := vcd.client.Client.GetSiteAssociations()
+	check.Assert(err, IsNil)
+	for i, s := range newSiteAssociations {
+		fmt.Printf("NEW SITE %d %# v\n", i, pretty.Formatter(s))
+	}
+	siteAssociationToDelete, err := vcd.client.Client.GetSiteAssociationBySiteId(siteSettingData.SiteID)
+	check.Assert(err, IsNil)
+	err = vcd.client.Client.RemoveSiteAssociation(siteAssociationToDelete.Href)
+	check.Assert(err, IsNil)
+
+	orgFileName := "./multi-site/datacloud-1.xml"
+	orgSettingData, err := ReadXmlDataFromFile[types.OrgAssociationMember](orgFileName)
+	check.Assert(err, IsNil)
+	check.Assert(orgSettingData, NotNil)
+
+	err = org.SetOrgAssociation(*orgSettingData)
 	check.Assert(err, IsNil)
 	time.Sleep(10 * time.Second)
 	newOrgAssociations, err := org.GetOrgAssociations()
@@ -78,9 +96,9 @@ func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
 	for i, s := range newOrgAssociations {
 		fmt.Printf("NEW %d %# v\n", i, pretty.Formatter(s))
 	}
-	associationToDelete, err := org.GetOrgAssociationByOrgId(settingData.OrgID)
+	orgAssociationToDelete, err := org.GetOrgAssociationByOrgId(orgSettingData.OrgID)
 	check.Assert(err, IsNil)
-	err = org.RemoveOrgAssociation(associationToDelete.Href)
+	err = org.RemoveOrgAssociation(orgAssociationToDelete.Href)
 	check.Assert(err, IsNil)
 
 }

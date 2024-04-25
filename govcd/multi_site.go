@@ -22,16 +22,11 @@ The associations come in two flavors:
 
 */
 
-// TODO:
-// QueryAllSiteAssociations // gets list of all Site associations
-// QueryAllOrgAssociations  // gets list of all Org associatons
-// GetSiteAssociationById   // gets info on existing site association
-// GetOrgAssociationById    // gets info on existing org association
-// DownloadSiteData         // needed to create Site association
-// DownloadOrgData          // needed to create Org association
-// SetSiteAssociation       // creates new site association
-// SetOrgAssociation        // creates new Org association
+// -----------------------------------------------------------------------------------------------------------------
+// Site association read operations
+// -----------------------------------------------------------------------------------------------------------------
 
+// QueryAllSiteAssociations retrieves all site associations for the current site
 func (client Client) QueryAllSiteAssociations(params, notEncodedParams map[string]string) ([]*types.QueryResultSiteAssociationRecord, error) {
 	if !client.IsSysAdmin {
 		return nil, fmt.Errorf("system administrator privileges are needed to handle site associations")
@@ -46,6 +41,7 @@ func (client Client) QueryAllSiteAssociations(params, notEncodedParams map[strin
 }
 
 // GetSiteAssociationData retrieves the structured data needed to start an association with another site
+// This is useful when we have control of both sites from the same client
 func (client Client) GetSiteAssociationData() (*types.SiteAssociationMember, error) {
 	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations", "localAssociationData")
 	if err != nil {
@@ -62,6 +58,7 @@ func (client Client) GetSiteAssociationData() (*types.SiteAssociationMember, err
 }
 
 // GetSiteRawAssociationData retrieves the raw (XML) data needed to start an association with another site
+// This is useful when we want to save this data to a file for future use
 func (client Client) GetSiteRawAssociationData() ([]byte, error) {
 	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations", "localAssociationData")
 	if err != nil {
@@ -87,6 +84,75 @@ func (client Client) GetSiteAssociations() ([]*types.SiteAssociationMember, erro
 
 	return associations.SiteAssociations, nil
 }
+
+// GetSiteAssociationBySiteId retrieves a single site association by the ID of the associated site
+// Note that there could be only one association between two sites
+func (client Client) GetSiteAssociationBySiteId(siteId string) (*types.SiteAssociationMember, error) {
+	associations, err := client.GetSiteAssociations()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving associations for current site: %s", err)
+	}
+
+	for _, a := range associations {
+		if equalIds(siteId, a.SiteID, "") {
+			return a, nil
+		}
+	}
+	return nil, fmt.Errorf("no association found for site ID %s", siteId)
+}
+
+// -----------------------------------------------------------------------------------------------------------------
+// Site association modifying operations
+// -----------------------------------------------------------------------------------------------------------------
+
+// SetSiteAssociationAsync sets a new site association without waiting for completion
+func (client Client) SetSiteAssociationAsync(associationData types.SiteAssociationMember) (Task, error) {
+	href, err := url.JoinPath(client.VCDHREF.String(), "site", "associations")
+	if err != nil {
+		return Task{}, fmt.Errorf("error setting the URL path for site/associations: %s", err)
+	}
+	associationData.Xmlns = types.XMLNamespaceVCloud
+	task, err := client.ExecuteTaskRequest(href, http.MethodPost, "application/*+xml",
+		"error setting site association: %s", &associationData)
+	if err != nil {
+		return Task{}, err
+	}
+
+	return task, nil
+}
+
+// SetSiteAssociation sets a new site association, waiting for completion
+func (client Client) SetSiteAssociation(associationData types.SiteAssociationMember) error {
+	task, err := client.SetSiteAssociationAsync(associationData)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// RemoveSiteAssociationAsync removes a site association without waiting for completion
+func (client Client) RemoveSiteAssociationAsync(associationHref string) (Task, error) {
+	task, err := client.ExecuteTaskRequest(associationHref, http.MethodDelete, "",
+		"error removing site association: %s", nil)
+	if err != nil {
+		return Task{}, err
+	}
+
+	return task, nil
+}
+
+// RemoveSiteAssociation removes a site association, waiting for completion
+func (client Client) RemoveSiteAssociation(associationHref string) error {
+	task, err := client.RemoveSiteAssociationAsync(associationHref)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// -----------------------------------------------------------------------------------------------------------------
+// Org association read operations
+// -----------------------------------------------------------------------------------------------------------------
 
 // QueryAllOrgAssociations retrieve all site associations with optional search parameters
 func (client Client) QueryAllOrgAssociations(params, notEncodedParams map[string]string) ([]*types.QueryResultOrgAssociationRecord, error) {
@@ -117,6 +183,53 @@ func (org AdminOrg) GetOrgAssociations() ([]*types.OrgAssociationMember, error) 
 
 	return associations.OrgAssociations, nil
 }
+
+// GetOrgAssociationByOrgId retrieves a single Org association by the ID of the associated Org
+// Note that there could be only one association between two organization
+func (org AdminOrg) GetOrgAssociationByOrgId(orgId string) (*types.OrgAssociationMember, error) {
+	associations, err := org.GetOrgAssociations()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving associations for org '%s': %s", org.AdminOrg.Name, err)
+	}
+
+	for _, a := range associations {
+		if equalIds(orgId, a.OrgID, "") {
+			return a, nil
+		}
+	}
+	return nil, fmt.Errorf("no association found for Org ID %s", orgId)
+}
+
+// GetOrgAssociationData retrieves the structured data needed to start an association with another Org
+// This is useful when we have control of both Orgs from the same client
+func (org AdminOrg) GetOrgAssociationData() (*types.OrgAssociationMember, error) {
+	href, err := org.getAssociationLink(true)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving association URL: %s", err)
+	}
+	var associationData types.OrgAssociationMember
+	_, err = org.client.ExecuteRequest(href, http.MethodGet, types.MimeOrgAssociation,
+		"error retrieving org association data: %s", nil, &associationData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &associationData, nil
+}
+
+// GetOrgRawAssociationData retrieves the raw (XML) data needed to start an association with another Org
+// This is useful when we want to save this data to a file for future use
+func (org AdminOrg) GetOrgRawAssociationData() ([]byte, error) {
+	href, err := org.getAssociationLink(true)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving association URL: %s", err)
+	}
+	return org.client.RetrieveRemoteDocument(href)
+}
+
+// -----------------------------------------------------------------------------------------------------------------
+// Org association modifying operations
+// -----------------------------------------------------------------------------------------------------------------
 
 // SetOrgAssociationAsync sets a new Org association without waiting for completion
 func (org *AdminOrg) SetOrgAssociationAsync(associationData types.OrgAssociationMember) (Task, error) {
@@ -163,40 +276,9 @@ func (org *AdminOrg) RemoveOrgAssociation(associationHref string) error {
 	return task.WaitTaskCompletion()
 }
 
-// GetOrgAssociationById retrieves a single Org association by its ID
-func (org AdminOrg) GetOrgAssociationById(id string) (*types.OrgAssociationMember, error) {
-	href, err := org.getAssociationLink(false)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving association URL: %s", err)
-	}
-	href, err = url.JoinPath(href, id)
-	if err != nil {
-		return nil, fmt.Errorf("error joining URL path with ID: %s", err)
-	}
-	var association types.OrgAssociationMember
-	_, err = org.client.ExecuteRequest(href, http.MethodGet, types.MimeOrgAssociation,
-		"error retrieving association: %s", nil, &association)
-	if err != nil {
-		return nil, err
-	}
-
-	return &association, nil
-}
-
-// GetOrgAssociationByOrgId retrieves a single Org association by the ID of the associated Org
-func (org AdminOrg) GetOrgAssociationByOrgId(orgId string) (*types.OrgAssociationMember, error) {
-	associations, err := org.GetOrgAssociations()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving associations for org '%s': %s", org.AdminOrg.Name, err)
-	}
-
-	for _, a := range associations {
-		if equalIds(orgId, a.OrgID, "") {
-			return a, nil
-		}
-	}
-	return nil, fmt.Errorf("no association found for Org ID %s", orgId)
-}
+// -----------------------------------------------------------------------------------------------------------------
+// Miscellaneous
+// -----------------------------------------------------------------------------------------------------------------
 
 // getAssociationLink retrieves the URL needed to run associations operations with an Org.
 // If the 'localData' parameter is true, it returns the URL needed to download the association
@@ -217,32 +299,10 @@ func (org AdminOrg) getAssociationLink(localData bool) (string, error) {
 	return href, nil
 }
 
-// GetOrgAssociationData retrieves the structured data needed to start an association with another Org
-func (org AdminOrg) GetOrgAssociationData() (*types.OrgAssociationMember, error) {
-	href, err := org.getAssociationLink(true)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving association URL: %s", err)
-	}
-	var associationData types.OrgAssociationMember
-	_, err = org.client.ExecuteRequest(href, http.MethodGet, types.MimeOrgAssociation,
-		"error retrieving org association data: %s", nil, &associationData)
-	if err != nil {
-		return nil, err
-	}
-
-	return &associationData, nil
-}
-
-// GetOrgRawAssociationData retrieves the raw (XML) data needed to start an association with another Org
-func (org AdminOrg) GetOrgRawAssociationData() ([]byte, error) {
-	href, err := org.getAssociationLink(true)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving association URL: %s", err)
-	}
-	return org.client.RetrieveRemoteDocument(href)
-}
-
 // ReadXmlDataFromFile reads the contents of a file and attempts decoding an expected data type
+// Examples:
+// orgSettingData, err := ReadXmlDataFromFile[types.OrgAssociationMember]("./data/org1-association-data.xml")
+// siteSettingData, err := ReadXmlDataFromFile[types.SiteAssociationMember]("./data/site1-association-data.xml")
 func ReadXmlDataFromFile[dataType any](fileName string) (*dataType, error) {
 	contents, err := os.ReadFile(path.Clean(fileName))
 	if err != nil {
