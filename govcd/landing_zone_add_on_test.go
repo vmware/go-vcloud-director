@@ -1,4 +1,4 @@
-//go:build rde || functional || ALL
+//go:build slz || functional || ALL
 
 /*
 * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
