@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-
 	. "gopkg.in/check.v1"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"

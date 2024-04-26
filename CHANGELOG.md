@@ -1,3 +1,20 @@
+## 2.25.0 (Unreleased)
+
+Changes in progress for v2.25.0 are available at [.changes/v2.25.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.25.0) until the release.
+
+## 2.24.0 (April 18, 2024)
+
+### FEATURES
+* Added method `Client.QueryVappNetworks` to retrieve all vApp networks ([#657](https://github.com/vmware/go-vcloud-director/pull/657))
+* Added `VApp` methods `QueryAllVappNetworks`, `QueryVappNetworks`, `QueryVappOrgNetworks` to retrieve various types of vApp networks ([#657](https://github.com/vmware/go-vcloud-director/pull/657))
+
+### BUG FIXES
+* Fixed an issue that prevented CSE Kubernetes clusters from being upgraded to an OVA with higher Kubernetes version but same TKG version,
+  and to an OVA with a higher patch version of Kubernetes ([#663](https://github.com/vmware/go-vcloud-director/pull/663))
+* Fixed an issue that prevented CSE Kubernetes clusters from being upgraded to TKG v2.5.0 with Kubernetes v1.26.11 as it
+  performed an invalid upgrade of CoreDNS ([#663](https://github.com/vmware/go-vcloud-director/pull/663))
+* Fixed an issue that prevented reading the SSH Public Key from provisioned CSE Kubernetes clusters ([#663](https://github.com/vmware/go-vcloud-director/pull/663))
+
 ## 2.23.0 (March 22, 2024)
 
 ### FEATURES

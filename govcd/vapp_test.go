@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/kr/pretty"
 	"regexp"
 	"time"
 
@@ -610,6 +611,20 @@ func (vcd *TestVCD) Test_AddNewVMMultiNIC(check *C) {
 
 	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
 
+	allVappNetworks, err := vapp.QueryAllVappNetworks(nil)
+	check.Assert(err, IsNil)
+	printVerbose("%# v\n", pretty.Formatter(allVappNetworks))
+	check.Assert(len(allVappNetworks), Equals, 2)
+
+	vappNetworks, err := vapp.QueryVappNetworks(nil)
+	check.Assert(err, IsNil)
+	printVerbose("%# v\n", pretty.Formatter(vappNetworks))
+	check.Assert(len(vappNetworks), Equals, 0)
+	vappOrgNetworks, err := vapp.QueryVappOrgNetworks(nil)
+	check.Assert(err, IsNil)
+	printVerbose("%# v\n", pretty.Formatter(vappOrgNetworks))
+	check.Assert(len(vappOrgNetworks), Equals, 2)
+
 	// Cleanup
 	err = vapp.RemoveVM(*vm)
 	check.Assert(err, IsNil)
@@ -686,6 +701,20 @@ func (vcd *TestVCD) Test_RemoveAllNetworks(check *C) {
 	// network removal, but ignore error as it might already be powered off
 	vappStatus, err := vcd.vapp.GetStatus()
 	check.Assert(err, IsNil)
+
+	allVappNetworks, err := vcd.vapp.QueryAllVappNetworks(nil)
+	check.Assert(err, IsNil)
+	printVerbose("%# v\n", pretty.Formatter(allVappNetworks))
+	check.Assert(len(allVappNetworks), Equals, 2)
+
+	vappNetworks, err := vcd.vapp.QueryVappNetworks(nil)
+	check.Assert(err, IsNil)
+	printVerbose("%# v\n", pretty.Formatter(vappNetworks))
+	check.Assert(len(vappNetworks), Equals, 1)
+	vappOrgNetworks, err := vcd.vapp.QueryVappOrgNetworks(nil)
+	check.Assert(err, IsNil)
+	printVerbose("%# v\n", pretty.Formatter(vappOrgNetworks))
+	check.Assert(len(vappOrgNetworks), Equals, 1)
 
 	if vappStatus != "POWERED_OFF" {
 		task, err := vcd.vapp.Undeploy()
