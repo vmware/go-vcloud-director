@@ -53,6 +53,11 @@ type Client struct {
 	// "User-Agent: <product> / <product-version> <comment>"
 	UserAgent string
 
+	// RequestIdFunc is a function that would return an unique string to be used for
+	// 'X-Vmware-Vcloud-Client-Request-Id' which helps log tracing
+	// Function `WithVcloudRequestIdFunc` contains more details
+	RequestIdFunc func() string
+
 	// IgnoredMetadata allows to ignore metadata entries when using the methods defined in metadata_v2.go
 	IgnoredMetadata []IgnoredMetadata
 
@@ -259,6 +264,7 @@ func (client *Client) newRequest(params map[string]string, notEncodedParams map[
 	}
 
 	setHttpUserAgent(client.UserAgent, req)
+	setVcloudClientRequestId(client.RequestIdFunc, req)
 
 	// Avoids passing data if the logging of requests is disabled
 	if util.LogHttpRequest {
@@ -656,8 +662,6 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 		req.Header.Add("Content-Type", contentType)
 	}
 
-	setHttpUserAgent(client.UserAgent, req)
-
 	resp, err := client.Http.Do(req)
 	if err != nil {
 		return resp, err
@@ -670,6 +674,24 @@ func executeRequestCustomErr(pathURL string, params map[string]string, requestTy
 func setHttpUserAgent(userAgent string, req *http.Request) {
 	if userAgent != "" {
 		req.Header.Set("User-Agent", userAgent)
+	}
+}
+
+// The X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header must contain only alpha-numeric characters or
+// dashes. The header must contain at least one alpha-numeric character, and VMware Cloud Director
+// shortens it if it's longer than 128 characters long. The X-VMWARE-VCLOUD-REQUEST-ID response
+// header is formed from the first 128 characters of X-VMWARE-VCLOUD-CLIENT-REQUEST-ID, followed by
+// a dash and a random UUID that the server generates. If the X-VMWARE-VCLOUD-CLIENT-REQUEST-ID
+// header is invalid, null, or empty, the X-VMWARE-VCLOUD-REQUEST-ID is a random UUID. VMware Cloud
+// Director adds this value to every VMware Cloud Director, vCenter Server, and ESXi log message
+// related to processing the request, and provides a way to correlate the processing of a request
+// across all participating systems. If a request does not supply a
+// X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header, the response contains an X-VMWARE-VCLOUD-REQUEST-ID
+// header with a generated value that cannot be used for log correlation.
+func setVcloudClientRequestId(requestBuilder func() string, req *http.Request) {
+	if requestBuilder != nil {
+		requestId := requestBuilder()
+		req.Header.Set("X-VMWARE-VCLOUD-CLIENT-REQUEST-ID", requestId)
 	}
 }
 
