@@ -236,7 +236,9 @@ func (client *Client) validateAPIVersion() error {
 // version is above or 9.7
 // Note. This function will always respect minimum supported API version which is defined in
 // client.APIVersion. If the wantedApiVersionOrMinimumRequired is less than minimum supported
-// version, this function will return the minimum supported version
+// version, this function will return the minimum supported version. This means that it must be be
+// well tested when client.APIVersion is bumped to avoid unexpected errors due to newer API version
+// being used.
 func (client *Client) GetSpecificApiVersionOnCondition(vcdApiVersionCondition, wantedApiVersionOrMinimumRequired string) string {
 	apiVersion := client.APIVersion
 	if client.APIVCDMaxVersionIs(vcdApiVersionCondition) {
