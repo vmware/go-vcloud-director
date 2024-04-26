@@ -74,7 +74,12 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(serverTunnel.NsxtL2VpnTunnel.LocalEndpointIp, Equals, localEndpointIp[0].IPAddress)
 	check.Assert(serverTunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "1.1.1.1")
 	check.Assert(serverTunnel.NsxtL2VpnTunnel.ConnectorInitiationMode, Equals, "ON_DEMAND")
-	check.Assert(serverTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
+	if is10511plus, err := vcd.client.Client.VersionEqualOrGreater("10.5.1.23400185", 4); err == nil && is10511plus {
+		// VCD 10.5.1.1+ return 6 asterisks instead of PreSharedKey
+		check.Assert(serverTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, "******")
+	} else {
+		check.Assert(serverTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
+	}
 
 	fetchedServerTunnel, err := edge.GetL2VpnTunnelById(serverTunnel.NsxtL2VpnTunnel.ID)
 	check.Assert(err, IsNil)
@@ -97,7 +102,12 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(updatedServerTunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "2.2.2.2")
 	check.Assert(updatedServerTunnel.NsxtL2VpnTunnel.TunnelInterface, Equals, "192.168.0.1/24")
 	check.Assert(updatedServerTunnel.NsxtL2VpnTunnel.ConnectorInitiationMode, Equals, "INITIATOR")
-	check.Assert(updatedServerTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
+	if is10511plus, err := vcd.client.Client.VersionEqualOrGreater("10.5.1.23400185", 4); err == nil && is10511plus {
+		// VCD 10.5.1.1+ return 6 asterisks instead of PreSharedKey
+		check.Assert(serverTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, "******")
+	} else {
+		check.Assert(serverTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
+	}
 
 	tunnelByName, err := edge.GetL2VpnTunnelByName(serverTunnel.NsxtL2VpnTunnel.Name)
 	check.Assert(err, IsNil)
@@ -150,7 +160,12 @@ func (vcd *TestVCD) Test_NsxtL2VpnTunnel(check *C) {
 	check.Assert(clientTunnel.NsxtL2VpnTunnel.Enabled, Equals, true)
 	check.Assert(clientTunnel.NsxtL2VpnTunnel.LocalEndpointIp, Equals, localEndpointIp[0].IPAddress)
 	check.Assert(clientTunnel.NsxtL2VpnTunnel.RemoteEndpointIp, Equals, "1.1.1.1")
-	check.Assert(clientTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
+	if is10511plus, err := vcd.client.Client.VersionEqualOrGreater("10.5.1.23400185", 4); err == nil && is10511plus {
+		// VCD 10.5.1.1+ return 6 asterisks instead of PreSharedKey
+		check.Assert(serverTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, "******")
+	} else {
+		check.Assert(serverTunnel.NsxtL2VpnTunnel.PreSharedKey, Equals, check.TestName())
+	}
 
 	fetchedClientTunnel, err := edge.GetL2VpnTunnelById(clientTunnel.NsxtL2VpnTunnel.ID)
 	check.Assert(err, IsNil)
