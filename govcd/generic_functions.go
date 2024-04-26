@@ -1,6 +1,7 @@
 package govcd
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 )
@@ -95,4 +96,35 @@ func localFilterOneOrError[E any](entityLabel string, entities []*E, fieldName, 
 	}
 
 	return oneOrError(fieldName, expectedFieldValue, filteredValues)
+}
+
+// convertAnyToRdeEntity unmarshals any entity to map[string]interface{}
+func convertAnyToRdeEntity[E any](entityCfg *E) (map[string]interface{}, error) {
+	jsonText, err := json.Marshal(entityCfg)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling configuration :%s", err)
+	}
+
+	var unmarshalledRdeEntityJson map[string]interface{}
+	err = json.Unmarshal(jsonText, &unmarshalledRdeEntityJson)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling configuration :%s", err)
+	}
+
+	return unmarshalledRdeEntityJson, nil
+}
+
+func convertRdeEntityToAny[E any](content map[string]interface{}) (*E, error) {
+	jsonText2, err := json.Marshal(content)
+	if err != nil {
+		return nil, fmt.Errorf("error converting entity to type: %s", err)
+	}
+
+	result := new(E)
+	err = json.Unmarshal(jsonText2, result)
+	if err != nil {
+		return nil, fmt.Errorf("error converting entity to type: %s", err)
+	}
+
+	return result, nil
 }

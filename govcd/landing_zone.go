@@ -5,7 +5,6 @@
 package govcd
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 
@@ -38,7 +37,7 @@ func (vcdClient *VCDClient) CreateSolutionLandingZone(slzCfg *types.SolutionLand
 	}
 
 	// 2. Convert more precise structure to fit DefinedEntity.DefinedEntity.Entity
-	unmarshalledRdeEntityJson, err := convertSlzToRde(slzCfg)
+	unmarshalledRdeEntityJson, err := convertAnyToRdeEntity(slzCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func (vcdClient *VCDClient) CreateSolutionLandingZone(slzCfg *types.SolutionLand
 		return nil, fmt.Errorf("error refreshing RDE after resolving: %s", err)
 	}
 
-	result, err := convertRdeToSlz(createdRdeEntity.DefinedEntity.Entity)
+	result, err := convertRdeEntityToAny[types.SolutionLandingZoneType](createdRdeEntity.DefinedEntity.Entity)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +95,7 @@ func (vcdClient *VCDClient) GetAllSolutionLandingZones(queryParameters url.Value
 	results := make([]*SolutionLandingZone, len(allSlzs))
 	for slzRdeIndex, slzRde := range allSlzs {
 
-		slz, err := convertRdeToSlz(slzRde.DefinedEntity.Entity)
+		slz, err := convertRdeEntityToAny[types.SolutionLandingZoneType](slzRde.DefinedEntity.Entity)
 		if err != nil {
 			return nil, fmt.Errorf("error converting RDE to SLZ: %s", err)
 		}
@@ -136,7 +135,7 @@ func (vcdClient *VCDClient) GetSolutionLandingZoneById(id string) (*SolutionLand
 		return nil, fmt.Errorf("error retrieving RDE by ID: %s", err)
 	}
 
-	result, err := convertRdeToSlz(rde.DefinedEntity.Entity)
+	result, err := convertRdeEntityToAny[types.SolutionLandingZoneType](rde.DefinedEntity.Entity)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +156,7 @@ func (slz *SolutionLandingZone) Refresh() error {
 	}
 
 	// 5. Repackage created RDE "Entity" to more exact type
-	result, err := convertRdeToSlz(slz.DefinedEntity.DefinedEntity.Entity)
+	result, err := convertRdeEntityToAny[types.SolutionLandingZoneType](slz.DefinedEntity.DefinedEntity.Entity)
 	if err != nil {
 		return err
 	}
@@ -176,7 +175,7 @@ func (slz *SolutionLandingZone) Id() string {
 }
 
 func (slz *SolutionLandingZone) Update(slzCfg *types.SolutionLandingZoneType) (*SolutionLandingZone, error) {
-	unmarshalledRdeEntityJson, err := convertSlzToRde(slzCfg)
+	unmarshalledRdeEntityJson, err := convertAnyToRdeEntity(slzCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +187,7 @@ func (slz *SolutionLandingZone) Update(slzCfg *types.SolutionLandingZoneType) (*
 		return nil, err
 	}
 
-	result, err := convertRdeToSlz(slz.DefinedEntity.DefinedEntity.Entity)
+	result, err := convertRdeEntityToAny[types.SolutionLandingZoneType](slz.DefinedEntity.DefinedEntity.Entity)
 	if err != nil {
 		return nil, err
 	}
@@ -205,34 +204,4 @@ func (slz *SolutionLandingZone) Update(slzCfg *types.SolutionLandingZoneType) (*
 // Delete removes the RDE that defines Solution Landing Zone
 func (slz *SolutionLandingZone) Delete() error {
 	return slz.DefinedEntity.Delete()
-}
-
-func convertSlzToRde(slzCfg *types.SolutionLandingZoneType) (map[string]interface{}, error) {
-	jsonText, err := json.Marshal(slzCfg)
-	if err != nil {
-		return nil, fmt.Errorf("error marshalling SLZ configuration :%s", err)
-	}
-
-	var unmarshalledRdeEntityJson map[string]interface{}
-	err = json.Unmarshal(jsonText, &unmarshalledRdeEntityJson)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling SLZ configuration :%s", err)
-	}
-
-	return unmarshalledRdeEntityJson, nil
-}
-
-func convertRdeToSlz(content map[string]interface{}) (*types.SolutionLandingZoneType, error) {
-	jsonText2, err := json.Marshal(content)
-	if err != nil {
-		return nil, fmt.Errorf("error converting entity to SolutionLandingZone text: %s", err)
-	}
-
-	result := &types.SolutionLandingZoneType{}
-	err = json.Unmarshal(jsonText2, result)
-	if err != nil {
-		return nil, fmt.Errorf("error converting entity text to SolutionLandingZone: %s", err)
-	}
-
-	return result, nil
 }
