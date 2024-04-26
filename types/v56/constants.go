@@ -288,6 +288,8 @@ const (
 	QtResourcePool              = "resourcePool"              // Resource Pool
 	QtNetworkPool               = "networkPool"               // Network Pool
 	QtProviderVdcStorageProfile = "providerVdcStorageProfile" // StorageProfile of Provider VDC
+	QtVappNetwork               = "vAppNetwork"
+	QtAdminVappNetwork          = "adminVAppNetwork"
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
