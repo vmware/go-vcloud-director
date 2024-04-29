@@ -69,7 +69,6 @@ type SolutionAddOnConfig struct {
 	IsoFilePath          string
 	User                 string
 	CatalogItemId        string
-	AcceptEula           bool
 	AutoTrustCertificate bool
 }
 
@@ -110,11 +109,6 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*Solut
 	foundFiles, err := getContentsFromIsoFiles(cfg.IsoFilePath, wantedFiles)
 	if err != nil {
 		return nil, fmt.Errorf("error reading contents of '%s': %s", cfg.IsoFilePath, err)
-	}
-
-	if !cfg.AcceptEula {
-		eula := string(foundFiles[eulaKey].contents)
-		return nil, fmt.Errorf("unable to create when acceptEula is false.\nEULA:%s", eula)
 	}
 
 	solutionAddOnEntityRde, err := buildSolutionAddonRdeEntity(foundFiles, "administrator", cfg.CatalogItemId)
@@ -186,6 +180,7 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*Solut
 	return &returnType, nil
 }
 
+// GetAllSolutionAddons retrieves all Solution Add-Ons with a given filter
 func (vcdClient *VCDClient) GetAllSolutionAddons(queryParameters url.Values) ([]*SolutionAddOn, error) {
 	allAddons, err := vcdClient.GetAllRdes("vmware", "solutions_add_on", "1.0.0", queryParameters)
 	if err != nil {
@@ -209,6 +204,7 @@ func (vcdClient *VCDClient) GetAllSolutionAddons(queryParameters url.Values) ([]
 	return results, nil
 }
 
+// GetSolutionAddonById retrieves Solution Add-On by ID
 func (vcdClient *VCDClient) GetSolutionAddonById(id string) (*SolutionAddOn, error) {
 	if id == "" {
 		return nil, fmt.Errorf("id must be specified")
@@ -230,6 +226,23 @@ func (vcdClient *VCDClient) GetSolutionAddonById(id string) (*SolutionAddOn, err
 	}
 
 	return packages, nil
+}
+
+// GetSolutionAddonByName retrieves Solution Add-Ons by name
+// Example name: "vmware.ds-1.4.0-23376809"
+func (vcdClient *VCDClient) GetSolutionAddonByName(name string) (*SolutionAddOn, error) {
+	if name == "" {
+		return nil, fmt.Errorf("name must be specified")
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", fmt.Sprintf("name==%s", name))
+	results, err := vcdClient.GetAllSolutionAddons(queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Solution Add-Ons: %s", err)
+	}
+
+	return oneOrError("name", name, results)
 }
 
 func (s *SolutionAddOn) Update(saoCfg *types.SolutionAddOn) (*SolutionAddOn, error) {
