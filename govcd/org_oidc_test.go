@@ -14,7 +14,65 @@ import (
 	"time"
 )
 
-func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCRUD(check *C) {
+// Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpoint configures OIDC
+// with a wellknown endpoint.
+func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpoint(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("test requires system administrator privileges")
+	}
+	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
+		check.Skip("test requires OIDC configuration")
+	}
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	settings, err := adminOrg.GetOpenIdConnectSettings()
+	check.Assert(err, IsNil)
+	check.Assert(settings, NotNil)
+	check.Assert(settings.Enabled, Equals, false)
+	check.Assert(settings.AccessTokenEndpoint, Equals, "")
+	check.Assert(settings.UserInfoEndpoint, Equals, "")
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, "")
+	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+
+	settings, err = setOIDCSettings(adminOrg, types.OrgOAuthSettings{
+		ClientId:          "clientId",
+		ClientSecret:      "clientSecret",
+		Enabled:           true,
+		MaxClockSkew:      60,
+		WellKnownEndpoint: vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
+	})
+	check.Assert(err, IsNil)
+	defer func() {
+		deleteOIDCSettings(check, adminOrg)
+	}()
+
+	check.Assert(settings, NotNil)
+	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
+	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
+	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
+	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(settings.IssuerId, Not(Equals), "")
+	check.Assert(settings.Enabled, Equals, true)
+	check.Assert(settings.ClientId, Equals, "clientId")
+	check.Assert(settings.ClientSecret, Equals, "clientSecret")
+	check.Assert(settings.UserAuthorizationEndpoint, Not(Equals), "")
+	check.Assert(settings.AccessTokenEndpoint, Not(Equals), "")
+	check.Assert(settings.UserInfoEndpoint, Not(Equals), "")
+	check.Assert(settings.ScimEndpoint, Equals, "")
+	check.Assert(len(settings.Scope), Not(Equals), 0)
+	check.Assert(settings.MaxClockSkew, Equals, 60)
+	check.Assert(settings.WellKnownEndpoint, Not(Equals), "")
+	check.Assert(settings.OIDCAttributeMapping, NotNil)
+	check.Assert(settings.OAuthKeyConfigurations, NotNil)
+	check.Assert(len(settings.OAuthKeyConfigurations.OAuthKeyConfiguration), Not(Equals), 0)
+}
+
+// Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAndOverridingOptions configures OIDC
+// with a wellknown endpoint, but overrides the obtained values with custom ones.
+func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAndOverridingOptions(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("test requires system administrator privileges")
 	}
@@ -31,76 +89,187 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCRUD(check *C) {
 	check.Assert(settings, NotNil)
 	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 
-	testValidationErrors(check, adminOrg)
+	settings, err = setOIDCSettings(adminOrg, types.OrgOAuthSettings{
+		ClientId:                  "clientId",
+		ClientSecret:              "clientSecret",
+		Enabled:                   true,
+		MaxClockSkew:              60,
+		AccessTokenEndpoint:       vcd.config.VCD.OidcServer.Url + "/foo",
+		UserAuthorizationEndpoint: vcd.config.VCD.OidcServer.Url + "/foo2",
+		WellKnownEndpoint:         vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
+	})
+	check.Assert(err, IsNil)
+	defer func() {
+		deleteOIDCSettings(check, adminOrg)
+	}()
 
-	settings = setOIDCSettings(check, adminOrg, types.OrgOAuthSettings{
+	check.Assert(settings, NotNil)
+	check.Assert(settings.AccessTokenEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/foo")
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/foo2")
+	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
+	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
+	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
+	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(settings.IssuerId, Not(Equals), "")
+	check.Assert(settings.Enabled, Equals, true)
+	check.Assert(settings.ClientId, Equals, "clientId")
+	check.Assert(settings.ClientSecret, Equals, "clientSecret")
+	check.Assert(settings.UserInfoEndpoint, Not(Equals), "")
+	check.Assert(settings.ScimEndpoint, Equals, "")
+	check.Assert(len(settings.Scope), Not(Equals), 0)
+	check.Assert(settings.MaxClockSkew, Equals, 60)
+	check.Assert(settings.WellKnownEndpoint, Not(Equals), "")
+	check.Assert(settings.OIDCAttributeMapping, NotNil)
+	check.Assert(settings.OAuthKeyConfigurations, NotNil)
+	check.Assert(len(settings.OAuthKeyConfigurations.OAuthKeyConfiguration), Not(Equals), 0)
+}
+
+// Test_OrgOidcSettingsSystemAdminCreateWithCustomValues configures OIDC
+// without the wellknown endpoint, by hand.
+func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("test requires system administrator privileges")
+	}
+	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
+		check.Skip("test requires OIDC configuration")
+	}
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	settings, err := setOIDCSettings(adminOrg, types.OrgOAuthSettings{
+		ClientId:                  "clientId",
+		ClientSecret:              "clientSecret",
+		Enabled:                   true,
+		UserAuthorizationEndpoint: vcd.config.VCD.OidcServer.Url + "/userAuth",
+		AccessTokenEndpoint:       vcd.config.VCD.OidcServer.Url + "/accessToken",
+		IssuerId:                  vcd.config.VCD.OidcServer.Url + "/issuerId",
+		UserInfoEndpoint:          vcd.config.VCD.OidcServer.Url + "/userInfo",
+		MaxClockSkew:              60,
+		Scope:                     []string{"foo", "bar"},
+		OIDCAttributeMapping: &types.OIDCAttributeMapping{
+			SubjectAttributeName:   "subject",
+			EmailAttributeName:     "email",
+			FullNameAttributeName:  "fullname",
+			FirstNameAttributeName: "first",
+			LastNameAttributeName:  "last",
+			GroupsAttributeName:    "groups",
+			RolesAttributeName:     "roles",
+		},
+		OAuthKeyConfigurations: &types.OAuthKeyConfigurationsList{
+			OAuthKeyConfiguration: []types.OAuthKeyConfiguration{
+				{
+					KeyId:          "rsa1",
+					Algorithm:      "RSA",
+					Key:            "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9gXitSASYbVS56gBkQ3UOCS7F\n8SnFABs44sxXykt8DW4y1mxdyCcM0X/lVPf+DNfXbIISmPk/mqoRS9uZSuQIUtC2\n4iaGkWyUALvrq8FJcR8Krf5EtDt1W9AkLEREDJ7VkpJx/VoCd9ZNe8NFstAvbQ6+\nbM0Jg9lJJdr+VPNvywIDAQAB\n-----END PUBLIC KEY-----",
+					ExpirationDate: "",
+				},
+			},
+		},
+	})
+	check.Assert(err, IsNil)
+	defer func() {
+		deleteOIDCSettings(check, adminOrg)
+	}()
+
+	check.Assert(settings, NotNil)
+	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
+	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
+	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
+	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(settings.Enabled, Equals, true)
+	check.Assert(settings.ClientId, Equals, "clientId")
+	check.Assert(settings.ClientSecret, Equals, "clientSecret")
+	check.Assert(settings.IssuerId, Equals, vcd.config.VCD.OidcServer.Url+"/issuerId")
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/userAuth")
+	check.Assert(settings.AccessTokenEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/accessToken")
+	check.Assert(settings.UserInfoEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/userInfo")
+	check.Assert(settings.ScimEndpoint, Equals, "")
+	check.Assert(len(settings.Scope), Equals, 2)
+	check.Assert(settings.MaxClockSkew, Equals, 60)
+	check.Assert(settings.WellKnownEndpoint, Equals, "")
+	check.Assert(settings.OIDCAttributeMapping, NotNil)
+	check.Assert(settings.OIDCAttributeMapping.EmailAttributeName, Equals, "email")
+	check.Assert(settings.OIDCAttributeMapping.LastNameAttributeName, Equals, "last")
+	check.Assert(settings.OIDCAttributeMapping.FirstNameAttributeName, Equals, "first")
+	check.Assert(settings.OIDCAttributeMapping.SubjectAttributeName, Equals, "subject")
+	check.Assert(settings.OIDCAttributeMapping.GroupsAttributeName, Equals, "groups")
+	check.Assert(settings.OIDCAttributeMapping.FullNameAttributeName, Equals, "fullname")
+	check.Assert(settings.OIDCAttributeMapping.RolesAttributeName, Equals, "roles")
+	check.Assert(settings.OAuthKeyConfigurations, NotNil)
+	check.Assert(len(settings.OAuthKeyConfigurations.OAuthKeyConfiguration), Equals, 1)
+	check.Assert(settings.OAuthKeyConfigurations.OAuthKeyConfiguration[0].KeyId, Equals, "rsa1")
+	check.Assert(settings.OAuthKeyConfigurations.OAuthKeyConfiguration[0].Algorithm, Equals, "RSA")
+	check.Assert(true, Equals, strings.Contains(settings.OAuthKeyConfigurations.OAuthKeyConfiguration[0].Key, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9gXitSASYbVS56gBkQ3UOCS7F"))
+}
+
+// Test_OrgOidcSettingsSystemAdminUpdate configures OIDC settings with a wellknown endpoint, then updates some values.
+func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminUpdate(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("test requires system administrator privileges")
+	}
+	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
+		check.Skip("test requires OIDC configuration")
+	}
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	settings, err := adminOrg.GetOpenIdConnectSettings()
+	check.Assert(err, IsNil)
+	check.Assert(settings, NotNil)
+	check.Assert(settings.Enabled, Equals, false)
+	check.Assert(settings.AccessTokenEndpoint, Equals, "")
+	check.Assert(settings.UserInfoEndpoint, Equals, "")
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, "")
+	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+
+	settings, err = setOIDCSettings(adminOrg, types.OrgOAuthSettings{
 		ClientId:          "clientId",
 		ClientSecret:      "clientSecret",
 		Enabled:           true,
 		MaxClockSkew:      60,
 		WellKnownEndpoint: vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
 	})
-	check.Assert(settings.WellKnownEndpoint, NotNil)
-
-	// Be sure that the settings are always deleted
+	check.Assert(err, IsNil)
 	defer func() {
-		err = adminOrg.DeleteOpenIdConnectSettings()
-		check.Assert(err, IsNil)
+		deleteOIDCSettings(check, adminOrg)
 	}()
+	check.Assert(settings, NotNil)
 
-	err = adminOrg.DeleteOpenIdConnectSettings()
+	updatedSettings, err := setOIDCSettings(adminOrg, types.OrgOAuthSettings{
+		ClientId:     "clientId2",
+		ClientSecret: "clientSecret2",
+		Enabled:      false,
+		MaxClockSkew: 120,
+		OIDCAttributeMapping: &types.OIDCAttributeMapping{
+			SubjectAttributeName:   "subject2",
+			EmailAttributeName:     "email2",
+			FullNameAttributeName:  "fullname2",
+			FirstNameAttributeName: "first2",
+			LastNameAttributeName:  "last2",
+			GroupsAttributeName:    "groups2",
+			RolesAttributeName:     "roles2",
+		},
+		WellKnownEndpoint: vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
+	})
 	check.Assert(err, IsNil)
+	check.Assert(updatedSettings, NotNil)
 
-	// Re-configure manually, without the well-known endpoint
-	newSettings := setOIDCSettings(check, adminOrg, types.OrgOAuthSettings{
-		ClientId:     settings.ClientId,
-		ClientSecret: settings.ClientSecret,
-
-		UserAuthorizationEndpoint: settings.UserAuthorizationEndpoint,
-		AccessTokenEndpoint:       settings.AccessTokenEndpoint,
-		IssuerId:                  settings.IssuerId,
-		UserInfoEndpoint:          settings.UserInfoEndpoint,
-		MaxClockSkew:              60,
-		Scope:                     settings.Scope,
-		OIDCAttributeMapping:      settings.OIDCAttributeMapping,
-		OAuthKeyConfigurations:    settings.OAuthKeyConfigurations,
-	})
-	check.Assert(newSettings.WellKnownEndpoint, NotNil)
-
-	// Reconfigure without deleting
-	newSettings = setOIDCSettings(check, adminOrg, types.OrgOAuthSettings{
-		ClientId:     "changedClientId",
-		ClientSecret: settings.ClientSecret,
-
-		UserAuthorizationEndpoint: settings.UserAuthorizationEndpoint,
-		AccessTokenEndpoint:       settings.AccessTokenEndpoint,
-		IssuerId:                  settings.IssuerId,
-		UserInfoEndpoint:          settings.UserInfoEndpoint,
-		MaxClockSkew:              60,
-		Scope:                     settings.Scope,
-		OIDCAttributeMapping:      settings.OIDCAttributeMapping,
-		OAuthKeyConfigurations:    settings.OAuthKeyConfigurations,
-	})
-	check.Assert(newSettings.ClientId, Equals, "changedClientId")
-
-	// Disable OIDC
-	newSettings = setOIDCSettings(check, adminOrg, types.OrgOAuthSettings{
-		Enabled:                   false,
-		ClientId:                  "changedClientId",
-		ClientSecret:              settings.ClientSecret,
-		UserAuthorizationEndpoint: settings.UserAuthorizationEndpoint,
-		AccessTokenEndpoint:       settings.AccessTokenEndpoint,
-		IssuerId:                  settings.IssuerId,
-		UserInfoEndpoint:          settings.UserInfoEndpoint,
-		MaxClockSkew:              60,
-		Scope:                     settings.Scope,
-		OIDCAttributeMapping:      settings.OIDCAttributeMapping,
-		OAuthKeyConfigurations:    settings.OAuthKeyConfigurations,
-	})
-	check.Assert(newSettings.Enabled, Equals, false)
-
-	err = adminOrg.DeleteOpenIdConnectSettings()
-	check.Assert(err, IsNil)
+	check.Assert(updatedSettings.Enabled, Equals, false)
+	check.Assert(updatedSettings.ClientId, Equals, "clientId2")
+	check.Assert(updatedSettings.ClientSecret, Equals, "clientSecret2")
+	check.Assert(updatedSettings.MaxClockSkew, Equals, 120)
+	check.Assert(updatedSettings.OIDCAttributeMapping, NotNil)
+	check.Assert(updatedSettings.OIDCAttributeMapping.EmailAttributeName, Equals, "email2")
+	check.Assert(updatedSettings.OIDCAttributeMapping.LastNameAttributeName, Equals, "last2")
+	check.Assert(updatedSettings.OIDCAttributeMapping.FirstNameAttributeName, Equals, "first2")
+	check.Assert(updatedSettings.OIDCAttributeMapping.SubjectAttributeName, Equals, "subject2")
+	check.Assert(updatedSettings.OIDCAttributeMapping.GroupsAttributeName, Equals, "groups2")
+	check.Assert(updatedSettings.OIDCAttributeMapping.FullNameAttributeName, Equals, "fullname2")
+	check.Assert(updatedSettings.OIDCAttributeMapping.RolesAttributeName, Equals, "roles2")
 }
 
 func (vcd *TestVCD) Test_OrgOidcSettingsTenantCRUD(check *C) {
@@ -109,8 +278,19 @@ func (vcd *TestVCD) Test_OrgOidcSettingsTenantCRUD(check *C) {
 	}
 }
 
-// testValidationErrors tests the validation rules when setting OpenID Connect Settings with AdminOrg.SetOpenIdConnectSettings
-func testValidationErrors(check *C, adminOrg *AdminOrg) {
+// Test_OrgOidcSettingsValidationErrors tests the validation rules when setting OpenID Connect Settings with AdminOrg.SetOpenIdConnectSettings
+func (vcd *TestVCD) Test_OrgOidcSettingsValidationErrors(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("test requires system administrator privileges")
+	}
+	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
+		check.Skip("test requires OIDC configuration")
+	}
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
 	tests := []struct {
 		wrongConfig types.OrgOAuthSettings
 		errorMsg    string
@@ -283,22 +463,37 @@ func testValidationErrors(check *C, adminOrg *AdminOrg) {
 
 // setOIDCSettings sets the given OIDC settings for the given Organization. It does this operation
 // with some tries to avoid test failures due to network glitches.
-func setOIDCSettings(check *C, adminOrg *AdminOrg, settings types.OrgOAuthSettings) *types.OrgOAuthSettings {
+func setOIDCSettings(adminOrg *AdminOrg, settings types.OrgOAuthSettings) (*types.OrgOAuthSettings, error) {
 	tries := 0
 	var newSettings *types.OrgOAuthSettings
 	var err error
 	for tries < 3 {
 		tries++
 		newSettings, err = adminOrg.SetOpenIdConnectSettings(settings)
-		if err != nil {
-			check.Assert(true, Equals, strings.Contains(err.Error(), "could not establish a connection") || strings.Contains(err.Error(), "connect timed out"))
-		}
 		if err == nil {
 			break
 		}
-		time.Sleep(5 * time.Second)
+		if strings.Contains(err.Error(), "could not establish a connection") || strings.Contains(err.Error(), "connect timed out") {
+			time.Sleep(5 * time.Second)
+		}
 	}
+	if err != nil {
+		return nil, err
+	}
+	return newSettings, nil
+}
+
+// deleteOIDCSettings deletes the current OIDC settings for the given Organization
+func deleteOIDCSettings(check *C, adminOrg *AdminOrg) {
+	err := adminOrg.DeleteOpenIdConnectSettings()
 	check.Assert(err, IsNil)
-	check.Assert(newSettings, NotNil)
-	return newSettings
+
+	settings, err := adminOrg.GetOpenIdConnectSettings()
+	check.Assert(err, IsNil)
+	check.Assert(settings, NotNil)
+	check.Assert(settings.Enabled, Equals, false)
+	check.Assert(settings.AccessTokenEndpoint, Equals, "")
+	check.Assert(settings.UserInfoEndpoint, Equals, "")
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, "")
+	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 }
