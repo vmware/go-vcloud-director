@@ -8,10 +8,22 @@ package types
 /*
 	Note: every site or org can have as many associations as they want, but each association has only two members.
   Thus, an organization could be associated with 3 more, but we won't see one association with 4 members;
-  we will see 3 associations of two members each
+  we will see instead 3 associations of two members each
 */
 
+// MultiSiteStatus defines a type used for status constants
+type MultiSiteStatus string
+
+const (
+	StatusActive      MultiSiteStatus = "ACTIVE"
+	StatusAsymmetric  MultiSiteStatus = "ASYMMETRIC"
+	StatusUnreachable MultiSiteStatus = "UNREACHABLE"
+)
+
 type SiteAssociations struct {
+	Href             string                   `xml:"href,attr,omitempty"`
+	Type             string                   `xml:"type,attr,omitempty"`
+	Link             LinkList                 `xml:"Link,omitempty"`
 	SiteAssociations []*SiteAssociationMember `xml:"SiteAssociationMember"`
 }
 
@@ -38,6 +50,26 @@ type SiteAssociationMember struct {
 	Tasks  *TasksInProgress `xml:"task,omitempty"`
 }
 
+// Site is the definition of a VCD seen as an element in a collaborative pair
+type Site struct {
+	Xmlns                   string           `xml:"xmlns,attr,omitempty"`
+	Href                    string           `xml:"href,attr,omitempty"`
+	Type                    string           `xml:"type,attr,omitempty"`
+	Id                      string           `xml:"id,attr,omitempty"`
+	Name                    string           `xml:"name,attr"`
+	OperationKey            string           `xml:"operationKey,attr,omitempty"`       // Optional unique identifier to support idempotent semantics for create and delete operations.
+	Description             string           `xml:"description,omitempty"`             // Optional description
+	RestEndpoint            string           `xml:"RestEndpoint"`                      //  The URI of the REST API end-point for the site.
+	BaseUiEndpoint          string           `xml:"BaseUiEndpoint"`                    // The base URI of the UI end-point for the site.
+	TenantUiEndpoint        string           `xml:"TenantUiEndpoint"`                  // The base URI of the UI end-point for the site.
+	RestEndpointCertificate string           `xml:"RestEndpointCertificate,omitempty"` // Optional PEM-encoded certificate to use when connecting to the REST API end-point.
+	MultiSiteUrl            string           `xml:"MultiSiteUrl,omitempty"`            //  The URL that represents the entire multisite setup.
+	SiteAssociations        SiteAssociations `xml:"SiteAssociations,omitempty"`        //  List of sites associated with this site.
+	Link                    LinkList         `xml:"Link,omitempty"`
+	Tasks                   TasksInProgress  `xml:"Tasks,omitempty"`
+}
+
+// OrgAssociations is a collection of Org associations
 type OrgAssociations struct {
 	OrgAssociations []*OrgAssociationMember `xml:"OrgAssociationMember"`
 }
