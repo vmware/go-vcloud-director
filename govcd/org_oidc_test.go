@@ -33,26 +33,14 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCRUD(check *C) {
 
 	testValidationErrors(check, adminOrg)
 
-	// To avoid test failures due to bad connectivity with the OIDC Provider server, we put some retries in place
-	tries := 0
-	for tries < 3 {
-		tries++
-		settings, err = adminOrg.SetOpenIdConnectSettings(types.OrgOAuthSettings{
-			ClientId:          addrOf("a"),
-			ClientSecret:      addrOf("b"),
-			Enabled:           addrOf(true),
-			WellKnownEndpoint: addrOf(vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint),
-		})
-		if err != nil {
-			check.Assert(true, Equals, strings.Contains(err.Error(), "could not establish a connection") || strings.Contains(err.Error(), "connect timed out"))
-		}
-		if err == nil {
-			break
-		}
-		time.Sleep(5 * time.Second)
-	}
-	check.Assert(err, IsNil)
-	check.Assert(settings, NotNil)
+	settings = setOIDCSettings(check, adminOrg, types.OrgOAuthSettings{
+		ClientId:          "clientId",
+		ClientSecret:      "clientSecret",
+		Enabled:           true,
+		MaxClockSkew:      60,
+		WellKnownEndpoint: vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
+	})
+	check.Assert(settings.WellKnownEndpoint, NotNil)
 
 	// Be sure that the settings are always deleted
 	defer func() {
@@ -60,6 +48,59 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCRUD(check *C) {
 		check.Assert(err, IsNil)
 	}()
 
+	err = adminOrg.DeleteOpenIdConnectSettings()
+	check.Assert(err, IsNil)
+
+	// Re-configure manually, without the well-known endpoint
+	newSettings := setOIDCSettings(check, adminOrg, types.OrgOAuthSettings{
+		ClientId:     settings.ClientId,
+		ClientSecret: settings.ClientSecret,
+
+		UserAuthorizationEndpoint: settings.UserAuthorizationEndpoint,
+		AccessTokenEndpoint:       settings.AccessTokenEndpoint,
+		IssuerId:                  settings.IssuerId,
+		UserInfoEndpoint:          settings.UserInfoEndpoint,
+		MaxClockSkew:              60,
+		Scope:                     settings.Scope,
+		OIDCAttributeMapping:      settings.OIDCAttributeMapping,
+		OAuthKeyConfigurations:    settings.OAuthKeyConfigurations,
+	})
+	check.Assert(newSettings.WellKnownEndpoint, NotNil)
+
+	// Reconfigure without deleting
+	newSettings = setOIDCSettings(check, adminOrg, types.OrgOAuthSettings{
+		ClientId:     "changedClientId",
+		ClientSecret: settings.ClientSecret,
+
+		UserAuthorizationEndpoint: settings.UserAuthorizationEndpoint,
+		AccessTokenEndpoint:       settings.AccessTokenEndpoint,
+		IssuerId:                  settings.IssuerId,
+		UserInfoEndpoint:          settings.UserInfoEndpoint,
+		MaxClockSkew:              60,
+		Scope:                     settings.Scope,
+		OIDCAttributeMapping:      settings.OIDCAttributeMapping,
+		OAuthKeyConfigurations:    settings.OAuthKeyConfigurations,
+	})
+	check.Assert(newSettings.ClientId, Equals, "changedClientId")
+
+	// Disable OIDC
+	newSettings = setOIDCSettings(check, adminOrg, types.OrgOAuthSettings{
+		Enabled:                   false,
+		ClientId:                  "changedClientId",
+		ClientSecret:              settings.ClientSecret,
+		UserAuthorizationEndpoint: settings.UserAuthorizationEndpoint,
+		AccessTokenEndpoint:       settings.AccessTokenEndpoint,
+		IssuerId:                  settings.IssuerId,
+		UserInfoEndpoint:          settings.UserInfoEndpoint,
+		MaxClockSkew:              60,
+		Scope:                     settings.Scope,
+		OIDCAttributeMapping:      settings.OIDCAttributeMapping,
+		OAuthKeyConfigurations:    settings.OAuthKeyConfigurations,
+	})
+	check.Assert(newSettings.Enabled, Equals, false)
+
+	err = adminOrg.DeleteOpenIdConnectSettings()
+	check.Assert(err, IsNil)
 }
 
 func (vcd *TestVCD) Test_OrgOidcSettingsTenantCRUD(check *C) {
@@ -80,89 +121,65 @@ func testValidationErrors(check *C, adminOrg *AdminOrg) {
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId: addrOf("clientId"),
+				ClientId: "clientId",
 			},
 			errorMsg: "the Client Secret is mandatory to configure OpenID Connect",
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:     addrOf("clientId"),
-				ClientSecret: addrOf("clientSecret"),
-			},
-			errorMsg: "the OpenID Connect input settings must specify either Enabled=true or Enabled=false",
-		},
-		{
-			wrongConfig: types.OrgOAuthSettings{
-				ClientId:     addrOf("clientId"),
-				ClientSecret: addrOf("clientSecret"),
-				Enabled:      addrOf(true),
+				ClientId:     "clientId",
+				ClientSecret: "clientSecret",
 			},
 			errorMsg: "the User Authorization Endpoint is mandatory to configure OpenID Connect",
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
 			},
 			errorMsg: "the Access Token Endpoint is mandatory to configure OpenID Connect",
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
 			},
 			errorMsg: "the User Info Endpoint is mandatory to configure OpenID Connect",
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
+				UserInfoEndpoint:          "https://dummy.url/userinfo",
+				MaxClockSkew:              -1,
 			},
-			errorMsg: "the Max Clock Skew is mandatory to configure OpenID Connect",
+			errorMsg: "the Max Clock Skew must be positive to correctly configure OpenID Connect",
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
-				MaxClockSkew:              addrOf(-1),
-			},
-			errorMsg: "the Max Clock Skew is mandatory to configure OpenID Connect",
-		},
-		{
-			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
-				MaxClockSkew:              addrOf(60),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
+				UserInfoEndpoint:          "https://dummy.url/userinfo",
+				MaxClockSkew:              60,
 				OIDCAttributeMapping:      &types.OIDCAttributeMapping{},
 			},
 			errorMsg: "the Subject, Email, Full name, First Name and Last name are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect",
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
-				MaxClockSkew:              addrOf(60),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
+				UserInfoEndpoint:          "https://dummy.url/userinfo",
+				MaxClockSkew:              60,
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName: "a",
 				},
@@ -171,13 +188,12 @@ func testValidationErrors(check *C, adminOrg *AdminOrg) {
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
-				MaxClockSkew:              addrOf(60),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
+				UserInfoEndpoint:          "https://dummy.url/userinfo",
+				MaxClockSkew:              60,
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName: "a",
 					EmailAttributeName:   "b",
@@ -187,13 +203,12 @@ func testValidationErrors(check *C, adminOrg *AdminOrg) {
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
-				MaxClockSkew:              addrOf(60),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
+				UserInfoEndpoint:          "https://dummy.url/userinfo",
+				MaxClockSkew:              60,
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName:  "a",
 					EmailAttributeName:    "b",
@@ -204,13 +219,12 @@ func testValidationErrors(check *C, adminOrg *AdminOrg) {
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
-				MaxClockSkew:              addrOf(60),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
+				UserInfoEndpoint:          "https://dummy.url/userinfo",
+				MaxClockSkew:              60,
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName:   "a",
 					EmailAttributeName:     "b",
@@ -222,13 +236,13 @@ func testValidationErrors(check *C, adminOrg *AdminOrg) {
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
-				MaxClockSkew:              addrOf(60),
+				ClientId:     "clientId",
+				ClientSecret: "clientSecret",
+
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
+				UserInfoEndpoint:          "https://dummy.url/userinfo",
+				MaxClockSkew:              60,
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName:   "a",
 					EmailAttributeName:     "b",
@@ -241,13 +255,12 @@ func testValidationErrors(check *C, adminOrg *AdminOrg) {
 		},
 		{
 			wrongConfig: types.OrgOAuthSettings{
-				ClientId:                  addrOf("clientId"),
-				ClientSecret:              addrOf("clientSecret"),
-				Enabled:                   addrOf(true),
-				UserAuthorizationEndpoint: addrOf("https://dummy.url/authorize"),
-				AccessTokenEndpoint:       addrOf("https://dummy.url/token"),
-				UserInfoEndpoint:          addrOf("https://dummy.url/userinfo"),
-				MaxClockSkew:              addrOf(60),
+				ClientId:                  "clientId",
+				ClientSecret:              "clientSecret",
+				UserAuthorizationEndpoint: "https://dummy.url/authorize",
+				AccessTokenEndpoint:       "https://dummy.url/token",
+				UserInfoEndpoint:          "https://dummy.url/userinfo",
+				MaxClockSkew:              60,
 				OIDCAttributeMapping: &types.OIDCAttributeMapping{
 					SubjectAttributeName:   "a",
 					EmailAttributeName:     "b",
@@ -266,5 +279,26 @@ func testValidationErrors(check *C, adminOrg *AdminOrg) {
 		check.Assert(err, NotNil)
 		check.Assert(true, Equals, strings.Contains(err.Error(), test.errorMsg))
 	}
+}
 
+// setOIDCSettings sets the given OIDC settings for the given Organization. It does this operation
+// with some tries to avoid test failures due to network glitches.
+func setOIDCSettings(check *C, adminOrg *AdminOrg, settings types.OrgOAuthSettings) *types.OrgOAuthSettings {
+	tries := 0
+	var newSettings *types.OrgOAuthSettings
+	var err error
+	for tries < 3 {
+		tries++
+		newSettings, err = adminOrg.SetOpenIdConnectSettings(settings)
+		if err != nil {
+			check.Assert(true, Equals, strings.Contains(err.Error(), "could not establish a connection") || strings.Contains(err.Error(), "connect timed out"))
+		}
+		if err == nil {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	check.Assert(err, IsNil)
+	check.Assert(newSettings, NotNil)
+	return newSettings
 }
