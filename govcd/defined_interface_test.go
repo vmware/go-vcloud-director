@@ -8,9 +8,10 @@ package govcd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
-	"strings"
 )
 
 // Test_DefinedInterface tests the CRUD behavior of Defined Interfaces as a System administrator and tenant user.

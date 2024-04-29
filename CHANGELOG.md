@@ -1,3 +1,7 @@
+## 2.25.0 (Unreleased)
+
+Changes in progress for v2.25.0 are available at [.changes/v2.25.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v2.25.0) until the release.
+
 ## 2.24.0 (April 18, 2024)
 
 ### FEATURES

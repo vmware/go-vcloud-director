@@ -344,6 +344,8 @@ While running tests, the following environment variables can be used:
 * `GOVCD_KEEP_TEST_OBJECTS` will skip deletion of objects created during tests.
 * `GOVCD_API_VERSION` allows to select the API version to use. This must be used **for testing purposes only** as the SDK
    has been tested to use certain version of the API. Using this environment variable may lead to unexpected failures.
+* `GOVCD_SKIP_LOG_TRACING` can disable sending 'X-VMWARE-VCLOUD-CLIENT-REQUEST-ID' header that is
+  used for easier log correlation
 
 When both the environment variable and the command line option are possible, the environment variable gets evaluated first.
 
