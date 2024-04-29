@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"time"
 )
 
 /*
@@ -21,6 +22,26 @@ The associations come in two flavors:
    2b. Associates an organization with another in a different VCD (requires a site association)
 
 */
+
+// -----------------------------------------------------------------------------------------------------------------
+//  Site read operations
+// -----------------------------------------------------------------------------------------------------------------
+
+// GetSite retrieves the data for the current site (VCD)
+func (client Client) GetSite() (*types.Site, error) {
+	href, err := url.JoinPath(client.VCDHREF.String(), "site")
+	if err != nil {
+		return nil, fmt.Errorf("error setting the URL path for site: %s", err)
+	}
+	var site types.Site
+	_, err = client.ExecuteRequest(href, http.MethodGet, "application/*+xml",
+		"error retrieving site: %s", nil, &site)
+	if err != nil {
+		return nil, err
+	}
+
+	return &site, nil
+}
 
 // -----------------------------------------------------------------------------------------------------------------
 // Site association read operations
@@ -99,6 +120,28 @@ func (client Client) GetSiteAssociationBySiteId(siteId string) (*types.SiteAssoc
 		}
 	}
 	return nil, fmt.Errorf("no association found for site ID %s", siteId)
+}
+
+// CheckSiteAssociation polls the state of a given site association until it becomes active, or a timeout is reached.
+// Note: this method should be called only after both sides have performed the data association upload.
+func (client Client) CheckSiteAssociation(siteId string, timeout time.Duration) (string, time.Duration, error) {
+	startTime := time.Now()
+
+	foundStatus := ""
+	elapsed := time.Since(startTime)
+	for elapsed < timeout {
+		time.Sleep(time.Second)
+		elapsed = time.Since(startTime)
+		siteAssociation, err := client.GetSiteAssociationBySiteId(siteId)
+		if err != nil {
+			return foundStatus, elapsed, fmt.Errorf("error getting site association by ID '%s': %s", siteId, err)
+		}
+		foundStatus = siteAssociation.Status
+		if foundStatus == string(types.StatusActive) {
+			return foundStatus, elapsed, nil
+		}
+	}
+	return foundStatus, elapsed, fmt.Errorf("site association '%s' not ACTIVE within the given timeout of %s: found status: '%s'", siteId, timeout, foundStatus)
 }
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -227,6 +270,28 @@ func (org AdminOrg) GetOrgRawAssociationData() ([]byte, error) {
 	return org.client.RetrieveRemoteDocument(href)
 }
 
+// CheckOrgAssociation polls the state of a given Org association until it becomes active, or a timeout is reached.
+// Note: this method should be called only after both sides have performed the data association upload.
+func (org AdminOrg) CheckOrgAssociation(orgId string, timeout time.Duration) (string, time.Duration, error) {
+	startTime := time.Now()
+
+	foundStatus := ""
+	elapsed := time.Since(startTime)
+	for elapsed < timeout {
+		time.Sleep(time.Second)
+		elapsed = time.Since(startTime)
+		orgAssociation, err := org.GetOrgAssociationByOrgId(orgId)
+		if err != nil {
+			return foundStatus, elapsed, fmt.Errorf("error getting org association by ID '%s': %s", orgId, err)
+		}
+		foundStatus = orgAssociation.Status
+		if foundStatus == string(types.StatusActive) {
+			return foundStatus, elapsed, nil
+		}
+	}
+	return foundStatus, elapsed, fmt.Errorf("org association '%s' not ACTIVE within the given timeout of %s: found status: '%s'", orgId, timeout, foundStatus)
+}
+
 // -----------------------------------------------------------------------------------------------------------------
 // Org association modifying operations
 // -----------------------------------------------------------------------------------------------------------------
@@ -308,10 +373,18 @@ func ReadXmlDataFromFile[dataType any](fileName string) (*dataType, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading file '%s': %s", fileName, err)
 	}
+	return RawDataToStructuredXml[dataType](contents)
+}
+
+// RawDataToStructuredXml reads an input byte stream and attempts decoding an expected data type
+// Examples:
+// orgSettingData, err := RawDataToStructuredXml[types.OrgAssociationMember](data)
+// siteSettingData, err := RawDataToStructuredXml[types.SiteAssociationMember](data)
+func RawDataToStructuredXml[dataType any](rawData []byte) (*dataType, error) {
 	var localData dataType
-	err = xml.Unmarshal(contents, &localData)
+	err := xml.Unmarshal(rawData, &localData)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding data from file '%s': %s", fileName, err)
+		return nil, fmt.Errorf("error decoding data: %s", err)
 	}
 	return &localData, nil
 }

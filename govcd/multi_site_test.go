@@ -19,6 +19,11 @@ func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip(fmt.Sprintf("test %s requires system administrator privileges\n", check.TestName()))
 	}
+
+	siteStruct, err := vcd.client.Client.GetSite()
+	check.Assert(err, IsNil)
+	fmt.Printf("CURRENT SITE %# v\n", pretty.Formatter(siteStruct))
+
 	siteQueryAssociations, err := vcd.client.Client.QueryAllSiteAssociations(nil, nil)
 	check.Assert(err, IsNil)
 	for i, s := range siteQueryAssociations {
@@ -78,6 +83,13 @@ func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
 	for i, s := range newSiteAssociations {
 		fmt.Printf("NEW SITE %d %# v\n", i, pretty.Formatter(s))
 	}
+
+	// This check should be performed only when a full site connection has been established (i.e. both sides have done the connection)
+	status, elapsed, err := vcd.client.Client.CheckSiteAssociation(siteSettingData.SiteID, 120*time.Second)
+	check.Assert(err, IsNil)
+	check.Assert(status, Equals, "ACTIVE")
+	fmt.Printf("elapsed: %s\n", elapsed)
+
 	siteAssociationToDelete, err := vcd.client.Client.GetSiteAssociationBySiteId(siteSettingData.SiteID)
 	check.Assert(err, IsNil)
 	err = vcd.client.Client.RemoveSiteAssociation(siteAssociationToDelete.Href)
@@ -96,9 +108,15 @@ func (vcd *TestVCD) Test_GetSiteAssociations(check *C) {
 	for i, s := range newOrgAssociations {
 		fmt.Printf("NEW %d %# v\n", i, pretty.Formatter(s))
 	}
+
+	// This check should be performed only when a full org connection has been established (i.e. both sides have done the connection)
+	status, elapsed, err = org.CheckOrgAssociation(orgSettingData.OrgID, 120*time.Second)
+	check.Assert(err, IsNil)
+	check.Assert(status, Equals, "ACTIVE")
+	fmt.Printf("elapsed: %s\n", elapsed)
+
 	orgAssociationToDelete, err := org.GetOrgAssociationByOrgId(orgSettingData.OrgID)
 	check.Assert(err, IsNil)
 	err = org.RemoveOrgAssociation(orgAssociationToDelete.Href)
 	check.Assert(err, IsNil)
-
 }
