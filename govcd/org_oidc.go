@@ -83,7 +83,30 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		}
 		if settings.OIDCAttributeMapping == nil {
 			settings.OIDCAttributeMapping = wellKnownSettings.OIDCAttributeMapping
+		} else if wellKnownSettings.OIDCAttributeMapping != nil {
+			if settings.OIDCAttributeMapping.EmailAttributeName == "" {
+				settings.OIDCAttributeMapping.EmailAttributeName = wellKnownSettings.OIDCAttributeMapping.EmailAttributeName
+			}
+			if settings.OIDCAttributeMapping.SubjectAttributeName == "" {
+				settings.OIDCAttributeMapping.SubjectAttributeName = wellKnownSettings.OIDCAttributeMapping.SubjectAttributeName
+			}
+			if settings.OIDCAttributeMapping.LastNameAttributeName == "" {
+				settings.OIDCAttributeMapping.LastNameAttributeName = wellKnownSettings.OIDCAttributeMapping.LastNameAttributeName
+			}
+			if settings.OIDCAttributeMapping.RolesAttributeName == "" {
+				settings.OIDCAttributeMapping.RolesAttributeName = wellKnownSettings.OIDCAttributeMapping.RolesAttributeName
+			}
+			if settings.OIDCAttributeMapping.FullNameAttributeName == "" {
+				settings.OIDCAttributeMapping.FullNameAttributeName = wellKnownSettings.OIDCAttributeMapping.FullNameAttributeName
+			}
+			if settings.OIDCAttributeMapping.GroupsAttributeName == "" {
+				settings.OIDCAttributeMapping.GroupsAttributeName = wellKnownSettings.OIDCAttributeMapping.GroupsAttributeName
+			}
+			if settings.OIDCAttributeMapping.FirstNameAttributeName == "" {
+				settings.OIDCAttributeMapping.FirstNameAttributeName = wellKnownSettings.OIDCAttributeMapping.FirstNameAttributeName
+			}
 		}
+
 		if settings.OAuthKeyConfigurations == nil {
 			settings.OAuthKeyConfigurations = wellKnownSettings.OAuthKeyConfigurations
 		}
