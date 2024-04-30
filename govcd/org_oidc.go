@@ -82,8 +82,10 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 			settings.Scope = wellKnownSettings.Scope
 		}
 		if settings.OIDCAttributeMapping == nil {
+			// The whole mapping is missing, we take the whole struct from wellknown endpoint
 			settings.OIDCAttributeMapping = wellKnownSettings.OIDCAttributeMapping
 		} else if wellKnownSettings.OIDCAttributeMapping != nil {
+			// Some mappings are present, others are missing. We take the missing ones from wellknown endpoint
 			if settings.OIDCAttributeMapping.EmailAttributeName == "" {
 				settings.OIDCAttributeMapping.EmailAttributeName = wellKnownSettings.OIDCAttributeMapping.EmailAttributeName
 			}
