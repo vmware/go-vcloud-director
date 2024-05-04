@@ -18,6 +18,7 @@ const (
 	StatusActive      MultiSiteStatus = "ACTIVE"
 	StatusAsymmetric  MultiSiteStatus = "ASYMMETRIC"
 	StatusUnreachable MultiSiteStatus = "UNREACHABLE"
+	StatusError       MultiSiteStatus = "ERROR"
 )
 
 type SiteAssociations struct {

@@ -64,7 +64,7 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 	}
 
 	// The second VCD must be different from the first one
-	check.Assert(os.Getenv(secondVcdUrl), Not(Equals), vcd.client.Client.VCDHREF.String())
+	check.Assert(os.Getenv(secondVcdUrl), Not(Equals), firstVcdClient.Client.VCDHREF.String())
 
 	version1, _, err := firstVcdClient.Client.GetVcdVersion()
 	check.Assert(err, IsNil)
@@ -131,6 +131,9 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(associations2), Equals, len(associations2before)+1)
 
+	// TODO: check shared organizations. Current methods (QueryAllOrgs and GetOrgList) only report local ones,
+	// while an yet unsupported method (/openapi/1.0.0/orgs) reports both.
+
 	//orgs1after, err := firstVcdClient.QueryAllOrgs()
 	//orgs1after, err := firstVcdClient.GetOrgList()
 	//check.Assert(err, IsNil)
@@ -146,7 +149,7 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 	association2, err := secondVcdClient.Client.GetSiteAssociationBySiteId(firstVcdStructuredAssociationData.SiteID)
 	check.Assert(err, IsNil)
 
-	// STEP 7 remove site associations
+	// STEP 7 remove site associations (at the end of tests)
 	defer func() {
 		err = firstVcdClient.Client.RemoveSiteAssociation(association1.Href)
 		check.Assert(err, IsNil)
@@ -155,9 +158,10 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 	}()
 
 	// STEP 8 get organization association data from both sides
+	// NOTE: org association from different sites can only happen after the two VCDs have been associated at site level
 
 	var localOrg *AdminOrg
-	// The local org –if possible– is accessed through Org admin
+	// The local org –if possible– is accessed through an Org admin
 	if len(vcd.config.Tenants) > 0 {
 		localUser, err := newUserConnection(firstVcdClient.Client.VCDHREF.String(),
 			vcd.config.Tenants[0].User,
@@ -165,19 +169,22 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 			vcd.config.Tenants[0].SysOrg, true)
 		check.Assert(err, IsNil)
 		localOrg, err = localUser.GetAdminOrgByName(vcd.config.Tenants[0].SysOrg)
-		fmt.Println("using Org user for local org")
+		fmt.Printf("Using Org user '%s@%s' (site 1)\n", vcd.config.Tenants[0].User, vcd.config.Tenants[0].SysOrg)
 	} else {
 		localOrg, err = firstVcdClient.GetAdminOrgByName(vcd.config.VCD.Org)
+		fmt.Printf("Using System administrator user for local org '%s'\n", vcd.config.VCD.Org)
 	}
 	check.Assert(err, IsNil)
 	remoteOrgs, err := secondVcdClient.GetOrgList()
 	check.Assert(err, IsNil)
 	check.Assert(len(remoteOrgs.Org) > 1, Equals, true)
 
+	// Get the first non-System org from the second site
 	remoteOrgName := remoteOrgs.Org[0].Name
 	if strings.EqualFold(remoteOrgName, "system") {
 		remoteOrgName = remoteOrgs.Org[1].Name
 	}
+	fmt.Printf("Using System administrator user for remote org '%s' (site 2)\n", remoteOrgName)
 	remoteOrg, err := secondVcdClient.GetAdminOrgByName(remoteOrgName)
 	check.Assert(err, IsNil)
 
@@ -193,14 +200,14 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 	err = remoteOrg.SetOrgAssociation(*orgAssociationData1)
 	check.Assert(err, IsNil)
 
-	// STEP 10 check association connection
+	// STEP 10 check org association connection
 
 	status1, elapsed1, err = localOrg.CheckOrgAssociation(orgAssociationData2.OrgID, 120*time.Second)
 	check.Assert(err, IsNil)
-	fmt.Printf("org #1: status: %s - elapsed: %s\n", status1, elapsed1)
+	fmt.Printf("org #1 (from site 1): status: %s - elapsed: %s\n", status1, elapsed1)
 	status2, elapsed2, err = remoteOrg.CheckOrgAssociation(orgAssociationData1.OrgID, 120*time.Second)
 	check.Assert(err, IsNil)
-	fmt.Printf("org #2: status: %s - elapsed: %s\n", status2, elapsed2)
+	fmt.Printf("org #2 (from site 2): status: %s - elapsed: %s\n", status2, elapsed2)
 
 	// STEP 11 retrieve the specific associations that we have just created (used for removal)
 	orgAssociation1, err := localOrg.GetOrgAssociationByOrgId(orgAssociationData2.OrgID)
@@ -214,107 +221,98 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 		err = remoteOrg.RemoveOrgAssociation(orgAssociation2.Href)
 		check.Assert(err, IsNil)
 	}()
+	// TODO: check number of networks in both orgs before and after associations
+	// This needs a new method to query networks by Org. The current ones do it by VDC
+}
 
-	/*
-		siteStruct, err := firstVcdClient.Client.GetSite()
-		check.Assert(err, IsNil)
-		fmt.Printf("CURRENT SITE %# v\n", pretty.Formatter(siteStruct))
+func (vcd *TestVCD) Test_OrgAssociations(check *C) {
 
-		siteQueryAssociations, err := vcd.client.Client.QueryAllSiteAssociations(nil, nil)
-		check.Assert(err, IsNil)
-		for i, s := range siteQueryAssociations {
-			fmt.Printf("%d %# v\n", i, pretty.Formatter(s))
+	// Note: this test runs regardless of `VCD_TEST_ORG_USER` state, as it uses explicit Org user connections
+	// to perform its operations
+
+	if len(vcd.config.Tenants) < 2 {
+		check.Skip(fmt.Sprintf("not enough tenant structures defined in configuration. Two are requited. %d were found", len(vcd.config.Tenants)))
+	}
+	// Make sure that the tenants structure is populated
+	for _, tenant := range vcd.config.Tenants {
+		if tenant.User == "" || tenant.SysOrg == "" || tenant.Password == "" {
+			check.Skip("One or more components in tenant structure are empty.")
+			return
 		}
-		fmt.Println()
-		orgQueryAssociations, err := vcd.client.Client.QueryAllOrgAssociations(nil, nil)
-		check.Assert(err, IsNil)
-		for i, s := range orgQueryAssociations {
-			fmt.Printf("%d %# v\n", i, pretty.Formatter(s))
-		}
+	}
 
-		fmt.Println()
-		associationData, err := vcd.client.Client.GetSiteAssociationData()
-		check.Assert(err, IsNil)
-		fmt.Printf("---- %# v\n", pretty.Formatter(associationData))
+	firstOrgName := vcd.config.Tenants[0].SysOrg
+	secondOrgName := vcd.config.Tenants[1].SysOrg
 
-		rawAssociationData, err := vcd.client.Client.GetSiteRawAssociationData()
-		check.Assert(err, IsNil)
-		fmt.Printf("%s\n", rawAssociationData)
+	// Step 0 define two Org user connections
+	firstVcdClient, err := newUserConnection(vcd.client.Client.VCDHREF.String(),
+		vcd.config.Tenants[0].User,
+		vcd.config.Tenants[0].Password,
+		firstOrgName, true)
+	check.Assert(err, IsNil)
+	secondVcdClient, err := newUserConnection(vcd.client.Client.VCDHREF.String(),
+		vcd.config.Tenants[1].User,
+		vcd.config.Tenants[1].Password,
+		secondOrgName, true)
+	check.Assert(err, IsNil)
+	fmt.Printf("Using user '%s@%s'\n", vcd.config.Tenants[0].User, firstOrgName)
+	fmt.Printf("Using user '%s@%s'\n", vcd.config.Tenants[1].User, secondOrgName)
 
-		fmt.Println()
-		siteAssociations, err := vcd.client.Client.GetSiteAssociations()
-		check.Assert(err, IsNil)
-		for i, a := range siteAssociations {
-			fmt.Printf("%d %# v\n", i, pretty.Formatter(a))
-		}
+	org, err := vcd.client.GetAdminOrgByName(firstOrgName)
+	check.Assert(err, IsNil)
+	err = org.RemoveOrgAssociation("https://w2-hs4-vcd-58-29.eng.vmware.com/api/org/a93c9db9-7471-3192-8d09-a8f7eeda85f9")
 
-		fmt.Println()
-		//org, err := vcd.client.GetAdminOrgByName("gmaxia")
-		org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
-		check.Assert(err, IsNil)
-		orgAssociations, err := org.GetOrgAssociations()
-		check.Assert(err, IsNil)
-		for i, s := range orgAssociations {
-			fmt.Printf("%d %# v\n", i, pretty.Formatter(s))
-		}
+	// STEP 1 get organization association data from both sides, using their own Org users
+	var firstOrg *AdminOrg
+	var secondOrg *AdminOrg
+	firstOrg, err = firstVcdClient.GetAdminOrgByName(firstOrgName)
+	check.Assert(err, IsNil)
+	secondOrg, err = secondVcdClient.GetAdminOrgByName(secondOrgName)
+	check.Assert(err, IsNil)
 
-		orgAssociationData, err := org.GetOrgAssociationData()
-		check.Assert(err, IsNil)
-		fmt.Printf("---- %# v\n", pretty.Formatter(orgAssociationData))
-		orgRawAssociationData, err := org.GetOrgRawAssociationData()
-		check.Assert(err, IsNil)
-		fmt.Printf("---- %s\n", orgRawAssociationData)
+	orgAssociationData1, err := firstOrg.GetOrgAssociationData()
+	check.Assert(err, IsNil)
+	rawOrgAssociationData1, err := firstOrg.GetOrgRawAssociationData()
+	check.Assert(err, IsNil)
+	orgAssociationData2, err := secondOrg.GetOrgAssociationData()
+	check.Assert(err, IsNil)
 
-		// TODO: change the test to be more generic
+	// Check that the raw data is the same as the structured data
+	rawOrgAssociationData2, err := secondOrg.GetOrgRawAssociationData()
+	check.Assert(err, IsNil)
+	convertedAssociationData1, err := RawDataToStructuredXml[types.OrgAssociationMember](rawOrgAssociationData1)
+	check.Assert(err, IsNil)
+	check.Assert(orgAssociationData1.OrgID, Equals, convertedAssociationData1.OrgID)
+	check.Assert(orgAssociationData1.OrgPublicKey, Equals, convertedAssociationData1.OrgPublicKey)
+	convertedAssociationData2, err := RawDataToStructuredXml[types.OrgAssociationMember](rawOrgAssociationData2)
+	check.Assert(err, IsNil)
+	check.Assert(orgAssociationData2.OrgID, Equals, convertedAssociationData2.OrgID)
+	check.Assert(orgAssociationData2.OrgPublicKey, Equals, convertedAssociationData2.OrgPublicKey)
 
-		siteFileName := "./multi-site/sc1-vcd-22-29.eng.vmware.com.xml"
-		siteSettingData, err := ReadXmlDataFromFile[types.SiteAssociationMember](siteFileName)
-		check.Assert(err, IsNil)
-		check.Assert(siteSettingData, NotNil)
-		err = vcd.client.Client.SetSiteAssociation(*siteSettingData)
-		check.Assert(err, IsNil)
-		time.Sleep(10 * time.Second)
-		newSiteAssociations, err := vcd.client.Client.GetSiteAssociations()
-		check.Assert(err, IsNil)
-		for i, s := range newSiteAssociations {
-			fmt.Printf("NEW SITE %d %# v\n", i, pretty.Formatter(s))
-		}
+	// STEP 2 set org associations within the same VCD
+	err = firstOrg.SetOrgAssociation(*orgAssociationData2)
+	check.Assert(err, IsNil)
+	err = secondOrg.SetOrgAssociation(*orgAssociationData1)
+	check.Assert(err, IsNil)
 
-		// This check should be performed only when a full site connection has been established (i.e. both sides have done the connection)
-		status, elapsed, err := vcd.client.Client.CheckSiteAssociation(siteSettingData.SiteID, 120*time.Second)
-		check.Assert(err, IsNil)
-		check.Assert(status, Equals, "ACTIVE")
-		fmt.Printf("elapsed: %s\n", elapsed)
+	// STEP 3 check association connection
+	status1, elapsed1, err := firstOrg.CheckOrgAssociation(orgAssociationData2.OrgID, 120*time.Second)
+	check.Assert(err, IsNil)
+	fmt.Printf("org #1 (same site): status: %s - elapsed: %s\n", status1, elapsed1)
+	status2, elapsed2, err := secondOrg.CheckOrgAssociation(orgAssociationData1.OrgID, 120*time.Second)
+	check.Assert(err, IsNil)
+	fmt.Printf("org #2 (same site): status: %s - elapsed: %s\n", status2, elapsed2)
 
-		siteAssociationToDelete, err := vcd.client.Client.GetSiteAssociationBySiteId(siteSettingData.SiteID)
-		check.Assert(err, IsNil)
-		err = vcd.client.Client.RemoveSiteAssociation(siteAssociationToDelete.Href)
-		check.Assert(err, IsNil)
+	// STEP 4 retrieve the specific associations that we have just created (used for removal)
+	orgAssociation1, err := firstOrg.GetOrgAssociationByOrgId(orgAssociationData2.OrgID)
+	check.Assert(err, IsNil)
+	orgAssociation2, err := secondOrg.GetOrgAssociationByOrgId(orgAssociationData1.OrgID)
+	check.Assert(err, IsNil)
 
-		orgFileName := "./multi-site/datacloud-1.xml"
-		orgSettingData, err := ReadXmlDataFromFile[types.OrgAssociationMember](orgFileName)
-		check.Assert(err, IsNil)
-		check.Assert(orgSettingData, NotNil)
-
-		err = org.SetOrgAssociation(*orgSettingData)
-		check.Assert(err, IsNil)
-		time.Sleep(10 * time.Second)
-		newOrgAssociations, err := org.GetOrgAssociations()
-		check.Assert(err, IsNil)
-		for i, s := range newOrgAssociations {
-			fmt.Printf("NEW %d %# v\n", i, pretty.Formatter(s))
-		}
-
-		// This check should be performed only when a full org connection has been established (i.e. both sides have done the connection)
-		status, elapsed, err = org.CheckOrgAssociation(orgSettingData.OrgID, 120*time.Second)
-		check.Assert(err, IsNil)
-		check.Assert(status, Equals, "ACTIVE")
-		fmt.Printf("elapsed: %s\n", elapsed)
-
-		orgAssociationToDelete, err := org.GetOrgAssociationByOrgId(orgSettingData.OrgID)
-		check.Assert(err, IsNil)
-		err = org.RemoveOrgAssociation(orgAssociationToDelete.Href)
-		check.Assert(err, IsNil)
-
-	*/
+	// STEP 5 Remove associations
+	check.Assert(err, IsNil)
+	err = firstOrg.RemoveOrgAssociation(orgAssociation1.Href)
+	check.Assert(err, IsNil)
+	err = secondOrg.RemoveOrgAssociation(orgAssociation2.Href)
+	check.Assert(err, IsNil)
 }
