@@ -9,12 +9,13 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	. "gopkg.in/check.v1"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	. "gopkg.in/check.v1"
 )
 
 // Test_RdeAndRdeType tests the CRUD operations for the RDE Type with both System administrator and a tenant user.
