@@ -498,6 +498,9 @@ const (
 
 	// OpenApiEndpointVgpuProfile is used to query vGPU profiles
 	OpenApiEndpointVgpuProfile = "vgpuProfiles"
+
+	// OpenAPI Org
+	OpenApiEndpointOrgs = "orgs/"
 )
 
 // Header keys to run operations in tenant context

@@ -760,7 +760,13 @@ func (client *Client) newOpenApiRequest(apiVersion string, params url.Values, me
 		}
 	}
 	for k, v := range additionalHeader {
-		req.Header.Add(k, v)
+		if strings.Contains(v, "{{MEDIA_TYPE}}") || strings.Contains(v, "{{API_VERSION}}") {
+			v = strings.Replace(v, "{{MEDIA_TYPE}}", types.JSONMime, 1)
+			v = strings.Replace(v, "{{API_VERSION}}", apiVersion, 1)
+			req.Header.Set(k, v)
+		} else {
+			req.Header.Add(k, v)
+		}
 	}
 
 	// Inject JSON mime type if there are no overwrites

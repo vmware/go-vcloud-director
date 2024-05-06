@@ -142,6 +142,8 @@ var endpointMinApiVersions = map[string]string{
 
 	// Endpoint for managing vGPU profiles
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVgpuProfile: "36.2",
+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgs: "37.2",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
