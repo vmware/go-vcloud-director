@@ -10,6 +10,7 @@ import (
 	_ "embed"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -20,9 +21,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpoint(c
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("test requires system administrator privileges")
 	}
-	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
-		check.Skip("test requires OIDC configuration")
-	}
+	oidcServerUrl := validateAndGetOidcServerUrl(check, vcd)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -42,7 +41,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpoint(c
 		ClientSecret:      "clientSecret",
 		Enabled:           true,
 		MaxClockSkew:      60,
-		WellKnownEndpoint: vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
+		WellKnownEndpoint: oidcServerUrl.String(),
 	})
 	check.Assert(err, IsNil)
 	defer func() {
@@ -76,9 +75,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAn
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("test requires system administrator privileges")
 	}
-	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
-		check.Skip("test requires OIDC configuration")
-	}
+	oidcServerUrl := validateAndGetOidcServerUrl(check, vcd)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -94,9 +91,9 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAn
 		ClientSecret:              "clientSecret",
 		Enabled:                   true,
 		MaxClockSkew:              60,
-		AccessTokenEndpoint:       vcd.config.VCD.OidcServer.Url + "/foo",
-		UserAuthorizationEndpoint: vcd.config.VCD.OidcServer.Url + "/foo2",
-		WellKnownEndpoint:         vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
+		AccessTokenEndpoint:       oidcServerUrl.Host + "/foo",
+		UserAuthorizationEndpoint: oidcServerUrl.Host + "/foo2",
+		WellKnownEndpoint:         oidcServerUrl.String(),
 	})
 	check.Assert(err, IsNil)
 	defer func() {
@@ -104,8 +101,8 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAn
 	}()
 
 	check.Assert(settings, NotNil)
-	check.Assert(settings.AccessTokenEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/foo")
-	check.Assert(settings.UserAuthorizationEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/foo2")
+	check.Assert(settings.AccessTokenEndpoint, Equals, oidcServerUrl.Host+"/foo")
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, oidcServerUrl.Host+"/foo2")
 	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
 	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
 	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
@@ -130,9 +127,8 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check 
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("test requires system administrator privileges")
 	}
-	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
-		check.Skip("test requires OIDC configuration")
-	}
+
+	oidcServerUrl := validateAndGetOidcServerUrl(check, vcd)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -142,10 +138,10 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check 
 		ClientId:                  "clientId",
 		ClientSecret:              "clientSecret",
 		Enabled:                   true,
-		UserAuthorizationEndpoint: vcd.config.VCD.OidcServer.Url + "/userAuth",
-		AccessTokenEndpoint:       vcd.config.VCD.OidcServer.Url + "/accessToken",
-		IssuerId:                  vcd.config.VCD.OidcServer.Url + "/issuerId",
-		UserInfoEndpoint:          vcd.config.VCD.OidcServer.Url + "/userInfo",
+		UserAuthorizationEndpoint: oidcServerUrl.Host + "/userAuth",
+		AccessTokenEndpoint:       oidcServerUrl.Host + "/accessToken",
+		IssuerId:                  oidcServerUrl.Host + "/issuerId",
+		UserInfoEndpoint:          oidcServerUrl.Host + "/userInfo",
 		MaxClockSkew:              60,
 		Scope:                     []string{"foo", "bar"},
 		OIDCAttributeMapping: &types.OIDCAttributeMapping{
@@ -181,10 +177,10 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check 
 	check.Assert(settings.Enabled, Equals, true)
 	check.Assert(settings.ClientId, Equals, "clientId")
 	check.Assert(settings.ClientSecret, Equals, "clientSecret")
-	check.Assert(settings.IssuerId, Equals, vcd.config.VCD.OidcServer.Url+"/issuerId")
-	check.Assert(settings.UserAuthorizationEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/userAuth")
-	check.Assert(settings.AccessTokenEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/accessToken")
-	check.Assert(settings.UserInfoEndpoint, Equals, vcd.config.VCD.OidcServer.Url+"/userInfo")
+	check.Assert(settings.IssuerId, Equals, oidcServerUrl.Host+"/issuerId")
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, oidcServerUrl.Host+"/userAuth")
+	check.Assert(settings.AccessTokenEndpoint, Equals, oidcServerUrl.Host+"/accessToken")
+	check.Assert(settings.UserInfoEndpoint, Equals, oidcServerUrl.Host+"/userInfo")
 	check.Assert(settings.ScimEndpoint, Equals, "")
 	check.Assert(len(settings.Scope), Equals, 2)
 	check.Assert(settings.MaxClockSkew, Equals, 60)
@@ -209,9 +205,8 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminUpdate(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("test requires system administrator privileges")
 	}
-	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
-		check.Skip("test requires OIDC configuration")
-	}
+
+	oidcServerUrl := validateAndGetOidcServerUrl(check, vcd)
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
@@ -231,7 +226,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminUpdate(check *C) {
 		ClientSecret:      "clientSecret",
 		Enabled:           true,
 		MaxClockSkew:      60,
-		WellKnownEndpoint: vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
+		WellKnownEndpoint: oidcServerUrl.String(),
 	})
 	check.Assert(err, IsNil)
 	defer func() {
@@ -253,7 +248,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminUpdate(check *C) {
 			GroupsAttributeName:    "groups2",
 			RolesAttributeName:     "roles2",
 		},
-		WellKnownEndpoint: vcd.config.VCD.OidcServer.Url + vcd.config.VCD.OidcServer.WellKnownEndpoint,
+		WellKnownEndpoint: oidcServerUrl.String(),
 	})
 	check.Assert(err, IsNil)
 	check.Assert(updatedSettings, NotNil)
@@ -273,18 +268,14 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminUpdate(check *C) {
 }
 
 func (vcd *TestVCD) Test_OrgOidcSettingsTenantCRUD(check *C) {
-	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
-		check.Skip("test requires OIDC configuration")
-	}
+	_ = validateAndGetOidcServerUrl(check, vcd)
+
 }
 
 // Test_OrgOidcSettingsValidationErrors tests the validation rules when setting OpenID Connect Settings with AdminOrg.SetOpenIdConnectSettings
 func (vcd *TestVCD) Test_OrgOidcSettingsValidationErrors(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("test requires system administrator privileges")
-	}
-	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
-		check.Skip("test requires OIDC configuration")
 	}
 
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
@@ -496,4 +487,16 @@ func deleteOIDCSettings(check *C, adminOrg *AdminOrg) {
 	check.Assert(settings.UserInfoEndpoint, Equals, "")
 	check.Assert(settings.UserAuthorizationEndpoint, Equals, "")
 	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+}
+
+func validateAndGetOidcServerUrl(check *C, vcd *TestVCD) *url.URL {
+	if vcd.config.VCD.OidcServer.Url == "" || vcd.config.VCD.OidcServer.WellKnownEndpoint == "" {
+		check.Skip("test requires OIDC configuration")
+	}
+
+	oidcServer, err := url.Parse(vcd.config.VCD.OidcServer.Url)
+	if err != nil {
+		check.Skip(check.TestName() + " requires OIDC Server URL and its well-known endpoint")
+	}
+	return oidcServer.JoinPath(vcd.config.VCD.OidcServer.WellKnownEndpoint)
 }
