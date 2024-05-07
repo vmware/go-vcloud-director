@@ -281,11 +281,6 @@ func (vcd *TestVCD) Test_OrgAssociations(check *C) {
 	fmt.Printf("Using user '%s@%s'\n", vcd.config.Tenants[0].User, firstOrgName)
 	fmt.Printf("Using user '%s@%s'\n", vcd.config.Tenants[1].User, secondOrgName)
 
-	org, err := vcd.client.GetAdminOrgByName(firstOrgName)
-	check.Assert(err, IsNil)
-	err = org.RemoveOrgAssociation("https://w2-hs4-vcd-58-29.eng.vmware.com/api/org/a93c9db9-7471-3192-8d09-a8f7eeda85f9")
-	check.Assert(err, IsNil)
-
 	// STEP 1: get organization association data from both sides, using their own Org users
 	var firstOrg *AdminOrg
 	var secondOrg *AdminOrg
