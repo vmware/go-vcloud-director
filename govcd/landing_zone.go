@@ -83,7 +83,7 @@ func (vcdClient *VCDClient) CreateSolutionLandingZone(slzCfg *types.SolutionLand
 	return &returnType, nil
 }
 
-// GetAllSolutionLandingZones retrieves all solution landing zones
+// GetAllSolutionLandingZones retrieves all Solution Landing Zones
 //
 // Note: Up to VCD 10.5.1.1 there can be only a single RDE entry (one SLZ per VCD)
 func (vcdClient *VCDClient) GetAllSolutionLandingZones(queryParameters url.Values) ([]*SolutionLandingZone, error) {
