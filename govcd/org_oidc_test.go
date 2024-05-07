@@ -300,7 +300,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsWithTenantUser(check *C) {
 	err := vcdClient.Authenticate(userName, password, orgName)
 	check.Assert(err, IsNil)
 
-	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	adminOrg, err := vcd.client.GetAdminOrgByName(orgName)
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
@@ -319,7 +319,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsWithTenantUser(check *C) {
 	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
 	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
 	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
-	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.Tenants[0].SysOrg))
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, orgName))
 	check.Assert(settings.IssuerId, Not(Equals), "")
 	check.Assert(settings.Enabled, Equals, true)
 	check.Assert(settings.ClientId, Equals, "clientId")
