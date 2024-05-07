@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+// #nosec G101 -- These credentials are fake for testing purposes
 const (
 	secondVcdUrl              = "VCD_URL2"
 	secondVcdUser             = "VCD_USER2"
