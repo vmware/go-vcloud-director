@@ -12,6 +12,10 @@ import (
 )
 
 func (vcd *TestVCD) Test_CreateLandingZone(check *C) {
+	if vcd.client.Client.APIVCDMaxVersionIs("< 37.1") {
+		check.Skip("Solution Landing Zones are supported in VCD 10.4.1+")
+	}
+
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 
