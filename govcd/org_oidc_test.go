@@ -35,7 +35,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpoint(c
 	check.Assert(settings.AccessTokenEndpoint, Equals, "")
 	check.Assert(settings.UserInfoEndpoint, Equals, "")
 	check.Assert(settings.UserAuthorizationEndpoint, Equals, "")
-	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.VCD.Org))
 
 	settings, err = setOIDCSettings(adminOrg, types.OrgOAuthSettings{
 		ClientId:          "clientId",
@@ -53,7 +53,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpoint(c
 	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
 	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
 	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
-	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.VCD.Org))
 	check.Assert(settings.IssuerId, Not(Equals), "")
 	check.Assert(settings.Enabled, Equals, true)
 	check.Assert(settings.ClientId, Equals, "clientId")
@@ -85,7 +85,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAn
 	settings, err := adminOrg.GetOpenIdConnectSettings()
 	check.Assert(err, IsNil)
 	check.Assert(settings, NotNil)
-	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.VCD.Org))
 
 	accessTokenEndpoint := fmt.Sprintf("%s://%s/foo", oidcServerUrl.Scheme, oidcServerUrl.Host)
 	userAuthorizationEndpoint := fmt.Sprintf("%s://%s/foo2", oidcServerUrl.Scheme, oidcServerUrl.Host)
@@ -110,7 +110,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAn
 	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
 	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
 	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
-	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.VCD.Org))
 	check.Assert(settings.IssuerId, Not(Equals), "")
 	check.Assert(settings.Enabled, Equals, true)
 	check.Assert(settings.ClientId, Equals, "clientId")
@@ -190,7 +190,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check 
 	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
 	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
 	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
-	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.VCD.Org))
 	check.Assert(settings.Enabled, Equals, true)
 	check.Assert(settings.ClientId, Equals, "clientId")
 	check.Assert(settings.ClientSecret, Equals, "clientSecret")
@@ -237,7 +237,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminUpdate(check *C) {
 	check.Assert(settings.AccessTokenEndpoint, Equals, "")
 	check.Assert(settings.UserInfoEndpoint, Equals, "")
 	check.Assert(settings.UserAuthorizationEndpoint, Equals, "")
-	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.VCD.Org))
 
 	settings, err = setOIDCSettings(adminOrg, types.OrgOAuthSettings{
 		ClientId:          "clientId",
@@ -285,9 +285,59 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminUpdate(check *C) {
 	check.Assert(updatedSettings.OIDCAttributeMapping.RolesAttributeName, Equals, "roles2")
 }
 
-func (vcd *TestVCD) Test_OrgOidcSettingsTenantCRUD(check *C) {
-	_ = validateAndGetOidcServerUrl(check, vcd)
+func (vcd *TestVCD) Test_OrgOidcSettingsWithTenantUser(check *C) {
+	if len(vcd.config.Tenants) == 0 {
+		check.Skip(check.TestName() + " requires at least one tenant in the configuration")
+	}
 
+	oidcServerUrl := validateAndGetOidcServerUrl(check, vcd)
+
+	orgName := vcd.config.Tenants[0].SysOrg
+	userName := vcd.config.Tenants[0].User
+	password := vcd.config.Tenants[0].Password
+
+	vcdClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err := vcdClient.Authenticate(userName, password, orgName)
+	check.Assert(err, IsNil)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	settings, err := setOIDCSettings(adminOrg, types.OrgOAuthSettings{
+		ClientId:          "clientId",
+		ClientSecret:      "clientSecret",
+		Enabled:           true,
+		MaxClockSkew:      60,
+		WellKnownEndpoint: oidcServerUrl.String(),
+	})
+	check.Assert(err, IsNil)
+	defer func() {
+		deleteOIDCSettings(check, adminOrg)
+	}()
+	check.Assert(settings, NotNil)
+	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
+	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
+	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.Tenants[0].SysOrg))
+	check.Assert(settings.IssuerId, Not(Equals), "")
+	check.Assert(settings.Enabled, Equals, true)
+	check.Assert(settings.ClientId, Equals, "clientId")
+	check.Assert(settings.ClientSecret, Equals, "clientSecret")
+	check.Assert(settings.UserAuthorizationEndpoint, Not(Equals), "")
+	check.Assert(settings.AccessTokenEndpoint, Not(Equals), "")
+	check.Assert(settings.UserInfoEndpoint, Not(Equals), "")
+	check.Assert(settings.ScimEndpoint, Equals, "")
+	check.Assert(len(settings.Scope), Not(Equals), 0)
+	check.Assert(settings.MaxClockSkew, Equals, 60)
+	check.Assert(settings.WellKnownEndpoint, Not(Equals), "")
+	check.Assert(settings.OIDCAttributeMapping, NotNil)
+	check.Assert(settings.OAuthKeyConfigurations, NotNil)
+	check.Assert(len(settings.OAuthKeyConfigurations.OAuthKeyConfiguration), Not(Equals), 0)
+
+	settings2, err := adminOrg.GetOpenIdConnectSettings()
+	check.Assert(err, IsNil)
+	check.Assert(settings2, DeepEquals, settings)
 }
 
 // Test_OrgOidcSettingsValidationErrors tests the validation rules when setting OpenID Connect Settings with AdminOrg.SetOpenIdConnectSettings

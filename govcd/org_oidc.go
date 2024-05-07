@@ -5,8 +5,11 @@
 package govcd
 
 import (
+	"bytes"
+	"encoding/xml"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -15,32 +18,21 @@ import (
 
 // GetOpenIdConnectSettings retrieves the current OpenID Connect settings for a given Organization
 func (adminOrg *AdminOrg) GetOpenIdConnectSettings() (*types.OrgOAuthSettings, error) {
-	if strings.TrimSpace(adminOrg.AdminOrg.HREF) == "" {
-		return nil, fmt.Errorf("the HREF of the Organization is required to retrieve its OpenID Connect settings")
-	}
-
-	var settings types.OrgOAuthSettings
-
-	_, err := adminOrg.client.ExecuteRequestWithApiVersion(adminOrg.AdminOrg.HREF+"/settings/oauth", http.MethodGet,
-		types.MimeOAuthSettingsXml, "error getting Organization OpenID Connect settings: %s", nil, &settings,
-		getHighestOidcApiVersion(adminOrg.client))
+	result, err := oidcExecuteRequest(adminOrg, http.MethodGet, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &settings, nil
+	return result, nil
 }
 
 // SetOpenIdConnectSettings sets the OpenID Connect configuration for a given Organization. If the well-known configuration
 // endpoint is provided, the configuration is automatically retrieved from that URL.
 // If other fields have been set in the input structure, the well-known configuration is overridden with these.
 // If there are no fields informed, the configuration retrieved from the well-known configuration endpoint is applied as-is.
-// ClientId, ClientSecret and Enabled properties are always mandatory, with and without well-known endpoint.
+// ClientId and ClientSecret properties are always mandatory, with and without well-known endpoint.
 // This method returns an error if the settings can't be saved in VCD for any reason or if the provided settings are wrong.
 func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettings) (*types.OrgOAuthSettings, error) {
-	if strings.TrimSpace(adminOrg.AdminOrg.HREF) == "" {
-		return nil, fmt.Errorf("the HREF of the Organization is required to configure its OpenID Connect settings")
-	}
 	if settings.ClientId == "" {
 		return nil, fmt.Errorf("the Client ID is mandatory to configure OpenID Connect")
 	}
@@ -143,30 +135,85 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 	}
 	settings.OIDCAttributeMapping.Xmlns = types.XMLNamespaceVCloud
 
-	var createdSettings types.OrgOAuthSettings
-	_, err := adminOrg.client.ExecuteRequestWithApiVersion(adminOrg.AdminOrg.HREF+"/settings/oauth", http.MethodPut,
-		types.MimeOAuthSettingsXml, "error creating Organization OpenID Connect settings: %s", settings, &createdSettings,
-		getHighestOidcApiVersion(adminOrg.client))
+	result, err := oidcExecuteRequest(adminOrg, http.MethodPut, &settings)
 	if err != nil {
 		return nil, err
 	}
 
-	return &createdSettings, nil
+	return result, nil
 }
 
 // DeleteOpenIdConnectSettings deletes the current OpenID Connect settings from a given Organization
 func (adminOrg *AdminOrg) DeleteOpenIdConnectSettings() error {
-	if strings.TrimSpace(adminOrg.AdminOrg.HREF) == "" {
-		return fmt.Errorf("the HREF of the Organization is required to delete its OpenID Connect settings")
-	}
-
-	_, err := adminOrg.client.ExecuteRequest(adminOrg.AdminOrg.HREF+"/settings/oauth", http.MethodDelete,
-		types.MimeOAuthSettingsXml, "error deleting Organization OpenID Connect settings: %s", nil, nil)
+	_, err := oidcExecuteRequest(adminOrg, http.MethodDelete, nil)
 	if err != nil {
 		return err
 	}
-
 	return nil
+}
+
+// oidcExecuteRequest executes a request to the OIDC endpoint with the given payload and HTTP method
+func oidcExecuteRequest(adminOrg *AdminOrg, method string, payload *types.OrgOAuthSettings) (*types.OrgOAuthSettings, error) {
+	if adminOrg.AdminOrg.HREF == "" {
+		return nil, fmt.Errorf("the HREF of the Organization is required to use OpenID Connect")
+	}
+	endpoint, err := url.Parse(adminOrg.AdminOrg.HREF + "/settings/oauth")
+	if err != nil {
+		return nil, fmt.Errorf("error parsing Organization '%s' OpenID Connect URL: %s", adminOrg.AdminOrg.Name, err)
+	}
+	if endpoint == nil {
+		return nil, fmt.Errorf("error parsing Organization '%s' OpenID Connect URL: it is nil", adminOrg.AdminOrg.Name)
+	}
+	if method == http.MethodPut && payload == nil {
+		return nil, fmt.Errorf("the OIDC settings cannot be nil when performing a PUT call")
+	}
+
+	// Set Organization "tenant context" headers
+	headers := make(http.Header)
+	headers.Set("Content-Type", types.MimeOAuthSettingsXml)
+	for k, v := range getTenantContextHeader(&TenantContext{
+		OrgId:   adminOrg.AdminOrg.ID,
+		OrgName: adminOrg.AdminOrg.Name,
+	}) {
+		headers.Add(k, v)
+	}
+
+	// If the call is a PUT, we prepare the body with the input settings
+	var body io.Reader
+	if method == http.MethodPut {
+		text := bytes.Buffer{}
+		encoder := xml.NewEncoder(&text)
+		err = encoder.Encode(*payload)
+		if err != nil {
+			return nil, err
+		}
+		body = strings.NewReader(text.String())
+	}
+
+	// Perform the HTTP call with the custom headers and obtained API version
+	req := adminOrg.client.newRequest(nil, nil, method, *endpoint, body, getHighestOidcApiVersion(adminOrg.client), headers)
+	resp, err := checkResp(adminOrg.client.Http.Do(req))
+	if err != nil {
+		return nil, fmt.Errorf("error deleting Organization OpenID Connect settings: %s", err)
+	}
+
+	// Get the response settings
+	switch method {
+	case http.MethodDelete:
+		if resp != nil && resp.StatusCode != http.StatusNoContent {
+			return nil, fmt.Errorf("error deleting Organization OpenID Connect settings, expected status code %d - received %d", http.StatusNoContent, resp.StatusCode)
+		}
+		return nil, nil
+	default:
+		var result types.OrgOAuthSettings
+		err = decodeBody(types.BodyTypeXML, resp, &result)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding Organization OpenID Connect settings: %s", err)
+		}
+		// Workaround for a possible bug in VCD: the PUT call never returns the tenant name in the redirect URL
+		result.OrgRedirectUri = strings.Replace(result.OrgRedirectUri, "tenant:null", "tenant:"+adminOrg.AdminOrg.Name, 1)
+		return &result, nil
+	}
 }
 
 // oidcValidateConnection executes a test probe against the given endpoint to validate that the client
