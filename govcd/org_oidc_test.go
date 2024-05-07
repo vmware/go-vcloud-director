@@ -8,6 +8,7 @@ package govcd
 
 import (
 	_ "embed"
+	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 	"net/url"
@@ -86,13 +87,16 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAn
 	check.Assert(settings, NotNil)
 	check.Assert(settings.OrgRedirectUri, Not(Equals), "")
 
+	accessTokenEndpoint := fmt.Sprintf("%s://%s/foo", oidcServerUrl.Scheme, oidcServerUrl.Host)
+	userAuthorizationEndpoint := fmt.Sprintf("%s://%s/foo2", oidcServerUrl.Scheme, oidcServerUrl.Host)
+
 	settings, err = setOIDCSettings(adminOrg, types.OrgOAuthSettings{
 		ClientId:                  "clientId",
 		ClientSecret:              "clientSecret",
 		Enabled:                   true,
 		MaxClockSkew:              60,
-		AccessTokenEndpoint:       oidcServerUrl.Host + "/foo",
-		UserAuthorizationEndpoint: oidcServerUrl.Host + "/foo2",
+		AccessTokenEndpoint:       accessTokenEndpoint,
+		UserAuthorizationEndpoint: userAuthorizationEndpoint,
 		WellKnownEndpoint:         oidcServerUrl.String(),
 	})
 	check.Assert(err, IsNil)
@@ -101,8 +105,8 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithWellKnownEndpointAn
 	}()
 
 	check.Assert(settings, NotNil)
-	check.Assert(settings.AccessTokenEndpoint, Equals, oidcServerUrl.Host+"/foo")
-	check.Assert(settings.UserAuthorizationEndpoint, Equals, oidcServerUrl.Host+"/foo2")
+	check.Assert(settings.AccessTokenEndpoint, Equals, accessTokenEndpoint)
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, userAuthorizationEndpoint)
 	check.Assert(settings.Xmlns, Equals, "http://www.vmware.com/vcloud/v1.5")
 	check.Assert(settings.Href, Equals, adminOrg.AdminOrg.HREF+"/settings/oauth")
 	check.Assert(settings.Type, Equals, "application/vnd.vmware.admin.organizationOAuthSettings+xml")
@@ -134,14 +138,27 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check 
 	check.Assert(err, IsNil)
 	check.Assert(adminOrg, NotNil)
 
+	accessTokenEndpoint := fmt.Sprintf("%s://%s/accessToken", oidcServerUrl.Scheme, oidcServerUrl.Host)
+	userAuthorizationEndpoint := fmt.Sprintf("%s://%s/userAuth", oidcServerUrl.Scheme, oidcServerUrl.Host)
+	issuerId := fmt.Sprintf("%s://%s/issuerId", oidcServerUrl.Scheme, oidcServerUrl.Host)
+	userInfoEndpoint := fmt.Sprintf("%s://%s/userInfo", oidcServerUrl.Scheme, oidcServerUrl.Host)
+
+	expirationDate := "2123-12-31T01:59:59.000Z"
+	dummyKey := "-----BEGIN PUBLIC KEY-----\n" +
+		"MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9gXitSASYbVS56gBkQ3UOCS7F\n" +
+		"8SnFABs44sxXykt8DW4y1mxdyCcM0X/lVPf+DNfXbIISmPk/mqoRS9uZSuQIUtC2\n" +
+		"4iaGkWyUALvrq8FJcR8Krf5EtDt1W9AkLEREDJ7VkpJx/VoCd9ZNe8NFstAvbQ6+\n" +
+		"bM0Jg9lJJdr+VPNvywIDAQAB\n" +
+		"-----END PUBLIC KEY-----"
+
 	settings, err := setOIDCSettings(adminOrg, types.OrgOAuthSettings{
 		ClientId:                  "clientId",
 		ClientSecret:              "clientSecret",
 		Enabled:                   true,
-		UserAuthorizationEndpoint: oidcServerUrl.Host + "/userAuth",
-		AccessTokenEndpoint:       oidcServerUrl.Host + "/accessToken",
-		IssuerId:                  oidcServerUrl.Host + "/issuerId",
-		UserInfoEndpoint:          oidcServerUrl.Host + "/userInfo",
+		UserAuthorizationEndpoint: userAuthorizationEndpoint,
+		AccessTokenEndpoint:       accessTokenEndpoint,
+		IssuerId:                  issuerId,
+		UserInfoEndpoint:          userInfoEndpoint,
 		MaxClockSkew:              60,
 		Scope:                     []string{"foo", "bar"},
 		OIDCAttributeMapping: &types.OIDCAttributeMapping{
@@ -158,8 +175,8 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check 
 				{
 					KeyId:          "rsa1",
 					Algorithm:      "RSA",
-					Key:            "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9gXitSASYbVS56gBkQ3UOCS7F\n8SnFABs44sxXykt8DW4y1mxdyCcM0X/lVPf+DNfXbIISmPk/mqoRS9uZSuQIUtC2\n4iaGkWyUALvrq8FJcR8Krf5EtDt1W9AkLEREDJ7VkpJx/VoCd9ZNe8NFstAvbQ6+\nbM0Jg9lJJdr+VPNvywIDAQAB\n-----END PUBLIC KEY-----",
-					ExpirationDate: "",
+					Key:            dummyKey,
+					ExpirationDate: expirationDate,
 				},
 			},
 		},
@@ -177,10 +194,10 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check 
 	check.Assert(settings.Enabled, Equals, true)
 	check.Assert(settings.ClientId, Equals, "clientId")
 	check.Assert(settings.ClientSecret, Equals, "clientSecret")
-	check.Assert(settings.IssuerId, Equals, oidcServerUrl.Host+"/issuerId")
-	check.Assert(settings.UserAuthorizationEndpoint, Equals, oidcServerUrl.Host+"/userAuth")
-	check.Assert(settings.AccessTokenEndpoint, Equals, oidcServerUrl.Host+"/accessToken")
-	check.Assert(settings.UserInfoEndpoint, Equals, oidcServerUrl.Host+"/userInfo")
+	check.Assert(settings.IssuerId, Equals, issuerId)
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, userAuthorizationEndpoint)
+	check.Assert(settings.AccessTokenEndpoint, Equals, accessTokenEndpoint)
+	check.Assert(settings.UserInfoEndpoint, Equals, userInfoEndpoint)
 	check.Assert(settings.ScimEndpoint, Equals, "")
 	check.Assert(len(settings.Scope), Equals, 2)
 	check.Assert(settings.MaxClockSkew, Equals, 60)
@@ -197,7 +214,8 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminCreateWithCustomValues(check 
 	check.Assert(len(settings.OAuthKeyConfigurations.OAuthKeyConfiguration), Equals, 1)
 	check.Assert(settings.OAuthKeyConfigurations.OAuthKeyConfiguration[0].KeyId, Equals, "rsa1")
 	check.Assert(settings.OAuthKeyConfigurations.OAuthKeyConfiguration[0].Algorithm, Equals, "RSA")
-	check.Assert(true, Equals, strings.Contains(settings.OAuthKeyConfigurations.OAuthKeyConfiguration[0].Key, "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9gXitSASYbVS56gBkQ3UOCS7F"))
+	check.Assert(settings.OAuthKeyConfigurations.OAuthKeyConfiguration[0].Key, Equals, dummyKey)
+	check.Assert(settings.OAuthKeyConfigurations.OAuthKeyConfiguration[0].ExpirationDate, Equals, expirationDate)
 }
 
 // Test_OrgOidcSettingsSystemAdminUpdate configures OIDC settings with a wellknown endpoint, then updates some values.
