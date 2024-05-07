@@ -285,6 +285,7 @@ func (vcd *TestVCD) Test_OrgOidcSettingsSystemAdminUpdate(check *C) {
 	check.Assert(updatedSettings.OIDCAttributeMapping.RolesAttributeName, Equals, "roles2")
 }
 
+// Test_OrgOidcSettingsWithTenantUser configures OIDC settings with a tenant user instead of System administrator.
 func (vcd *TestVCD) Test_OrgOidcSettingsWithTenantUser(check *C) {
 	if len(vcd.config.Tenants) == 0 {
 		check.Skip(check.TestName() + " requires at least one tenant in the configuration")

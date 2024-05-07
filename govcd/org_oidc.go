@@ -28,7 +28,7 @@ func (adminOrg *AdminOrg) GetOpenIdConnectSettings() (*types.OrgOAuthSettings, e
 
 // SetOpenIdConnectSettings sets the OpenID Connect configuration for a given Organization. If the well-known configuration
 // endpoint is provided, the configuration is automatically retrieved from that URL.
-// If other fields have been set in the input structure, the well-known configuration is overridden with these.
+// If other fields have been set in the input structure, the corresponding values retrieved from the well-known endpoint are overridden.
 // If there are no fields informed, the configuration retrieved from the well-known configuration endpoint is applied as-is.
 // ClientId and ClientSecret properties are always mandatory, with and without well-known endpoint.
 // This method returns an error if the settings can't be saved in VCD for any reason or if the provided settings are wrong.
@@ -76,7 +76,7 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		if settings.OIDCAttributeMapping == nil {
 			// The whole mapping is missing, we take the whole struct from wellknown endpoint
 			settings.OIDCAttributeMapping = wellKnownSettings.OIDCAttributeMapping
-		} else if wellKnownSettings.OIDCAttributeMapping != nil {
+		} else {
 			// Some mappings are present, others are missing. We take the missing ones from wellknown endpoint
 			if settings.OIDCAttributeMapping.EmailAttributeName == "" {
 				settings.OIDCAttributeMapping.EmailAttributeName = wellKnownSettings.OIDCAttributeMapping.EmailAttributeName
