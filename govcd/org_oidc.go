@@ -193,18 +193,21 @@ func oidcExecuteRequest(adminOrg *AdminOrg, method string, payload *types.OrgOAu
 	// Perform the HTTP call with the custom headers and obtained API version
 	req := adminOrg.client.newRequest(nil, nil, method, *endpoint, body, getHighestOidcApiVersion(adminOrg.client), headers)
 	resp, err := checkResp(adminOrg.client.Http.Do(req))
-	if err != nil {
-		return nil, fmt.Errorf("error deleting Organization OpenID Connect settings: %s", err)
-	}
 
-	// Get the response settings
+	// Check the errors and get the response
 	switch method {
 	case http.MethodDelete:
+		if err != nil {
+			return nil, fmt.Errorf("error deleting Organization OpenID Connect settings: %s", err)
+		}
 		if resp != nil && resp.StatusCode != http.StatusNoContent {
 			return nil, fmt.Errorf("error deleting Organization OpenID Connect settings, expected status code %d - received %d", http.StatusNoContent, resp.StatusCode)
 		}
 		return nil, nil
 	case http.MethodGet:
+		if err != nil {
+			return nil, fmt.Errorf("error getting Organization OpenID Connect settings: %s", err)
+		}
 		var result types.OrgOAuthSettings
 		err = decodeBody(types.BodyTypeXML, resp, &result)
 		if err != nil {
@@ -212,6 +215,9 @@ func oidcExecuteRequest(adminOrg *AdminOrg, method string, payload *types.OrgOAu
 		}
 		return &result, nil
 	case http.MethodPut:
+		if err != nil {
+			return nil, fmt.Errorf("error setting Organization OpenID Connect settings: %s", err)
+		}
 		// Note: This branch of the switch should be exactly the same as the GET operation, however there is a bug found in VCD 10.5.1.1:
 		// the PUT call returns a wrong redirect URL.
 		// For that reason, we ignore the response body and call GetOpenIdConnectSettings() to return the correct response body to the caller.
