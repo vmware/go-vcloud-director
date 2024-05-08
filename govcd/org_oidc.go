@@ -204,15 +204,23 @@ func oidcExecuteRequest(adminOrg *AdminOrg, method string, payload *types.OrgOAu
 			return nil, fmt.Errorf("error deleting Organization OpenID Connect settings, expected status code %d - received %d", http.StatusNoContent, resp.StatusCode)
 		}
 		return nil, nil
-	default:
+	case http.MethodGet:
 		var result types.OrgOAuthSettings
 		err = decodeBody(types.BodyTypeXML, resp, &result)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding Organization OpenID Connect settings: %s", err)
 		}
-		// Workaround for a possible bug in VCD: the PUT call never returns the tenant name in the redirect URL
-		result.OrgRedirectUri = strings.Replace(result.OrgRedirectUri, "tenant:null", "tenant:"+adminOrg.AdminOrg.Name, 1)
 		return &result, nil
+	case http.MethodPut:
+		// Note: This branch of the switch should be exactly the same as the GET operation, however there is a bug found in VCD 10.5.1.1:
+		// the PUT call returns a wrong redirect URL.
+		// For that reason, we ignore the response body and call GetOpenIdConnectSettings() to return the correct response body to the caller.
+		if resp != nil && resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("error saving Organization OpenID Connect settings, expected status code %d - received %d", http.StatusOK, resp.StatusCode)
+		}
+		return adminOrg.GetOpenIdConnectSettings()
+	default:
+		return nil, fmt.Errorf("not supported HTTP method %s", method)
 	}
 }
 
