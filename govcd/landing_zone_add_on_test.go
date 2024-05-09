@@ -7,46 +7,41 @@
 package govcd
 
 import (
+	"errors"
+	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
+	if vcd.config.VCD.Catalog.NsxtCatalogAddonDse == "" {
+		check.Skip("missing 'VCD.Catalog.NsxtCatalogAddonDse' value")
+	}
+	catalogMediaName := vcd.config.VCD.Catalog.NsxtCatalogAddonDse
+
 	slz := createSlz(vcd, check)
 	err := slz.Refresh()
 	check.Assert(err, IsNil)
 
-	isoPath := os.Getenv("DSE_ISO") //"vmware-vcd-ds-1.3.0-22829404.iso"
-	if isoPath == "" {
-		check.Skip("no .ISO defined")
-	}
+	addOnCatalog, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
 
-	// Upload image
-	isoFileName := filepath.Base(isoPath)
+	cacheFilePath, err := fetchCacheFile(addOnCatalog, catalogMediaName, check)
+	check.Assert(err, IsNil)
+
 	org, err := vcd.client.GetOrgById(slz.SolutionLandingZoneType.ID)
 	check.Assert(err, IsNil)
 	catalog, err := org.GetCatalogById(slz.SolutionLandingZoneType.Catalogs[0].ID, false)
 	check.Assert(err, IsNil)
-	catItem, err := catalog.GetCatalogItemByName(isoFileName, false)
-	if ContainsNotFound(err) {
-		uploadPieceSize := 10
-		task, err := catalog.UploadMediaFile(isoFileName, "", isoPath, int64(uploadPieceSize)*1024*1024, false) // Convert from megabytes to bytes)
-		check.Assert(err, IsNil)
-		err = task.WaitTaskCompletion()
-		check.Assert(err, IsNil)
-
-		catItem, err = catalog.GetCatalogItemByName(isoFileName, true)
-		check.Assert(err, IsNil)
-	}
+	catItem, err := catalog.GetCatalogItemByName(catalogMediaName, false)
+	check.Assert(err, IsNil)
 
 	createCfg := SolutionAddOnConfig{
-		IsoFilePath:          isoPath,
+		IsoFilePath:          cacheFilePath,
 		User:                 "administrator",
 		CatalogItemId:        catItem.CatalogItem.ID,
-		AcceptEula:           true,
 		AutoTrustCertificate: true,
 	}
 	solutionAddOn, err := vcd.client.CreateSolutionAddOn(createCfg)
@@ -56,8 +51,16 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 	// Get all
 	allSolutionAddOns, err := vcd.client.GetAllSolutionAddons(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allSolutionAddOns), Equals, 1)
-	check.Assert(allSolutionAddOns[0].Id(), Equals, solutionAddOn.Id())
+	check.Assert(len(allSolutionAddOns) >= 1, Equals, true) // VCD has a few baked in Solution Add-Ons (e.g. 'service-account-solutions-system-user', 'vmware.solution-addon-landing-zone-1.0.0')
+
+	foundId := false
+	for addOnIndex := range allSolutionAddOns {
+		if allSolutionAddOns[addOnIndex].Id() == solutionAddOn.Id() {
+			foundId = true
+			break
+		}
+	}
+	check.Assert(foundId, Equals, true)
 
 	// Get all with filter
 	queryParams := queryParameterFilterAnd("id=="+solutionAddOn.Id(), nil)
@@ -75,7 +78,40 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 	check.Assert(err, IsNil)
 
 	// Verify no more Add-Ons remaining
-	allSolutionAddOns, err = vcd.client.GetAllSolutionAddons(nil)
+	allSolutionAddOnsAfterCleanup, err := vcd.client.GetAllSolutionAddons(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allSolutionAddOns), Equals, 0)
+	check.Assert(len(allSolutionAddOnsAfterCleanup), Equals, len(allSolutionAddOns)-1)
+}
+
+func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error) {
+	pwd, err := os.Getwd()
+	check.Assert(err, IsNil)
+	cacheDirPath := pwd + "/test-resources/cache"
+	cacheFilePath := cacheDirPath + "/" + fileName
+	printVerbose("# Using '%s' file to cache Solution Add-On\n", cacheFilePath)
+
+	if _, err := os.Stat(cacheFilePath); errors.Is(err, os.ErrNotExist) {
+		// Create cache directory if it doesn't exist
+		if _, err := os.Stat(cacheDirPath); os.IsNotExist(err) {
+			printVerbose("# Creating directory '%s'\n", cacheDirPath)
+			err := os.Mkdir(cacheDirPath, 0755)
+			check.Assert(err, IsNil)
+		}
+
+		fmt.Printf("# Downloading Solution Add-On '%s' from VCD...", fileName)
+		addOnMediaItem, err := catalog.GetMediaByName(fileName, false)
+		check.Assert(err, IsNil)
+
+		addOn, err := addOnMediaItem.Download()
+		check.Assert(err, IsNil)
+
+		err = os.WriteFile(cacheFilePath, addOn, 0644)
+		check.Assert(err, IsNil)
+		addOn = nil // free memory
+		fmt.Println("Done")
+	} else {
+		printVerbose("# File '%s' is present, not downloading\n", cacheFilePath)
+	}
+
+	return cacheFilePath, nil
 }

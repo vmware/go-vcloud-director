@@ -47,3 +47,5 @@ govcd/test_cleanup_list*.json
 *.bak
 *.swp
 
+# File cache directory
+govcd/test-resources/cache/*

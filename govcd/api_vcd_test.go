@@ -162,6 +162,7 @@ type TestConfig struct {
 			CatalogItem               string `yaml:"catalogItem,omitempty"`
 			CatalogItemWithEfiSupport string `yaml:"catalogItemWithEfiSupport,omitempty"`
 			NsxtCatalogItem           string `yaml:"nsxtCatalogItem,omitempty"`
+			NsxtCatalogAddonDse       string `yaml:"nsxtCatalogAddonDse,omitempty"`
 			CatalogItemDescription    string `yaml:"catalogItemDescription,omitempty"`
 			CatalogItemWithMultiVms   string `yaml:"catalogItemWithMultiVms,omitempty"`
 			VmNameInMultiVmItem       string `yaml:"vmNameInMultiVmItem,omitempty"`

@@ -132,3 +132,72 @@ func (vcd *TestVCD) Test_CreateLandingZone(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(slzByIdErr, IsNil)
 }
+
+func createSlz(vcd *TestVCD, check *C) *SolutionLandingZone {
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
+	check.Assert(err, IsNil)
+
+	adminVdc, err := adminOrg.GetAdminVDCById(vcd.nsxtVdc.Vdc.ID, false)
+	check.Assert(err, IsNil)
+	orgNetwork, err := vcd.nsxtVdc.GetOpenApiOrgVdcNetworkByName(vcd.config.VCD.Nsxt.RoutedNetwork)
+	check.Assert(err, IsNil)
+	check.Assert(orgNetwork, NotNil)
+	computePolicy, err := adminVdc.GetAllAssignedVdcComputePoliciesV2(nil)
+	check.Assert(err, IsNil)
+	check.Assert(computePolicy, NotNil)
+	storageProfileRef, err := adminVdc.GetDefaultStorageProfileReference()
+	check.Assert(err, IsNil)
+	check.Assert(storageProfileRef, NotNil)
+	catalog, err := adminOrg.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
+	check.Assert(err, IsNil)
+	check.Assert(catalog, NotNil)
+	slzCfg := &types.SolutionLandingZoneType{
+		Name: adminOrg.AdminOrg.Name,
+		ID:   adminOrg.AdminOrg.ID,
+		Vdcs: []types.SolutionLandingZoneVdc{
+			{
+				ID:           adminVdc.AdminVdc.ID,
+				Name:         adminVdc.AdminVdc.Name,
+				Capabilities: []string{},
+				Networks: []types.SolutionLandingZoneVdcChild{
+					{
+						ID:           orgNetwork.OpenApiOrgVdcNetwork.ID,
+						Name:         orgNetwork.OpenApiOrgVdcNetwork.Name,
+						IsDefault:    true,
+						Capabilities: []string{},
+					},
+				},
+				ComputePolicies: []types.SolutionLandingZoneVdcChild{
+					{
+						ID:           computePolicy[0].VdcComputePolicyV2.ID,
+						Name:         computePolicy[0].VdcComputePolicyV2.Name,
+						IsDefault:    true,
+						Capabilities: []string{},
+					},
+				},
+				StoragePolicies: []types.SolutionLandingZoneVdcChild{
+					{
+						ID:           storageProfileRef.ID,
+						Name:         storageProfileRef.Name,
+						IsDefault:    true,
+						Capabilities: []string{},
+					},
+				},
+			},
+		},
+		Catalogs: []types.SolutionLandingZoneCatalog{
+			{
+				ID:           catalog.Catalog.ID,
+				Name:         catalog.Catalog.Name,
+				Capabilities: []string{},
+			},
+		},
+	}
+	slz, err := vcd.client.CreateSolutionLandingZone(slzCfg)
+	check.Assert(err, IsNil)
+	check.Assert(slz, NotNil)
+
+	AddToCleanupListOpenApi(slz.DefinedEntity.DefinedEntity.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointRdeEntities+slz.DefinedEntity.DefinedEntity.ID)
+
+	return slz
+}
