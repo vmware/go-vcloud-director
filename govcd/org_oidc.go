@@ -127,6 +127,20 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		return nil, fmt.Errorf("the OIDC Key Configuration is mandatory to configure OpenID Connect")
 	}
 
+	// Perform connectivity validations
+	err := oidcValidateConnection(adminOrg.client, settings.UserAuthorizationEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	err = oidcValidateConnection(adminOrg.client, settings.AccessTokenEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	err = oidcValidateConnection(adminOrg.client, settings.UserInfoEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
 	// The namespace must be set for all structures, otherwise the API call fails
 	settings.Xmlns = types.XMLNamespaceVCloud
 	settings.OAuthKeyConfigurations.Xmlns = types.XMLNamespaceVCloud
