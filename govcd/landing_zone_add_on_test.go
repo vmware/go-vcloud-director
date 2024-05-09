@@ -94,7 +94,7 @@ func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error)
 		// Create cache directory if it doesn't exist
 		if _, err := os.Stat(cacheDirPath); os.IsNotExist(err) {
 			printVerbose("# Creating directory '%s'\n", cacheDirPath)
-			err := os.Mkdir(cacheDirPath, 0755)
+			err := os.Mkdir(cacheDirPath, 0750)
 			check.Assert(err, IsNil)
 		}
 
@@ -105,7 +105,7 @@ func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error)
 		addOn, err := addOnMediaItem.Download()
 		check.Assert(err, IsNil)
 
-		err = os.WriteFile(cacheFilePath, addOn, 0644)
+		err = os.WriteFile(cacheFilePath, addOn, 0600)
 		check.Assert(err, IsNil)
 		addOn = nil // free memory
 		fmt.Println("Done")
