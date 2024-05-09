@@ -275,7 +275,7 @@ func oidcValidateConnection(client *Client, endpoint string) error {
 	}
 
 	if result.TargetProbe == nil || !result.TargetProbe.CanConnect || (isSecure && !result.TargetProbe.SSLHandshake) {
-		return fmt.Errorf("could not establish a connection to %s", uri.String())
+		return fmt.Errorf("could not establish a connection to %s://%s", uri.Scheme, uri.Host)
 	}
 	return nil
 }
