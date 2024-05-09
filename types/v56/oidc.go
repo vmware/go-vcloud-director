@@ -40,12 +40,12 @@ type OrgOAuthSettings struct {
 	LastKeySuccessfulRefresh   string `xml:"LastKeySuccessfulRefresh,omitempty"`   // Last time refresh of the keys was successful
 
 	// Added in v37.1
-	EnableIdTokenClaims bool `xml:"EnableIdTokenClaims"` // Flag indicating whether Id-Token Claims should be used when establishing user details
+	EnableIdTokenClaims *bool `xml:"EnableIdTokenClaims"` // Flag indicating whether Id-Token Claims should be used when establishing user details
 	// Added in v38.0
-	UsePKCE                                    bool `xml:"UsePKCE"`                                    // Flag indicating whether client must use PKCE (Proof Key for Code Exchange), which provides additional verification against potential authorization code interception. Default is false
-	SendClientCredentialsAsAuthorizationHeader bool `xml:"SendClientCredentialsAsAuthorizationHeader"` // Flag indicating whether client credentials should be sent as an Authorization header when fetching the token. Default is false, which means client credentials will be sent within the body of the request
+	UsePKCE                                    *bool `xml:"UsePKCE"`                                    // Flag indicating whether client must use PKCE (Proof Key for Code Exchange), which provides additional verification against potential authorization code interception. Default is false
+	SendClientCredentialsAsAuthorizationHeader *bool `xml:"SendClientCredentialsAsAuthorizationHeader"` // Flag indicating whether client credentials should be sent as an Authorization header when fetching the token. Default is false, which means client credentials will be sent within the body of the request
 	// Added in v38.1
-	CustomUiButtonLabel string `xml:"CustomUiButtonLabel,omitempty"` // Custom label to use when displaying this OpenID Connect configuration on the VCD login pane. If null, a default label will be used
+	CustomUiButtonLabel *string `xml:"CustomUiButtonLabel,omitempty"` // Custom label to use when displaying this OpenID Connect configuration on the VCD login pane. If null, a default label will be used
 }
 
 // OAuthKeyConfigurationsList contains a list of OAuth Key configurations

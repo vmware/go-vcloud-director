@@ -341,6 +341,77 @@ func (vcd *TestVCD) Test_OrgOidcSettingsWithTenantUser(check *C) {
 	check.Assert(settings2, DeepEquals, settings)
 }
 
+// Test_OrgOidcSettingsDifferentVersions tests the parameters that are only available in certain
+// VCD versions, like the UI button label. This test only makes sense when it is run in several
+// VCD versions.
+func (vcd *TestVCD) Test_OrgOidcSettingsDifferentVersions(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("test requires system administrator privileges")
+	}
+
+	oidcServerUrl := validateAndGetOidcServerUrl(check, vcd)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	settings, err := adminOrg.GetOpenIdConnectSettings()
+	check.Assert(err, IsNil)
+	check.Assert(settings, NotNil)
+	check.Assert(settings.Enabled, Equals, false)
+	check.Assert(settings.AccessTokenEndpoint, Equals, "")
+	check.Assert(settings.UserInfoEndpoint, Equals, "")
+	check.Assert(settings.UserAuthorizationEndpoint, Equals, "")
+	check.Assert(true, Equals, strings.HasSuffix(settings.OrgRedirectUri, vcd.config.VCD.Org))
+
+	s := types.OrgOAuthSettings{
+		ClientId:          "clientId",
+		ClientSecret:      "clientSecret",
+		Enabled:           true,
+		MaxClockSkew:      60,
+		WellKnownEndpoint: oidcServerUrl.String(),
+	}
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.1") {
+		s.EnableIdTokenClaims = addrOf(true)
+	}
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.0") {
+		s.SendClientCredentialsAsAuthorizationHeader = addrOf(true)
+		s.UsePKCE = addrOf(true)
+	}
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.1") {
+		s.CustomUiButtonLabel = addrOf("this is a test")
+	}
+
+	settings, err = setOIDCSettings(adminOrg, s)
+	check.Assert(err, IsNil)
+	defer func() {
+		deleteOIDCSettings(check, adminOrg)
+	}()
+
+	check.Assert(settings, NotNil)
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 37.1") {
+		check.Assert(settings.EnableIdTokenClaims, NotNil)
+		check.Assert(*settings.EnableIdTokenClaims, Equals, true)
+	} else {
+		check.Assert(settings.EnableIdTokenClaims, IsNil)
+	}
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.0") {
+		check.Assert(settings.SendClientCredentialsAsAuthorizationHeader, NotNil)
+		check.Assert(settings.UsePKCE, NotNil)
+		check.Assert(*settings.SendClientCredentialsAsAuthorizationHeader, Equals, true)
+		check.Assert(*settings.UsePKCE, Equals, true)
+	} else {
+		check.Assert(settings.SendClientCredentialsAsAuthorizationHeader, IsNil)
+		check.Assert(settings.UsePKCE, IsNil)
+	}
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.1") {
+		check.Assert(settings.CustomUiButtonLabel, NotNil)
+		check.Assert(*settings.CustomUiButtonLabel, Equals, "this is a test")
+	} else {
+		check.Assert(settings.CustomUiButtonLabel, IsNil)
+	}
+}
+
 // Test_OrgOidcSettingsValidationErrors tests the validation rules when setting OpenID Connect Settings with AdminOrg.SetOpenIdConnectSettings
 func (vcd *TestVCD) Test_OrgOidcSettingsValidationErrors(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
