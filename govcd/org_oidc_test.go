@@ -598,14 +598,14 @@ func setOIDCSettings(adminOrg *AdminOrg, settings types.OrgOAuthSettings) (*type
 	tries := 0
 	var newSettings *types.OrgOAuthSettings
 	var err error
-	for tries < 3 {
+	for tries < 5 {
 		tries++
 		newSettings, err = adminOrg.SetOpenIdConnectSettings(settings)
 		if err == nil {
 			break
 		}
 		if strings.Contains(err.Error(), "could not establish a connection") || strings.Contains(err.Error(), "connect timed out") {
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 		}
 	}
 	if err != nil {
