@@ -7,9 +7,13 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
+
+// slzRdeType sets Runtime Defined Entity Type to be used across multiple calls
+var slzRdeType = [3]string{"vmware", "solutions_organization", "1.0.0"}
 
 // SolutionLandingZone controls VCD Solution Add-On Landing Zone. It does so by wrapping RDE for
 // entity types vmware:solutions_organization:1.0.0.
@@ -31,7 +35,7 @@ type SolutionLandingZone struct {
 // 2. Resolves the RDE
 func (vcdClient *VCDClient) CreateSolutionLandingZone(slzCfg *types.SolutionLandingZoneType) (*SolutionLandingZone, error) {
 	// 1. Check that RDE type exists
-	rdeType, err := vcdClient.GetRdeType("vmware", "solutions_organization", "1.0.0")
+	rdeType, err := vcdClient.GetRdeType(slzRdeType[0], slzRdeType[1], slzRdeType[2])
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving RDE Type for Solution Landing zone: %s", err)
 	}
@@ -44,7 +48,7 @@ func (vcdClient *VCDClient) CreateSolutionLandingZone(slzCfg *types.SolutionLand
 
 	// 3. Construct payload
 	entityCfg := &types.DefinedEntity{
-		EntityType: "urn:vcloud:type:vmware:solutions_organization:1.0.0",
+		EntityType: "urn:vcloud:type:" + strings.Join(slzRdeType[:], ":"),
 		Name:       "Solutions Organization",
 		State:      addrOf("PRE_CREATED"),
 		// Processed solution landing zone
@@ -87,7 +91,7 @@ func (vcdClient *VCDClient) CreateSolutionLandingZone(slzCfg *types.SolutionLand
 //
 // Note: Up to VCD 10.5.1.1 there can be only a single RDE entry (one SLZ per VCD)
 func (vcdClient *VCDClient) GetAllSolutionLandingZones(queryParameters url.Values) ([]*SolutionLandingZone, error) {
-	allSlzs, err := vcdClient.GetAllRdes("vmware", "solutions_organization", "1.0.0", queryParameters)
+	allSlzs, err := vcdClient.GetAllRdes(slzRdeType[0], slzRdeType[1], slzRdeType[2], queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving all SLZs: %s", err)
 	}
@@ -149,13 +153,14 @@ func (vcdClient *VCDClient) GetSolutionLandingZoneById(id string) (*SolutionLand
 	return packages, nil
 }
 
+// Refresh reloads parent RDE data
 func (slz *SolutionLandingZone) Refresh() error {
 	err := slz.DefinedEntity.Refresh()
 	if err != nil {
 		return err
 	}
 
-	// 5. Repackage created RDE "Entity" to more exact type
+	// Repackage created RDE "Entity" to more exact type
 	result, err := convertRdeEntityToAny[types.SolutionLandingZoneType](slz.DefinedEntity.DefinedEntity.Entity)
 	if err != nil {
 		return err
@@ -166,6 +171,7 @@ func (slz *SolutionLandingZone) Refresh() error {
 	return nil
 }
 
+// Id is a shorthand to retrieve ID of parent runtime defined entity
 func (slz *SolutionLandingZone) Id() string {
 	if slz == nil || slz.DefinedEntity == nil || slz.DefinedEntity.DefinedEntity == nil {
 		return ""
@@ -174,6 +180,7 @@ func (slz *SolutionLandingZone) Id() string {
 	return slz.DefinedEntity.DefinedEntity.ID
 }
 
+// Update Solution Landing Zone
 func (slz *SolutionLandingZone) Update(slzCfg *types.SolutionLandingZoneType) (*SolutionLandingZone, error) {
 	unmarshalledRdeEntityJson, err := convertAnyToRdeEntity(slzCfg)
 	if err != nil {
