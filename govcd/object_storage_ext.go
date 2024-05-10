@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -192,13 +193,30 @@ func (client *Client) S3ApiCreateBucket(name, region string, additionalHeader ma
 }
 
 func (client *Client) S3ApiDeleteBucket(name, region string, additionalHeader map[string]string) (*http.Response, error) {
+
+	client.S3ApiClearBucket(name, region, additionalHeader)
+
+	urlRef, _ := client.S3ApiBuildEndpoint(name)
+
+	req := client.newS3ApiRequest(client.APIVersion, nil, http.MethodDelete, urlRef, nil, nil)
+
+	resp, err := client.Http.Do(req)
+	if err != nil || resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiDeleteBucket] error deleting bucket: status (%d - %s) %s", resp.StatusCode, resp.Status, err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (client *Client) S3ApiClearBucket(name, region string, additionalHeader map[string]string) (*http.Response, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
 	body := `{
 		"quiet": true,
 		"removeAll": true,
 		"deleteVersion": true,
-		"tryAsync": true
+		"tryAsync": false
 	}`
 
 	values, err := url.ParseQuery("delete")
@@ -207,11 +225,11 @@ func (client *Client) S3ApiDeleteBucket(name, region string, additionalHeader ma
 		return nil, err
 	}
 
-	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodDelete, urlRef, bytes.NewBuffer([]byte(body)), nil)
+	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPost, urlRef, bytes.NewBuffer([]byte(body)), nil)
 
 	resp, err := client.Http.Do(req)
-	if err != nil {
-		util.Logger.Printf("[DEBUG - S3ApiDeleteBucket] error deleting bucket: %s", err)
+	if err != nil || resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiDeleteBucket] error deleting bucket: status (%d - %s) %s", resp.StatusCode, resp.Status, err)
 		return nil, err
 	}
 
@@ -300,7 +318,7 @@ func (client *Client) S3ApiEditBucketAcls(name, region string, acls []map[string
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
-		util.Logger.Printf("[DEBUG - S3ApiEditBucketTags] error editing bucket tags: %s", err)
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketAcls] error editing bucket acls: %s", err)
 		return nil, err
 	}
 
@@ -322,7 +340,41 @@ func (client *Client) S3ApiEditBucketCors(name, region string, cors string, addi
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
-		util.Logger.Printf("[DEBUG - S3ApiEditBucketTags] error editing bucket tags: %s", err)
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketCors] error editing bucket cors: %s", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (client *Client) S3ApiUploadObject(name, region, objectKey, source string, additionalHeader map[string]string) (*http.Response, error) {
+	urlRef, _ := client.S3ApiBuildEndpoint(name, objectKey)
+
+	fi, err := os.Stat(source)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditObjectUpload] error getting object stats: %s", err)
+		return nil, err
+	}
+
+	util.Logger.Printf("The file is %d bytes long", fi.Size())
+
+	file, err := os.ReadFile(source)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditObjectUpload] error reading object: %s", err)
+		return nil, err
+	}
+
+	contentType := http.DetectContentType(file)
+
+	values, _ := url.ParseQuery("cors")
+	headers := make(map[string]string)
+	headers["Content-Type"] = contentType
+
+	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer(file), headers)
+
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditObjectUpload] error uploading object: %s", err)
 		return nil, err
 	}
 
