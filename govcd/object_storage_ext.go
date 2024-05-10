@@ -14,6 +14,31 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+type Bucket struct {
+	Name      string      `json:"name"`
+	Tenant    string      `json:"tenant"`
+	S3Href    string      `json:"s3Href"`
+	S3AltHref string      `json:"s3AltHref"`
+	Owner     BucketOwner `json:"owner"`
+}
+
+type BucketOwner struct {
+	Id          string `json:"id"`
+	DisplayName string `json:"displayName"`
+}
+
+type S3Cors struct {
+	CorsRules []S3CorsRule `json:"corsRules"`
+}
+
+type S3CorsRule struct {
+	AllowedMethods []string `json:"allowedMethods"`
+	MaxAgeSeconds  int32    `json:"maxAgeSeconds"`
+	ExposeHeaders  []string `json:"exposeHeaders"`
+	AllowedOrigins []string `json:"allowedOrigins"`
+	AllowedHeaders []string `json:"allowedHeaders"`
+}
+
 // ObjectStorageApiBuildEndpoint helps to construct ObjectStorageApI endpoint by using already configured VCD HREF while requiring only
 // the last bit for s3 API.
 // Sample URL construct: https://s3.HOST//api/v1/s3
@@ -215,6 +240,85 @@ func (client *Client) S3ApiEditBucketTags(name, region string, tags map[string]s
 	}
 
 	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer(data), nil)
+
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketTags] error editing bucket tags: %s", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (client *Client) S3ApiEditBucketAcls(name, region string, acls []map[string]interface{}, additionalHeader map[string]string) (*http.Response, error) {
+	urlRef, _ := client.S3ApiBuildEndpoint(name)
+
+	bucketJson, _ := client.S3ApiGetBucket(name, region, nil)
+	// util.Logger.Printf("[DEBUG - S3ApiEditBucketAcl]  bucket: %s", bucketJson)
+
+	var bucket *Bucket
+
+	if err := json.Unmarshal([]byte(bucketJson), &bucket); err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketAcl] error unmarshal bucket: %s", err)
+	}
+
+	values, _ := url.ParseQuery("acl")
+	var grants []map[string]interface{}
+	for _, acl := range acls {
+		grantee := make(map[string]interface{})
+		grant := make(map[string]interface{})
+		switch acl["user"] {
+		case "TENANT":
+			grantee["id"] = bucket.Tenant + "|"
+		case "AUTHENTICATED":
+			grantee["uri"] = "http://acs.amazonaws.com/groups/global/AuthenticatedUsers"
+		case "PUBLIC":
+			grantee["uri"] = "http://acs.amazonaws.com/groups/global/AllUsers"
+		case "SYSTEM-LOGGER":
+			grantee["uri"] = "http://acs.amazonaws.com/groups/s3/LogDelivery"
+		}
+		grant["grantee"] = grantee
+		grant["permission"] = acl["permission"]
+
+		grants = append(grants, grant)
+	}
+
+	grants = append(grants, map[string]interface{}{"grantee": map[string]interface{}{"id": bucket.Owner.Id}, "permission": "FULL_CONTROL"})
+	// util.Logger.Printf("[DEBUG - S3ApiEditBucketAcl] grants: %v", grants)
+
+	body := map[string]interface{}{}
+	body["owner"] = bucket.Owner
+	body["grants"] = grants
+	data, err := json.Marshal(body)
+	if err != nil {
+		util.Logger.Printf("Error marshaling json %s", err)
+	}
+
+	// util.Logger.Printf("[DEBUG - S3ApiEditBucketAcl] grants: %s", string(data))
+
+	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer(data), nil)
+
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketTags] error editing bucket tags: %s", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (client *Client) S3ApiEditBucketCors(name, region string, cors string, additionalHeader map[string]string) (*http.Response, error) {
+	urlRef, _ := client.S3ApiBuildEndpoint(name)
+
+	var s3cors *S3Cors
+	if err := json.Unmarshal([]byte(cors), &s3cors); err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketCors] error unmarshal cors: %s", err)
+		return nil, err
+	}
+
+	values, _ := url.ParseQuery("cors")
+
+	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer([]byte(cors)), nil)
 
 	resp, err := client.Http.Do(req)
 	if err != nil {
