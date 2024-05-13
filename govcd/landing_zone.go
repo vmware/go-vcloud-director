@@ -123,7 +123,7 @@ func (vcdClient *VCDClient) GetExactlyOneSolutionLandingZone() (*SolutionLanding
 		return nil, fmt.Errorf("error retrieving all Solution Landing Zones: %s", err)
 	}
 
-	return oneOrError("rde", "vmware:solutions_organization:1.0.0", allSlzs)
+	return oneOrError("rde", strings.Join(slzRdeType[:], ":"), allSlzs)
 }
 
 // GetSolutionLandingZoneById retrieves Solution Landing Zone by ID
@@ -171,8 +171,8 @@ func (slz *SolutionLandingZone) Refresh() error {
 	return nil
 }
 
-// Id is a shorthand to retrieve ID of parent runtime defined entity
-func (slz *SolutionLandingZone) Id() string {
+// RdeId is a shorthand to retrieve ID of parent runtime defined entity
+func (slz *SolutionLandingZone) RdeId() string {
 	if slz == nil || slz.DefinedEntity == nil || slz.DefinedEntity.DefinedEntity == nil {
 		return ""
 	}

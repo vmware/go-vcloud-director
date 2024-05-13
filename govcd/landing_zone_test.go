@@ -95,17 +95,17 @@ func (vcd *TestVCD) Test_CreateLandingZone(check *C) {
 	check.Assert(err, IsNil)
 
 	check.Assert(len(allEntries), Equals, 1)
-	check.Assert(allEntries[0].Id(), Equals, slz.Id())
+	check.Assert(allEntries[0].RdeId(), Equals, slz.RdeId())
 
 	// Get by ID
-	slzById, err := vcd.client.GetSolutionLandingZoneById(slz.Id())
+	slzById, err := vcd.client.GetSolutionLandingZoneById(slz.RdeId())
 	check.Assert(err, IsNil)
-	check.Assert(slzById.Id(), Equals, slz.Id())
+	check.Assert(slzById.RdeId(), Equals, slz.RdeId())
 
 	// Get exactly one
 	slzSingle, err := vcd.client.GetExactlyOneSolutionLandingZone()
 	check.Assert(err, IsNil)
-	check.Assert(slzSingle.Id(), Equals, slz.Id())
+	check.Assert(slzSingle.RdeId(), Equals, slz.RdeId())
 
 	// Update
 	// Lookup one more Org network and add it
@@ -128,7 +128,7 @@ func (vcd *TestVCD) Test_CreateLandingZone(check *C) {
 	check.Assert(err, IsNil)
 
 	// Check that no entry exists
-	slzByIdErr, err := vcd.client.GetSolutionLandingZoneById(slz.Id())
+	slzByIdErr, err := vcd.client.GetSolutionLandingZoneById(slz.RdeId())
 	check.Assert(err, NotNil)
 	check.Assert(slzByIdErr, IsNil)
 }
