@@ -55,7 +55,7 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 
 	foundId := false
 	for addOnIndex := range allSolutionAddOns {
-		if allSolutionAddOns[addOnIndex].Id() == solutionAddOn.Id() {
+		if allSolutionAddOns[addOnIndex].RdeId() == solutionAddOn.RdeId() {
 			foundId = true
 			break
 		}
@@ -63,15 +63,15 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 	check.Assert(foundId, Equals, true)
 
 	// Get all with filter
-	queryParams := queryParameterFilterAnd("id=="+solutionAddOn.Id(), nil)
+	queryParams := queryParameterFilterAnd("id=="+solutionAddOn.RdeId(), nil)
 	filteredSolutionAddon, err := vcd.client.GetAllSolutionAddons(queryParams)
 	check.Assert(err, IsNil)
 	check.Assert(len(filteredSolutionAddon), Equals, 1)
 
 	// By ID
-	sao, err := vcd.client.GetSolutionAddonById(solutionAddOn.Id())
+	sao, err := vcd.client.GetSolutionAddonById(solutionAddOn.RdeId())
 	check.Assert(err, IsNil)
-	check.Assert(sao.Id(), Equals, solutionAddOn.Id())
+	check.Assert(sao.RdeId(), Equals, solutionAddOn.RdeId())
 
 	// Delete
 	err = sao.Delete()

@@ -20,6 +20,25 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+var slzAddOnRdeType = [3]string{"vmware", "solutions_add_on", "1.0.0"}
+
+// SolutionAddOn is the main structure to handle Solution Add-Ons within Solution Landing Zone. It
+// packs parent RDE and Solution Add-On entity itself
+type SolutionAddOn struct {
+	SolutionEntity *types.SolutionAddOn
+	DefinedEntity  *DefinedEntity
+	vcdClient      *VCDClient
+}
+
+// SolutionAddOnConfig defines configuration for Solution Add-On creation which is used for
+// 'VCDClient.CreateSolutionAddOn'.
+type SolutionAddOnConfig struct {
+	IsoFilePath          string
+	User                 string
+	CatalogItemId        string
+	AutoTrustCertificate bool
+}
+
 const (
 	manifestKey     = "manifest"
 	iconKey         = "icon"
@@ -57,21 +76,6 @@ var iconTypes = map[string]string{
 	".ico":  "image/x-icon",
 }
 
-type SolutionAddOn struct {
-	SolutionEntity *types.SolutionAddOn
-	DefinedEntity  *DefinedEntity
-	vcdClient      *VCDClient
-}
-
-// SolutionAddOnConfig defines configuration for Solution Add-On creation which is used for
-// 'VCDClient.CreateSolutionAddOn'.
-type SolutionAddOnConfig struct {
-	IsoFilePath          string
-	User                 string
-	CatalogItemId        string
-	AutoTrustCertificate bool
-}
-
 func createSolutionAddOnValidator(cfg SolutionAddOnConfig) error {
 	if cfg.IsoFilePath == "" {
 		return fmt.Errorf("'isoFilePath' must be specified")
@@ -92,14 +96,13 @@ func createSolutionAddOnValidator(cfg SolutionAddOnConfig) error {
 // Requirements - the ISO image defined in `isoFilePath` must already be uploaded to a catalog and
 // `catalogItemId` must reflect exactly the same image
 //
-// 1. Get contents of Solution Add-On ISO file defined in 'isoFilePath'
-// 2. Check if 'acceptEula' is true, otherwise return an error with EULA contents
-// 3. Create the 'Entity' payload for creating RDE based on the given image
-// 4. Get Solution Add-On RDE Name from the manifest within 'isoFilePath'
-// 5. If 'autoTrustCertificate' is set to true - the code will check if VCD trusts the certificate
-// 6. Lookup RDE type 'vmware:solutions_add_on:1.0.0'
-// 7. Create an RDE entity with payload from the 'isoFilePath' contents
-// 8.
+// Order of operations that this method provides:
+// * Get contents of Solution Add-On ISO file defined in 'isoFilePath'
+// * Create the 'Entity' payload for creating RDE based on the given image
+// * Get Solution Add-On RDE Name from the manifest within 'isoFilePath'
+// * If 'autoTrustCertificate' is set to true - the code will check if VCD trusts the certificate
+// * Lookup RDE type 'vmware:solutions_add_on:1.0.0'
+// * Create an RDE entity with payload from the 'isoFilePath' contents
 func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*SolutionAddOn, error) {
 	err := createSolutionAddOnValidator(cfg)
 	if err != nil {
@@ -133,34 +136,28 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*Solut
 		}
 	}
 
-	// "urn:vcloud:type:vmware:solutions_add_on:1.0.0"
-	// 1. Check that RDE type exists
-	rdeType, err := vcdClient.GetRdeType("vmware", "solutions_add_on", "1.0.0")
+	rdeType, err := vcdClient.GetRdeType(slzAddOnRdeType[0], slzAddOnRdeType[1], slzAddOnRdeType[2])
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving RDE Type for Solution Add-On: %s", err)
 	}
 
-	// 2. Convert more precise structure to fit DefinedEntity.DefinedEntity.Entity
 	unmarshalledRdeEntityJson, err := convertAnyToRdeEntity(solutionAddOnEntityRde)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Construct payload
 	entityCfg := &types.DefinedEntity{
-		EntityType: "urn:vcloud:type:vmware:solutions_add_on:1.0.0",
+		EntityType: fmt.Sprintf("urn:vcloud:type:%s:%s:%s", slzAddOnRdeType[0], slzAddOnRdeType[1], slzAddOnRdeType[2]),
 		Name:       rdeName,
 		State:      addrOf("PRE_CREATED"),
 		Entity:     unmarshalledRdeEntityJson,
 	}
 
-	// 4. Create RDE
 	createdRdeEntity, err := rdeType.CreateRde(*entityCfg, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating RDE entity: %s", err)
 	}
 
-	// 5. Resolve RDE
 	err = createdRdeEntity.Resolve()
 	if err != nil {
 		return nil, fmt.Errorf("error resolving Solutions Add-On after creating: %s", err)
@@ -182,7 +179,7 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*Solut
 
 // GetAllSolutionAddons retrieves all Solution Add-Ons with a given filter
 func (vcdClient *VCDClient) GetAllSolutionAddons(queryParameters url.Values) ([]*SolutionAddOn, error) {
-	allAddons, err := vcdClient.GetAllRdes("vmware", "solutions_add_on", "1.0.0", queryParameters)
+	allAddons, err := vcdClient.GetAllRdes(slzAddOnRdeType[0], slzAddOnRdeType[1], slzAddOnRdeType[2], queryParameters)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving all Solution Add-ons: %s", err)
 	}
@@ -252,7 +249,6 @@ func (s *SolutionAddOn) Update(saoCfg *types.SolutionAddOn) (*SolutionAddOn, err
 	}
 
 	s.DefinedEntity.DefinedEntity.Entity = unmarshalledRdeEntityJson
-
 	err = s.DefinedEntity.Update(*s.DefinedEntity.DefinedEntity)
 	if err != nil {
 		return nil, err
@@ -274,18 +270,50 @@ func (s *SolutionAddOn) Update(saoCfg *types.SolutionAddOn) (*SolutionAddOn, err
 
 func (s *SolutionAddOn) Delete() error {
 	if s.DefinedEntity == nil {
-		return fmt.Errorf("error DefineEntity is nil")
+		return fmt.Errorf("error - parent Defined Entity is nil")
 	}
 	return s.DefinedEntity.Delete()
 }
 
-// Id is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
-func (s *SolutionAddOn) Id() string {
+// RdeId is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
+func (s *SolutionAddOn) RdeId() string {
 	if s == nil || s.DefinedEntity == nil || s.DefinedEntity.DefinedEntity == nil {
 		return ""
 	}
 
 	return s.DefinedEntity.DefinedEntity.ID
+}
+
+// TrustAddOnImageCertificate will check if a given certificate is trusted by VCD and trust it if it
+// is not there yet
+func (vcdClient *VCDClient) TrustAddOnImageCertificate(certificateText, source string) error {
+	if certificateText == "" {
+		return fmt.Errorf("certificate field is empty")
+	}
+
+	if source == "" {
+		return fmt.Errorf("source field is empty")
+	}
+
+	foundCertificateInLibrary, err := vcdClient.Client.FoundCertificateInLibrary(certificateText)
+	if err != nil {
+		return err
+	}
+	if foundCertificateInLibrary == 0 {
+		addonCertificateName := fmt.Sprintf("addon.%s_%s", source, time.Now().Format(time.RFC3339))
+
+		certificateConfig := types.CertificateLibraryItem{
+			Alias:       addonCertificateName,
+			Certificate: certificateText,
+			Description: "certificate retrieved from " + source,
+		}
+		_, err = vcdClient.Client.AddCertificateToLibrary(&certificateConfig)
+		if err != nil {
+			return fmt.Errorf("error adding certificate '%s' to library: %s", addonCertificateName, err)
+		}
+	}
+
+	return nil
 }
 
 func getContentsFromIsoFiles(isoFileName string, wanted map[string]isoFileDef) (map[string]isoFileDef, error) {
@@ -418,36 +446,6 @@ func buildSolutionAddonRdeEntity(foundFiles map[string]isoFileDef, user, catalog
 	}
 
 	return solutionEntity, nil
-}
-
-func (vcdClient *VCDClient) TrustAddOnImageCertificate(certificateText, source string) error {
-	if certificateText == "" {
-		return fmt.Errorf("certificate field is empty")
-	}
-
-	if source == "" {
-		return fmt.Errorf("source field is empty")
-	}
-
-	foundCertificateInLibrary, err := vcdClient.Client.FoundCertificateInLibrary(certificateText)
-	if err != nil {
-		return err
-	}
-	if foundCertificateInLibrary == 0 {
-		addonCertificateName := fmt.Sprintf("addon.%s_%s", source, time.Now().Format(time.RFC3339))
-
-		certificateConfig := types.CertificateLibraryItem{
-			Alias:       addonCertificateName,
-			Certificate: certificateText,
-			Description: "certificate retrieved from " + source,
-		}
-		_, err = vcdClient.Client.AddCertificateToLibrary(&certificateConfig)
-		if err != nil {
-			return fmt.Errorf("error adding certificate '%s' to library: %s", addonCertificateName, err)
-		}
-	}
-
-	return nil
 }
 
 func extractSolutionAddOnCertificate(foundFiles map[string]isoFileDef) (string, error) {
