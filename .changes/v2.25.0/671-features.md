@@ -1,2 +1,2 @@
-* Added methods to manage OpenID Connect settings for a given `AdminOrg`: `GetOpenIdConnectSettings`,
-  `SetOpenIdConnectSettings` and `DeleteOpenIdConnectSettings` [GH-671]
+* Added `AdminOrg` methods `GetOpenIdConnectSettings`, `SetOpenIdConnectSettings` and `DeleteOpenIdConnectSettings`
+  to manage OpenID Connect settings [GH-671]

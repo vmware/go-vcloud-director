@@ -18,18 +18,13 @@ import (
 
 // GetOpenIdConnectSettings retrieves the current OpenID Connect settings for a given Organization
 func (adminOrg *AdminOrg) GetOpenIdConnectSettings() (*types.OrgOAuthSettings, error) {
-	result, err := oidcExecuteRequest(adminOrg, http.MethodGet, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return oidcExecuteRequest(adminOrg, http.MethodGet, nil)
 }
 
 // SetOpenIdConnectSettings sets the OpenID Connect configuration for a given Organization. If the well-known configuration
 // endpoint is provided, the configuration is automatically retrieved from that URL.
 // If other fields have been set in the input structure, the corresponding values retrieved from the well-known endpoint are overridden.
-// If there are no fields informed, the configuration retrieved from the well-known configuration endpoint is applied as-is.
+// If there are no fields set, the configuration retrieved from the well-known configuration endpoint is applied as-is.
 // ClientId and ClientSecret properties are always mandatory, with and without well-known endpoint.
 // This method returns an error if the settings can't be saved in VCD for any reason or if the provided settings are wrong.
 func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettings) (*types.OrgOAuthSettings, error) {
@@ -48,6 +43,7 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		if err != nil {
 			return nil, err
 		}
+
 		// The following conditionals allow users to override the well-known automatic configuration values with their own,
 		// mimicking what users can do in UI.
 		// If an attribute was not set in the input settings, we pick the value that the well-known endpoint gave for that attribute,
