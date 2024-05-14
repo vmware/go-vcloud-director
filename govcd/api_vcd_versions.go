@@ -231,13 +231,25 @@ func (client *Client) validateAPIVersion() error {
 	return nil
 }
 
-// GetSpecificApiVersionOnCondition returns default version or wantedApiVersion if it is connected to version
-// described in vcdApiVersionCondition
-// f.e. values ">= 32.0", "32.0" returns 32.0 if vCD version is above or 9.7
-func (client *Client) GetSpecificApiVersionOnCondition(vcdApiVersionCondition, wantedApiVersion string) string {
+// GetSpecificApiVersionOnCondition returns default version or wantedApiVersion if it is connected
+// to version described in vcdApiVersionCondition e.g. values ">= 32.0", "32.0" returns 32.0 if vCD
+// version is above or 9.7
+// Note. This function will always respect minimum supported API version which is defined in
+// client.APIVersion. If the wantedApiVersionOrMinimumRequired is less than minimum supported
+// version, this function will return the minimum supported version. This means that it must be be
+// well tested when client.APIVersion is bumped to avoid unexpected errors due to newer API version
+// being used.
+func (client *Client) GetSpecificApiVersionOnCondition(vcdApiVersionCondition, wantedApiVersionOrMinimumRequired string) string {
 	apiVersion := client.APIVersion
 	if client.APIVCDMaxVersionIs(vcdApiVersionCondition) {
-		apiVersion = wantedApiVersion
+		versionConstraint := fmt.Sprintf(">= %s", apiVersion)
+		// only if the version is not less than minimum supported version 'client.APIVersion' we can
+		// specify 'wantedApiVersionOrMinimumRequired'
+		if matches, err := client.apiVersionMatchesConstraint(wantedApiVersionOrMinimumRequired, versionConstraint); err == nil && matches {
+			return wantedApiVersionOrMinimumRequired
+		}
+		util.Logger.Printf("[TRACE] API version %s does not satisfy constraints '%s'. Will use minimum supported version '%s'.",
+			wantedApiVersionOrMinimumRequired, versionConstraint, apiVersion)
 	}
 	return apiVersion
 }
