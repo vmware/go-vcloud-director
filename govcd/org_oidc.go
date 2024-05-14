@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/xml"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -44,57 +45,32 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 			return nil, err
 		}
 
-		// The following conditionals allow users to override the well-known automatic configuration values with their own,
+		// The following statements allow users to override the well-known automatic configuration values with their own,
 		// mimicking what users can do in UI.
-		// If an attribute was not set in the input settings, we pick the value that the well-known endpoint gave for that attribute,
-		// but if it was explicitly set by the user, we take that one instead (overriding the well-known one).
-		if settings.AccessTokenEndpoint == "" {
-			settings.AccessTokenEndpoint = wellKnownSettings.AccessTokenEndpoint
-		}
-		if settings.IssuerId == "" {
-			settings.IssuerId = wellKnownSettings.IssuerId
-		}
-		if settings.JwksUri == "" {
-			settings.JwksUri = wellKnownSettings.JwksUri
-		}
-		if settings.UserInfoEndpoint == "" {
-			settings.UserInfoEndpoint = wellKnownSettings.UserInfoEndpoint
-		}
-		if settings.UserAuthorizationEndpoint == "" {
-			settings.UserAuthorizationEndpoint = wellKnownSettings.UserAuthorizationEndpoint
-		}
-		if settings.ScimEndpoint == "" {
-			settings.ScimEndpoint = wellKnownSettings.ScimEndpoint
-		}
+		// If an attribute was not set in the input settings, the well-known endpoint value will be chosen.
+		settings.AccessTokenEndpoint = cmp.Or(settings.AccessTokenEndpoint, wellKnownSettings.AccessTokenEndpoint)
+		settings.IssuerId = cmp.Or(settings.IssuerId, wellKnownSettings.IssuerId)
+		settings.JwksUri = cmp.Or(settings.JwksUri, wellKnownSettings.JwksUri)
+		settings.UserInfoEndpoint = cmp.Or(settings.UserInfoEndpoint, wellKnownSettings.UserInfoEndpoint)
+		settings.UserAuthorizationEndpoint = cmp.Or(settings.UserAuthorizationEndpoint, wellKnownSettings.UserAuthorizationEndpoint)
+		settings.ScimEndpoint = cmp.Or(settings.ScimEndpoint, wellKnownSettings.ScimEndpoint)
+
 		if settings.Scope == nil || len(settings.Scope) == 0 {
 			settings.Scope = wellKnownSettings.Scope
 		}
+
 		if settings.OIDCAttributeMapping == nil {
-			// The whole mapping is missing, we take the whole struct from wellknown endpoint
+			// The whole mapping is missing, we take the whole struct from well-known endpoint
 			settings.OIDCAttributeMapping = wellKnownSettings.OIDCAttributeMapping
 		} else {
-			// Some mappings are present, others are missing. We take the missing ones from wellknown endpoint
-			if settings.OIDCAttributeMapping.EmailAttributeName == "" {
-				settings.OIDCAttributeMapping.EmailAttributeName = wellKnownSettings.OIDCAttributeMapping.EmailAttributeName
-			}
-			if settings.OIDCAttributeMapping.SubjectAttributeName == "" {
-				settings.OIDCAttributeMapping.SubjectAttributeName = wellKnownSettings.OIDCAttributeMapping.SubjectAttributeName
-			}
-			if settings.OIDCAttributeMapping.LastNameAttributeName == "" {
-				settings.OIDCAttributeMapping.LastNameAttributeName = wellKnownSettings.OIDCAttributeMapping.LastNameAttributeName
-			}
-			if settings.OIDCAttributeMapping.RolesAttributeName == "" {
-				settings.OIDCAttributeMapping.RolesAttributeName = wellKnownSettings.OIDCAttributeMapping.RolesAttributeName
-			}
-			if settings.OIDCAttributeMapping.FullNameAttributeName == "" {
-				settings.OIDCAttributeMapping.FullNameAttributeName = wellKnownSettings.OIDCAttributeMapping.FullNameAttributeName
-			}
-			if settings.OIDCAttributeMapping.GroupsAttributeName == "" {
-				settings.OIDCAttributeMapping.GroupsAttributeName = wellKnownSettings.OIDCAttributeMapping.GroupsAttributeName
-			}
-			if settings.OIDCAttributeMapping.FirstNameAttributeName == "" {
-				settings.OIDCAttributeMapping.FirstNameAttributeName = wellKnownSettings.OIDCAttributeMapping.FirstNameAttributeName
-			}
+			// Some mappings are present, others are missing. We take the missing ones from well-known endpoint
+			settings.OIDCAttributeMapping.EmailAttributeName = cmp.Or(settings.OIDCAttributeMapping.EmailAttributeName, wellKnownSettings.OIDCAttributeMapping.EmailAttributeName)
+			settings.OIDCAttributeMapping.SubjectAttributeName = cmp.Or(settings.OIDCAttributeMapping.SubjectAttributeName, wellKnownSettings.OIDCAttributeMapping.SubjectAttributeName)
+			settings.OIDCAttributeMapping.LastNameAttributeName = cmp.Or(settings.OIDCAttributeMapping.LastNameAttributeName, wellKnownSettings.OIDCAttributeMapping.LastNameAttributeName)
+			settings.OIDCAttributeMapping.RolesAttributeName = cmp.Or(settings.OIDCAttributeMapping.RolesAttributeName, wellKnownSettings.OIDCAttributeMapping.RolesAttributeName)
+			settings.OIDCAttributeMapping.FullNameAttributeName = cmp.Or(settings.OIDCAttributeMapping.FullNameAttributeName, wellKnownSettings.OIDCAttributeMapping.FullNameAttributeName)
+			settings.OIDCAttributeMapping.GroupsAttributeName = cmp.Or(settings.OIDCAttributeMapping.GroupsAttributeName, wellKnownSettings.OIDCAttributeMapping.GroupsAttributeName)
+			settings.OIDCAttributeMapping.FirstNameAttributeName = cmp.Or(settings.OIDCAttributeMapping.FirstNameAttributeName, wellKnownSettings.OIDCAttributeMapping.FirstNameAttributeName)
 		}
 
 		if settings.OAuthKeyConfigurations == nil {
