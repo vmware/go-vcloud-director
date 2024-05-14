@@ -44,6 +44,9 @@ type CseClusterSettings struct {
 	SshPublicKey            string
 	VirtualIpSubnet         string
 	AutoRepairOnErrors      bool
+
+	// If set to 'true' it will ignore the "MachineCount" of all the worker pools (on create and update) and use "Autoscaler" struct instead.
+	AutoscalerEnabled bool
 }
 
 // CseControlPlaneSettings defines the required configuration of a Control Plane of a Container Service Extension (CSE) Kubernetes cluster.
@@ -59,12 +62,19 @@ type CseControlPlaneSettings struct {
 // CseWorkerPoolSettings defines the required configuration of a Worker Pool of a Container Service Extension (CSE) Kubernetes cluster.
 type CseWorkerPoolSettings struct {
 	Name              string
-	MachineCount      int
+	MachineCount      int // If the Autoscaler is enabled, this field is ignored
 	DiskSizeGi        int
-	SizingPolicyId    string // Optional
-	PlacementPolicyId string // Optional
-	VGpuPolicyId      string // Optional
-	StorageProfileId  string // Optional
+	SizingPolicyId    string                   // Optional
+	PlacementPolicyId string                   // Optional
+	VGpuPolicyId      string                   // Optional
+	StorageProfileId  string                   // Optional
+	Autoscaler        *CseWorkerPoolAutoscaler // Optional, only taken into account if the autoscaler is enabled in the cluster
+}
+
+// CseWorkerPoolAutoscaler defines the required configuration of the Autoscaling capabilities of a CSE Kubernetes cluster Worker Pool.
+type CseWorkerPoolAutoscaler struct {
+	MaxSize int
+	MinSize int
 }
 
 // CseDefaultStorageClassSettings defines the required configuration of a Default Storage Class of a Container Service Extension (CSE) Kubernetes cluster.
@@ -104,7 +114,8 @@ type CseControlPlaneUpdateInput struct {
 // CseWorkerPoolUpdateInput defines the required configuration that a Worker Pool of the Container Service Extension (CSE) Kubernetes cluster
 // needs in order to be updated.
 type CseWorkerPoolUpdateInput struct {
-	MachineCount int
+	MachineCount int                      // If the Autoscaler is enabled, this field is ignored
+	Autoscaler   *CseWorkerPoolAutoscaler // Optional, only taken into account if the autoscaler is enabled in the cluster
 }
 
 // cseClusterSettingsInternal defines the required arguments that are required by the CSE Server used internally to specify

@@ -174,6 +174,17 @@ func (clusterSettings *cseClusterSettingsInternal) generateWorkerPoolsYaml() (st
 			placementPolicy = wp.VGpuPolicyName
 		}
 
+		// TODO AUTOSCALER
+		// If cluster.autoscaler is enabled
+		// Check if MaxReplicas, MinReplicas is set, MaxReplicas >= MinReplicas
+		// Set the metadata entries in YAML file
+		// Remove replicas fields from YAML file
+		//
+		// If cluster.autoscaler is disabled
+		// workerPools[workerPoolToUpdate].MachineCount < 0
+		// Remove metadata entries from YAML file
+		// Set replicas
+
 		if err := workerPools.Execute(buf, map[string]string{
 			"ClusterName":             clusterSettings.Name,
 			"NodePoolName":            wp.Name,

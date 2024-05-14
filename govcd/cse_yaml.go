@@ -35,6 +35,20 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		}
 	}
 
+	if cluster.AutoscalerEnabled {
+		fmt.Println("")
+		// TODO AUTOSCALER
+		// Are YAML documents already present?
+		// If so, check that replicas of autoscaler deployment is 1
+		// Otherwise, increase to 1
+		// If no documents are there, add them
+	} else {
+		fmt.Println("")
+		// Are YAML documents already present?
+		// If so, set deployment replicas to 0
+		// If no documents are there, do nothing
+	}
+
 	if input.WorkerPools != nil {
 		err := cseUpdateWorkerPoolsInYaml(yamlDocs, *input.WorkerPools)
 		if err != nil {
@@ -200,6 +214,17 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 		if workerPoolToUpdate == "" {
 			continue
 		}
+
+		// TODO AUTOSCALER
+		// If cluster.autoscaler is enabled
+		// Check if MaxReplicas, MinReplicas is set, MaxReplicas >= MinReplicas
+		// Set the metadata entries in YAML file
+		// Remove replicas fields from YAML file
+		//
+		// If cluster.autoscaler is disabled
+		// workerPools[workerPoolToUpdate].MachineCount < 0
+		// Remove metadata entries from YAML file
+		// Set replicas
 
 		if workerPools[workerPoolToUpdate].MachineCount < 0 {
 			return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
