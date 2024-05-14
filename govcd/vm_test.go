@@ -9,6 +9,7 @@ package govcd
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -2224,4 +2225,128 @@ func (vcd *TestVCD) Test_VmConsolidateDisks(check *C) {
 
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_VmExtraConfig(check *C) {
+
+	fmt.Printf("Running: %s\n", check.TestName())
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vApp wasn't properly created")
+	}
+
+	vapp := vcd.findFirstVapp()
+	if vapp.VApp.Name == "" {
+		check.Skip("Disabled: No suitable vApp found in vDC")
+	}
+	vm, _ := vcd.findFirstVm(vapp)
+	if vm.Name == "" {
+		check.Skip("Disabled: No suitable VM found in vDC")
+	}
+
+	poweredOffVm, err := vcd.client.Client.GetVMByHref(vm.HREF)
+	check.Assert(err, IsNil)
+
+	newVapp, poweredOnVm := createNsxtVAppAndVm(vcd, check)
+
+	testVmExtraConfig(vcd, "powered OFF VM", poweredOffVm, check, false, false)
+	testVmExtraConfig(vcd, "formerly powered OFF VM, now powered ON", poweredOffVm, check, true, false)
+	testVmExtraConfig(vcd, "powered ON VM", poweredOnVm, check, true, false)
+	testVmExtraConfig(vcd, "formerly powered ON VM, now powered OFF", poweredOnVm, check, false, true)
+
+	// poweredOffVm should be brought back to its original state
+	task, err := poweredOffVm.PowerOff()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	// Removing the newly created VM and its vApp
+	task, err = newVapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+}
+
+func testVmExtraConfig(vcd *TestVCD, label string, vm *VM, check *C, wantPowerOn, wantPowerOff bool) {
+
+	fmt.Println(label)
+	if wantPowerOn {
+		task, err := vm.PowerOn()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
+	if wantPowerOff && !wantPowerOn {
+		task, err := vm.PowerOff()
+		check.Assert(err, IsNil)
+		err = task.WaitTaskCompletion()
+		check.Assert(err, IsNil)
+	}
+	printVerbose("vm extra config %# v\n", pretty.Formatter(vm.VM.VirtualHardwareSection.ExtraConfig))
+
+	configSimilar := types.ExtraConfigMarshal{
+		Key:   "hpet1.present",
+		Value: "TRUE",
+	}
+	configWithValidKey := types.ExtraConfigMarshal{
+		Key:   "Norwegian.wood",
+		Value: "With a little help from my friends",
+	}
+	configWithInvalidKey := types.ExtraConfigMarshal{
+		Key:   "Eleanor Rigby", // invalid key: contains a space
+		Value: "The long and winding road",
+	}
+
+	xtraConfig, err := vm.GetExtraConfig()
+	check.Assert(err, IsNil)
+	printVerbose("initial values %# v\n", pretty.Formatter(xtraConfig))
+
+	// Checks that keys containing spaces trigger an error.
+	invalidUpdatedCfg, err := vm.UpdateExtraConfig([]*types.ExtraConfigMarshal{&configWithInvalidKey})
+	check.Assert(err, NotNil)
+	check.Assert(invalidUpdatedCfg, IsNil)
+	check.Assert(strings.Contains(err.Error(), "invalid keys"), Equals, true)
+
+	containsKey := func(items []*types.ExtraConfigMarshal, key string) bool {
+		return slices.ContainsFunc(items, func(marshal *types.ExtraConfigMarshal) bool {
+			return marshal.Key == key
+		})
+	}
+	containsKeyValue := func(items []*types.ExtraConfigMarshal, key, value string) bool {
+		return slices.ContainsFunc(items, func(marshal *types.ExtraConfigMarshal) bool {
+			return marshal.Key == key && marshal.Value == value
+		})
+	}
+
+	// Adds two items
+	updatedCfg, err := vm.UpdateExtraConfig([]*types.ExtraConfigMarshal{&configSimilar, &configWithValidKey})
+	check.Assert(err, IsNil)
+	check.Assert(updatedCfg, NotNil)
+
+	updatedXtraConfig, err := vm.GetExtraConfig()
+	check.Assert(err, IsNil)
+	check.Assert(updatedXtraConfig, NotNil)
+	printVerbose(" after update %# v\n", pretty.Formatter(updatedXtraConfig))
+
+	check.Assert(containsKey(updatedXtraConfig, configWithValidKey.Key), Equals, true)
+	check.Assert(containsKey(updatedXtraConfig, configSimilar.Key), Equals, true)
+
+	// Change the value of an existing key
+	modifiedValue := "modified value"
+	configSimilar.Value = modifiedValue
+	configWithValidKey.Value = modifiedValue
+	modifiedExtraCfg, err := vm.UpdateExtraConfig([]*types.ExtraConfigMarshal{&configSimilar, &configWithValidKey})
+	check.Assert(err, IsNil)
+	check.Assert(modifiedExtraCfg, NotNil)
+	printVerbose(" after modification %# v\n", pretty.Formatter(modifiedExtraCfg))
+	check.Assert(containsKeyValue(modifiedExtraCfg, configSimilar.Key, modifiedValue), Equals, true)
+	check.Assert(containsKeyValue(modifiedExtraCfg, configWithValidKey.Key, modifiedValue), Equals, true)
+
+	// Delete the recently inserted items
+	afterDeleteXtraConfig, err := vm.DeleteExtraConfig([]*types.ExtraConfigMarshal{&configSimilar, &configWithValidKey})
+	check.Assert(err, IsNil)
+	check.Assert(afterDeleteXtraConfig, NotNil)
+
+	printVerbose("after delete %# v\n", pretty.Formatter(afterDeleteXtraConfig))
+
+	check.Assert(containsKey(afterDeleteXtraConfig, configWithValidKey.Key), Equals, false)
+	check.Assert(containsKey(afterDeleteXtraConfig, configSimilar.Key), Equals, false)
 }

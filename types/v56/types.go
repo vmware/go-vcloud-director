@@ -1741,6 +1741,15 @@ type VirtualHardwareSection struct {
 	HREF string                 `xml:"href,attr,omitempty"`
 	Type string                 `xml:"type,attr,omitempty"`
 	Item []*VirtualHardwareItem `xml:"Item,omitempty"`
+
+	ExtraConfig []*VmVirtualHardwareSectionExtraConfig `xml:"ExtraConfig,omitempty"`
+	Link        []*Link                                `xml:"Link,omitempty"`
+}
+
+type VmVirtualHardwareSectionExtraConfig struct {
+	Key      string `xml:"key,attr"`
+	Value    string `xml:"value,attr"`
+	Required bool   `xml:"required,attr"`
 }
 
 // Each ovf:Item parsed from the ovf:VirtualHardwareSection

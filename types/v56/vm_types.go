@@ -221,3 +221,50 @@ type Adapter struct {
 	Network    string `xml:"network,attr"`
 	UnitNumber string `xml:"unitNumber,attr"`
 }
+
+// RequestVirtualHardwareSection is used to start a request in VM Extra Configuration set
+type RequestVirtualHardwareSection struct {
+	// Extends OVF Section_Type
+	XMLName xml.Name `xml:"ovf:VirtualHardwareSection"`
+	Ovf     string   `xml:"xmlns:ovf,attr"`
+	Vssd    string   `xml:"xmlns:vssd,attr"`
+	Rasd    string   `xml:"xmlns:rasd,attr"`
+	Ns4     string   `xml:"xmlns:ns4,attr"`
+	Vmw     string   `xml:"xmlns:vmw,attr"`
+
+	Info   string     `xml:"ovf:Info"`
+	HREF   string     `xml:"href,attr,omitempty"`
+	Type   string     `xml:"type,attr,omitempty"`
+	System []InnerXML `xml:"ovf:System,omitempty"`
+	Item   []InnerXML `xml:"ovf:Item,omitempty"`
+
+	ExtraConfigs []*ExtraConfigMarshal `xml:"vmw:ExtraConfig,omitempty"`
+}
+
+// ResponseVirtualHardwareSection is used to get a response
+type ResponseVirtualHardwareSection struct {
+	// Extends OVF Section_Type
+	XMLName xml.Name `xml:"VirtualHardwareSection"`
+	Xmlns   string   `xml:"vcloud,attr,omitempty"`
+	Ovf     string   `xml:"xmlns:ovf,attr"`
+	Ns4     string   `xml:"xmlns:ns4,attr"`
+	Vssd    string   `xml:"xmlns:vssd,attr"`
+	Rasd    string   `xml:"xmlns:rasd,attr"`
+	Vmw     string   `xml:"xmlns:vmw,attr"`
+
+	Info string `xml:"Info"`
+	HREF string `xml:"href,attr,omitempty"`
+	Type string `xml:"type,attr,omitempty"`
+
+	System []InnerXML `xml:"System,omitempty"`
+	Item   []InnerXML `xml:"Item,omitempty"`
+
+	ExtraConfigs []*ExtraConfig `xml:"ExtraConfig,omitempty"`
+}
+
+// ExtraConfig describes an Extra Configuration item
+type ExtraConfig struct {
+	Key      string `xml:"key,attr"`
+	Value    string `xml:"value,attr"`
+	Required bool   `xml:"required,attr"`
+}
