@@ -65,7 +65,7 @@ type CseWorkerPoolSettings struct {
 	PlacementPolicyId string                   // Optional
 	VGpuPolicyId      string                   // Optional
 	StorageProfileId  string                   // Optional
-	Autoscaler        *CseWorkerPoolAutoscaler // Optional, only taken into account if the autoscaler is enabled in the cluster
+	Autoscaler        *CseWorkerPoolAutoscaler // Optional, enables the Autoscaler if not nil. If it is nil for all worker pools, the Autoscaler will be disabled
 }
 
 // CseWorkerPoolAutoscaler defines the required configuration of the Autoscaling capabilities of a CSE Kubernetes cluster Worker Pool.
@@ -112,7 +112,7 @@ type CseControlPlaneUpdateInput struct {
 // needs in order to be updated.
 type CseWorkerPoolUpdateInput struct {
 	MachineCount int                      // If the Autoscaler is enabled, this field is ignored
-	Autoscaler   *CseWorkerPoolAutoscaler // Optional, only taken into account if the autoscaler is enabled in the cluster
+	Autoscaler   *CseWorkerPoolAutoscaler // Optional, enables the Autoscaler if not nil. If it is nil for all worker pools, the Autoscaler will be disabled
 }
 
 // cseClusterSettingsInternal defines the required arguments that are required by the CSE Server used internally to specify
