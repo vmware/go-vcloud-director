@@ -786,7 +786,6 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 	output.ServiceCidr = input.ServiceCidr
 	output.SshPublicKey = input.SshPublicKey
 	output.VirtualIpSubnet = input.VirtualIpSubnet
-	output.AutoscalerEnabled = input.AutoscalerEnabled
 
 	return output, nil
 }

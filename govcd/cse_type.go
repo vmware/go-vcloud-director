@@ -44,9 +44,6 @@ type CseClusterSettings struct {
 	SshPublicKey            string
 	VirtualIpSubnet         string
 	AutoRepairOnErrors      bool
-
-	// If set to 'true' it will ignore the "MachineCount" of all the worker pools (on create and update) and use "Autoscaler" struct instead.
-	AutoscalerEnabled bool
 }
 
 // CseControlPlaneSettings defines the required configuration of a Control Plane of a Container Service Extension (CSE) Kubernetes cluster.
@@ -147,7 +144,6 @@ type cseClusterSettingsInternal struct {
 	PodCidr                   string
 	ServiceCidr               string
 	AutoRepairOnErrors        bool
-	AutoscalerEnabled         bool
 }
 
 // tkgVersionBundle is a type that contains all the versions of the components of

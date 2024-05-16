@@ -5,6 +5,7 @@ import (
 	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"sigs.k8s.io/yaml"
+	"strconv"
 	"strings"
 )
 
@@ -35,19 +36,10 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		}
 	}
 
-	if cluster.AutoscalerEnabled {
-		fmt.Println("")
-		// TODO AUTOSCALER
-		// https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/docs/vmw-whitepaper-cluster-auto-scaler.pdf
-		// Are YAML documents already present?
-		// If so, check that replicas of autoscaler deployment is 1
-		// Otherwise, increase to 1
-		// If no documents are there, add them
-	} else {
-		fmt.Println("")
-		// Are YAML documents already present?
-		// If so, set deployment replicas to 0
-		// If no documents are there, do nothing
+	// Modify or add the autoscaler capabilities
+	yamlDocs, err = cseUpdateAutoscalerInYaml(yamlDocs, input.WorkerPools, input.NewWorkerPools)
+	if err != nil {
+		return cluster.capvcdType.Spec.CapiYaml, err
 	}
 
 	if input.WorkerPools != nil {
@@ -195,6 +187,7 @@ func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]interface{}, input C
 // the existing Worker Pools with the input parameters.
 func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPools map[string]CseWorkerPoolUpdateInput) error {
 	updated := 0
+
 	for _, d := range yamlDocuments {
 		if d["kind"] != "MachineDeployment" {
 			continue
@@ -216,22 +209,16 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 			continue
 		}
 
-		// TODO AUTOSCALER
-		// If cluster.autoscaler is enabled
-		// Check if MaxReplicas, MinReplicas is set, MaxReplicas >= MinReplicas
-		// Set the metadata entries in YAML file
-		// Remove replicas fields from YAML file
-		//
-		// If cluster.autoscaler is disabled
-		// workerPools[workerPoolToUpdate].MachineCount < 0
-		// Remove metadata entries from YAML file
-		// Set replicas
-
-		if workerPools[workerPoolToUpdate].MachineCount < 0 {
-			return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
+		if workerPools[workerPoolToUpdate].Autoscaler != nil {
+			d["metadata"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MaxSize)
+			d["metadata"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MinSize)
+			d["spec"].(map[string]interface{})["replicas"] = nil // This is required to avoid conflicts with Autoscaler
+		} else {
+			if workerPools[workerPoolToUpdate].MachineCount < 0 {
+				return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
+			}
+			d["spec"].(map[string]interface{})["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
 		}
-
-		d["spec"].(map[string]interface{})["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
 		updated++
 	}
 	if updated != len(workerPools) {
@@ -270,6 +257,12 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 			SizingPolicyName:    idToNameCache[workerPool.SizingPolicyId],
 			VGpuPolicyName:      idToNameCache[workerPool.VGpuPolicyId],
 			PlacementPolicyName: idToNameCache[workerPool.PlacementPolicyId],
+		}
+		if workerPool.Autoscaler != nil {
+			internalSettings.WorkerPools[i].Autoscaler = &CseWorkerPoolAutoscaler{
+				MaxSize: workerPool.Autoscaler.MaxSize,
+				MinSize: workerPool.Autoscaler.MinSize,
+			}
 		}
 	}
 
@@ -353,6 +346,71 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clus
 		result = result[:len(result)-1]             // We remove the last document (now duplicated)
 	}
 	return result, nil
+}
+
+// cseUpdateAutoscalerInYaml adds a new YAML document (Autoscaler) to the output if the input worker pools require it and it's not present.
+// If it's present, modifies the YAML documents by scaling the Autoscaler replicas to 1.
+// If none of the input worker pools requires autoscaling, the input YAML documents are modified to scale the Autoscaler replicas to 0.
+// NOTE: This function can modify the input if there is already an Autoscaler. Otherwise returns a new YAML document with unmodified input.
+func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, existingWorkerPools *map[string]CseWorkerPoolUpdateInput, newWorkerPools *[]CseWorkerPoolSettings) ([]map[string]interface{}, error) {
+	autoscalerNeeded := false
+	// We'll need the Autoscaler YAML document if at least one Worker Pool uses it
+	if existingWorkerPools != nil {
+		for _, wp := range *existingWorkerPools {
+			if wp.Autoscaler != nil {
+				autoscalerNeeded = true
+				break
+			}
+		}
+	}
+
+	// We'll need the Autoscaler YAML document if at least one of the new Worker Pools uses it
+	if !autoscalerNeeded && newWorkerPools != nil {
+		for _, wp := range *newWorkerPools {
+			if wp.Autoscaler != nil {
+				autoscalerNeeded = true
+				break
+			}
+		}
+	}
+
+	// Search for Autoscaler YAML document
+	for _, d := range yamlDocuments {
+		if d["kind"] != "Deployment" {
+			continue
+		}
+		if traverseMapAndGet[string](d, "metadata.name") != "cluster-autoscaler" {
+			continue
+		}
+		if traverseMapAndGet[string](d, "metadata.namespace") != "kube-system" {
+			continue
+		}
+		// Reaching here means that an Autoscaler was found. We need to modify its configuration.
+		if autoscalerNeeded {
+			d["spec"].(map[string]interface{})["replicas"] = float64(1) // As it was originally unmarshalled as a float64
+		} else {
+			d["spec"].(map[string]interface{})["replicas"] = float64(0) // As it was originally unmarshalled as a float64
+		}
+		return yamlDocuments, nil
+	}
+
+	// This part is only reached if we didn't find any Autoscaler document, so we add it new if it's needed.
+	if autoscalerNeeded {
+		settings := &cseClusterSettingsInternal{}
+		autoscalerYaml, err := settings.generateAutoscalerYaml()
+		if err != nil {
+			return nil, err
+		}
+		var autoscaler map[string]interface{}
+		err = yaml.Unmarshal([]byte(autoscalerYaml), &autoscaler)
+		if err != nil {
+			return nil, err
+		}
+		return append(yamlDocuments, autoscaler), nil
+	}
+
+	// Otherwise the documents are returned without change
+	return yamlDocuments, nil
 }
 
 // marshalMultipleYamlDocuments takes a slice of maps representing multiple YAML documents (one per item in the slice) and
