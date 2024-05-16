@@ -212,7 +212,7 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 		if workerPools[workerPoolToUpdate].Autoscaler != nil {
 			d["metadata"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MaxSize)
 			d["metadata"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MinSize)
-			d["spec"].(map[string]interface{})["replicas"] = nil // This is required to avoid conflicts with Autoscaler
+			delete(d["spec"].(map[string]interface{}), "replicas") // This is required to avoid conflicts with Autoscaler
 		} else {
 			if workerPools[workerPoolToUpdate].MachineCount < 0 {
 				return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
