@@ -38,6 +38,7 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	if cluster.AutoscalerEnabled {
 		fmt.Println("")
 		// TODO AUTOSCALER
+		// https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/docs/vmw-whitepaper-cluster-auto-scaler.pdf
 		// Are YAML documents already present?
 		// If so, check that replicas of autoscaler deployment is 1
 		// Otherwise, increase to 1

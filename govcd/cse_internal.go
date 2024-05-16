@@ -92,6 +92,11 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		return "", err
 	}
 
+	autoscalerYaml, err := clusterSettings.generateAutoscalerYaml()
+	if err != nil {
+		return "", err
+	}
+
 	templateArgs := map[string]interface{}{
 		"ClusterName":                 clusterSettings.Name,
 		"TargetNamespace":             clusterSettings.Name + "-ns",
@@ -129,6 +134,9 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 	prettyYaml := ""
 	if memoryHealthCheckYaml != "" {
 		prettyYaml += fmt.Sprintf("%s\n---\n", memoryHealthCheckYaml)
+	}
+	if autoscalerYaml != "" {
+		prettyYaml += fmt.Sprintf("%s\n---\n", autoscalerYaml)
 	}
 	prettyYaml += fmt.Sprintf("%s\n---\n%s", nodePoolYaml, buf.String())
 
@@ -174,18 +182,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateWorkerPoolsYaml() (st
 			placementPolicy = wp.VGpuPolicyName
 		}
 
-		// TODO AUTOSCALER
-		// If cluster.autoscaler is enabled
-		// Check if MaxReplicas, MinReplicas is set, MaxReplicas >= MinReplicas
-		// Set the metadata entries in YAML file
-		// Remove replicas fields from YAML file
-		//
-		// If cluster.autoscaler is disabled
-		// workerPools[workerPoolToUpdate].MachineCount < 0
-		// Remove metadata entries from YAML file
-		// Set replicas
-
-		if err := workerPools.Execute(buf, map[string]string{
+		args := map[string]string{
 			"ClusterName":             clusterSettings.Name,
 			"NodePoolName":            wp.Name,
 			"TargetNamespace":         clusterSettings.Name + "-ns",
@@ -197,8 +194,17 @@ func (clusterSettings *cseClusterSettingsInternal) generateWorkerPoolsYaml() (st
 			"NodePoolDiskSize":        fmt.Sprintf("%dGi", wp.DiskSizeGi),
 			"NodePoolEnableGpu":       strconv.FormatBool(wp.VGpuPolicyName != ""),
 			"NodePoolMachineCount":    strconv.Itoa(wp.MachineCount),
+			"AutoscalerMaxSize":       "-1",
+			"AutoscalerMinSize":       "-1",
 			"KubernetesVersion":       clusterSettings.TkgVersionBundle.KubernetesVersion,
-		}); err != nil {
+		}
+
+		if wp.Autoscaler != nil {
+			args["AutoscalerMaxSize"] = strconv.Itoa(wp.Autoscaler.MaxSize)
+			args["AutoscalerMinSize"] = strconv.Itoa(wp.Autoscaler.MinSize)
+		}
+
+		if err := workerPools.Execute(buf, args); err != nil {
 			return "", fmt.Errorf("could not generate a correct Worker Pool '%s' YAML block: %s", wp.Name, err)
 		}
 		resultYaml += fmt.Sprintf("%s\n", buf.String())
@@ -246,4 +252,44 @@ func (clusterSettings *cseClusterSettingsInternal) generateMachineHealthCheckYam
 	}
 	return fmt.Sprintf("%s\n", buf.String()), nil
 
+}
+
+// generateAutoscalerYaml generates YAML documents corresponding to the cluster Autoscaler
+func (clusterSettings *cseClusterSettingsInternal) generateAutoscalerYaml() (string, error) {
+	if clusterSettings == nil {
+		return "", fmt.Errorf("the receiver CSE Kubernetes cluster settings object is nil")
+	}
+
+	// The Autoscaler YAML is only required if at least one Worker Pool is using it
+	needsAutoscaler := false
+	for _, wp := range clusterSettings.WorkerPools {
+		if wp.Autoscaler != nil {
+			needsAutoscaler = true
+			break
+		}
+	}
+
+	if !needsAutoscaler {
+		return "", nil
+	}
+
+	autoscalerTemplate, err := getCseTemplate(clusterSettings.CseVersion, "autoscaler")
+	if err != nil {
+		return "", err
+	}
+
+	autoscaler := template.Must(template.New(clusterSettings.Name + "-autoscaler").Parse(autoscalerTemplate))
+	resultYaml := ""
+	buf := &bytes.Buffer{}
+
+	if err := autoscaler.Execute(buf, map[string]string{
+		"AutoscalerReplicas": "1",
+	}); err != nil {
+		return "", fmt.Errorf("could not generate a correct Autoscaler YAML block: %s", err)
+	}
+	resultYaml += fmt.Sprintf("%s\n", buf.String())
+
+	buf.Reset()
+
+	return resultYaml, nil
 }

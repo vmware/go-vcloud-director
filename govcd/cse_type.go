@@ -147,6 +147,7 @@ type cseClusterSettingsInternal struct {
 	PodCidr                   string
 	ServiceCidr               string
 	AutoRepairOnErrors        bool
+	AutoscalerEnabled         bool
 }
 
 // tkgVersionBundle is a type that contains all the versions of the components of
@@ -179,6 +180,7 @@ type cseWorkerPoolSettingsInternal struct {
 	PlacementPolicyName string
 	VGpuPolicyName      string
 	StorageProfileName  string
+	Autoscaler          *CseWorkerPoolAutoscaler
 }
 
 // cseDefaultStorageClassInternal defines a Default Storage Class inside cseClusterSettingsInternal

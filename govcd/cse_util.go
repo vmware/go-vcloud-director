@@ -576,8 +576,22 @@ func (input *CseClusterSettings) validate() error {
 		if _, alreadyExists := existingWorkerPools[workerPool.Name]; alreadyExists {
 			return fmt.Errorf("the names of the Worker Pools must be unique, but '%s' is repeated", workerPool.Name)
 		}
-		if workerPool.MachineCount < 1 {
+		if workerPool.Autoscaler == nil && workerPool.MachineCount < 1 {
 			return fmt.Errorf("number of Worker Pool '%s' nodes must higher than 0, but it was '%d'", workerPool.Name, workerPool.MachineCount)
+		}
+		if workerPool.Autoscaler != nil {
+			if workerPool.MachineCount > 0 {
+				util.Logger.Printf("[DEBUG] Worker Pool '%s' is using Autoscaler, will ignore the MachineCount '%d' property", workerPool.Name, workerPool.MachineCount)
+			}
+			if workerPool.Autoscaler.MaxSize < workerPool.Autoscaler.MinSize {
+				return fmt.Errorf("the Autoscaler maximum size for Worker Pool '%s' cannot be less than the minimum", workerPool.Name)
+			}
+			if workerPool.Autoscaler.MaxSize < 0 {
+				return fmt.Errorf("the Autoscaler maximum size for Worker Pool '%s' must be a positive number", workerPool.Name)
+			}
+			if workerPool.Autoscaler.MinSize < 0 {
+				return fmt.Errorf("the Autoscaler minimum size for Worker Pool '%s' must be a positive number", workerPool.Name)
+			}
 		}
 		if workerPool.DiskSizeGi < 20 {
 			return fmt.Errorf("disk size for the Worker Pool '%s' in Gibibytes (Gi) must be at least 20, but it was '%d'", workerPool.Name, workerPool.DiskSizeGi)
@@ -717,6 +731,13 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 		output.WorkerPools[i].PlacementPolicyName = idToNameCache[w.PlacementPolicyId]
 		output.WorkerPools[i].VGpuPolicyName = idToNameCache[w.VGpuPolicyId]
 		output.WorkerPools[i].StorageProfileName = idToNameCache[w.StorageProfileId]
+
+		if w.Autoscaler != nil {
+			output.WorkerPools[i].Autoscaler = &CseWorkerPoolAutoscaler{
+				MaxSize: w.Autoscaler.MaxSize,
+				MinSize: w.Autoscaler.MinSize,
+			}
+		}
 	}
 	output.ControlPlane = cseControlPlaneSettingsInternal{
 		MachineCount:        input.ControlPlane.MachineCount,
@@ -765,6 +786,7 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 	output.ServiceCidr = input.ServiceCidr
 	output.SshPublicKey = input.SshPublicKey
 	output.VirtualIpSubnet = input.VirtualIpSubnet
+	output.AutoscalerEnabled = input.AutoscalerEnabled
 
 	return output, nil
 }

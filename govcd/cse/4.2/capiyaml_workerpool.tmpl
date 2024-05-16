@@ -19,9 +19,15 @@ kind: MachineDeployment
 metadata:
   name: "{{.NodePoolName}}"
   namespace: "{{.TargetNamespace}}"
+  {{- if and (gt .AutoscalerMaxSize -1) (gt .AutoscalerMinSize -1) }}
+  cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size: "{{.AutoscalerMaxSize}}"
+  cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size: "{{.AutoscalerMinSize}}"
+  {{- end}}
 spec:
   clusterName: "{{.ClusterName}}"
+  {{- if and (lt .AutoscalerMaxSize 0) (lt .AutoscalerMinSize 0) }}
   replicas: {{.NodePoolMachineCount}}
+  {{- end}}
   selector:
     matchLabels: null
   template:

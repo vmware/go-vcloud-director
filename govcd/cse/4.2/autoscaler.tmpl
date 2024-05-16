@@ -3,21 +3,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cluster-autoscaler
-  namespace: ${AUTOSCALER_NS}
+  namespace: kube-system
   labels:
     app: cluster-autoscaler
 spec:
   selector:
     matchLabels:
       app: cluster-autoscaler
-  replicas: 1
+  replicas: {{.AutoscalerReplicas}}
   template:
     metadata:
       labels:
         app: cluster-autoscaler
     spec:
       containers:
-      - image: ${AUTOSCALER_IMAGE}
+      - image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.20.0
         name: cluster-autoscaler
         command:
         - /cluster-autoscaler
@@ -40,7 +40,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: cluster-autoscaler
-  namespace: ${AUTOSCALER_NS}
+  namespace: kube-system
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -53,13 +53,13 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: cluster-autoscaler
-  namespace: ${AUTOSCALER_NS}
+  namespace: kube-system
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: cluster-autoscaler
-  namespace: ${AUTOSCALER_NS}
+  namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
