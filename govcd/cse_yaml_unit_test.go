@@ -154,6 +154,50 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 		if traverseMapAndGet[float64](document, "spec.replicas", ".") != float64(newReplicas) {
 			t.Fatalf("expected %d replicas but got %0.f", newReplicas, retrievedReplicas)
 		}
+		autoscalerMinSize := traverseMapAndGet[string](document, "metadata|cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size", "|")
+		if autoscalerMinSize != "" {
+			t.Fatalf("didn't expect autoscaler min size but got '%s'", autoscalerMinSize)
+		}
+		autoscalerMaxSize := traverseMapAndGet[string](document, "metadata|cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size", "|")
+		if autoscalerMaxSize != "" {
+			t.Fatalf("didn't expect autoscaler max size but got '%s'", autoscalerMaxSize)
+		}
+	}
+
+	// We call the function to update the pools with autoscaling
+	newNodePools = map[string]CseWorkerPoolUpdateInput{}
+	for name := range oldNodePools {
+		newNodePools[name] = CseWorkerPoolUpdateInput{
+			MachineCount: -1, // We don't care about replicas as we use autoscaling
+			Autoscaler: &CseWorkerPoolAutoscaler{
+				MaxSize: 50,
+				MinSize: 10,
+			},
+		}
+	}
+	err = cseUpdateWorkerPoolsInYaml(yamlDocs, newNodePools)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The worker pools should have now the new details updated
+	for _, document := range yamlDocs {
+		if document["kind"] != "MachineDeployment" {
+			continue
+		}
+
+		retrievedReplicas := traverseMapAndGet[float64](document, "spec.replicas", ".")
+		if retrievedReplicas != 0 {
+			t.Fatalf("didn't expect replicas but got '%0.f'", retrievedReplicas)
+		}
+		autoscalerMinSize := traverseMapAndGet[string](document, "metadata|cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size", "|")
+		if autoscalerMinSize != "10" {
+			t.Fatalf("expected autoscaler min size '10' but got '%s'", autoscalerMinSize)
+		}
+		autoscalerMaxSize := traverseMapAndGet[string](document, "metadata|cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size", "|")
+		if autoscalerMaxSize != "50" {
+			t.Fatalf("expected autoscaler min size '50' but got '%s'", autoscalerMaxSize)
+		}
 	}
 
 	// Corner case: Wrong replicas
@@ -162,6 +206,7 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 	for name := range oldNodePools {
 		newNodePools[name] = CseWorkerPoolUpdateInput{
 			MachineCount: newReplicas,
+			Autoscaler:   nil,
 		}
 	}
 	err = cseUpdateWorkerPoolsInYaml(yamlDocs, newNodePools)
