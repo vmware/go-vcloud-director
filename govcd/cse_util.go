@@ -353,28 +353,28 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	for _, yamlDocument := range yamlDocuments {
 		switch yamlDocument["kind"] {
 		case "KubeadmControlPlane":
-			result.ControlPlane.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas"))
-			users := traverseMapAndGet[[]interface{}](yamlDocument, "spec.kubeadmConfigSpec.users")
+			result.ControlPlane.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas", "."))
+			users := traverseMapAndGet[[]interface{}](yamlDocument, "spec.kubeadmConfigSpec.users", ".")
 			if len(users) == 0 {
 				return nil, fmt.Errorf("expected 'spec.kubeadmConfigSpec.users' slice to not to be empty")
 			}
-			keys := traverseMapAndGet[[]interface{}](users[0], "sshAuthorizedKeys")
+			keys := traverseMapAndGet[[]interface{}](users[0], "sshAuthorizedKeys", ".")
 			if len(keys) > 0 {
 				result.SshPublicKey = keys[0].(string) // Optional field
 			}
 
-			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "spec.version"))
+			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "spec.version", "."))
 			if err != nil {
 				return nil, fmt.Errorf("could not read Kubernetes version: %s", err)
 			}
 			result.KubernetesVersion = *version
 
 		case "VCDMachineTemplate":
-			name := traverseMapAndGet[string](yamlDocument, "metadata.name")
-			sizingPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy")
-			placementPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.placementPolicy")
-			storageProfileName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.storageProfile")
-			diskSizeGi, err := strconv.Atoi(strings.ReplaceAll(traverseMapAndGet[string](yamlDocument, "spec.template.spec.diskSize"), "Gi", ""))
+			name := traverseMapAndGet[string](yamlDocument, "metadata.name", ".")
+			sizingPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy", ".")
+			placementPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.placementPolicy", ".")
+			storageProfileName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.storageProfile", ".")
+			diskSizeGi, err := strconv.Atoi(strings.ReplaceAll(traverseMapAndGet[string](yamlDocument, "spec.template.spec.diskSize", "."), "Gi", ""))
 			if err != nil {
 				return nil, err
 			}
@@ -397,8 +397,8 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				result.ControlPlane.DiskSizeGi = diskSizeGi
 
 				// We retrieve the Kubernetes Template OVA just once for the Control Plane because all YAML blocks share the same
-				vAppTemplateName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template")
-				catalogName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog")
+				vAppTemplateName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template", ".")
+				catalogName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog", ".")
 				vAppTemplates, err := queryVappTemplateListWithFilter(rde.client, map[string]string{
 					"catalogName": catalogName,
 					"name":        vAppTemplateName,
@@ -437,31 +437,51 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				workerPools[name] = workerPool // Override the worker pool with the updated data
 			}
 		case "MachineDeployment":
-			name := traverseMapAndGet[string](yamlDocument, "metadata.name")
+			name := traverseMapAndGet[string](yamlDocument, "metadata.name", ".")
 			// This is one Worker Pool. We need to check the map of worker pools, just in case we already saved the
 			// other information from VCDMachineTemplate.
 			if _, ok := workerPools[name]; !ok {
 				workerPools[name] = CseWorkerPoolSettings{}
 			}
 			workerPool := workerPools[name]
-			workerPool.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas"))
+
+			// This will be 0 if Autoscaler is enabled
+			workerPool.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas", "."))
+
+			// Get Autoscaler values
+			autoscalerMax := traverseMapAndGet[string](yamlDocument, "cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size", "#")
+			autoscalerMin := traverseMapAndGet[string](yamlDocument, "cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size", "#")
+			if autoscalerMax != "" && autoscalerMin != "" {
+				maxSize, err := strconv.Atoi(autoscalerMax)
+				if err != nil {
+					return nil, fmt.Errorf("error reading Autoscaler max size for pool '%s': %s", name, err)
+				}
+				minSize, err := strconv.Atoi(autoscalerMin)
+				if err != nil {
+					return nil, fmt.Errorf("error reading Autoscaler min size for pool '%s': %s", name, err)
+				}
+				workerPool.Autoscaler = &CseWorkerPoolAutoscaler{
+					MaxSize: maxSize,
+					MinSize: minSize,
+				}
+			}
 			workerPools[name] = workerPool // Override the worker pool with the updated data
 		case "VCDCluster":
-			result.VirtualIpSubnet = traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet")
+			result.VirtualIpSubnet = traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet", ".")
 		case "Cluster":
-			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "metadata.annotations.TKGVERSION"))
+			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "metadata.annotations.TKGVERSION", "."))
 			if err != nil {
 				return nil, fmt.Errorf("could not read TKG version: %s", err)
 			}
 			result.TkgVersion = *version
 
-			cidrBlocks := traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
+			cidrBlocks := traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks", ".")
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.pods.cidrBlocks' item")
 			}
 			result.PodCidr = cidrBlocks[0].(string)
 
-			cidrBlocks = traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
+			cidrBlocks = traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.services.cidrBlocks", ".")
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.services.cidrBlocks' item")
 			}

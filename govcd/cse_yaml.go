@@ -120,40 +120,40 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, k
 	for _, d := range yamlDocuments {
 		switch d["kind"] {
 		case "VCDMachineTemplate":
-			ok := traverseMapAndGet[string](d, "spec.template.spec.template") != ""
+			ok := traverseMapAndGet[string](d, "spec.template.spec.template", ".") != ""
 			if !ok {
 				return fmt.Errorf("the VCDMachineTemplate 'spec.template.spec.template' field is missing")
 			}
 			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["template"] = kubernetesTemplateOva.Name
 		case "MachineDeployment":
-			ok := traverseMapAndGet[string](d, "spec.template.spec.version") != ""
+			ok := traverseMapAndGet[string](d, "spec.template.spec.version", ".") != ""
 			if !ok {
 				return fmt.Errorf("the MachineDeployment 'spec.template.spec.version' field is missing")
 			}
 			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["version"] = tkgBundle.KubernetesVersion
 		case "Cluster":
-			ok := traverseMapAndGet[string](d, "metadata.annotations.TKGVERSION") != ""
+			ok := traverseMapAndGet[string](d, "metadata.annotations.TKGVERSION", ".") != ""
 			if !ok {
 				return fmt.Errorf("the Cluster 'metadata.annotations.TKGVERSION' field is missing")
 			}
 			d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["TKGVERSION"] = tkgBundle.TkgVersion
-			ok = traverseMapAndGet[string](d, "metadata.labels.tanzuKubernetesRelease") != ""
+			ok = traverseMapAndGet[string](d, "metadata.labels.tanzuKubernetesRelease", ".") != ""
 			if !ok {
 				return fmt.Errorf("the Cluster 'metadata.labels.tanzuKubernetesRelease' field is missing")
 			}
 			d["metadata"].(map[string]interface{})["labels"].(map[string]interface{})["tanzuKubernetesRelease"] = tkgBundle.TkrVersion
 		case "KubeadmControlPlane":
-			ok := traverseMapAndGet[string](d, "spec.version") != ""
+			ok := traverseMapAndGet[string](d, "spec.version", ".") != ""
 			if !ok {
 				return fmt.Errorf("the KubeadmControlPlane 'spec.version' field is missing")
 			}
 			d["spec"].(map[string]interface{})["version"] = tkgBundle.KubernetesVersion
-			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag") != ""
+			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag", ".") != ""
 			if !ok {
 				return fmt.Errorf("the KubeadmControlPlane 'spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag' field is missing")
 			}
 			d["spec"].(map[string]interface{})["kubeadmConfigSpec"].(map[string]interface{})["clusterConfiguration"].(map[string]interface{})["dns"].(map[string]interface{})["imageTag"] = tkgBundle.CoreDnsVersion
-			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag") != ""
+			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag", ".") != ""
 			if !ok {
 				return fmt.Errorf("the KubeadmControlPlane 'spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag' field is missing")
 			}
@@ -193,7 +193,7 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 			continue
 		}
 
-		workerPoolName := traverseMapAndGet[string](d, "metadata.name")
+		workerPoolName := traverseMapAndGet[string](d, "metadata.name", ".")
 		if workerPoolName == "" {
 			return fmt.Errorf("the MachineDeployment 'metadata.name' field is empty")
 		}
@@ -218,6 +218,8 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 				return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
 			}
 			d["spec"].(map[string]interface{})["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
+			delete(d["metadata"].(map[string]interface{}), "cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size")
+			delete(d["metadata"].(map[string]interface{}), "cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size")
 		}
 		updated++
 	}
@@ -270,13 +272,13 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 	// Kubernetes OVA name, version and Catalog, we pick this info from any of the available ones.
 	for _, doc := range docs {
 		if internalSettings.CatalogName == "" && doc["kind"] == "VCDMachineTemplate" {
-			internalSettings.CatalogName = traverseMapAndGet[string](doc, "spec.template.spec.catalog")
+			internalSettings.CatalogName = traverseMapAndGet[string](doc, "spec.template.spec.catalog", ".")
 		}
 		if internalSettings.KubernetesTemplateOvaName == "" && doc["kind"] == "VCDMachineTemplate" {
-			internalSettings.KubernetesTemplateOvaName = traverseMapAndGet[string](doc, "spec.template.spec.template")
+			internalSettings.KubernetesTemplateOvaName = traverseMapAndGet[string](doc, "spec.template.spec.template", ".")
 		}
 		if internalSettings.TkgVersionBundle.KubernetesVersion == "" && doc["kind"] == "MachineDeployment" {
-			internalSettings.TkgVersionBundle.KubernetesVersion = traverseMapAndGet[string](doc, "spec.template.spec.version")
+			internalSettings.TkgVersionBundle.KubernetesVersion = traverseMapAndGet[string](doc, "spec.template.spec.version", ".")
 		}
 		if internalSettings.CatalogName != "" && internalSettings.KubernetesTemplateOvaName != "" && internalSettings.TkgVersionBundle.KubernetesVersion != "" {
 			break
@@ -379,10 +381,10 @@ func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, existingW
 		if d["kind"] != "Deployment" {
 			continue
 		}
-		if traverseMapAndGet[string](d, "metadata.name") != "cluster-autoscaler" {
+		if traverseMapAndGet[string](d, "metadata.name", ".") != "cluster-autoscaler" {
 			continue
 		}
-		if traverseMapAndGet[string](d, "metadata.namespace") != "kube-system" {
+		if traverseMapAndGet[string](d, "metadata.namespace", ".") != "kube-system" {
 			continue
 		}
 		// Reaching here means that an Autoscaler was found. We need to modify its configuration.
@@ -450,10 +452,11 @@ func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[string]interfac
 }
 
 // traverseMapAndGet traverses the input interface{}, which should be a map of maps, by following the path specified as
-// "keyA.keyB.keyC.keyD", doing something similar to, visually speaking, map["keyA"]["keyB"]["keyC"]["keyD"], or in other words,
-// it goes inside every inner map iteratively, until the given path is finished.
+// "keyA%keyB%keyC%keyD" (if keySeparator="%"), or "keyA.keyB.keyC.keyD" (if keySeparator="."), etc. doing something similar to,
+// visually speaking, map["keyA"]["keyB"]["keyC"]["keyD"], or in other words, it goes inside every inner map iteratively,
+// until the given path is finished.
 // If the path doesn't lead to any value, or if the value is nil, or there is any other issue, returns the "zero" value of T.
-func traverseMapAndGet[T any](input interface{}, path string) T {
+func traverseMapAndGet[T any](input interface{}, path string, keySeparator string) T {
 	var nothing T
 	if input == nil {
 		return nothing
@@ -465,7 +468,7 @@ func traverseMapAndGet[T any](input interface{}, path string) T {
 	if len(inputMap) == 0 {
 		return nothing
 	}
-	pathUnits := strings.Split(path, ".")
+	pathUnits := strings.Split(path, keySeparator)
 	completed := false
 	i := 0
 	var result interface{}

@@ -118,13 +118,13 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 			continue
 		}
 
-		workerPoolName := traverseMapAndGet[string](document, "metadata.name")
+		workerPoolName := traverseMapAndGet[string](document, "metadata.name", ".")
 		if workerPoolName == "" {
 			t.Fatalf("incorrect CAPI YAML: %s", err)
 		}
 
 		oldNodePools[workerPoolName] = CseWorkerPoolUpdateInput{
-			MachineCount: int(traverseMapAndGet[float64](document, "spec.replicas")),
+			MachineCount: int(traverseMapAndGet[float64](document, "spec.replicas", ".")),
 		}
 	}
 	if len(oldNodePools) == 0 {
@@ -150,8 +150,8 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 			continue
 		}
 
-		retrievedReplicas := traverseMapAndGet[float64](document, "spec.replicas")
-		if traverseMapAndGet[float64](document, "spec.replicas") != float64(newReplicas) {
+		retrievedReplicas := traverseMapAndGet[float64](document, "spec.replicas", ".")
+		if traverseMapAndGet[float64](document, "spec.replicas", ".") != float64(newReplicas) {
 			t.Fatalf("expected %d replicas but got %0.f", newReplicas, retrievedReplicas)
 		}
 	}
@@ -198,7 +198,7 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 		}
 
 		oldControlPlane = CseControlPlaneUpdateInput{
-			MachineCount: int(traverseMapAndGet[float64](document, "spec.replicas")),
+			MachineCount: int(traverseMapAndGet[float64](document, "spec.replicas", ".")),
 		}
 	}
 	if reflect.DeepEqual(oldControlPlane, CseWorkerPoolUpdateInput{}) {
@@ -221,7 +221,7 @@ func Test_cseUpdateControlPlaneInYaml(t *testing.T) {
 			continue
 		}
 
-		retrievedReplicas := traverseMapAndGet[float64](document, "spec.replicas")
+		retrievedReplicas := traverseMapAndGet[float64](document, "spec.replicas", ".")
 		if retrievedReplicas != float64(newReplicas) {
 			t.Fatalf("expected %d replicas but got %0.f", newReplicas, retrievedReplicas)
 		}
@@ -264,7 +264,7 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 		if doc["kind"] != "Cluster" {
 			continue
 		}
-		clusterName = traverseMapAndGet[string](doc, "metadata.name")
+		clusterName = traverseMapAndGet[string](doc, "metadata.name", ".")
 	}
 	if clusterName == "" {
 		t.Fatal("could not find the cluster name in the CAPI YAML test file")
@@ -305,11 +305,11 @@ func Test_cseUpdateNodeHealthCheckInYaml(t *testing.T) {
 		if document["kind"] != "MachineHealthCheck" {
 			continue
 		}
-		maxUnhealthy := traverseMapAndGet[string](document, "spec.maxUnhealthy")
+		maxUnhealthy := traverseMapAndGet[string](document, "spec.maxUnhealthy", ".")
 		if maxUnhealthy != "12%" {
 			t.Fatalf("expected a 'spec.maxUnhealthy' = 12%%, but got %s", maxUnhealthy)
 		}
-		nodeStartupTimeout := traverseMapAndGet[string](document, "spec.nodeStartupTimeout")
+		nodeStartupTimeout := traverseMapAndGet[string](document, "spec.nodeStartupTimeout", ".")
 		if nodeStartupTimeout != "34s" {
 			t.Fatalf("expected a 'spec.nodeStartupTimeout' = 34s, but got %s", nodeStartupTimeout)
 		}
@@ -423,8 +423,9 @@ func Test_marshalMultplieYamlDocuments(t *testing.T) {
 // Test_traverseMapAndGet tests traverseMapAndGet function
 func Test_traverseMapAndGet(t *testing.T) {
 	type args struct {
-		input interface{}
-		path  string
+		input     interface{}
+		path      string
+		separator string
 	}
 	tests := []struct {
 		name     string
@@ -435,7 +436,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "input is nil",
 			args: args{
-				input: nil,
+				input:     nil,
+				separator: ".",
 			},
 			wantType: "string",
 			want:     "",
@@ -443,7 +445,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "input is not a map",
 			args: args{
-				input: "error",
+				input:     "error",
+				separator: ".",
 			},
 			wantType: "string",
 			want:     "",
@@ -451,7 +454,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 		{
 			name: "map is empty",
 			args: args{
-				input: map[string]interface{}{},
+				input:     map[string]interface{}{},
+				separator: ".",
 			},
 			wantType: "float64",
 			want:     float64(0),
@@ -462,7 +466,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 				input: map[string]interface{}{
 					"keyA": "value",
 				},
-				path: "keyB",
+				path:      "keyB",
+				separator: ".",
 			},
 			wantType: "string",
 			want:     "",
@@ -473,7 +478,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 				input: map[string]interface{}{
 					"keyA": "value",
 				},
-				path: "keyA",
+				path:      "keyA",
+				separator: ".",
 			},
 			wantType: "string",
 			want:     "value",
@@ -486,7 +492,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 						"keyB": "value",
 					},
 				},
-				path: "keyA",
+				path:      "keyA",
+				separator: ".",
 			},
 			wantType: "map",
 			want: map[string]interface{}{
@@ -503,7 +510,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 						},
 					},
 				},
-				path: "keyA.keyB.keyC",
+				path:      "keyA.keyB.keyC",
+				separator: ".",
 			},
 			wantType: "string",
 			want:     "value",
@@ -518,7 +526,8 @@ func Test_traverseMapAndGet(t *testing.T) {
 						},
 					},
 				},
-				path: "keyA.keyB.keyC.keyD",
+				path:      "keyA.keyB.keyC.keyD",
+				separator: ".",
 			},
 			wantType: "string",
 			want:     "",
@@ -533,21 +542,34 @@ func Test_traverseMapAndGet(t *testing.T) {
 						},
 					},
 				},
-				path: "keyA.keyB.keyC",
+				path:      "keyA.keyB.keyC",
+				separator: ".",
 			},
 			wantType: "string",
 			want:     "",
+		},
+		{
+			name: "requested path has special characters but separator is different",
+			args: args{
+				input: map[string]interface{}{
+					"keyA.foo.bar": "result",
+				},
+				path:      "keyA.foo.bar",
+				separator: "#",
+			},
+			wantType: "string",
+			want:     "result",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var got interface{}
 			if tt.wantType == "string" {
-				got = traverseMapAndGet[string](tt.args.input, tt.args.path)
+				got = traverseMapAndGet[string](tt.args.input, tt.args.path, tt.args.separator)
 			} else if tt.wantType == "map" {
-				got = traverseMapAndGet[map[string]interface{}](tt.args.input, tt.args.path)
+				got = traverseMapAndGet[map[string]interface{}](tt.args.input, tt.args.path, tt.args.separator)
 			} else if tt.wantType == "float64" {
-				got = traverseMapAndGet[float64](tt.args.input, tt.args.path)
+				got = traverseMapAndGet[float64](tt.args.input, tt.args.path, tt.args.separator)
 			} else {
 				t.Fatalf("wantType type not used in this test")
 			}
