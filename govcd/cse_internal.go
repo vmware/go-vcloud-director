@@ -193,15 +193,14 @@ func (clusterSettings *cseClusterSettingsInternal) generateWorkerPoolsYaml() (st
 			"NodePoolStorageProfile":  wp.StorageProfileName,
 			"NodePoolDiskSize":        fmt.Sprintf("%dGi", wp.DiskSizeGi),
 			"NodePoolEnableGpu":       strconv.FormatBool(wp.VGpuPolicyName != ""),
-			"NodePoolMachineCount":    strconv.Itoa(wp.MachineCount),
-			"AutoscalerMaxSize":       "-1",
-			"AutoscalerMinSize":       "-1",
 			"KubernetesVersion":       clusterSettings.TkgVersionBundle.KubernetesVersion,
 		}
 
 		if wp.Autoscaler != nil {
 			args["AutoscalerMaxSize"] = strconv.Itoa(wp.Autoscaler.MaxSize)
 			args["AutoscalerMinSize"] = strconv.Itoa(wp.Autoscaler.MinSize)
+		} else {
+			args["NodePoolMachineCount"] = strconv.Itoa(wp.MachineCount)
 		}
 
 		if err := workerPools.Execute(buf, args); err != nil {
