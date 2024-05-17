@@ -5,6 +5,8 @@ metadata:
   namespace: kube-system
   labels:
     app: cluster-autoscaler
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 spec:
   selector:
     matchLabels:
@@ -20,8 +22,24 @@ spec:
         name: cluster-autoscaler
         command:
         - /cluster-autoscaler
-        args:
+        - --v=4
+        - --stderrthreshold=info
         - --cloud-provider=clusterapi
+        - --expendable-pods-priority-cutoff=-10
+        - --scale-down-delay-after-delete=10s
+        - --scale-down-delay-after-add=10s
+        - --scale-down-delay-after-failure=10s
+        - --expander=least-waste
+        - --node-group-auto-discovery=clusterapi:namespace={{.TargetNamespace}}
+        - --balance-similar-node-groups
+        - --skip-nodes-with-system-pods=false
+      resources:
+        limits:
+          cpu: 100m
+          memory: 500Mi
+        requests:
+          cpu: 100m
+          memory: 500Mi
       serviceAccountName: cluster-autoscaler
       terminationGracePeriodSeconds: 10
       tolerations:

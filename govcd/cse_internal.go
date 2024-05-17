@@ -92,9 +92,20 @@ func (clusterSettings *cseClusterSettingsInternal) generateCapiYamlAsJsonString(
 		return "", err
 	}
 
-	autoscalerYaml, err := clusterSettings.generateAutoscalerYaml()
-	if err != nil {
-		return "", err
+	autoscalerNeeded := false
+	// We'll need the Autoscaler YAML document if at least one Worker Pool uses it
+	for _, wp := range clusterSettings.WorkerPools {
+		if wp.Autoscaler != nil {
+			autoscalerNeeded = true
+			break
+		}
+	}
+	autoscalerYaml := ""
+	if autoscalerNeeded {
+		autoscalerYaml, err = clusterSettings.generateAutoscalerYaml()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	templateArgs := map[string]interface{}{
@@ -259,19 +270,6 @@ func (clusterSettings *cseClusterSettingsInternal) generateAutoscalerYaml() (str
 		return "", fmt.Errorf("the receiver CSE Kubernetes cluster settings object is nil")
 	}
 
-	// The Autoscaler YAML is only required if at least one Worker Pool is using it
-	needsAutoscaler := false
-	for _, wp := range clusterSettings.WorkerPools {
-		if wp.Autoscaler != nil {
-			needsAutoscaler = true
-			break
-		}
-	}
-
-	if !needsAutoscaler {
-		return "", nil
-	}
-
 	autoscalerTemplate, err := getCseTemplate(clusterSettings.CseVersion, "autoscaler")
 	if err != nil {
 		return "", err
@@ -282,6 +280,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateAutoscalerYaml() (str
 	buf := &bytes.Buffer{}
 
 	if err := autoscaler.Execute(buf, map[string]string{
+		"TargetNamespace":    clusterSettings.Name + "-ns",
 		"AutoscalerReplicas": "1",
 	}); err != nil {
 		return "", fmt.Errorf("could not generate a correct Autoscaler YAML block: %s", err)

@@ -37,7 +37,7 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 	}
 
 	// Modify or add the autoscaler capabilities
-	yamlDocs, err = cseUpdateAutoscalerInYaml(yamlDocs, input.WorkerPools, input.NewWorkerPools)
+	yamlDocs, err = cseUpdateAutoscalerInYaml(yamlDocs, cluster.Name, cluster.CseVersion, input.WorkerPools, input.NewWorkerPools)
 	if err != nil {
 		return cluster.capvcdType.Spec.CapiYaml, err
 	}
@@ -354,7 +354,8 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clus
 // If it's present, modifies the YAML documents by scaling the Autoscaler replicas to 1.
 // If none of the input worker pools requires autoscaling, the input YAML documents are modified to scale the Autoscaler replicas to 0.
 // NOTE: This function can modify the input if there is already an Autoscaler. Otherwise returns a new YAML document with unmodified input.
-func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, existingWorkerPools *map[string]CseWorkerPoolUpdateInput, newWorkerPools *[]CseWorkerPoolSettings) ([]map[string]interface{}, error) {
+func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, clusterName string, cseVersion semver.Version,
+	existingWorkerPools *map[string]CseWorkerPoolUpdateInput, newWorkerPools *[]CseWorkerPoolSettings) ([]map[string]interface{}, error) {
 	autoscalerNeeded := false
 	// We'll need the Autoscaler YAML document if at least one Worker Pool uses it
 	if existingWorkerPools != nil {
@@ -398,7 +399,7 @@ func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, existingW
 
 	// This part is only reached if we didn't find any Autoscaler document, so we add it new if it's needed.
 	if autoscalerNeeded {
-		settings := &cseClusterSettingsInternal{}
+		settings := &cseClusterSettingsInternal{Name: clusterName, CseVersion: cseVersion}
 		autoscalerYaml, err := settings.generateAutoscalerYaml()
 		if err != nil {
 			return nil, err
