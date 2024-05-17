@@ -5,8 +5,6 @@ metadata:
   namespace: kube-system
   labels:
     app: cluster-autoscaler
-  annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 spec:
   selector:
     matchLabels:
@@ -16,10 +14,20 @@ spec:
     metadata:
       labels:
         app: cluster-autoscaler
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     spec:
+      serviceAccountName: cluster-autoscaler
       containers:
       - image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.20.0
         name: cluster-autoscaler
+        resources:
+          limits:
+            cpu: 100m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 500Mi
         command:
         - /cluster-autoscaler
         - --v=4
@@ -33,44 +41,6 @@ spec:
         - --node-group-auto-discovery=clusterapi:namespace={{.TargetNamespace}}
         - --balance-similar-node-groups
         - --skip-nodes-with-system-pods=false
-      resources:
-        limits:
-          cpu: 100m
-          memory: 500Mi
-        requests:
-          cpu: 100m
-          memory: 500Mi
-      serviceAccountName: cluster-autoscaler
-      terminationGracePeriodSeconds: 10
-      tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/control-plane
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: cluster-autoscaler-workload
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-autoscaler-workload
-subjects:
-- kind: ServiceAccount
-  name: cluster-autoscaler
-  namespace: kube-system
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: cluster-autoscaler-management
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-autoscaler-management
-subjects:
-- kind: ServiceAccount
-  name: cluster-autoscaler
-  namespace: kube-system
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -81,7 +51,7 @@ metadata:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: cluster-autoscaler-workload
+  name: cluster-autoscaler
 rules:
   - apiGroups:
     - ""
@@ -169,12 +139,6 @@ rules:
     - create
     - get
     - update
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: cluster-autoscaler-management
-rules:
   - apiGroups:
     - cluster.x-k8s.io
     resources:
@@ -188,3 +152,46 @@ rules:
     - list
     - update
     - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+  labels:
+    k8s-addon: cluster-autoscaler.addons.k8s.io
+    k8s-app: cluster-autoscaler
+rules:
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    verbs:
+    - create
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    resourceNames:
+    - cluster-autoscaler-status
+    - cluster-autoscaler-priority-expander
+    verbs:
+    - delete
+    - get
+    - update
+    - watch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cluster-autoscaler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-autoscaler
+subjects:
+- kind: ServiceAccount
+  name: cluster-autoscaler
+  namespace: kube-system
