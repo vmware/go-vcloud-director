@@ -601,7 +601,7 @@ func (input *CseClusterSettings) validate() error {
 		}
 		if workerPool.Autoscaler != nil {
 			if workerPool.MachineCount > 0 {
-				util.Logger.Printf("[DEBUG] Worker Pool '%s' is using Autoscaler, will ignore the MachineCount '%d' property", workerPool.Name, workerPool.MachineCount)
+				return fmt.Errorf("the Worker Pool '%s' is using Autoscaler (min=%d,max=%d), so can't set MachineCount to '%d'", workerPool.Name, workerPool.Autoscaler.MinSize, workerPool.Autoscaler.MaxSize, workerPool.MachineCount)
 			}
 			if workerPool.Autoscaler.MaxSize < workerPool.Autoscaler.MinSize {
 				return fmt.Errorf("the Autoscaler maximum size for Worker Pool '%s' cannot be less than the minimum", workerPool.Name)

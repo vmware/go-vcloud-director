@@ -152,36 +152,75 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	assertCseClusterEquals(check, allClusters[0], clusterGet)
 	check.Assert(allClusters[0].Etag, Equals, "") // Can't recover ETag by name
 
-	// Update worker pool from 1 node to 2
-	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {MachineCount: 2}}, true)
+	// Update worker pool with autoscaler
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {
+		Autoscaler: &CseWorkerPoolAutoscaler{
+			MaxSize: 2,
+			MinSize: 1,
+		}}}, true)
 	check.Assert(err, IsNil)
 	foundWorkerPool := false
 	for _, nodePool := range cluster.WorkerPools {
 		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
 			foundWorkerPool = true
+			check.Assert(nodePool.MachineCount, Equals, 0) // The field is not used
+			check.Assert(nodePool.Autoscaler, NotNil)
+			check.Assert(nodePool.Autoscaler.MaxSize, Equals, 2)
+			check.Assert(nodePool.Autoscaler.MinSize, Equals, 1)
+		}
+	}
+	check.Assert(foundWorkerPool, Equals, true)
+
+	// Update worker pool from 1 node to 2
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {MachineCount: 2}}, true)
+	check.Assert(err, IsNil)
+	foundWorkerPool = false
+	for _, nodePool := range cluster.WorkerPools {
+		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
+			foundWorkerPool = true
 			check.Assert(nodePool.MachineCount, Equals, 2)
+			check.Assert(nodePool.Autoscaler, IsNil)
 		}
 	}
 	check.Assert(foundWorkerPool, Equals, true)
 
 	// Add a new worker pool
 	err = cluster.AddWorkerPools([]CseWorkerPoolSettings{{
-		Name:         "new-pool",
+		Name:         "new-pool-1",
 		MachineCount: 1,
 		DiskSizeGi:   20,
+	}, {
+		Name:       "new-pool-2",
+		DiskSizeGi: 20,
+		Autoscaler: &CseWorkerPoolAutoscaler{
+			MaxSize: 2,
+			MinSize: 1,
+		},
 	}}, true)
 	check.Assert(err, IsNil)
-	foundWorkerPool = false
+	foundWorkerPool1, foundWorkerPool2 := false, false
 	for _, nodePool := range cluster.WorkerPools {
-		if nodePool.Name == "new-pool" {
-			foundWorkerPool = true
+		if nodePool.Name == "new-pool-1" {
+			foundWorkerPool1 = true
 			check.Assert(nodePool.MachineCount, Equals, 1)
 			check.Assert(nodePool.DiskSizeGi, Equals, 20)
 			check.Assert(nodePool.SizingPolicyId, Equals, "")
 			check.Assert(nodePool.StorageProfileId, Equals, "")
+			check.Assert(nodePool.Autoscaler, IsNil)
+		}
+		if nodePool.Name == "new-pool-2" {
+			foundWorkerPool2 = true
+			check.Assert(nodePool.MachineCount, Equals, 0) // Not used
+			check.Assert(nodePool.DiskSizeGi, Equals, 20)
+			check.Assert(nodePool.SizingPolicyId, Equals, "")
+			check.Assert(nodePool.StorageProfileId, Equals, "")
+			check.Assert(nodePool.Autoscaler, NotNil)
+			check.Assert(nodePool.Autoscaler.MinSize, Equals, "1")
+			check.Assert(nodePool.Autoscaler.MaxSize, Equals, "2")
 		}
 	}
-	check.Assert(foundWorkerPool, Equals, true)
+	check.Assert(foundWorkerPool1, Equals, true)
+	check.Assert(foundWorkerPool2, Equals, true)
 
 	// Update control plane from 1 node to 3 (needs to be an odd number)
 	err = cluster.UpdateControlPlane(CseControlPlaneUpdateInput{MachineCount: 3}, true)
@@ -222,20 +261,168 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 			clusterSettings.WorkerPools[0].Name: {
 				MachineCount: 1,
 			},
-			"new-pool": {
+			"new-pool-1": {
 				MachineCount: 0,
+			},
+			"new-pool-2": {
+				MachineCount: 0, // Should remove autoscaler
 			},
 		},
 	}, true)
 	check.Assert(err, IsNil)
 	check.Assert(cluster.ControlPlane.MachineCount, Equals, 1)
 	for _, pool := range cluster.WorkerPools {
-		if pool.Name == "new-pool" {
+		if pool.Name == "new-pool-1" {
 			check.Assert(pool.MachineCount, Equals, 0)
+			check.Assert(pool.Autoscaler, IsNil)
+		} else if pool.Name == "new-pool-2" {
+			check.Assert(pool.MachineCount, Equals, 0)
+			check.Assert(pool.Autoscaler, IsNil)
 		} else {
 			check.Assert(pool.MachineCount, Equals, 1)
 		}
 	}
+}
+
+// Test_CseWithAutoscaler tests the autoscaling capabilities in CSE clusters
+func (vcd *TestVCD) Test_CseWithAutoscaler(check *C) {
+	requireCseConfig(check, vcd.config)
+
+	// Prerequisites: We need to read several items before creating the cluster.
+	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
+	check.Assert(err, IsNil)
+
+	catalog, err := org.GetCatalogByName(vcd.config.Cse.OvaCatalog, false)
+	check.Assert(err, IsNil)
+
+	ova, err := catalog.GetVAppTemplateByName(vcd.config.Cse.OvaName)
+	check.Assert(err, IsNil)
+
+	tkgBundle, err := getTkgVersionBundleFromVAppTemplate(ova.VAppTemplate)
+	check.Assert(err, IsNil)
+
+	vdc, err := org.GetVDCByName(vcd.config.Cse.TenantVdc, false)
+	check.Assert(err, IsNil)
+
+	net, err := vdc.GetOrgVdcNetworkByName(vcd.config.Cse.RoutedNetwork, false)
+	check.Assert(err, IsNil)
+
+	sp, err := vdc.FindStorageProfileReference(vcd.config.Cse.StorageProfile)
+	check.Assert(err, IsNil)
+
+	policies, err := vcd.client.GetAllVdcComputePoliciesV2(url.Values{
+		"filter": []string{"name==TKG small"},
+	})
+	check.Assert(err, IsNil)
+	check.Assert(len(policies), Equals, 1)
+
+	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
+	check.Assert(err, IsNil)
+	defer func() {
+		err = token.Delete()
+		check.Assert(err, IsNil)
+	}()
+	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTokens+token.Token.ID)
+
+	apiToken, err := token.GetInitialApiToken()
+	check.Assert(err, IsNil)
+
+	cseVersion, err := semver.NewVersion(vcd.config.Cse.Version)
+	check.Assert(err, IsNil)
+	check.Assert(cseVersion, NotNil)
+
+	// Create the cluster
+	clusterSettings := CseClusterSettings{
+		Name:                    "test-cse-autoscaler",
+		OrganizationId:          org.Org.ID,
+		VdcId:                   vdc.Vdc.ID,
+		NetworkId:               net.OrgVDCNetwork.ID,
+		KubernetesTemplateOvaId: ova.VAppTemplate.ID,
+		CseVersion:              *cseVersion,
+		ControlPlane: CseControlPlaneSettings{
+			MachineCount:     1,
+			DiskSizeGi:       20,
+			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
+			StorageProfileId: sp.ID,
+			Ip:               "",
+		},
+		WorkerPools: []CseWorkerPoolSettings{{
+			Name: "worker-pool-1",
+			Autoscaler: &CseWorkerPoolAutoscaler{
+				MaxSize: 2,
+				MinSize: 1,
+			},
+			DiskSizeGi:       20,
+			SizingPolicyId:   policies[0].VdcComputePolicyV2.ID,
+			StorageProfileId: sp.ID,
+		}},
+		DefaultStorageClass: &CseDefaultStorageClassSettings{
+			StorageProfileId: sp.ID,
+			Name:             "storage-class-1",
+			ReclaimPolicy:    "delete",
+			Filesystem:       "ext4",
+		},
+		Owner:              vcd.config.Provider.User,
+		ApiToken:           apiToken.RefreshToken,
+		NodeHealthCheck:    true,
+		PodCidr:            "100.96.0.0/11",
+		ServiceCidr:        "100.64.0.0/13",
+		AutoRepairOnErrors: true,
+	}
+	cluster, err := org.CseCreateKubernetesCluster(clusterSettings, 150*time.Minute)
+
+	// We assure that the cluster gets always deleted, even if the creation failed.
+	// Deletion process only needs the cluster ID
+	defer func() {
+		check.Assert(cluster, NotNil)
+		check.Assert(cluster.client, NotNil)
+		check.Assert(cluster.ID, Not(Equals), "")
+		err = cluster.Delete(0)
+		check.Assert(err, IsNil)
+	}()
+
+	check.Assert(err, IsNil)
+	assertCseClusterCreation(check, cluster, clusterSettings, tkgBundle)
+
+	kubeconfig, err := cluster.GetKubeconfig(false)
+	check.Assert(err, IsNil)
+	check.Assert(true, Equals, strings.Contains(kubeconfig, cluster.Name))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-certificate-data"))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "certificate-authority-data"))
+	check.Assert(true, Equals, strings.Contains(kubeconfig, "client-key-data"))
+
+	err = cluster.Refresh()
+	check.Assert(err, IsNil)
+
+	clusterGet, err := vcd.client.CseGetKubernetesClusterById(cluster.ID)
+	check.Assert(err, IsNil)
+	assertCseClusterEquals(check, clusterGet, cluster)
+	check.Assert(clusterGet.Etag, Not(Equals), "")
+
+	allClusters, err := org.CseGetKubernetesClustersByName(clusterGet.CseVersion, clusterGet.Name)
+	check.Assert(err, IsNil)
+	check.Assert(len(allClusters), Equals, 1)
+	assertCseClusterEquals(check, allClusters[0], clusterGet)
+	check.Assert(allClusters[0].Etag, Equals, "") // Can't recover ETag by name
+
+	// Update worker pool and deactivate autoscaler
+	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {
+		Autoscaler: &CseWorkerPoolAutoscaler{
+			MaxSize: 10,
+			MinSize: 1,
+		}}}, true)
+	check.Assert(err, IsNil)
+	foundWorkerPool := false
+	for _, nodePool := range cluster.WorkerPools {
+		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
+			foundWorkerPool = true
+			check.Assert(nodePool.MachineCount, Equals, 0) // The field is not used
+			check.Assert(nodePool.Autoscaler, NotNil)
+			check.Assert(nodePool.Autoscaler.MinSize, Equals, 1)
+			check.Assert(nodePool.Autoscaler.MinSize, Equals, 10)
+		}
+	}
+	check.Assert(foundWorkerPool, Equals, true)
 }
 
 // Test_Cse_Failure tests cluster creation errors and their consequences
