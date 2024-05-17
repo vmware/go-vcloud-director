@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -78,7 +77,6 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 	saoByName, err := vcd.client.GetSolutionAddonByName(solutionAddOn.DefinedEntity.DefinedEntity.Name)
 	check.Assert(err, IsNil)
 	check.Assert(saoByName.RdeId(), Equals, solutionAddOn.RdeId())
-	spew.Dump(saoByName.DefinedEntity.DefinedEntity)
 
 	// Delete
 	err = sao.Delete()
