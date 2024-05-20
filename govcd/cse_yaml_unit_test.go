@@ -154,11 +154,11 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 		if traverseMapAndGet[float64](document, "spec.replicas", ".") != float64(newReplicas) {
 			t.Fatalf("expected %d replicas but got %0.f", newReplicas, retrievedReplicas)
 		}
-		autoscalerMinSize := traverseMapAndGet[string](document, "metadata|cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size", "|")
+		autoscalerMinSize := traverseMapAndGet[string](document, "metadata|annotations|cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size", "|")
 		if autoscalerMinSize != "" {
 			t.Fatalf("didn't expect autoscaler min size but got '%s'", autoscalerMinSize)
 		}
-		autoscalerMaxSize := traverseMapAndGet[string](document, "metadata|cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size", "|")
+		autoscalerMaxSize := traverseMapAndGet[string](document, "metadata|annotations|cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size", "|")
 		if autoscalerMaxSize != "" {
 			t.Fatalf("didn't expect autoscaler max size but got '%s'", autoscalerMaxSize)
 		}
@@ -190,11 +190,11 @@ func Test_cseUpdateWorkerPoolsInYaml(t *testing.T) {
 		if retrievedReplicas != 0 {
 			t.Fatalf("didn't expect replicas but got '%0.f'", retrievedReplicas)
 		}
-		autoscalerMinSize := traverseMapAndGet[string](document, "metadata|cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size", "|")
+		autoscalerMinSize := traverseMapAndGet[string](document, "metadata|annotations|cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size", "|")
 		if autoscalerMinSize != "10" {
 			t.Fatalf("expected autoscaler min size '10' but got '%s'", autoscalerMinSize)
 		}
-		autoscalerMaxSize := traverseMapAndGet[string](document, "metadata|cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size", "|")
+		autoscalerMaxSize := traverseMapAndGet[string](document, "metadata|annotations|cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size", "|")
 		if autoscalerMaxSize != "50" {
 			t.Fatalf("expected autoscaler min size '50' but got '%s'", autoscalerMaxSize)
 		}

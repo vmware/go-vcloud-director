@@ -449,8 +449,8 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 			workerPool.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas", "."))
 
 			// Get Autoscaler values
-			autoscalerMax := traverseMapAndGet[string](yamlDocument, "cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size", "#")
-			autoscalerMin := traverseMapAndGet[string](yamlDocument, "cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size", "#")
+			autoscalerMax := traverseMapAndGet[string](yamlDocument, "cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size", "#")
+			autoscalerMin := traverseMapAndGet[string](yamlDocument, "cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size", "#")
 			if autoscalerMax != "" && autoscalerMin != "" {
 				maxSize, err := strconv.Atoi(autoscalerMax)
 				if err != nil {

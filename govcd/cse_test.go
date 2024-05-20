@@ -284,6 +284,25 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	}
 }
 
+// TODO Delete me
+func (vcd *TestVCD) Test_CseFoo(check *C) {
+	requireCseConfig(check, vcd.config)
+
+	// Prerequisites: We need to read several items before creating the cluster.
+	clusterGet, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:cf8c9b14-20e3-451d-bc21-959286533480")
+	check.Assert(err, IsNil)
+	check.Assert(clusterGet.Etag, Not(Equals), "")
+
+	// Update worker pool with autoscaler
+	err = clusterGet.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterGet.WorkerPools[0].Name: {
+		MachineCount: 0,
+		Autoscaler: &CseWorkerPoolAutoscaler{
+			MaxSize: 3,
+			MinSize: 2,
+		}}}, true)
+	check.Assert(err, IsNil)
+}
+
 // Test_CseWithAutoscaler tests the autoscaling capabilities in CSE clusters
 func (vcd *TestVCD) Test_CseWithAutoscaler(check *C) {
 	requireCseConfig(check, vcd.config)

@@ -210,16 +210,21 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 		}
 
 		if workerPools[workerPoolToUpdate].Autoscaler != nil {
-			d["metadata"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MaxSize)
-			d["metadata"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MinSize)
+			if d["metadata"].(map[string]interface{})["annotations"] == nil {
+				d["metadata"].(map[string]interface{})["annotations"] = map[string]interface{}{}
+			}
+			d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MaxSize)
+			d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MinSize)
 			delete(d["spec"].(map[string]interface{}), "replicas") // This is required to avoid conflicts with Autoscaler
 		} else {
 			if workerPools[workerPoolToUpdate].MachineCount < 0 {
 				return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
 			}
 			d["spec"].(map[string]interface{})["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
-			delete(d["metadata"].(map[string]interface{}), "cluster.x-k8s.io/cluster-api-Autoscaler-node-group-max-size")
-			delete(d["metadata"].(map[string]interface{}), "cluster.x-k8s.io/cluster-api-Autoscaler-node-group-min-size")
+			if d["metadata"].(map[string]interface{})["annotations"] != nil {
+				delete(d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{}), "cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size")
+				delete(d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{}), "cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size")
+			}
 		}
 		updated++
 	}
@@ -404,12 +409,11 @@ func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, clusterNa
 		if err != nil {
 			return nil, err
 		}
-		var autoscaler map[string]interface{}
-		err = yaml.Unmarshal([]byte(autoscalerYaml), &autoscaler)
+		autoscaler, err := unmarshalMultipleYamlDocuments(autoscalerYaml)
 		if err != nil {
 			return nil, err
 		}
-		return append(yamlDocuments, autoscaler), nil
+		return append(yamlDocuments, autoscaler...), nil
 	}
 
 	// Otherwise the documents are returned without change
