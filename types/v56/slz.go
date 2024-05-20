@@ -35,6 +35,7 @@ type SolutionLandingZoneVdcChild struct {
 	Capabilities []string `json:"capabilities"`
 }
 
+// SolutionAddOn defines structure of Solution Add-On that is deployed in the Solution Landing Zone
 type SolutionAddOn struct {
 	Eula     string              `json:"eula"`
 	Icon     string              `json:"icon"`

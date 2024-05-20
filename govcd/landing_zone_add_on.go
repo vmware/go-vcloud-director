@@ -25,9 +25,9 @@ var slzAddOnRdeType = [3]string{"vmware", "solutions_add_on", "1.0.0"}
 // SolutionAddOn is the main structure to handle Solution Add-Ons within Solution Landing Zone. It
 // packs parent RDE and Solution Add-On entity itself
 type SolutionAddOn struct {
-	SolutionEntity *types.SolutionAddOn
-	DefinedEntity  *DefinedEntity
-	vcdClient      *VCDClient
+	SolutionAddOnEntity *types.SolutionAddOn
+	DefinedEntity       *DefinedEntity
+	vcdClient           *VCDClient
 }
 
 // SolutionAddOnConfig defines configuration for Solution Add-On creation which is used for
@@ -101,6 +101,7 @@ func createSolutionAddOnValidator(cfg SolutionAddOnConfig) error {
 // * Create the 'Entity' payload for creating RDE based on the given image
 // * Get Solution Add-On RDE Name from the manifest within 'isoFilePath'
 // * If 'autoTrustCertificate' is set to true - the code will check if VCD trusts the certificate
+// and trust it if it wasn't already trusted
 // * Lookup RDE type 'vmware:solutions_add_on:1.0.0'
 // * Create an RDE entity with payload from the 'isoFilePath' contents
 func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*SolutionAddOn, error) {
@@ -169,9 +170,9 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*Solut
 	}
 
 	returnType := SolutionAddOn{
-		SolutionEntity: result,
-		vcdClient:      vcdClient,
-		DefinedEntity:  createdRdeEntity,
+		SolutionAddOnEntity: result,
+		vcdClient:           vcdClient,
+		DefinedEntity:       createdRdeEntity,
 	}
 
 	return &returnType, nil
@@ -192,9 +193,9 @@ func (vcdClient *VCDClient) GetAllSolutionAddons(queryParameters url.Values) ([]
 		}
 
 		results[index] = &SolutionAddOn{
-			vcdClient:      vcdClient,
-			DefinedEntity:  rde,
-			SolutionEntity: addon,
+			vcdClient:           vcdClient,
+			DefinedEntity:       rde,
+			SolutionAddOnEntity: addon,
 		}
 	}
 
@@ -217,9 +218,9 @@ func (vcdClient *VCDClient) GetSolutionAddonById(id string) (*SolutionAddOn, err
 	}
 
 	packages := &SolutionAddOn{
-		SolutionEntity: result,
-		vcdClient:      vcdClient,
-		DefinedEntity:  rde,
+		SolutionAddOnEntity: result,
+		vcdClient:           vcdClient,
+		DefinedEntity:       rde,
 	}
 
 	return packages, nil
@@ -260,9 +261,9 @@ func (s *SolutionAddOn) Update(saoCfg *types.SolutionAddOn) (*SolutionAddOn, err
 	}
 
 	packages := SolutionAddOn{
-		SolutionEntity: result,
-		vcdClient:      s.vcdClient,
-		DefinedEntity:  s.DefinedEntity,
+		SolutionAddOnEntity: result,
+		vcdClient:           s.vcdClient,
+		DefinedEntity:       s.DefinedEntity,
 	}
 
 	return &packages, nil
