@@ -16,6 +16,10 @@ import (
 )
 
 func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
+	if vcd.client.Client.APIVCDMaxVersionIs("< 37.1") {
+		check.Skip("Solution Landing Zones are supported in VCD 10.4.1+")
+	}
+
 	if vcd.config.VCD.Catalog.NsxtCatalogAddonDse == "" {
 		check.Skip("missing 'VCD.Catalog.NsxtCatalogAddonDse' value")
 	}
