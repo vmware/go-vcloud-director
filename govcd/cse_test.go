@@ -289,7 +289,7 @@ func (vcd *TestVCD) Test_CseFoo(check *C) {
 	requireCseConfig(check, vcd.config)
 
 	// Prerequisites: We need to read several items before creating the cluster.
-	clusterGet, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:cf8c9b14-20e3-451d-bc21-959286533480")
+	clusterGet, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:e9d38be0-9d52-462d-b803-3c793ebb3bde")
 	check.Assert(err, IsNil)
 	check.Assert(clusterGet.Etag, Not(Equals), "")
 

@@ -205,8 +205,9 @@ type cseComponentsVersions struct {
 	CseInterfaceVersion       string
 }
 
-// Constants that define the RDE Type of a CSE Kubernetes cluster
+// Constants used internally to manage CSE Kubernetes clusters
 const (
-	cseKubernetesClusterVendor    = "vmware"
-	cseKubernetesClusterNamespace = "capvcdCluster"
+	cseKubernetesClusterVendor                   = "vmware"
+	cseKubernetesClusterNamespace                = "capvcdCluster"
+	cseKubernetesClusterDefaultAutoscalerVersion = "v1.26.2"
 )
