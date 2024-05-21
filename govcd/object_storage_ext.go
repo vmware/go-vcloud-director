@@ -15,6 +15,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
+// Bucket represents an object storage bucket.
 type Bucket struct {
 	Name      string      `json:"name"`
 	Tenant    string      `json:"tenant"`
@@ -23,15 +24,18 @@ type Bucket struct {
 	Owner     BucketOwner `json:"owner"`
 }
 
+// BucketOwner represents the owner of a bucket.
 type BucketOwner struct {
 	Id          string `json:"id"`
 	DisplayName string `json:"displayName"`
 }
 
+// S3Cors represents the configuration for Cross-Origin Resource Sharing (CORS) rules for an S3 bucket.
 type S3Cors struct {
 	CorsRules []S3CorsRule `json:"corsRules"`
 }
 
+// S3CorsRule represents a Cross-Origin Resource Sharing (CORS) rule for an S3 bucket.
 type S3CorsRule struct {
 	AllowedMethods []string `json:"allowedMethods"`
 	MaxAgeSeconds  int32    `json:"maxAgeSeconds"`
@@ -126,6 +130,9 @@ func (client *Client) newS3ApiRequest(apiVersion string, params url.Values, meth
 	return req
 }
 
+// S3ApiGetBuckets retrieves a list of buckets from the S3 API in the specified region.
+// It takes the region as a parameter and an optional additionalHeader map for additional headers.
+// It returns a string containing the response body and an error if any.
 func (client *Client) S3ApiGetBuckets(region string, additionalHeader map[string]string) (string, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint()
 
@@ -152,6 +159,28 @@ func (client *Client) S3ApiGetBuckets(region string, additionalHeader map[string
 	}
 }
 
+// S3ApiGetBucket retrieves the contents of an S3 bucket with the specified name and region.
+// It sends an HTTP GET request to the S3 API endpoint and returns the response body as a string.
+// If the request is successful (HTTP status code 200), the function returns the response body.
+// If the request fails or the bucket is not found, the function returns an error.
+//
+// Parameters:
+// - name: The name of the S3 bucket.
+// - region: The region where the S3 bucket is located.
+// - additionalHeader: Additional headers to include in the request.
+//
+// Returns:
+// - string: The response body as a string if the request is successful.
+// - error: An error if the request fails or the bucket is not found.
+//
+// Example usage:
+//
+//	body, err := client.S3ApiGetBucket("my-bucket", "us-west-2", nil)
+//	if err != nil {
+//	  log.Printf("Error retrieving S3 bucket: %s", err)
+//	} else {
+//	  log.Printf("S3 bucket contents: %s", body)
+//	}
 func (client *Client) S3ApiGetBucket(name, region string, additionalHeader map[string]string) (string, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
@@ -176,6 +205,8 @@ func (client *Client) S3ApiGetBucket(name, region string, additionalHeader map[s
 	}
 }
 
+// S3ApiCreateBucket creates a new S3 bucket with the specified name and region.
+// It returns the HTTP response and an error, if any.
 func (client *Client) S3ApiCreateBucket(name, region string, additionalHeader map[string]string) (*http.Response, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
@@ -192,9 +223,12 @@ func (client *Client) S3ApiCreateBucket(name, region string, additionalHeader ma
 	return resp, nil
 }
 
+// S3ApiDeleteBucket deletes an S3 bucket with the specified name and region.
+// It also accepts an optional additionalHeader parameter to include additional headers in the request.
+// The function returns the HTTP response and an error, if any.
 func (client *Client) S3ApiDeleteBucket(name, region string, additionalHeader map[string]string) (*http.Response, error) {
 
-	client.S3ApiClearBucket(name, region, additionalHeader)
+	client.S3ApiCleanBucket(name, region, additionalHeader)
 
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
@@ -209,7 +243,18 @@ func (client *Client) S3ApiDeleteBucket(name, region string, additionalHeader ma
 	return resp, nil
 }
 
-func (client *Client) S3ApiClearBucket(name, region string, additionalHeader map[string]string) (*http.Response, error) {
+// S3ApiCleanBucket removes all objects and versions from an S3 bucket.
+// It takes the name of the bucket, the region where the bucket is located, and additional headers as input.
+// It returns the HTTP response and an error, if any.
+// The function sends a POST request to the S3 API endpoint to delete all objects and versions in the bucket.
+// The request body includes the following parameters:
+// - quiet: Set to true to suppress the response body.
+// - removeAll: Set to true to remove all objects and versions.
+// - deleteVersion: Set to true to delete all versions of objects.
+// - tryAsync: Set to false to perform the operation synchronously.
+// If the request is successful and the response status code is less than 400, the function returns the response and nil error.
+// Otherwise, it logs an error message and returns nil response and the error.
+func (client *Client) S3ApiCleanBucket(name, region string, additionalHeader map[string]string) (*http.Response, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
 	body := `{
@@ -236,6 +281,16 @@ func (client *Client) S3ApiClearBucket(name, region string, additionalHeader map
 	return resp, nil
 }
 
+// S3ApiEditBucketTags edits the tags of an S3 bucket.
+// It takes the name of the bucket, the region, a map of tags, and additional headers as input parameters.
+// The function returns the HTTP response and an error, if any.
+// The URL path for this operation is /tagging.
+// The tags parameter is a map where the key represents the tag key and the value represents the tag value.
+// The additionalHeader parameter is a map of additional headers to be included in the request.
+// The function first builds the endpoint URL using the provided bucket name.
+// It then constructs the tagSet and body JSON objects based on the tags parameter.
+// The function marshals the body JSON object into a byte array.
+// Finally, it sends a PUT request to the S3 API endpoint with the marshaled JSON data and returns the response.
 func (client *Client) S3ApiEditBucketTags(name, region string, tags map[string]string, additionalHeader map[string]string) (*http.Response, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
@@ -268,11 +323,20 @@ func (client *Client) S3ApiEditBucketTags(name, region string, tags map[string]s
 	return resp, nil
 }
 
+// S3ApiEditBucketAcls edits the access control list (ACL) of an S3 bucket.
+// It takes the name and region of the bucket, a list of ACLs, and additional headers as input.
+// The function returns the HTTP response and an error, if any.
+// The ACLs parameter is a list of maps, where each map represents an ACL.
+// Each ACL map should contain the following keys:
+//   - "user": The user type. Possible values are "TENANT", "AUTHENTICATED", "PUBLIC", and "SYSTEM-LOGGER".
+//   - "permission": The permission level for the user. Possible values are "READ", "WRITE", "READ_ACP", "WRITE_ACP", and "FULL_CONTROL".
+//
+// The function updates the ACLs of the bucket and returns the updated HTTP response.
+// If there is an error during the process, the function returns the error.
 func (client *Client) S3ApiEditBucketAcls(name, region string, acls []map[string]interface{}, additionalHeader map[string]string) (*http.Response, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
 	bucketJson, _ := client.S3ApiGetBucket(name, region, nil)
-	// util.Logger.Printf("[DEBUG - S3ApiEditBucketAcl]  bucket: %s", bucketJson)
 
 	var bucket *Bucket
 
@@ -302,7 +366,6 @@ func (client *Client) S3ApiEditBucketAcls(name, region string, acls []map[string
 	}
 
 	grants = append(grants, map[string]interface{}{"grantee": map[string]interface{}{"id": bucket.Owner.Id}, "permission": "FULL_CONTROL"})
-	// util.Logger.Printf("[DEBUG - S3ApiEditBucketAcl] grants: %v", grants)
 
 	body := map[string]interface{}{}
 	body["owner"] = bucket.Owner
@@ -311,8 +374,6 @@ func (client *Client) S3ApiEditBucketAcls(name, region string, acls []map[string
 	if err != nil {
 		util.Logger.Printf("Error marshaling json %s", err)
 	}
-
-	// util.Logger.Printf("[DEBUG - S3ApiEditBucketAcl] grants: %s", string(data))
 
 	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer(data), nil)
 
@@ -325,6 +386,10 @@ func (client *Client) S3ApiEditBucketAcls(name, region string, acls []map[string
 	return resp, nil
 }
 
+// S3ApiEditBucketCors edits the CORS (Cross-Origin Resource Sharing) configuration for a bucket in the S3 API.
+// It takes the name of the bucket, the region where the bucket is located, the CORS configuration as a JSON string,
+// and additional headers as input parameters.
+// The function returns the HTTP response and an error, if any.
 func (client *Client) S3ApiEditBucketCors(name, region string, cors string, additionalHeader map[string]string) (*http.Response, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
@@ -347,16 +412,126 @@ func (client *Client) S3ApiEditBucketCors(name, region string, cors string, addi
 	return resp, nil
 }
 
+// S3ApiEditBucketVersioning edits the versioning status of an S3 bucket.
+// It takes the bucket name, region, versioning status, and additional headers as input parameters.
+// The function returns the HTTP response and an error, if any.
+// The versioning status can be either true (enabled) or false (suspended).
+// The function constructs the request URL, sets the versioning status in the request body,
+// and sends a PUT request to the S3 API endpoint to update the bucket versioning status.
+// If the request is successful, the function returns the HTTP response.
+// If there is an error, the function logs the error and returns nil and the error.
+func (client *Client) S3ApiEditBucketVersioning(name, region string, versioning bool, additionalHeader map[string]string) (*http.Response, error) {
+	urlRef, _ := client.S3ApiBuildEndpoint(name)
+
+	values, _ := url.ParseQuery("versioning")
+
+	versioningStatus := "Enabled"
+	if !versioning {
+		versioningStatus = "Suspended"
+	}
+
+	body := `{"status": "` + versioningStatus + `"}`
+
+	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer([]byte(body)), nil)
+
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketVersioning] error versioning bucket: %s", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// S3ApiEditBucketEncryption edits the encryption settings for a bucket in the S3 API.
+// It takes the bucket name, region, encryption key, and additional headers as parameters.
+// The function returns the HTTP response and an error, if any.
+// The encryption settings are updated by sending a PUT request to the S3 API endpoint.
+// The encryption algorithm used is AES256, and the encryption key is optional.
+// If a key is provided, it is used to encrypt the bucket's contents.
+// If no key is provided, the bucket's contents are encrypted using a randomly generated key.
+// The function returns the HTTP response and an error, if any.
+func (client *Client) S3ApiEditBucketEncryption(name, region string, key string, additionalHeader map[string]string) (*http.Response, error) {
+	urlRef, _ := client.S3ApiBuildEndpoint(name)
+
+	values, _ := url.ParseQuery("encryption")
+
+	sseRules := make(map[string][]interface{})
+	rule := make(map[string]interface{})
+	sseByDefault := make(map[string]interface{})
+	sseByDefault["sseAlgorithm"] = "AES256"
+
+	if key != "" && len(key) > 0 {
+		// key := make([]byte, 32)
+		// _, err := rand.Read(key)
+		// if err != nil {
+		// 	return nil, fmt.Errorf("S3ApiEditBucketEncryption - Error generating AES key : %s", encryption)
+		// }
+
+		// sseByDefault["sseCKey"] = base64.StdEncoding.EncodeToString(key)
+		sseByDefault["sseCKey"] = key
+	}
+
+	rule["sseByDefault"] = sseByDefault
+	sseRules["sseRules"] = append(sseRules["sseRules"], rule)
+
+	data, err := json.Marshal(sseRules)
+	if err != nil {
+		util.Logger.Printf("Error marshaling json %s", err)
+	}
+
+	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer(data), nil)
+
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketVersioning] error versioning bucket: %s", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (client *Client) S3ApiEditBucketReplication(name, region, id, targetBucket, prefix string, additionalHeader map[string]string) (*http.Response, error) {
+	urlRef, _ := client.S3ApiBuildEndpoint(name)
+
+	values, _ := url.ParseQuery("replication")
+
+	body := `{
+		"rule": [
+			{
+				"id": "` + id + `",
+				"status": "Enabled",
+				"destination": {
+					"bucket": "arn:aws:s3:::` + targetBucket + `"
+				},
+				"prefix": "` + prefix + `"
+			}
+		]
+	}`
+
+	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer([]byte(body)), nil)
+
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketReplication] error replication bucket: %s", err)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// S3ApiUploadObject uploads an object to an S3-compatible storage service.
+// It takes the name of the storage service, the region, the object key, the source file path,
+// and additional headers as input parameters.
+// It returns the HTTP response and an error, if any.
 func (client *Client) S3ApiUploadObject(name, region, objectKey, source string, additionalHeader map[string]string) (*http.Response, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name, objectKey)
 
-	fi, err := os.Stat(source)
+	_, err := os.Stat(source)
 	if err != nil {
 		util.Logger.Printf("[DEBUG - S3ApiEditObjectUpload] error getting object stats: %s", err)
 		return nil, err
 	}
-
-	util.Logger.Printf("The file is %d bytes long", fi.Size())
 
 	file, err := os.ReadFile(source)
 	if err != nil {
