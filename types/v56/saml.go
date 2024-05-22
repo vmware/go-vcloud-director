@@ -89,12 +89,12 @@ type AdfsAuthErrorEnvelope struct {
 }
 
 // Error satisfies Go's default `error` interface for AdfsAuthErrorEnvelope and formats
-// error for humand readable output
+// error for human readable output
 func (samlErr AdfsAuthErrorEnvelope) Error() string {
 	return fmt.Sprintf("SAML request got error: %s", samlErr.Body.Fault.Reason.Text)
 }
 
-// AdfsAuthResponseEnvelope helps to marshal ADFS reponse to authentication request.
+// AdfsAuthResponseEnvelope helps to marshal ADFS response to authentication request.
 //
 // Note. This structure is not complete and has many more fields.
 type AdfsAuthResponseEnvelope struct {

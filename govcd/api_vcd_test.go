@@ -184,7 +184,11 @@ type TestConfig struct {
 		ExternalNetworkPortGroupType string `yaml:"externalNetworkPortGroupType,omitempty"`
 		VimServer                    string `yaml:"vimServer,omitempty"`
 		LdapServer                   string `yaml:"ldapServer,omitempty"`
-		Nsxt                         struct {
+		OidcServer                   struct {
+			Url               string `yaml:"url,omitempty"`
+			WellKnownEndpoint string `yaml:"wellKnownEndpoint,omitempty"`
+		} `yaml:"oidcServer,omitempty"`
+		Nsxt struct {
 			Manager                   string `yaml:"manager"`
 			Tier0router               string `yaml:"tier0router"`
 			Tier0routerVrf            string `yaml:"tier0routerVrf"`
@@ -199,6 +203,7 @@ type TestConfig struct {
 			VdcGroupEdgeGateway       string `yaml:"vdcGroupEdgeGateway"`
 			NsxtEdgeCluster           string `yaml:"nsxtEdgeCluster"`
 			RoutedNetwork             string `yaml:"routedNetwork"`
+			IsolatedNetwork           string `yaml:"isolatedNetwork"`
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
