@@ -5,6 +5,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"strconv"
 	"strings"
 	"text/template"
@@ -270,6 +271,12 @@ func (clusterSettings *cseClusterSettingsInternal) generateAutoscalerYaml() (str
 		return "", fmt.Errorf("the receiver CSE Kubernetes cluster settings object is nil")
 	}
 
+	k8sVersion, err := semver.NewSemver(clusterSettings.TkgVersionBundle.KubernetesVersion)
+	if err != nil {
+		return "", err
+	}
+	k8sVersionSegments := k8sVersion.Segments()
+
 	autoscalerTemplate, err := getCseTemplate(clusterSettings.CseVersion, "autoscaler")
 	if err != nil {
 		return "", err
@@ -282,7 +289,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateAutoscalerYaml() (str
 	if err := autoscaler.Execute(buf, map[string]string{
 		"TargetNamespace":    clusterSettings.Name + "-ns",
 		"AutoscalerReplicas": "1",
-		"AutoscalerVersion":  cseKubernetesClusterDefaultAutoscalerVersion,
+		"AutoscalerVersion":  fmt.Sprintf("v%d.%d.%d", k8sVersionSegments[0], k8sVersionSegments[1], k8sVersionSegments[2]),
 	}); err != nil {
 		return "", fmt.Errorf("could not generate a correct Autoscaler YAML block: %s", err)
 	}
