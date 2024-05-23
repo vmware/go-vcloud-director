@@ -35,7 +35,7 @@ func (vcd *TestVCD) Test_SolutionAddOnInstance(check *C) {
 
 	deleteInputs := make(map[string]interface{})
 	deleteInputs["operation"] = "delete instance"
-	deleteInputs["name"] = addOnInstance.SolutionEntity.AddonInstanceSolutionName
+	deleteInputs["name"] = addOnInstance.SolutionAddOnInstance.AddonInstanceSolutionName
 	deleteInputs["input-force-delete"] = true
 	res2, err := addOnInstance.RemoveSolutionAddOnInstance(deleteInputs)
 	check.Assert(err, IsNil)

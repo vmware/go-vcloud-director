@@ -5,11 +5,14 @@
 package govcd
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"maps"
 	"net/url"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
@@ -23,13 +26,12 @@ var addOnInstancePublishBehaviorId = "urn:vcloud:behavior-interface:invoke:vmwar
 // var addOnInstanceRemovalBehaviorId = "urn:vcloud:behavior-interface:invoke:vmware:solutions_add_on_instance:1.0.0"
 
 type SolutionAddOnInstance struct {
-	SolutionEntity *types.SolutionAddOnInstance
-	DefinedEntity  *DefinedEntity
-	vcdClient      *VCDClient
+	SolutionAddOnInstance *types.SolutionAddOnInstance
+	DefinedEntity         *DefinedEntity
+	vcdClient             *VCDClient
 }
 
 func (addon *SolutionAddOn) CreateSolutionAddOnInstance(inputs map[string]interface{}) (*SolutionAddOnInstance, string, error) {
-
 	// copy inputs to prevent mutation of function argument
 	inputsCopy := make(map[string]interface{})
 	maps.Copy(inputsCopy, inputs)
@@ -42,6 +44,11 @@ func (addon *SolutionAddOn) CreateSolutionAddOnInstance(inputs map[string]interf
 		return nil, "", fmt.Errorf("'name' field must be present in the inputs")
 	}
 
+	// err := addon.vali(inputsCopy, false)
+	// if err != nil {
+	// 	return nil, "", fmt.Errorf("validation error: %s", err)
+	// }
+
 	behaviorInvocation := types.BehaviorInvocation{
 		Arguments: inputsCopy,
 	}
@@ -53,7 +60,6 @@ func (addon *SolutionAddOn) CreateSolutionAddOnInstance(inputs map[string]interf
 	}
 
 	// Once the task is done and no error are here, one must find that instance from scratch
-
 	createdAddOnInstance, err := addon.GetInstanceByName(name)
 	if err != nil {
 		return nil, "", fmt.Errorf("error retrieving Solution Add-On instance '%s' after creation: %s", name, err)
@@ -108,9 +114,9 @@ func (vcdClient *VCDClient) GetAllSolutionAddonInstances(queryParameters url.Val
 		}
 
 		results[index] = &SolutionAddOnInstance{
-			vcdClient:      vcdClient,
-			DefinedEntity:  rde,
-			SolutionEntity: addon,
+			vcdClient:             vcdClient,
+			DefinedEntity:         rde,
+			SolutionAddOnInstance: addon,
 		}
 	}
 
@@ -128,9 +134,9 @@ func (vcdClient *VCDClient) GetSolutionAddOnInstanceById(id string) (*SolutionAd
 		return nil, err
 	}
 	result := &SolutionAddOnInstance{
-		vcdClient:      vcdClient,
-		DefinedEntity:  addOnInstanceRde,
-		SolutionEntity: addOnInstanceEntity,
+		vcdClient:             vcdClient,
+		DefinedEntity:         addOnInstanceRde,
+		SolutionAddOnInstance: addOnInstanceEntity,
 	}
 
 	return result, nil
@@ -150,7 +156,7 @@ func (addonInstance *SolutionAddOnInstance) RemoveSolutionAddOnInstance(deleteIn
 	parentRde := addonInstance.DefinedEntity
 	result, err := parentRde.InvokeBehavior(addOnInstanceRemovalBehaviorId, behaviorInvocation)
 	if err != nil {
-		return "", fmt.Errorf("error invoking removal of Solution Add-On instance '%s': %s", addonInstance.SolutionEntity.Name, err)
+		return "", fmt.Errorf("error invoking removal of Solution Add-On instance '%s': %s", addonInstance.SolutionAddOnInstance.Name, err)
 	}
 
 	return result, nil
@@ -161,7 +167,7 @@ func (addonInstance *SolutionAddOnInstance) RemoveSolutionAddOnInstance(deleteIn
 func (addonInstance *SolutionAddOnInstance) Publishing(scope []string, scopeAll bool) (string, error) {
 	arguments := make(map[string]interface{})
 	arguments["operation"] = "publish instance"
-	arguments["name"] = addonInstance.SolutionEntity.Name
+	arguments["name"] = addonInstance.SolutionAddOnInstance.Name
 	if scope != nil {
 		arguments["scope"] = strings.Join(scope, ",")
 	} else {
@@ -176,7 +182,7 @@ func (addonInstance *SolutionAddOnInstance) Publishing(scope []string, scopeAll 
 	parentRde := addonInstance.DefinedEntity
 	result, err := parentRde.InvokeBehavior(addOnInstancePublishBehaviorId, behaviorInvocation)
 	if err != nil {
-		return "", fmt.Errorf("error invoking publish behavior of Solution Add-On instance '%s': %s", addonInstance.SolutionEntity.Name, err)
+		return "", fmt.Errorf("error invoking publish behavior of Solution Add-On instance '%s': %s", addonInstance.SolutionAddOnInstance.Name, err)
 	}
 
 	return result, nil
@@ -188,4 +194,133 @@ func (addOnInstance *SolutionAddOnInstance) RdeId() string {
 	}
 
 	return addOnInstance.DefinedEntity.DefinedEntity.ID
+}
+
+func (addon *SolutionAddOn) extractInputs() ([]*types.SolutionAddOnInputField, error) {
+
+	// Extract inputs definition / Manifest["inputs"]
+	inputValidation := addon.SolutionEntity.Manifest["inputs"]
+	inputValidationSlice, ok := inputValidation.([]any)
+	if !ok {
+		return nil, fmt.Errorf("error processing Solution Add-On input validation metadata")
+	}
+
+	inputFieldMetadata, err := convertInputs(inputValidationSlice)
+	if err != nil {
+		if err != nil {
+			return nil, fmt.Errorf("error converting Solution Add-On input validation metadata: %s", err)
+		}
+	}
+
+	return inputFieldMetadata, nil
+}
+
+// isDeleteOperation
+func (addon *SolutionAddOn) validate(userInputs map[string]interface{}, isDeleteOperation bool) error {
+	schemaInputs, err := addon.extractInputs()
+	if err != nil {
+		return err
+	}
+
+	requiredFields := make(map[string]bool)
+
+	for _, si := range schemaInputs {
+		// Skip field if the operation does not match
+		// Required fields can be defined either for create or for update operations
+		if si.Delete && isDeleteOperation {
+			continue
+		}
+
+		// if si.Required {
+		// Setting the key, but not marking as found yet
+		requiredFields[si.Name] = false
+		// }
+	}
+	fmt.Println("===========")
+	spew.Dump(requiredFields)
+
+	// Check if all required fields are set in inputs
+	for requiredFieldKey := range requiredFields {
+		for userInputKey := range userInputs {
+			if requiredFieldKey == userInputKey { // field found
+				requiredFields[requiredFieldKey] = true
+			}
+		}
+	}
+
+	// Check if all field constraints are satisfied
+	missingFields := make([]string, 0)
+	msFields := make([]*types.SolutionAddOnInputField, 0)
+	for k := range requiredFields {
+		if !requiredFields[k] {
+			missingFields = append(missingFields, k)
+			field, err := localFilterOneOrError("Solution Add-On filter value", schemaInputs, "Name", k)
+			if err != nil {
+				return fmt.Errorf("error finding field with key '%s'", k)
+			}
+			msFields = append(msFields, field)
+		}
+	}
+
+	if len(missingFields) > 0 {
+		fieldInfo, err := dumpFields(msFields)
+		if err != nil {
+			return fmt.Errorf("error processing missing fields '%s' for: %s", addon.DefinedEntity.DefinedEntity.Name, err)
+		}
+
+		return fmt.Errorf("%s\n\nERROR: Missing fields '%s' for Solution Add-On '%s'",
+			fieldInfo, strings.Join(missingFields, ", "), addon.DefinedEntity.DefinedEntity.Name)
+	}
+
+	return nil
+}
+
+func dumpFields(allFields []*types.SolutionAddOnInputField) (string, error) {
+	buf := bytes.NewBufferString("\n")
+
+	_, _ = fmt.Fprintf(buf, "-----------------\n")
+	for _, f := range allFields {
+		_, _ = fmt.Fprintf(buf, "Field: %s\n", f.Name)
+		_, _ = fmt.Fprintf(buf, "Title: %s\n", f.Title)
+		_, _ = fmt.Fprintf(buf, "Type: %s\n", f.Type)
+		_, _ = fmt.Fprintf(buf, "Description: %s\n", f.Description)
+		if f.Default != nil {
+			_, _ = fmt.Fprintf(buf, "Default: %v\n", f.Default)
+		}
+
+		_, _ = fmt.Fprintf(buf, "-----------------\n")
+	}
+
+	return buf.String(), nil
+}
+
+func convertInputs(allInputs []any) ([]*types.SolutionAddOnInputField, error) {
+	allFields := make([]*types.SolutionAddOnInputField, len(allInputs))
+
+	for index, inputField := range allInputs {
+		inpField, err := convertInput(inputField)
+		if err != nil {
+			return nil, err
+		}
+
+		allFields[index] = inpField
+	}
+
+	return allFields, nil
+
+}
+
+func convertInput(field any) (*types.SolutionAddOnInputField, error) {
+	txt, err := json.Marshal(field)
+	if err != nil {
+		return nil, fmt.Errorf("failed marshalling: %s", err)
+	}
+
+	fieldType := types.SolutionAddOnInputField{}
+	err = json.Unmarshal(txt, &fieldType)
+	if err != nil {
+		return nil, fmt.Errorf("failed unmarshalling input field to exact type: %s", err)
+	}
+
+	return &fieldType, nil
 }

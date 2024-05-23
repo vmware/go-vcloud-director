@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/govcd/internal/udf"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"sigs.k8s.io/yaml"
@@ -274,6 +275,42 @@ func (s *SolutionAddOn) Delete() error {
 	}
 	return s.DefinedEntity.Delete()
 }
+
+func (s *SolutionAddOn) Inputs() (*SolutionAddOn, error) {
+	inputs := s.SolutionEntity.Manifest["inputs"]
+	inputsSlice := inputs.([]types.SolutionAddOnInputField)
+
+	spew.Dump(inputsSlice)
+
+	// unmarshalledRdeEntityJson, err := convertAnyToRdeEntity(saoCfg)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// s.DefinedEntity.DefinedEntity.Entity = unmarshalledRdeEntityJson
+	// err = s.DefinedEntity.Update(*s.DefinedEntity.DefinedEntity)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// result, err := convertRdeEntityToAny[types.SolutionAddOn](s.DefinedEntity.DefinedEntity.Entity)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// packages := SolutionAddOn{
+	// 	SolutionEntity: result,
+	// 	vcdClient:      s.vcdClient,
+	// 	DefinedEntity:  s.DefinedEntity,
+	// }
+
+	return nil, nil
+}
+
+// func inputs(inputs interface{}) {
+// 	inputsSlice := inputs.([]types.SolutionAddOnInputField)
+
+// }
 
 // RdeId is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
 func (s *SolutionAddOn) RdeId() string {

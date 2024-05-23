@@ -52,6 +52,46 @@ type SolutionAddOnOrigin struct {
 	CatalogItemId string `json:"catalogItemId"`
 }
 
+// type SolutionAddOnInputs struct {
+// 	Inputs []struct {
+// 		Name   string `json:"name"`
+// 		Type   string `json:"type"`
+// 		Title  string `json:"title"`
+// 		Values struct {
+// 			Slz      string `json:"SLZ"`
+// 			External string `json:"EXTERNAL"`
+// 		} `json:"values,omitempty"`
+// 		Default     string `json:"default,omitempty"`
+// 		Required    bool   `json:"required,omitempty"`
+// 		Description string `json:"description"`
+// 		Secure      bool   `json:"secure,omitempty"`
+// 		Validation  string `json:"validation,omitempty"`
+// 		View        string `json:"view,omitempty"`
+// 		Delete      bool   `json:"delete,omitempty"`
+// 	} `json:"inputs"`
+// }
+
+type SolutionAddOnInput struct {
+	Inputs []SolutionAddOnInputField `json:"inputs"`
+}
+type SolutionAddOnInputFieldValues struct {
+	Slz      string `json:"SLZ"`
+	External string `json:"EXTERNAL"`
+}
+type SolutionAddOnInputField struct {
+	Name        string                        `json:"name"`
+	Type        string                        `json:"type"`
+	Title       string                        `json:"title"`
+	Values      SolutionAddOnInputFieldValues `json:"values,omitempty"`
+	Default     any                           `json:"default,omitempty"`
+	Required    bool                          `json:"required,omitempty"`
+	Description string                        `json:"description"`
+	Secure      bool                          `json:"secure,omitempty"`
+	Validation  string                        `json:"validation,omitempty"`
+	View        string                        `json:"view,omitempty"`
+	Delete      bool                          `json:"delete,omitempty"`
+}
+
 type SolutionAddOnInstance struct {
 	Name                         string                          `json:"name"`
 	Scope                        SolutionAddOnInstanceScope      `json:"scope"`
@@ -68,9 +108,10 @@ type SolutionAddOnInstance struct {
 	AddonInstanceSolutionVersion string                          `json:"addonInstanceSolutionVersion"`
 }
 type SolutionAddOnInstanceScope struct {
-	AllTenants     bool `json:"allTenants"`
-	TenantScoped   bool `json:"tenantScoped"`
-	ProviderScoped bool `json:"providerScoped"`
+	AllTenants     bool     `json:"allTenants"`
+	TenantScoped   bool     `json:"tenantScoped"`
+	Tenants        []string `json:"tenants"`
+	ProviderScoped bool     `json:"providerScoped"`
 }
 type SolutionAddOnInstanceRuntime struct {
 	GoVersion   string `json:"goVersion"`
