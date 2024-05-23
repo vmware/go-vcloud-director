@@ -8,8 +8,7 @@ type SolutionLandingZoneType struct {
 	// ID is the Org ID that the Solution Landing Zone is configured for
 	ID string `json:"id"`
 	// Name is the Org name that the Solution Landing Zone is configured for
-	Name string `json:"name,omitempty"`
-	// Catalogs
+	Name     string                       `json:"name,omitempty"`
 	Catalogs []SolutionLandingZoneCatalog `json:"catalogs"`
 	Vdcs     []SolutionLandingZoneVdc     `json:"vdcs"`
 }
@@ -51,25 +50,6 @@ type SolutionAddOnOrigin struct {
 	AcceptedOn    string `json:"acceptedOn"`
 	CatalogItemId string `json:"catalogItemId"`
 }
-
-// type SolutionAddOnInputs struct {
-// 	Inputs []struct {
-// 		Name   string `json:"name"`
-// 		Type   string `json:"type"`
-// 		Title  string `json:"title"`
-// 		Values struct {
-// 			Slz      string `json:"SLZ"`
-// 			External string `json:"EXTERNAL"`
-// 		} `json:"values,omitempty"`
-// 		Default     string `json:"default,omitempty"`
-// 		Required    bool   `json:"required,omitempty"`
-// 		Description string `json:"description"`
-// 		Secure      bool   `json:"secure,omitempty"`
-// 		Validation  string `json:"validation,omitempty"`
-// 		View        string `json:"view,omitempty"`
-// 		Delete      bool   `json:"delete,omitempty"`
-// 	} `json:"inputs"`
-// }
 
 type SolutionAddOnInput struct {
 	Inputs []SolutionAddOnInputField `json:"inputs"`
@@ -127,41 +107,3 @@ type SolutionAddOnInstanceRequests struct {
 	StartedOn    time.Time `json:"startedOn"`
 	InvocationID string    `json:"invocationId"`
 }
-
-/*
-{
-	"name": "ds-CwNjS",
-	"scope": {
-		"allTenants": false,
-		"tenantScoped": false,
-		"providerScoped": true
-	},
-	"status": "PENDING",
-	"runtime": {
-		"goVersion": "go1.21.5",
-		"sdkVersion": "1.1.1.8617379",
-		"vcdVersion": "10.5.1.23400185",
-		"environment": "Development"
-	},
-	"elements": [],
-	"requests": [
-		{
-			"error": "",
-			"status": "PENDING",
-			"operation": "CREATE",
-			"startedBy": "administrator",
-			"startedOn": "2024-05-15T11:58:32.606850307Z",
-			"invocationId": "27901936-126f-4eb0-857d-1eba2d0de21e"
-		}
-	],
-	"prototype": "urn:vcloud:entity:vmware:solutions_add_on:73d5cb45-c1ba-41ea-ab30-1f74f52b37a9",
-	"resources": [],
-	"properties": {
-		"__vcdext_encrypted__": "secure@R7oGNaGm/OYBgdY7HvxHvBWfIG8Sj4N3WIw/lFrtoWWuduSWYqj1JztPj8huLgyFPHW9tfxqOkk9Z2upAT67XNJO/bnNWJyReaZl/JaY3Np0",
-		"delete-previous-uiplugin-versions": false
-	},
-	"encryptionKey": "******",
-	"addonInstanceSolutionName": "ds",
-	"addonInstanceSolutionVendor": "vmware",
-	"addonInstanceSolutionVersion": "1.4.0-23376809"
-} */
