@@ -220,6 +220,11 @@ func (client *Client) S3ApiCreateBucket(name, region string, additionalHeader ma
 		return nil, err
 	}
 
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiCreateBucket] error creating bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error creating bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+	}
+
 	return resp, nil
 }
 
@@ -235,9 +240,14 @@ func (client *Client) S3ApiDeleteBucket(name, region string, additionalHeader ma
 	req := client.newS3ApiRequest(client.APIVersion, nil, http.MethodDelete, urlRef, nil, nil)
 
 	resp, err := client.Http.Do(req)
-	if err != nil || resp.StatusCode >= 400 {
-		util.Logger.Printf("[DEBUG - S3ApiDeleteBucket] error deleting bucket: status (%d - %s) %s", resp.StatusCode, resp.Status, err)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiDeleteBucket] error deleting bucket %s", err)
 		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiDeleteBucket] error deleting bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error deleting bucket: status (%d - %s)", resp.StatusCode, resp.Status)
 	}
 
 	return resp, nil
@@ -320,6 +330,11 @@ func (client *Client) S3ApiEditBucketTags(name, region string, tags map[string]s
 		return nil, err
 	}
 
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketTags] error editing bucket tags: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error editing bucket tags: status (%d - %s)", resp.StatusCode, resp.Status)
+	}
+
 	return resp, nil
 }
 
@@ -383,6 +398,11 @@ func (client *Client) S3ApiEditBucketAcls(name, region string, acls []map[string
 		return nil, err
 	}
 
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketAcls] error editing bucket acls: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error editing bucket acls: status (%d - %s)", resp.StatusCode, resp.Status)
+	}
+
 	return resp, nil
 }
 
@@ -407,6 +427,11 @@ func (client *Client) S3ApiEditBucketCors(name, region string, cors string, addi
 	if err != nil {
 		util.Logger.Printf("[DEBUG - S3ApiEditBucketCors] error editing bucket cors: %s", err)
 		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketCors] error editing bucket cors: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error editing bucket cors: status (%d - %s)", resp.StatusCode, resp.Status)
 	}
 
 	return resp, nil
@@ -438,6 +463,11 @@ func (client *Client) S3ApiEditBucketVersioning(name, region string, versioning 
 	if err != nil {
 		util.Logger.Printf("[DEBUG - S3ApiEditBucketVersioning] error versioning bucket: %s", err)
 		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketVersioning] error versioning bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error versioning bucket: status (%d - %s)", resp.StatusCode, resp.Status)
 	}
 
 	return resp, nil
@@ -488,9 +518,24 @@ func (client *Client) S3ApiEditBucketEncryption(name, region string, key string,
 		return nil, err
 	}
 
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketVersioning] error versioning bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error versioning bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+	}
+
 	return resp, nil
 }
 
+// S3ApiEditBucketReplication edits the replication configuration of a bucket in the S3 API.
+// It takes the following parameters:
+// - name: the name of the bucket
+// - region: the region of the bucket
+// - id: the ID of the replication rule
+// - targetBucket: the target bucket for replication
+// - prefix: the prefix for replication
+// - additionalHeader: additional headers to include in the request
+//
+// It returns the HTTP response and an error, if any.
 func (client *Client) S3ApiEditBucketReplication(name, region, id, targetBucket, prefix string, additionalHeader map[string]string) (*http.Response, error) {
 	urlRef, _ := client.S3ApiBuildEndpoint(name)
 
@@ -515,6 +560,36 @@ func (client *Client) S3ApiEditBucketReplication(name, region, id, targetBucket,
 	if err != nil {
 		util.Logger.Printf("[DEBUG - S3ApiEditBucketReplication] error replication bucket: %s", err)
 		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketReplication] error replication bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error replication bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+	}
+
+	return resp, nil
+}
+
+// S3ApiEditBucketPolicy edits the policy of a bucket in the S3 API.
+// It takes the name of the bucket, the region, the new policy json string,
+// and additional headers as a map[string]string.
+// It returns the HTTP response and an error, if any.
+func (client *Client) S3ApiEditBucketPolicy(name, region, policy string, additionalHeader map[string]string) (*http.Response, error) {
+	urlRef, _ := client.S3ApiBuildEndpoint(name)
+
+	values, _ := url.ParseQuery("policy")
+
+	req := client.newS3ApiRequest(client.APIVersion, values, http.MethodPut, urlRef, bytes.NewBuffer([]byte(policy)), nil)
+
+	resp, err := client.Http.Do(req)
+	if err != nil {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketPolicy] error policy bucket: %s", err)
+		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiEditBucketPolicy] error policy bucket: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error policy bucket: status (%d - %s)", resp.StatusCode, resp.Status)
 	}
 
 	return resp, nil
@@ -551,6 +626,11 @@ func (client *Client) S3ApiUploadObject(name, region, objectKey, source string, 
 	if err != nil {
 		util.Logger.Printf("[DEBUG - S3ApiEditObjectUpload] error uploading object: %s", err)
 		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		util.Logger.Printf("[DEBUG - S3ApiEditObjectUpload] error uploading object: status (%d - %s)", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("error uploading object: status (%d - %s)", resp.StatusCode, resp.Status)
 	}
 
 	return resp, nil
