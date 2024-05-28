@@ -1,6 +1,6 @@
 module github.com/vmware/go-vcloud-director/v2
 
-go 1.21
+go 1.22
 
 require (
 	github.com/araddon/dateparse v0.0.0-20190622164848-0fb0a474d195
@@ -22,5 +22,5 @@ require (
 
 replace (
 	gopkg.in/check.v1 => github.com/go-check/check v0.0.0-20201130134442-10cb98267c6c
-	gopkg.in/yaml.v2 => github.com/go-yaml/yaml/v2 v2.2.2
+	gopkg.in/yaml.v2 => github.com/go-yaml/yaml/v2 v2.4.0
 )
