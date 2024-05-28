@@ -51,7 +51,7 @@ func (ejectTask *EjectTask) WaitInspectTaskCompletion(isAnswerYes bool, delay ti
 		}
 
 		// If task is not in a waiting status we're done, check if there's an error and return it.
-		if ejectTask.Task.Task.Status != "queued" && ejectTask.Task.Task.Status != "preRunning" && ejectTask.Task.Task.Status != "running" {
+		if ejectTask.Task.Task.Status != "queued" && ejectTask.Task.Task.Status != "preRunning" && ejectTask.Task.Task.Status != "running" && ejectTask.Task.Task.Status != "expectingAction" {
 			if ejectTask.Task.Task.Status == "error" {
 				return fmt.Errorf("task did not complete succesfully: %s", ejectTask.Task.Task.Error.Message)
 			}
