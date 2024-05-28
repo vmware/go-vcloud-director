@@ -384,7 +384,7 @@ func test_NsxtDistributedFirewallRule(vcd *TestVCD, check *C, vdcGroupId string,
 		check.Assert(err, IsNil)
 	}
 
-	// Adding firewal rules one by one and checking that each of them is
+	// Adding firewal rules one by one and checking that each of them is placed correctly
 	testDistributedFirewallRuleSequence(check, randomizedFwRuleSubSet, vdcGroup, false)
 	testDistributedFirewallRuleSequence(check, randomizedFwRuleSubSet, vdcGroup, true)
 }
