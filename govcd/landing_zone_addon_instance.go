@@ -10,13 +10,15 @@ import (
 	"fmt"
 	"maps"
 	"net/url"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
-// var slzAddOnRdeType = [3]string{"vmware", "solutions_add_on", "1.0.0"}
 var slzAddOnInstanceRdeType = [3]string{"vmware", "solutions_add_on_instance", "1.0.0"}
 
 var addOnCreateInstanceBehaviorId = "urn:vcloud:behavior-interface:createInstance:vmware:solutions_add_on:1.0.0"
@@ -93,11 +95,23 @@ func (addon *SolutionAddOn) GetInstanceByName(name string) (*SolutionAddOnInstan
 	return oneOrError("name", name, addOnInstances)
 }
 
-func (vcdClient *VCDClient) GetAllSolutionAddonInstanceByName(name string) ([]*SolutionAddOnInstance, error) {
+func (vcdClient *VCDClient) GetAllSolutionAddonInstancesByName(name string) ([]*SolutionAddOnInstance, error) {
 	queryParams := copyOrNewUrlValues(nil)
 	queryParams = queryParameterFilterAnd(fmt.Sprintf("entity.name==%s", name), queryParams)
 
 	return vcdClient.GetAllSolutionAddonInstances(queryParams)
+}
+
+func (vcdClient *VCDClient) GetSolutionAddonInstanceByName(name string) (*SolutionAddOnInstance, error) {
+	queryParams := copyOrNewUrlValues(nil)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("entity.name==%s", name), queryParams)
+
+	addOnInstances, err := vcdClient.GetAllSolutionAddonInstances(queryParams)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving Solution Add-On Instance with name '%s': %s", name, err)
+	}
+
+	return oneOrError("name", name, addOnInstances)
 }
 
 func (vcdClient *VCDClient) GetAllSolutionAddonInstances(queryParameters url.Values) ([]*SolutionAddOnInstance, error) {
@@ -142,7 +156,7 @@ func (vcdClient *VCDClient) GetSolutionAddOnInstanceById(id string) (*SolutionAd
 	return result, nil
 }
 
-func (addonInstance *SolutionAddOnInstance) RemoveSolutionAddOnInstance(deleteInputs map[string]interface{}) (string, error) {
+func (addonInstance *SolutionAddOnInstance) Delete(deleteInputs map[string]interface{}) (string, error) {
 	// copy deleteInputs to prevent mutation of function argument
 	deleteInputsCopy := make(map[string]interface{})
 	maps.Copy(deleteInputsCopy, deleteInputs)
@@ -188,6 +202,15 @@ func (addonInstance *SolutionAddOnInstance) Publishing(scope []string, scopeAll 
 	return result, nil
 }
 
+// GetParentSolutionAddOn retrieves parent Solution Add-On that is specified in the Prototype field
+func (addOnInstance *SolutionAddOnInstance) GetParentSolutionAddOn() (*SolutionAddOn, error) {
+	if addOnInstance == nil || addOnInstance.DefinedEntity == nil || addOnInstance.DefinedEntity.DefinedEntity == nil {
+		return nil, fmt.Errorf("cannot retrieve parent Solution Add-On from empty instance")
+	}
+
+	return addOnInstance.vcdClient.GetSolutionAddonById(addOnInstance.SolutionAddOnInstance.Prototype)
+}
+
 func (addOnInstance *SolutionAddOnInstance) RdeId() string {
 	if addOnInstance == nil || addOnInstance.DefinedEntity == nil || addOnInstance.DefinedEntity.DefinedEntity == nil {
 		return ""
@@ -196,53 +219,83 @@ func (addOnInstance *SolutionAddOnInstance) RdeId() string {
 	return addOnInstance.DefinedEntity.DefinedEntity.ID
 }
 
-func (addon *SolutionAddOn) extractInputs() ([]*types.SolutionAddOnInputField, error) {
-
-	// Extract inputs definition / Manifest["inputs"]
-	inputValidation := addon.SolutionEntity.Manifest["inputs"]
-	inputValidationSlice, ok := inputValidation.([]any)
-	if !ok {
-		return nil, fmt.Errorf("error processing Solution Add-On input validation metadata")
+func (addOnInstance *SolutionAddOnInstance) ReadCreationInputValues(convertAllValuesToStrings bool) (map[string]interface{}, error) {
+	if addOnInstance == nil || addOnInstance.SolutionAddOnInstance == nil || addOnInstance.SolutionAddOnInstance.Properties == nil {
+		return nil, fmt.Errorf("cannot extract properties - they are nil")
 	}
 
-	inputFieldMetadata, err := convertInputs(inputValidationSlice)
+	parentAddOn, err := addOnInstance.GetParentSolutionAddOn()
 	if err != nil {
-		if err != nil {
-			return nil, fmt.Errorf("error converting Solution Add-On input validation metadata: %s", err)
+		return nil, fmt.Errorf("error retrieving parent Solution Add-On: %s", err)
+	}
+
+	schemaInputFields, err := parentAddOn.extractInputs()
+	if err != nil {
+		return nil, fmt.Errorf("error extracting inputs from Solution Add-On manifests: %s", err)
+	}
+
+	// Fields are specified within addOnInstance.SolutionAddOnInstance.Properties but they contain more values
+	// that just the inputs themselves. Searching for values of all defined inputs.
+	resultMap := make(map[string]interface{})
+	for _, schemaInputField := range schemaInputFields {
+		// Deletion fields are not stored in schema because they are not supplied for creating the
+		// instance
+		if schemaInputField.Delete {
+			continue
+		}
+
+		util.Logger.Printf("[TRACE] Solution Add-On Instance Input field - looking for field '%s'", schemaInputField.Name)
+		if foundValue, ok := addOnInstance.SolutionAddOnInstance.Properties[schemaInputField.Name]; ok {
+			util.Logger.Printf("[TRACE] Solution Add-On Instance Input field - found field '%s' of type %s",
+				schemaInputField.Name, schemaInputField.Type)
+			resultMap[schemaInputField.Name] = foundValue
 		}
 	}
 
-	return inputFieldMetadata, nil
+	if convertAllValuesToStrings {
+		convertedResultMap := make(map[string]interface{})
+		util.Logger.Printf("[TRACE] Solution Add-On Instance Inputs - converting all values to strings")
+
+		for fieldName, fieldValue := range resultMap {
+			convertedResultMap[fieldName] = fmt.Sprintf("%v", fieldValue)
+		}
+		return convertedResultMap, nil
+	}
+
+	return resultMap, nil
 }
 
 // isDeleteOperation
-func (addon *SolutionAddOn) validate(userInputs map[string]interface{}, isDeleteOperation bool) error {
+func (addon *SolutionAddOn) ValidateInputs(userInputs map[string]interface{}, validateOnlyRequired, isDeleteOperation bool) error {
 	schemaInputs, err := addon.extractInputs()
 	if err != nil {
 		return err
 	}
 
 	requiredFields := make(map[string]bool)
-
 	for _, si := range schemaInputs {
 		// Skip field if the operation does not match
 		// Required fields can be defined either for create or for update operations
-		if si.Delete && isDeleteOperation {
+		if si.Delete != isDeleteOperation {
 			continue
 		}
 
-		// if si.Required {
+		// Validating only required fields is set
+		// Skipping a non required field.
+		if !si.Required && validateOnlyRequired {
+			continue
+		}
+
 		// Setting the key, but not marking as found yet
 		requiredFields[si.Name] = false
-		// }
 	}
-	fmt.Println("===========")
-	spew.Dump(requiredFields)
+
+	// util.Logger.Printf("[TRACE] Solution Add-On ValidateInputs - found required fields: %s", requiredFields)
 
 	// Check if all required fields are set in inputs
 	for requiredFieldKey := range requiredFields {
 		for userInputKey := range userInputs {
-			if requiredFieldKey == userInputKey { // field found
+			if requiredFieldKey == userInputKey || fmt.Sprintf("input-%s", requiredFieldKey) == userInputKey { // field found
 				requiredFields[requiredFieldKey] = true
 			}
 		}
@@ -263,7 +316,7 @@ func (addon *SolutionAddOn) validate(userInputs map[string]interface{}, isDelete
 	}
 
 	if len(missingFields) > 0 {
-		fieldInfo, err := dumpFields(msFields)
+		fieldInfo, err := printAddonFieldData(msFields)
 		if err != nil {
 			return fmt.Errorf("error processing missing fields '%s' for: %s", addon.DefinedEntity.DefinedEntity.Name, err)
 		}
@@ -275,7 +328,93 @@ func (addon *SolutionAddOn) validate(userInputs map[string]interface{}, isDelete
 	return nil
 }
 
-func dumpFields(allFields []*types.SolutionAddOnInputField) (string, error) {
+// ConvertInputTypes will make sure that values will match types as defined in Add-On schema
+// The needs for this operation comes from the fact that at least some of the Solution Add-Ons will
+// fail if a boolean "false" is sent as a string
+func (addon *SolutionAddOn) ConvertInputTypes(userInputs map[string]interface{}) (map[string]interface{}, error) {
+	schemaInputs, err := addon.extractInputs()
+	if err != nil {
+		return nil, err
+	}
+
+	userInputsCopy := make(map[string]interface{})
+	maps.Copy(userInputsCopy, userInputs)
+
+	for userInputKey, userInputValue := range userInputsCopy {
+		// search for key in the schema inputs and find correct type
+		util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - user input key %s, value of type %T", userInputKey, userInputValue)
+
+		typeOfUserInputValue := reflect.TypeOf(userInputValue)
+
+		var foundField *types.SolutionAddOnInputField
+		for _, field := range schemaInputs {
+			util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - checking field %#v against user specified field %s", field, userInputKey)
+			if field.Name == userInputKey || fmt.Sprintf("input-%s", field.Name) == userInputKey {
+				foundField = field
+				util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - found field in schema %#v", field)
+				break
+			}
+		}
+
+		if foundField == nil {
+			util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - field '%s' not found in schema", userInputKey)
+		}
+
+		// User supplied string value, but actual type is different
+		// Only attempting to convert fields that are in the schema
+		if foundField != nil && typeOfUserInputValue.String() == "string" && foundField.Type != "String" {
+			userInputStringValue := userInputValue.(string)
+
+			util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - found field in schema %#v", foundField)
+
+			switch foundField.Type {
+			case "Boolean":
+				util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - converting field '%s' to bool", userInputKey)
+				// override string key to match boolean type
+				boolValue, err := strconv.ParseBool(userInputStringValue)
+				if err != nil {
+					return nil, fmt.Errorf("error converting field '%s' to boolean: %s", userInputKey, err)
+				}
+				userInputsCopy[userInputKey] = boolValue
+			case "Integer":
+				util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - converting field '%s' to int", userInputKey)
+				// override string key to match integer type
+				intValue, err := strconv.Atoi(userInputStringValue)
+				if err != nil {
+					return nil, fmt.Errorf("error converting field '%s' to integer: %s", userInputKey, err)
+				}
+				userInputsCopy[userInputKey] = intValue
+			default:
+				return nil, fmt.Errorf("unknown field type '%s' for field '%s'", foundField.Type, userInputKey)
+			}
+		}
+	}
+
+	util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - final result %s", spew.Sdump(userInputsCopy))
+
+	return userInputsCopy, nil
+}
+
+// extractInputs retrieves input field definitions for instantiating and removing Solution Add-On from manifest
+func (addon *SolutionAddOn) extractInputs() ([]*types.SolutionAddOnInputField, error) {
+	// Extract inputs definition / Manifest["inputs"]
+	inputValidation := addon.SolutionEntity.Manifest["inputs"]
+	inputValidationSlice, ok := inputValidation.([]any)
+	if !ok {
+		return nil, fmt.Errorf("error processing Solution Add-On input validation metadata")
+	}
+
+	inputFieldMetadata, err := convertAllAddonInputFields(inputValidationSlice)
+	if err != nil {
+		if err != nil {
+			return nil, fmt.Errorf("error converting Solution Add-On input validation metadata: %s", err)
+		}
+	}
+
+	return inputFieldMetadata, nil
+}
+
+func printAddonFieldData(allFields []*types.SolutionAddOnInputField) (string, error) {
 	buf := bytes.NewBufferString("\n")
 
 	_, _ = fmt.Fprintf(buf, "-----------------\n")
@@ -283,6 +422,8 @@ func dumpFields(allFields []*types.SolutionAddOnInputField) (string, error) {
 		_, _ = fmt.Fprintf(buf, "Field: %s\n", f.Name)
 		_, _ = fmt.Fprintf(buf, "Title: %s\n", f.Title)
 		_, _ = fmt.Fprintf(buf, "Type: %s\n", f.Type)
+		_, _ = fmt.Fprintf(buf, "Required: %t\n", f.Required)
+		_, _ = fmt.Fprintf(buf, "IsDelete: %t\n", f.Delete)
 		_, _ = fmt.Fprintf(buf, "Description: %s\n", f.Description)
 		if f.Default != nil {
 			_, _ = fmt.Fprintf(buf, "Default: %v\n", f.Default)
@@ -294,11 +435,11 @@ func dumpFields(allFields []*types.SolutionAddOnInputField) (string, error) {
 	return buf.String(), nil
 }
 
-func convertInputs(allInputs []any) ([]*types.SolutionAddOnInputField, error) {
-	allFields := make([]*types.SolutionAddOnInputField, len(allInputs))
+func convertAllAddonInputFields(allInputFields []any) ([]*types.SolutionAddOnInputField, error) {
+	allFields := make([]*types.SolutionAddOnInputField, len(allInputFields))
 
-	for index, inputField := range allInputs {
-		inpField, err := convertInput(inputField)
+	for index, inputField := range allInputFields {
+		inpField, err := convertAddonInputField(inputField)
 		if err != nil {
 			return nil, err
 		}
@@ -307,19 +448,18 @@ func convertInputs(allInputs []any) ([]*types.SolutionAddOnInputField, error) {
 	}
 
 	return allFields, nil
-
 }
 
-func convertInput(field any) (*types.SolutionAddOnInputField, error) {
+func convertAddonInputField(field any) (*types.SolutionAddOnInputField, error) {
 	txt, err := json.Marshal(field)
 	if err != nil {
-		return nil, fmt.Errorf("failed marshalling: %s", err)
+		return nil, fmt.Errorf("failed marshalling Input Field: %s", err)
 	}
 
 	fieldType := types.SolutionAddOnInputField{}
 	err = json.Unmarshal(txt, &fieldType)
 	if err != nil {
-		return nil, fmt.Errorf("failed unmarshalling input field to exact type: %s", err)
+		return nil, fmt.Errorf("failed unmarshalling Input Field to exact type: %s", err)
 	}
 
 	return &fieldType, nil

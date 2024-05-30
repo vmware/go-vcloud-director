@@ -1,106 +1,230 @@
 //go:build unit || ALL
 
 /*
- * Copyright 2020 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
+ * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
  */
 
 package govcd
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
+	"github.com/kr/pretty"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-func TestSolutionAddOn_Inputs(t *testing.T) {
+func TestSolutionAddOn_ValidateInputs(t *testing.T) {
+	emptyInputs := make(map[string]interface{})
 
-	// res := types.SolutionAddOn{}
-	// err := json.Unmarshal(sampleSolutionAddonManifest, &res)
-	// if err != nil {
-	// 	t.Fatalf("error unmarshalling sample solution addon manifest: %s", err)
-	// }
+	requiredInputsCreate := make(map[string]interface{})
+	requiredInputsCreate["delete-previous-uiplugin-versions"] = true
 
-	// inputs := res.Manifest["inputs"]
+	requiredInputsDelete := make(map[string]interface{})
+	requiredInputsDelete["force-delete"] = true
 
-	res2 := make(map[string]any)
-	// err := json.Unmarshal(sampleSolutionAddonManifest2, &res2)
-	err := json.Unmarshal(sampleSolutionAddonManifest2, &res2)
-	if err != nil {
-		t.Fatalf("error unmarshalling sample Solution Add-On manifest: %s", err)
+	type args struct {
+		userInputs           map[string]interface{}
+		validateOnlyRequired bool
+		isDeleteOperation    bool
 	}
 
-	newSolutionAddon := SolutionAddOn{
-		DefinedEntity: &DefinedEntity{DefinedEntity: &types.DefinedEntity{Name: "vmware.ds-1.4.0-23376809"}},
-		SolutionEntity: &types.SolutionAddOn{
-			Manifest: res2,
+	tests := []struct {
+		name     string
+		manifest []byte
+		args     args
+		wantErr  bool
+	}{
+		{
+			name:     "MissingRequiredCreate",
+			manifest: sampleSolutionAddonManifest1,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: false, isDeleteOperation: false},
+			wantErr:  true,
+		},
+		{
+			name:     "SpecifiedRequiredCreate",
+			manifest: sampleSolutionAddonManifest1,
+			args:     args{userInputs: requiredInputsCreate, validateOnlyRequired: true, isDeleteOperation: false},
+			wantErr:  false,
+		},
+		{
+			name:     "SpecifiedRequiredDelete",
+			manifest: sampleSolutionAddonManifest1,
+			args:     args{userInputs: requiredInputsDelete, validateOnlyRequired: true, isDeleteOperation: true},
+			wantErr:  false,
+		},
+		{
+			name:     "MissingRequiredCreate2",
+			manifest: sampleSolutionAddonManifest2,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: false, isDeleteOperation: false},
+			wantErr:  true,
+		},
+		{
+			name:     "MissingRequiredDelete",
+			manifest: sampleSolutionAddonManifest1,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: false, isDeleteOperation: true},
+			wantErr:  true,
+		},
+		{
+			name:     "MissingRequiredDelete2",
+			manifest: sampleSolutionAddonManifest2,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: true, isDeleteOperation: true},
+			wantErr:  false,
+		},
+		{
+			name:     "NoRequiredFieldsEmptyInputsCreate",
+			manifest: sampleSolutionAddonManifestNoRequired,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: true, isDeleteOperation: false},
+			wantErr:  false,
+		},
+		{
+			name:     "NoRequiredFieldsEmptyInputsDelete",
+			manifest: sampleSolutionAddonManifestNoRequired,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: true, isDeleteOperation: true},
+			wantErr:  false,
+		},
+		{
+			name:     "EmptyAddonInputsRequiredOnlyCreate",
+			manifest: sampleSolutionAddonManifestEmptyInputs,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: true, isDeleteOperation: false},
+			wantErr:  false,
+		},
+		{
+			name:     "EmptyAddonInputsRequiredOnlyDelete",
+			manifest: sampleSolutionAddonManifestEmptyInputs,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: true, isDeleteOperation: true},
+			wantErr:  false,
+		},
+		{
+			name:     "EmptyAddonInputsAllFieldsCreate",
+			manifest: sampleSolutionAddonManifestEmptyInputs,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: false, isDeleteOperation: false},
+			wantErr:  false,
+		},
+		{
+			name:     "EmptyAddonInputsAllFieldsDelete",
+			manifest: sampleSolutionAddonManifestEmptyInputs,
+			args:     args{userInputs: emptyInputs, validateOnlyRequired: false, isDeleteOperation: true},
+			wantErr:  false,
 		},
 	}
 
-	inputsCopy := make(map[string]interface{})
-	inputsCopy["operation"] = "create instance"
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-	err = newSolutionAddon.validate(inputsCopy, false)
-	if err != nil {
-		t.Fatalf("%s", err)
+			addOnManifest := make(map[string]any)
+			err := json.Unmarshal(tt.manifest, &addOnManifest)
+			if err != nil {
+				t.Fatalf("error unmarshalling sample Solution Add-On manifest: %s", err)
+			}
+
+			addon := SolutionAddOn{
+				DefinedEntity: &DefinedEntity{DefinedEntity: &types.DefinedEntity{Name: "vmware.ds-1.4.0-23376809"}},
+				SolutionEntity: &types.SolutionAddOn{
+					Manifest: addOnManifest,
+				},
+			}
+
+			if err := addon.ValidateInputs(tt.args.userInputs, tt.args.validateOnlyRequired, tt.args.isDeleteOperation); (err != nil) != tt.wantErr {
+				t.Errorf("SolutionAddOn.ValidateInputs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestSolutionAddOn_ConvertInputTypes(t *testing.T) {
+	// emptyInputs := make(map[string]interface{})
+
+	requiredInputsCreateBool := make(map[string]interface{})
+	requiredInputsCreateBool["name"] = "name"
+	requiredInputsCreateBool["delete-previous-uiplugin-versions"] = true
+
+	requiredInputsCreateString := make(map[string]interface{})
+	requiredInputsCreateString["name"] = "name"
+	requiredInputsCreateString["delete-previous-uiplugin-versions"] = "true"
+
+	requiredInputsCreateBoolWithInput := make(map[string]interface{})
+	requiredInputsCreateBoolWithInput["name"] = "name"
+	requiredInputsCreateBoolWithInput["input-delete-previous-uiplugin-versions"] = true
+
+	requiredInputsCreateStringWithInput := make(map[string]interface{})
+	requiredInputsCreateStringWithInput["name"] = "name"
+	requiredInputsCreateStringWithInput["input-delete-previous-uiplugin-versions"] = "true"
+
+	requiredInputsDelete := make(map[string]interface{})
+	requiredInputsDelete["force-delete"] = true
+
+	type args struct {
+		userInputs map[string]interface{}
+		// validateOnlyRequired bool
+		// isDeleteOperation    bool
 	}
 
-	/*
-		inputs := res2["inputs"].([]any)
+	tests := []struct {
+		name           string
+		manifest       []byte
+		args           args
+		expectedOutput map[string]interface{}
+		wantErr        bool
+	}{
+		{
+			name:           "StringToBool",
+			manifest:       sampleSolutionAddonManifest1,
+			args:           args{userInputs: requiredInputsCreateString},
+			expectedOutput: requiredInputsCreateBool,
+			wantErr:        false,
+		},
+		{
+			name:           "StringToString",
+			manifest:       sampleSolutionAddonManifest1,
+			args:           args{userInputs: requiredInputsCreateString},
+			expectedOutput: requiredInputsCreateString,
+			wantErr:        true,
+		},
+		{
+			name:           "StringToBoolWithInput",
+			manifest:       sampleSolutionAddonManifest1,
+			args:           args{userInputs: requiredInputsCreateStringWithInput},
+			expectedOutput: requiredInputsCreateBoolWithInput,
+			wantErr:        false,
+		},
+		{
+			name:           "StringToStringWithInput",
+			manifest:       sampleSolutionAddonManifest1,
+			args:           args{userInputs: requiredInputsCreateStringWithInput},
+			expectedOutput: requiredInputsCreateStringWithInput,
+			wantErr:        true,
+		},
+	}
 
-		for _, inputField := range inputs {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-			txt, err := json.Marshal(inputField)
+			addOnManifest := make(map[string]any)
+			err := json.Unmarshal(tt.manifest, &addOnManifest)
 			if err != nil {
-				t.Fatalf("failed marshalling: %s", err)
+				t.Fatalf("error unmarshalling sample Solution Add-On manifest: %s", err)
 			}
 
-			inpField := types.SolutionAddOnInputField{}
-			err = json.Unmarshal(txt, &inpField)
-			if err != nil {
-				t.Fatalf("failed unmarshalling: %s", err)
+			addon := SolutionAddOn{
+				DefinedEntity: &DefinedEntity{DefinedEntity: &types.DefinedEntity{Name: "vmware.ds-1.4.0-23376809"}},
+				SolutionEntity: &types.SolutionAddOn{
+					Manifest: addOnManifest,
+				},
 			}
 
-			// fmt.Println(inpField.Name + " " + inpField.Type)
+			convertedInputs, err := addon.ConvertInputTypes(tt.args.userInputs)
+			if (err != nil) && !tt.wantErr {
+				t.Errorf("SolutionAddOn.ConvertInputTypes() error = %v, wantErr %v", err, tt.wantErr)
+			}
 
-			spew.Dump(inpField)
-
-			// iiii := inputField.(map[string]any)
-			// spew.Dump(inputField)
-
-		}
-
-		// type fields struct {
-		// 	SolutionEntity *types.SolutionAddOn
-		// 	DefinedEntity  *DefinedEntity
-		// 	vcdClient      *VCDClient
-		// }
-		// tests := []struct {
-		// 	name    string
-		// 	fields  fields
-		// 	want    *SolutionAddOn
-		// 	wantErr bool
-		// }{
-		// 	// TODO: Add test cases.
-		// }
-		// for _, tt := range tests {
-		// 	t.Run(tt.name, func(t *testing.T) {
-		// 		s := &SolutionAddOn{
-		// 			SolutionEntity: tt.fields.SolutionEntity,
-		// 			DefinedEntity:  tt.fields.DefinedEntity,
-		// 			vcdClient:      tt.fields.vcdClient,
-		// 		}
-		// 		got, err := s.Inputs()
-		// 		if (err != nil) != tt.wantErr {
-		// 			t.Errorf("SolutionAddOn.Inputs() error = %v, wantErr %v", err, tt.wantErr)
-		// 			return
-		// 		}
-		// 		if !reflect.DeepEqual(got, tt.want) {
-		// 			t.Errorf("SolutionAddOn.Inputs() = %v, want %v", got, tt.want)
-		// 		}
-		// 	})
-		// }
-	*/
+			if reflect.DeepEqual(convertedInputs, tt.expectedOutput) == tt.wantErr {
+				diff := pretty.Diff(tt.expectedOutput, convertedInputs)
+				t.Errorf("SolutionAddOn.ConvertInputTypes() values are not identical\n\n%s", diff)
+			}
+		})
+	}
 }
 
 var sampleSolutionAddonManifest1 = []byte(`
@@ -120,61 +244,46 @@ var sampleSolutionAddonManifest1 = []byte(`
 			"type": "Boolean",
 			"title": "Force Delete",
 			"delete": true,
+			"required": true,
 			"default": false,
 			"description": "If setting true, the uninstallation will remove all Data Solution records from Cloud Director but actual Data Solution instances will stay in Kubernetes clusters. If setting false, the uninstallation proceeds only when Data Solution records are not found in Cloud Director."
 		}
-	],
+	]
+}
+`)
+
+var sampleSolutionAddonManifestNoRequired = []byte(`
+{
+	"name": "ds",
+	"inputs": [
+		{
+			"name": "delete-previous-uiplugin-versions",
+			"type": "Boolean",
+			"title": "Delete Previous UI Plugin Versions",
+			"default": false,
+			"required": false,
+			"description": "If setting true, the installation will delete all previous versions of this ui plugin. If setting false, the installation will just disable previous versions"
+		},
+		{
+			"name": "force-delete",
+			"type": "Boolean",
+			"title": "Force Delete",
+			"delete": true,
+			"default": false,
+			"description": "If setting true, the uninstallation will remove all Data Solution records from Cloud Director but actual Data Solution instances will stay in Kubernetes clusters. If setting false, the uninstallation proceeds only when Data Solution records are not found in Cloud Director."
+		}
+	]
+}
+`)
+
+var sampleSolutionAddonManifestEmptyInputs = []byte(`
+{
+	"name": "ds",
+	"inputs": [],
 	"vendor": "vmware",
 	"runtime": {
 		"sdkVersion": "1.1.1.8577774"
-	},
-	"version": "1.4.0-23376809",
-	"elements": [
-		{
-			"name": "ds-ui-plugin",
-			"type": "ui-plugin"
-		},
-		{
-			"name": "ds-rde",
-			"type": "defined-entity"
-		},
-		{
-			"name": "ds-rights-bundle",
-			"spec": {
-				"name": "vmware:dataSolutionsRightsBundle",
-				"rights": [
-					"vmware:dsCluster: Administrator Full access"
-				],
-				"description": "Data Solutions Rights Bundle"
-			},
-			"type": "rights-bundle"
-		}
-	],
-	"policies": {},
-	"triggers": [
-		{
-			"event": "PostCreate",
-			"action": "post-install-hook"
-		},
-		{
-			"event": "PreUpgrade",
-			"action": "post-install-hook"
-		},
-		{
-			"event": "PostUpgrade",
-			"action": "post-install-hook"
-		},
-		{
-			"event": "PreDelete",
-			"action": "post-install-hook"
-		}
-	],
-	"resources": [
-		"licenses"
-	],
-	"vcdVersion": "10.4.3",
-	"description": "Data solution enabling multi-tenancy customers to deliver a portfolio of on-demand caching, messaging and database software at a massive scale.",
-	"friendlyName": "Data Solutions"
+	}
 }
 `)
 
@@ -251,65 +360,6 @@ var sampleSolutionAddonManifest2 = []byte(`
 			"default": 3600,
 			"description": "The deploy timeout is used to set the timeout in seconds for Object Storage Extension Operator installation. Defaults to 3600."
 		}
-	],
-	"vendor": "vmware",
-	"runtime": {
-		"sdkVersion": "1.1.1.8558408"
-	},
-	"version": "3.0.0-23443325",
-	"elements": [
-		{
-			"name": "ose-ui-plugin",
-			"type": "ui-plugin"
-		},
-		{
-			"name": "ose-rde",
-			"type": "defined-entity"
-		}
-	],
-	"policies": {
-		"tenantScoped": true,
-		"upgradesFrom": "3.0.0-*",
-		"supportsMultipleInstances": true
-	},
-	"triggers": [
-		{
-			"event": "PreCreate",
-			"action": "ose-hook"
-		},
-		{
-			"event": "PostCreate",
-			"action": "ose-hook"
-		},
-		{
-			"event": "PreDelete",
-			"action": "ose-hook"
-		},
-		{
-			"event": "PreUpgrade",
-			"action": "ose-hook"
-		},
-		{
-			"event": "PostUpgrade",
-			"action": "ose-hook"
-		}
-	],
-	"resources": [
-		"licenses",
-		"resources",
-		"x:installer"
-	],
-	"operations": [
-		{
-			"name": "Update",
-			"action": "ose-hook",
-			"timeout": 240,
-			"description": "Update the installation configuration of Object Storage Extension",
-			"friendlyName": ""
-		}
-	],
-	"vcdVersion": "10.4.3",
-	"description": "VMware Cloud Director Object Storage Extension offers S3 compliant object storage as a service for Cloud Director users.",
-	"friendlyName": "Object Storage"
+	]
 }
 `)

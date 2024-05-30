@@ -257,6 +257,15 @@ type TestConfig struct {
 		OvaCatalog     string `yaml:"ovaCatalog,omitempty"`
 		OvaName        string `yaml:"ovaName,omitempty"`
 	} `yaml:"cse,omitempty"`
+	SolutionAddOn struct {
+		Org           string `yaml:"org"`
+		Vdc           string `yaml:"vdc"`
+		RoutedNetwork string `yaml:"routedNetwork"`
+		ComputePolicy string `yaml:"computePolicy"`
+		StoragePolicy string `yaml:"storagePolicy"`
+		Catalog       string `yaml:"catalog"`
+		AddonImageDse string `yaml:"addonImageDse"`
+	} `yaml:"solutionAddOn,omitempty"`
 }
 
 // Test struct for vcloud-director.
