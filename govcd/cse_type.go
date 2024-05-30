@@ -207,7 +207,6 @@ type cseComponentsVersions struct {
 
 // Constants used internally to manage CSE Kubernetes clusters
 const (
-	cseKubernetesClusterVendor                   = "vmware"
-	cseKubernetesClusterNamespace                = "capvcdCluster"
-	cseKubernetesClusterDefaultAutoscalerVersion = "v1.26.2"
+	cseKubernetesClusterVendor    = "vmware"
+	cseKubernetesClusterNamespace = "capvcdCluster"
 )
