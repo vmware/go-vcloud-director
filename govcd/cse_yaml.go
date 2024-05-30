@@ -373,8 +373,7 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clus
 
 // cseUpdateAutoscalerInYaml adds a new YAML document (Autoscaler) to the output if the input worker pools require it and it's not present.
 // If it's present, modifies the YAML documents by scaling the Autoscaler replicas to 1.
-// If none of the input worker pools requires autoscaling, the input YAML documents are modified to scale the Autoscaler replicas to 0.
-// NOTE: This function can modify the input if there is already an Autoscaler. Otherwise returns a new YAML document with unmodified input.
+// If none of the input worker pools requires autoscaling, the YAML documents are modified to reduce the Autoscaler replicas to 0.
 func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, clusterName string, cseVersion, kubernetesVersion semver.Version,
 	existingWorkerPools *map[string]CseWorkerPoolUpdateInput, newWorkerPools *[]CseWorkerPoolSettings) ([]map[string]interface{}, error) {
 	autoscalerNeeded := false
