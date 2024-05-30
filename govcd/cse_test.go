@@ -215,8 +215,8 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 			check.Assert(nodePool.SizingPolicyId, Equals, "")
 			check.Assert(nodePool.StorageProfileId, Equals, "")
 			check.Assert(nodePool.Autoscaler, NotNil)
-			check.Assert(nodePool.Autoscaler.MinSize, Equals, "1")
-			check.Assert(nodePool.Autoscaler.MaxSize, Equals, "2")
+			check.Assert(nodePool.Autoscaler.MinSize, Equals, 1)
+			check.Assert(nodePool.Autoscaler.MaxSize, Equals, 2)
 		}
 	}
 	check.Assert(foundWorkerPool1, Equals, true)
@@ -419,7 +419,7 @@ func (vcd *TestVCD) Test_CseWithAutoscaler(check *C) {
 			check.Assert(nodePool.MachineCount, Equals, 0) // The field is not used
 			check.Assert(nodePool.Autoscaler, NotNil)
 			check.Assert(nodePool.Autoscaler.MinSize, Equals, 1)
-			check.Assert(nodePool.Autoscaler.MinSize, Equals, 10)
+			check.Assert(nodePool.Autoscaler.MaxSize, Equals, 10)
 		}
 	}
 	check.Assert(foundWorkerPool, Equals, true)
