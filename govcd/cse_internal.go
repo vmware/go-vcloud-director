@@ -271,7 +271,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateAutoscalerYaml() (str
 		return "", fmt.Errorf("the receiver CSE Kubernetes cluster settings object is nil")
 	}
 
-	k8sVersion, err := semver.NewSemver(clusterSettings.TkgVersionBundle.KubernetesVersion)
+	k8sVersion, err := semver.NewVersion(clusterSettings.TkgVersionBundle.KubernetesVersion)
 	if err != nil {
 		return "", err
 	}

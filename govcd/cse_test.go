@@ -171,7 +171,7 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 	}
 	check.Assert(foundWorkerPool, Equals, true)
 
-	// Update worker pool from 1 node to 2
+	// Update worker pool from Autoscaling to static 2 nodes
 	err = cluster.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterSettings.WorkerPools[0].Name: {MachineCount: 2}}, true)
 	check.Assert(err, IsNil)
 	foundWorkerPool = false
@@ -179,12 +179,12 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 		if nodePool.Name == clusterSettings.WorkerPools[0].Name {
 			foundWorkerPool = true
 			check.Assert(nodePool.MachineCount, Equals, 2)
-			check.Assert(nodePool.Autoscaler, IsNil)
+			check.Assert(nodePool.Autoscaler, IsNil) // Autoscaler should be deactivated
 		}
 	}
 	check.Assert(foundWorkerPool, Equals, true)
 
-	// Add a new worker pool
+	// Add two new worker pools, one with autoscaler
 	err = cluster.AddWorkerPools([]CseWorkerPoolSettings{{
 		Name:         "new-pool-1",
 		MachineCount: 1,
@@ -282,25 +282,6 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 			check.Assert(pool.MachineCount, Equals, 1)
 		}
 	}
-}
-
-// TODO Delete me
-func (vcd *TestVCD) Test_CseFoo(check *C) {
-	requireCseConfig(check, vcd.config)
-
-	// Prerequisites: We need to read several items before creating the cluster.
-	clusterGet, err := vcd.client.CseGetKubernetesClusterById("urn:vcloud:entity:vmware:capvcdCluster:e9d38be0-9d52-462d-b803-3c793ebb3bde")
-	check.Assert(err, IsNil)
-	check.Assert(clusterGet.Etag, Not(Equals), "")
-
-	// Update worker pool with autoscaler
-	err = clusterGet.UpdateWorkerPools(map[string]CseWorkerPoolUpdateInput{clusterGet.WorkerPools[0].Name: {
-		MachineCount: 0,
-		Autoscaler: &CseWorkerPoolAutoscaler{
-			MaxSize: 3,
-			MinSize: 2,
-		}}}, true)
-	check.Assert(err, IsNil)
 }
 
 // Test_CseWithAutoscaler tests the autoscaling capabilities in CSE clusters
