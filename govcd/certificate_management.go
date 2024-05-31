@@ -6,9 +6,10 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
 	"regexp"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Certificate is a structure defining a certificate in VCD
@@ -185,7 +186,7 @@ func (client *Client) MatchingCertificatesInLibrary(pem string) ([]*Certificate,
 	}
 	var matchingCertificates []*Certificate
 	for _, cert := range certificates {
-		isSame, err := cert.Same(pem)
+		isSame, err := cert.SameAs(pem)
 		if err != nil {
 			return nil, err
 		}
@@ -346,9 +347,9 @@ func getCertificateText(pem string) (string, error) {
 	return text[1], nil
 }
 
-// Same returns true if the certificate text matches the text of the provided PEM
+// SameAs returns true if the certificate text matches the text of the provided PEM
 // (without the BEGIN CERTIFICATE and END CERTIFICATE markers)
-func (certificate *Certificate) Same(pem string) (bool, error) {
+func (certificate *Certificate) SameAs(pem string) (bool, error) {
 	internalValue, err := getCertificateText(certificate.CertificateLibrary.Certificate)
 	if err != nil {
 		return false, err
