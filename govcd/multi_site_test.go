@@ -44,7 +44,7 @@ func getClientConnectionFromEnv() (*VCDClient, error) {
 	if password == "" {
 		missing = append(missing, secondVcdPassword)
 	}
-	if password == "" {
+	if orgName == "" {
 		missing = append(missing, secondVcdSysOrg)
 	}
 	if len(missing) > 0 {
