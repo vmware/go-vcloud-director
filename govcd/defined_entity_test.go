@@ -139,7 +139,7 @@ func (vcd *TestVCD) Test_RdeAndRdeType(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(allRdeTypesBySystemAdmin), Equals, alreadyPresentRdes+1)
 
-	// Count is 1 for tenant user as it can only retrieve the created type as per the assigned rights above.
+	// Count is existing RDE Types + 1 for tenant user
 	alreadyPresentRdes = len(allRdeTypesByTenant)
 	allRdeTypesByTenant, err = tenantUserClient.GetAllRdeTypes(nil)
 	check.Assert(err, IsNil)
