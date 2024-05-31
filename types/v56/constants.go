@@ -151,9 +151,13 @@ const (
 	MimeProviderVdc = "application/vnd.vmware.admin.vmwprovidervdc+xml"
 	// Mime to identify SAML metadata
 	MimeSamlMetadata = "application/samlmetadata+xml"
-	// Mime to identify organization federation settings (SAML) XML and JSON
+	// Mime to identify organization federation settings (SAML)
 	MimeFederationSettingsXml  = "application/vnd.vmware.admin.organizationFederationSettings+xml"
 	MimeFederationSettingsJson = "application/vnd.vmware.admin.organizationFederationSettings+json"
+	// Mime to identify organization OpenID Connect (OIDC) settings
+	MimeOAuthSettingsXml = "application/vnd.vmware.admin.organizationoauthsettings+xml"
+	// Mime to identify the OpenID Provider info
+	MimeOpenIdProviderInfoXml = "application/vnd.vmware.vcloud.admin.openIdProviderInfo+xml"
 	// Mime to handle virtual hardware versions
 	MimeVirtualHardwareVersion = "application/vnd.vmware.vcloud.virtualHardwareVersion+xml"
 )

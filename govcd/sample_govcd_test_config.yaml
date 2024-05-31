@@ -191,6 +191,13 @@ vcd:
     # IP of a pre-configured LDAP server
     # using Docker image https://github.com/rroemhild/docker-test-openldap
     ldap_server: 10.10.10.99
+    #
+    # Details of pre-configured OIDC server
+    oidcServer:
+      # Server URL
+      url: "10.10.10.100/oidc-server"
+      # Well-known endpoint
+      wellKnownEndpoint: "/.well-known/openid-configuration"
 vsphere:
   # resource pools needed to create new provider VDCs
   resourcePoolForVcd1: resource-pool-for-vcd-01
