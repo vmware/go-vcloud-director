@@ -167,7 +167,7 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		return nil, nil, err
 	}
 
-	// 2. Converting the give `rule` (*types.DistributedFirewallRule) into json.RawMessage so that
+	// 2. Converting the given `rule` (*types.DistributedFirewallRule) into json.RawMessage so that
 	// it is provided in the same format as other already retrieved rules
 	newRuleRawJson, err := firewallRuleToRawJson(rule)
 	if err != nil {
@@ -199,6 +199,7 @@ func (vdcGroup *VdcGroup) CreateDistributedFirewallRule(optionalAboveRuleId stri
 		}
 		// 3.2.2 Find index for specified 'optionalAboveRuleId' rule
 		newFwRuleSliceIndex, err := getFirewallRuleIndexById(dfwRules, optionalAboveRuleId)
+		newRuleSlicePosition = newFwRuleSliceIndex // Set rule position for returning single firewall rule
 		if err != nil {
 			return nil, nil, err
 		}
