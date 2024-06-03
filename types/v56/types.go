@@ -373,7 +373,7 @@ type InstantiationParams struct {
 // Description: Represents an Org VDC network in the vCloud model.
 // Since: 5.1
 type OrgVDCNetwork struct {
-	XMLName         xml.Name              `xml:"OrgVdcNetwork"`
+	// XMLName         xml.Name              `xml:"OrgVdcNetwork"`
 	Xmlns           string                `xml:"xmlns,attr,omitempty"`
 	HREF            string                `xml:"href,attr,omitempty"`
 	Type            string                `xml:"type,attr,omitempty"`
@@ -655,6 +655,142 @@ type VdcConfiguration struct {
 	VmDiscoveryEnabled       bool                              `xml:"VmDiscoveryEnabled,omitempty"`
 	IsElastic                *bool                             `xml:"IsElastic,omitempty"`             // Supported from 32.0 for the Flex model
 	IncludeMemoryOverhead    *bool                             `xml:"IncludeMemoryOverhead,omitempty"` // Supported from 32.0 for the Flex model
+}
+
+// VMWVdcTemplate references a VDC Template.
+// Type: VMWVdcTemplateType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: A reference to a VDC template.
+// Since: 5.7
+type VMWVdcTemplate struct {
+	HREF         string `xml:"href,attr,omitempty"`
+	Type         string `xml:"type,attr,omitempty"`
+	ID           string `xml:"id,attr,omitempty"`
+	OperationKey string `xml:"operationKey,attr,omitempty"`
+	Name         string `xml:"name,attr"`
+	Status       int    `xml:"status,attr,omitempty"`
+
+	Link                     LinkList                                `xml:"Link,omitempty"`
+	Description              string                                  `xml:"Description,omitempty"`
+	Tasks                    *TasksInProgress                        `xml:"Tasks,omitempty"`
+	TenantName               string                                  `xml:"TenantName,omitempty"`
+	TenantDescription        string                                  `xml:"TenantDescription,omitempty"`
+	NetworkBackingType       string                                  `xml:"NetworkBackingType,omitempty"` // "NSX_V" or "NSX_T"
+	ProviderVdcReference     *VMWVdcTemplateProviderVdcSpecification `xml:"ProviderVdcReference,omitempty"`
+	VdcTemplateSpecification *VMWVdcTemplateSpecification            `xml:"VdcTemplateSpecification,omitempty"`
+}
+
+// VMWVdcTemplateProviderVdcSpecification references a Provider VDC for a VDC Template.
+// Type: VMWVdcTemplateProviderVdcSpecificationType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Since: 5.7
+type VMWVdcTemplateProviderVdcSpecification struct {
+	HREF string `xml:"href,attr,omitempty"`
+	Type string `xml:"type,attr,omitempty"`
+	ID   string `xml:"id,attr,omitempty"`
+	Name string `xml:"name,attr"`
+
+	Binding *VMWVdcTemplateBinding `xml:"Binding,omitempty"`
+}
+
+// VMWVdcTemplateBinding specifies a binding for a VDC Template
+// Type: VMWVdcTemplateBindingType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: A Binding pairs a Name element that contains a user-specified identifier in URN format with a Value element
+// that contains a reference to an object. The Name can then be used anywhere in the request where a reference
+// to that type of object is allowed. For example, when specifying multiple Provider VDCs in a VMWVdcTemplate,
+// create a Binding where the Value is a reference to an external network in a candidate Provider VDC, then use
+// the Name from that binding in place of the href attribute required by the Network element in the GatewayConfiguration
+// of the VdcTemplateSpecification. When the template is instantiated, the Name is replaced by the network reference
+// in the Value part of the Binding associated with the Provider VDC that the system selects during instantiation.
+// Supported binding values are references to External networks and Edge clusters.
+//
+// Since: 5.10
+type VMWVdcTemplateBinding struct {
+	Name  string     `xml:"Name,omitempty"` // URI format
+	Value *Reference `xml:"Value,omitempty"`
+}
+
+// VMWVdcTemplateSpecification references a VDC for a VDC Template.
+// Type: VMWVdcTemplateSpecificationType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: A reference to a Provider VDC.
+// Since: 5.7
+type VMWVdcTemplateSpecification struct {
+	// Indicates that the Provider VDC's automatically-created VXLAN network pool should be used.
+	// NetworkPoolReference must be empty if this element appears in the request.
+	AutomaticNetworkPoolReference *Reference `xml:"AutomaticNetworkPoolReference,omitempty"`
+
+	// Boolean to request fast provisioning. Request will be honored only if the underlying datastore supports it.
+	// Fast provisioning can reduce the time it takes to create virtual machines by using vSphere linked clones.
+	// If you disable fast provisioning, all provisioning operations will result in full clones.
+	FastProvisioningEnabled bool `xml:"FastProvisioningEnabled,omitempty"`
+
+	// Defines a gateway and NAT Routed organization VDC network to be created.
+	GatewayConfiguration *VdcTemplateSpecificationGatewayConfiguration `xml:"GatewayConfiguration,omitempty"`
+
+	// Set to true to indicate if the FLEX vDC is to include memory overhead into its accounting for admission control.
+	// This field can only be set on input for FLEX vDC templates and Allocation VApp VDC templates.
+	// However, this field will be returned properly when read.
+	IncludeMemoryOverhead bool `xml:"IncludeMemoryOverhead,omitempty"`
+
+	// Set to true to indicate if the FLEX vDC is to be elastic. This field can only be set on input for FLEX VDC templates
+	// and Allocation VApp vDC templates. However, this field will be returned properly when read.
+	IsElastic bool `xml:"IsElastic,omitempty"`
+
+	// Reference to a network pool in the Provider VDC. Must be empty if you specify AutomaticNetworkPoolReference.
+	NetworkPoolReference        *Reference                 `xml:"NetworkPoolReference,omitempty"`
+	NetworkProfileConfiguration *VdcTemplateNetworkProfile `xml:"NetworkProfileConfiguration,omitempty"`
+
+	// Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number.
+	NicQuota int `xml:"NicQuota,omitempty"`
+
+	// Maximum number of network objects that can be deployed in this VDC. Defaults to 0, which means no networks can be deployed.
+	ProvisionedNetworkQuota int `xml:"ProvisionedNetworkQuota,omitempty"`
+
+	// A set of name of Storage Profiles, with corresponding limit value, that all Provider VDCs must have, and that are selected at the time of VDC Template instantiation.
+	StorageProfile *VdcStorageProfiles `xml:"StorageProfile,omitempty"`
+
+	// Boolean to request thin provisioning. Request will be honored only if the underlying datastore supports it.
+	// Thin provisioning saves storage space by committing it on demand. This allows over-allocation of storage.
+	ThinProvision bool `xml:"ThinProvision,omitempty"`
+
+	// The quota of VMs that can be created in this VDC. Includes VMs in both vApps and vApp templates, deployed, or otherwise.
+	// Defaults to 0, which specifies an unlimited number.
+	VmQuota int `xml:"VmQuota,omitempty"`
+}
+
+// VdcTemplateSpecificationGatewayConfiguration specifies the Edge Gateway configuration for a VDC Template.
+// Type: VdcTemplateSpecificationGatewayConfigurationType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: Defines a gateway and NAT Routed organization VDC network to be created.
+// Since: 5.7
+type VdcTemplateSpecificationGatewayConfiguration struct {
+	// EdgeGateway configuration for the VDC created by this template. The following restrictions apply:
+	// * You may not specify a BackwardCompatibilityMode or an EdgeGatewayServiceConfiguration.
+	// * The GatewayInterfaces element must contain exactly one GatewayInterface. That GatewayInterface must have an InterfaceType
+	//   of uplink and must not contain a SubnetParticipation element.
+	Gateway *EdgeGateway `xml:"Gateway,omitempty"`
+
+	// Org VDC network configuration created by this template. The following restrictions apply:
+	// * You may not specify a BackwardCompatibilityMode, EdgeGatewayServiceConfiguration, or NetworkFeatures.
+	// * The NetworkConfiguration must specify a FenceMode of natRouted.
+	Network *OrgVDCNetwork `xml:"Network,omitempty"`
+}
+
+// VdcTemplateNetworkProfile specifies the network profile for a VDC Template.
+// Type: VdcTemplateNetworkProfileType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: Network Profile configuration that is applied to VDC instantiated from a template.
+// In NSX_V VDCs Primary and Secondary Edge Clusters can be configured and used for Edge Gateway deployments.
+// In NSX_T VDC only Services Edge Cluster can be configured and used for deploying DHCP/VApp services. Binding name from
+// the binding names needs to specified as ReferenceType to PrimaryEdgeCluster SecondaryEdgeCluster and ServicesEdgeCluster
+// properties. When VDC is instantiated, based on PVDC and binding name appropriate binding value is selected to configure network profiles.
+// Since: 35.2
+type VdcTemplateNetworkProfile struct {
+	PrimaryEdgeCluster   *Reference `xml:"PrimaryEdgeCluster,omitempty"`
+	SecondaryEdgeCluster *Reference `xml:"SecondaryEdgeCluster,omitempty"`
+	ServicesEdgeCluster  *Reference `xml:"ServicesEdgeCluster,omitempty"`
 }
 
 // Task represents an asynchronous operation in VMware Cloud Director.
