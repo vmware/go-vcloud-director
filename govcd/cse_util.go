@@ -288,7 +288,7 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	params.Add("filter", fmt.Sprintf("name==%s", result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].OvdcNetworkName))
 	params = queryParameterFilterAnd("orgVdc.id=="+result.VdcId, params)
 	params = queryParameterFilterAnd("_context==includeAccessible", params)
-	networks, err := getAllOpenApiOrgVdcNetworks(rde.client, params)
+	networks, err := getAllOpenApiOrgVdcNetworks(rde.client, params, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not read Org VDC Network from Capvcd type: %s", err)
 	}
