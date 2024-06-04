@@ -531,24 +531,10 @@ func (egw *NsxtEdgeGateway) GetAllUnusedExternalIPAddresses(refresh bool) ([]net
 	return getAllUnusedExternalIPAddresses(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, netip.Prefix{}, 0)
 }
 
-// GetUnusedExternalIPAddressesWithCountLimit will work just as 'GetAllUnusedExternalIPAddresses',
-// but it supports setting a limit 'limitTo' of IP addresses requested because in the case of very
-// large IPv6 subnets (e.g. /64) counting all IPs might exchaust the system.
-func (egw *NsxtEdgeGateway) GetUnusedExternalIPAddressesWithCountLimit(refresh bool, limitTo int64) ([]netip.Addr, error) {
-	if refresh {
-		err := egw.Refresh()
-		if err != nil {
-			return nil, fmt.Errorf("error refreshing Edge Gateway: %s", err)
-		}
-	}
-	usedIpAddresses, err := egw.GetUsedIpAddresses(nil)
-	if err != nil {
-		return nil, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)
-	}
-
-	return getAllUnusedExternalIPAddresses(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, netip.Prefix{}, limitTo)
-}
-
+// GetUsedAndUnusedExternalIPAddressCountWithLimit will count IPs and can limit their total count up
+// to 'limitTo' which can be used to count IPs with huge IPv6 subnets
+//
+// Return order - usedIpCount, unusedIpCount, error
 func (egw *NsxtEdgeGateway) GetUsedAndUnusedExternalIPAddressCountWithLimit(refresh bool, limitTo int64) (int64, int64, error) {
 	if refresh {
 		err := egw.Refresh()
@@ -571,8 +557,6 @@ func (egw *NsxtEdgeGateway) GetUsedAndUnusedExternalIPAddressCountWithLimit(refr
 	unusedIpCount := assignedIpCount - usedIpCount
 
 	return usedIpCount, unusedIpCount, nil
-
-	// return getAllUnusedExternalIPAddresses(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, netip.Prefix{}, limitTo)
 }
 
 // GetAllocatedIpCount traverses all subnets in Edge Gateway and returns a count of allocated IP
