@@ -51,10 +51,15 @@ func (vcd *TestVCD) Test_RdeAndRdeType(check *C) {
 	check.Assert(err, IsNil)
 	alreadyPresentRdes := len(allRdeTypesBySystemAdmin)
 
-	// For the tenant, it returns 0 RDE Types, but no error.
+	// For the tenant, in VCD versions lower than 39.0 it returns 0 RDE Types, but no error.
+	// In newer VCD versions, it returns some pre-defined RDE Types.
 	allRdeTypesByTenant, err := tenantUserClient.GetAllRdeTypes(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allRdeTypesByTenant), Equals, 0)
+	if vcd.client.Client.APIVCDMaxVersionIs("< 39.0") {
+		check.Assert(len(allRdeTypesByTenant), Equals, 0)
+	} else {
+		check.Assert(true, Equals, len(allRdeTypesByTenant) > 0)
+	}
 
 	// Then we create a new RDE Type with System administrator.
 	// Can't put check.TestName() in nss due to a bug in VCD 10.4.1 that causes RDEs to fail on GET once created with special characters like "."
@@ -134,10 +139,11 @@ func (vcd *TestVCD) Test_RdeAndRdeType(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(allRdeTypesBySystemAdmin), Equals, alreadyPresentRdes+1)
 
-	// Count is 1 for tenant user as it can only retrieve the created type as per the assigned rights above.
+	// Count is existing RDE Types + 1 for tenant user
+	alreadyPresentRdes = len(allRdeTypesByTenant)
 	allRdeTypesByTenant, err = tenantUserClient.GetAllRdeTypes(nil)
 	check.Assert(err, IsNil)
-	check.Assert(len(allRdeTypesByTenant), Equals, 1)
+	check.Assert(len(allRdeTypesByTenant), Equals, alreadyPresentRdes+1)
 
 	// Test the multiple ways of getting a RDE Types in both users.
 	obtainedRdeTypeBySysAdmin, err := systemAdministratorClient.GetRdeTypeById(createdRdeType.DefinedEntityType.ID)
