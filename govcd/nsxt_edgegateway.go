@@ -1012,7 +1012,7 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks, limit
 						assignedIpSlice = append(assignedIpSlice, ip)
 						counter++
 						if limitTo != 0 && counter >= limitTo {
-							util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice hit limitTo %d at %s with ", limitTo, time.Since(start))
+							util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice hit limitTo %d at %s with IP range", limitTo, time.Since(start))
 							return assignedIpSlice, nil
 						}
 					}
@@ -1020,7 +1020,7 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks, limit
 					assignedIpSlice = append(assignedIpSlice, startIp)
 					counter++
 					if limitTo != 0 && counter >= limitTo {
-						util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice hit limitTo %d at %s with ", limitTo, time.Since(start))
+						util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice hit limitTo %d at %s with single IP", limitTo, time.Since(start))
 						return assignedIpSlice, nil
 					}
 				}
