@@ -593,6 +593,9 @@ func (input *CseClusterSettings) validate() error {
 	}
 	existingWorkerPools := map[string]bool{}
 	for _, workerPool := range input.WorkerPools {
+		if !cseNamesRegex.MatchString(workerPool.Name) {
+			return fmt.Errorf("the Worker Pool name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", workerPool.Name)
+		}
 		if _, alreadyExists := existingWorkerPools[workerPool.Name]; alreadyExists {
 			return fmt.Errorf("the names of the Worker Pools must be unique, but '%s' is repeated", workerPool.Name)
 		}
@@ -616,9 +619,6 @@ func (input *CseClusterSettings) validate() error {
 		if workerPool.DiskSizeGi < 20 {
 			return fmt.Errorf("disk size for the Worker Pool '%s' in Gibibytes (Gi) must be at least 20, but it was '%d'", workerPool.Name, workerPool.DiskSizeGi)
 		}
-		if !cseNamesRegex.MatchString(workerPool.Name) {
-			return fmt.Errorf("the Worker Pool name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", workerPool.Name)
-		}
 		existingWorkerPools[workerPool.Name] = true
 	}
 	if input.DefaultStorageClass != nil { // This field is optional
@@ -631,7 +631,7 @@ func (input *CseClusterSettings) validate() error {
 		if input.DefaultStorageClass.ReclaimPolicy != "delete" && input.DefaultStorageClass.ReclaimPolicy != "retain" {
 			return fmt.Errorf("the Reclaim Policy for the Default Storage Class must be either 'delete' or 'retain', but it was '%s'", input.DefaultStorageClass.ReclaimPolicy)
 		}
-		if input.DefaultStorageClass.Filesystem != "ext4" && input.DefaultStorageClass.ReclaimPolicy != "xfs" {
+		if input.DefaultStorageClass.Filesystem != "ext4" && input.DefaultStorageClass.Filesystem != "xfs" {
 			return fmt.Errorf("the filesystem for the Default Storage Class must be either 'ext4' or 'xfs', but it was '%s'", input.DefaultStorageClass.Filesystem)
 		}
 	}

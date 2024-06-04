@@ -425,8 +425,8 @@ func (vcd *TestVCD) Test_CseWithAutoscaler(check *C) {
 	check.Assert(foundWorkerPool, Equals, true)
 }
 
-// Test_Cse_Failure tests cluster creation errors and their consequences
-func (vcd *TestVCD) Test_Cse_Failure(check *C) {
+// Test_CseFailure tests cluster creation errors and their consequences
+func (vcd *TestVCD) Test_CseFailure(check *C) {
 	requireCseConfig(check, vcd.config)
 
 	// Prerequisites: We need to read several items before creating the cluster.
@@ -561,6 +561,249 @@ func (vcd *TestVCD) Test_Cse_Failure(check *C) {
 
 	err = cluster.UpgradeCluster(clusterSettings.KubernetesTemplateOvaId, true)
 	check.Assert(err, NotNil)
+}
+
+// Test_CseValidationErrors tests validation errors during cluster creation request
+func (vcd *TestVCD) Test_CseValidationErrors(check *C) {
+	requireCseConfig(check, vcd.config)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
+	check.Assert(err, IsNil)
+
+	settings := CseClusterSettings{}
+
+	// Wrong CSE version
+	cseVersion, err := semver.NewVersion("9.0.0")
+	check.Assert(err, IsNil)
+	check.Assert(cseVersion, NotNil)
+	settings.CseVersion = *cseVersion
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("the Container Service Extension version '%s' is not supported", settings.CseVersion.String()), Equals, true)
+	cseVersion, err = semver.NewVersion(vcd.config.Cse.Version)
+	check.Assert(err, IsNil)
+	check.Assert(cseVersion, NotNil)
+	settings.CseVersion = *cseVersion
+
+	// Wrong name
+	settings.Name = "NotAValidName%%%1"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: the name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", settings.Name), Equals, true)
+
+	settings.Name = "valid"
+
+	// Missing Organization ID
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the Organization ID is required", Equals, true)
+
+	settings.OrganizationId = org.Org.ID
+
+	// Missing VDC ID
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the VDC ID is required", Equals, true)
+
+	vdc, err := org.GetVDCByName(vcd.config.Cse.TenantVdc, false)
+	check.Assert(err, IsNil)
+	settings.VdcId = vdc.Vdc.ID
+
+	// Missing Network ID
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the Network ID is required", Equals, true)
+
+	net, err := vdc.GetOrgVdcNetworkByName(vcd.config.Cse.RoutedNetwork, false)
+	check.Assert(err, IsNil)
+	settings.NetworkId = net.OrgVDCNetwork.ID
+
+	// Missing Kubernetes OVA
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the Kubernetes Template OVA ID is required", Equals, true)
+
+	catalog, err := org.GetCatalogByName(vcd.config.Cse.OvaCatalog, false)
+	check.Assert(err, IsNil)
+	ova, err := catalog.GetVAppTemplateByName(vcd.config.Cse.OvaName)
+	check.Assert(err, IsNil)
+	settings.KubernetesTemplateOvaId = ova.VAppTemplate.ID
+
+	// No control plane nodes
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: number of Control Plane nodes must be odd and higher than 0, but it was '0'", Equals, true)
+
+	settings.ControlPlane.MachineCount = 2
+
+	// Wrong control plane nodes, it should not be even
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: number of Control Plane nodes must be odd and higher than 0, but it was '2'", Equals, true)
+
+	settings.ControlPlane.MachineCount = 1
+
+	// Wrong disk size for the control plane
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: disk size for the Control Plane in Gibibytes (Gi) must be at least 20, but it was '0'", Equals, true)
+
+	settings.ControlPlane.DiskSizeGi = 20
+
+	// No worker pool
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: there must be at least one Worker Pool", Equals, true)
+
+	settings.WorkerPools = []CseWorkerPoolSettings{
+		{},
+	}
+
+	// Wrong worker pool name
+	settings.WorkerPools[0].Name = "NotAValidName%%%1"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: the Worker Pool name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", settings.WorkerPools[0].Name), Equals, true)
+
+	settings.WorkerPools[0].Name = "wp-1"
+
+	// No worker pool replicas
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: number of Worker Pool '%s' nodes must higher than 0, but it was '0'", settings.WorkerPools[0].Name), Equals, true)
+
+	settings.WorkerPools[0].MachineCount = 1
+
+	// Try to set the autoscaler and the static machine count at same time
+	settings.WorkerPools[0].Autoscaler = &CseWorkerPoolAutoscaler{MaxSize: 1, MinSize: 5}
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: the Worker Pool '%s' is using Autoscaler (min=5,max=1), so can't set MachineCount to '1'", settings.WorkerPools[0].Name), Equals, true)
+
+	// The autoscaler is configured wrong (min > max)
+	settings.WorkerPools[0].MachineCount = 0
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: the Autoscaler maximum size for Worker Pool '%s' cannot be less than the minimum", settings.WorkerPools[0].Name), Equals, true)
+
+	// The autoscaler is configured wrong (max < 0)
+	settings.WorkerPools[0].Autoscaler.MaxSize = -5
+	settings.WorkerPools[0].Autoscaler.MinSize = -10
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: the Autoscaler maximum size for Worker Pool '%s' must be a positive number", settings.WorkerPools[0].Name), Equals, true)
+
+	// The autoscaler is configured wrong (min < 0)
+	settings.WorkerPools[0].Autoscaler.MaxSize = 5
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: the Autoscaler minimum size for Worker Pool '%s' must be a positive number", settings.WorkerPools[0].Name), Equals, true)
+
+	// Wrong disk size for the worker pool
+	settings.WorkerPools[0].Autoscaler.MinSize = 1
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: disk size for the Worker Pool '%s' in Gibibytes (Gi) must be at least 20, but it was '0'", settings.WorkerPools[0].Name), Equals, true)
+
+	settings.WorkerPools[0].DiskSizeGi = 20
+	settings.WorkerPools = append(settings.WorkerPools, CseWorkerPoolSettings{Name: "wp-1"})
+
+	// Repeated worker pool name
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: the names of the Worker Pools must be unique, but '%s' is repeated", settings.WorkerPools[0].Name), Equals, true)
+
+	settings.WorkerPools[1] = CseWorkerPoolSettings{Name: "wp-2", MachineCount: 1, DiskSizeGi: 20}
+
+	// Missing API token
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the API token is required", Equals, true)
+
+	token, err := vcd.client.CreateToken(vcd.config.Provider.SysOrg, check.TestName())
+	check.Assert(err, IsNil)
+	defer func() {
+		err = token.Delete()
+		check.Assert(err, IsNil)
+	}()
+	AddToCleanupListOpenApi(token.Token.Name, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTokens+token.Token.ID)
+
+	apiToken, err := token.GetInitialApiToken()
+	check.Assert(err, IsNil)
+	settings.ApiToken = apiToken.RefreshToken
+
+	// Missing Pod CIDR
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the Pod CIDR is required", Equals, true)
+
+	// Wrong Pod CIDR
+	settings.PodCidr = "256.700.1.278/800"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), "error creating the CSE Kubernetes cluster: the Pod CIDR is malformed"), Equals, true)
+
+	// Missing Service CIDR
+	settings.PodCidr = "192.168.1.0/20"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the Service CIDR is required", Equals, true)
+
+	// Wrong Service CIDR
+	settings.ServiceCidr = "256.700.1.278/800"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), "error creating the CSE Kubernetes cluster: the Service CIDR is malformed"), Equals, true)
+
+	// Wrong Virtual IP subnet
+	settings.ServiceCidr = "192.168.1.0/20"
+	settings.VirtualIpSubnet = "256.700.1.278/800"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), "error creating the CSE Kubernetes cluster: the Virtual IP Subnet is malformed"), Equals, true)
+
+	// Wrong Control Plane IP
+	settings.VirtualIpSubnet = "192.154.1.0/20"
+	settings.ControlPlane.Ip = "256.700.1.278"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(strings.Contains(err.Error(), "error creating the CSE Kubernetes cluster: the Control Plane IP is malformed"), Equals, true)
+
+	// Wrong default storage class name
+	settings.ControlPlane.Ip = "1.1.1.1"
+	settings.DefaultStorageClass = &CseDefaultStorageClassSettings{Name: "NotAValidName%%%1"}
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == fmt.Sprintf("error creating the CSE Kubernetes cluster: the Default Storage Class name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", settings.DefaultStorageClass.Name), Equals, true)
+
+	// Missing Storage profile ID
+	settings.DefaultStorageClass.Name = "sp-1"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the Storage Profile ID for the Default Storage Class is required", Equals, true)
+
+	sp, err := vdc.FindStorageProfileReference(vcd.config.Cse.StorageProfile)
+	check.Assert(err, IsNil)
+
+	policies, err := vcd.client.GetAllVdcComputePoliciesV2(url.Values{
+		"filter": []string{"name==TKG small"},
+	})
+	check.Assert(err, IsNil)
+	check.Assert(len(policies), Equals, 1)
+
+	// Wrong retaining policy in the default storage class
+	settings.DefaultStorageClass.StorageProfileId = sp.ID
+	settings.DefaultStorageClass.ReclaimPolicy = "whatever"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the Reclaim Policy for the Default Storage Class must be either 'delete' or 'retain', but it was 'whatever'", Equals, true)
+
+	// Wrong filesystem in the default storage class
+	settings.DefaultStorageClass.ReclaimPolicy = "delete"
+	settings.DefaultStorageClass.Filesystem = "oops"
+	_, err = org.CseCreateKubernetesCluster(settings, 0)
+	check.Assert(err, NotNil)
+	check.Assert(err.Error() == "error creating the CSE Kubernetes cluster: the filesystem for the Default Storage Class must be either 'ext4' or 'xfs', but it was 'oops'", Equals, true)
 }
 
 func assertCseClusterCreation(check *C, createdCluster *CseKubernetesCluster, settings CseClusterSettings, expectedKubernetesData tkgVersionBundle) {
