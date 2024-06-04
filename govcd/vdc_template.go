@@ -20,18 +20,23 @@ func (vcdClient *VCDClient) CreateVdcTemplate(input types.VMWVdcTemplate) (*VdcT
 		return nil, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 	href := vcdClient.Client.VCDHREF
-	href.Path += "/admin/extension/vdcTemplate"
+	href.Path += "/admin/extension/vdcTemplates"
 
-	result := types.VMWVdcTemplate{}
+	// Set the correct namespaces before sending the payload
+	input.Xmlns = types.XMLNamespaceVCloud
+	input.XmlnsVmext = types.XMLNamespaceExtension
+	input.XmlnsVmw = types.XMLNamespaceVMW
+	input.VdcTemplateSpecification.Xmlns = types.XMLNamespaceXSI
 
+	result := &types.VMWVdcTemplate{}
 	_, err := vcdClient.Client.ExecuteRequest(href.String(), http.MethodPost, types.MimeVdcTemplateXml,
-		"error creating VDC Template: %s", input, &result)
+		"error creating VDC Template: %s", input, result)
 	if err != nil {
 		return nil, err
 	}
 
 	return &VdcTemplate{
-		VdcTemplate: &result,
+		VdcTemplate: result,
 		client:      &vcdClient.Client,
 	}, nil
 }

@@ -742,3 +742,9 @@ const (
 	BackingUseWhenOnlyOne    BackingUseConstraint = "use-when-only-one"   // use automatically when only one was found
 	BackingUseFirstAvailable BackingUseConstraint = "use-first-available" // use the first available backing with no conditions
 )
+
+// Values used to create a VDC Template
+const (
+	VdcTemplateFlexType       = "vmext:VMWFlexVdcTemplateSpecificationType"
+	VdcTemplatePayAsYouGoType = "vmext:VMWAllocationVappVdcTemplateSpecificationType"
+)

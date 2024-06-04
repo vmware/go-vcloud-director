@@ -583,8 +583,8 @@ type VdcStorageProfileConfiguration struct {
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VdcStorageProfileType.html
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/AdminVdcStorageProfileType.html
 type VdcStorageProfile struct {
-	ID                        string                         `xml:"id,attr"`
-	Xmlns                     string                         `xml:"xmlns,attr"`
+	ID                        string                         `xml:"id,attr,omitempty"`
+	Xmlns                     string                         `xml:"xmlns,attr,omitempty"`
 	Name                      string                         `xml:"name,attr"`
 	Enabled                   *bool                          `xml:"Enabled,omitempty"`
 	Units                     string                         `xml:"Units"`
@@ -663,6 +663,11 @@ type VdcConfiguration struct {
 // Description: A reference to a VDC template.
 // Since: 5.7
 type VMWVdcTemplate struct {
+	XMLName    xml.Name `xml:"vmext:VMWVdcTemplate"`
+	Xmlns      string   `xml:"xmlns,attr"`
+	XmlnsVmext string   `xml:"xmlns:vmext,attr"`
+	XmlnsVmw   string   `xml:"xmlns:vmw,attr"`
+
 	HREF         string `xml:"href,attr,omitempty"`
 	Type         string `xml:"type,attr,omitempty"`
 	ID           string `xml:"id,attr,omitempty"`
@@ -673,11 +678,11 @@ type VMWVdcTemplate struct {
 	Link                     LinkList                                  `xml:"Link,omitempty"`
 	Description              string                                    `xml:"Description,omitempty"`
 	Tasks                    *TasksInProgress                          `xml:"Tasks,omitempty"`
-	TenantName               string                                    `xml:"TenantName,omitempty"`
-	TenantDescription        string                                    `xml:"TenantDescription,omitempty"`
-	NetworkBackingType       string                                    `xml:"NetworkBackingType,omitempty"` // "NSX_V" or "NSX_T"
-	ProviderVdcReference     []*VMWVdcTemplateProviderVdcSpecification `xml:"ProviderVdcReference,omitempty"`
-	VdcTemplateSpecification *VMWVdcTemplateSpecification              `xml:"VdcTemplateSpecification,omitempty"`
+	TenantName               string                                    `xml:"vmext:TenantName,omitempty"`
+	TenantDescription        string                                    `xml:"vmext:TenantDescription,omitempty"`
+	NetworkBackingType       string                                    `xml:"vmext:NetworkBackingType,omitempty"` // "NSX_V" or "NSX_T"
+	ProviderVdcReference     []*VMWVdcTemplateProviderVdcSpecification `xml:"vmext:ProviderVdcReference,omitempty"`
+	VdcTemplateSpecification *VMWVdcTemplateSpecification              `xml:"vmext:VdcTemplateSpecification,omitempty"`
 }
 
 // VMWVdcTemplateProviderVdcSpecification references a Provider VDC for a VDC Template.
@@ -690,7 +695,7 @@ type VMWVdcTemplateProviderVdcSpecification struct {
 	ID   string `xml:"id,attr,omitempty"`
 	Name string `xml:"name,attr"`
 
-	Binding []*VMWVdcTemplateBinding `xml:"Binding,omitempty"`
+	Binding []*VMWVdcTemplateBinding `xml:"vmext:Binding,omitempty"`
 }
 
 // VMWVdcTemplateBinding specifies a binding for a VDC Template
@@ -707,8 +712,8 @@ type VMWVdcTemplateProviderVdcSpecification struct {
 //
 // Since: 5.10
 type VMWVdcTemplateBinding struct {
-	Name  string     `xml:"Name,omitempty"` // URI format
-	Value *Reference `xml:"Value,omitempty"`
+	Name  string     `xml:"vmext:Name,omitempty"` // URI format
+	Value *Reference `xml:"vmext:Value,omitempty"`
 }
 
 // VMWVdcTemplateSpecification references a VDC for a VDC Template.
@@ -717,47 +722,59 @@ type VMWVdcTemplateBinding struct {
 // Description: A reference to a Provider VDC.
 // Since: 5.7
 type VMWVdcTemplateSpecification struct {
+	Xmlns string `xml:"xmlns:xsi,attr"`
+	Type  string `xml:"xsi:type,attr,omitempty"`
+
+	// Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number.
+	NicQuota int `xml:"NicQuota,omitempty"`
+
+	// The quota of VMs that can be created in this VDC. Includes VMs in both vApps and vApp templates, deployed, or otherwise.
+	// Defaults to 0, which specifies an unlimited number.
+	VmQuota int `xml:"VmQuota,omitempty"`
+
+	// Maximum number of network objects that can be deployed in this VDC. Defaults to 0, which means no networks can be deployed.
+	ProvisionedNetworkQuota int `xml:"ProvisionedNetworkQuota,omitempty"`
+
 	// Indicates that the Provider VDC's automatically-created VXLAN network pool should be used.
 	// NetworkPoolReference must be empty if this element appears in the request.
-	AutomaticNetworkPoolReference *Reference `xml:"AutomaticNetworkPoolReference,omitempty"`
-
-	// Boolean to request fast provisioning. Request will be honored only if the underlying datastore supports it.
-	// Fast provisioning can reduce the time it takes to create virtual machines by using vSphere linked clones.
-	// If you disable fast provisioning, all provisioning operations will result in full clones.
-	FastProvisioningEnabled bool `xml:"FastProvisioningEnabled,omitempty"`
+	// AutomaticNetworkPoolReference *Reference `xml:"vmext:AutomaticNetworkPoolReference,omitempty"`
 
 	// Defines a gateway and NAT Routed organization VDC network to be created.
 	GatewayConfiguration *VdcTemplateSpecificationGatewayConfiguration `xml:"GatewayConfiguration,omitempty"`
+
+	// A set of name of Storage Profiles, with corresponding limit value, that all Provider VDCs must have, and that are selected at the time of VDC Template instantiation.
+	StorageProfile []VdcStorageProfile `xml:"StorageProfile,omitempty"`
+
+	// Set to true to indicate if the FLEX vDC is to be elastic. This field can only be set on input for FLEX VDC templates
+	// and Allocation VApp vDC templates. However, this field will be returned properly when read.
+	IsElastic bool `xml:"IsElastic,omitempty"`
 
 	// Set to true to indicate if the FLEX vDC is to include memory overhead into its accounting for admission control.
 	// This field can only be set on input for FLEX vDC templates and Allocation VApp VDC templates.
 	// However, this field will be returned properly when read.
 	IncludeMemoryOverhead bool `xml:"IncludeMemoryOverhead,omitempty"`
 
-	// Set to true to indicate if the FLEX vDC is to be elastic. This field can only be set on input for FLEX VDC templates
-	// and Allocation VApp vDC templates. However, this field will be returned properly when read.
-	IsElastic bool `xml:"IsElastic,omitempty"`
-
-	// Reference to a network pool in the Provider VDC. Must be empty if you specify AutomaticNetworkPoolReference.
-	NetworkPoolReference        *Reference                 `xml:"NetworkPoolReference,omitempty"`
-	NetworkProfileConfiguration *VdcTemplateNetworkProfile `xml:"NetworkProfileConfiguration,omitempty"`
-
-	// Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number.
-	NicQuota int `xml:"NicQuota,omitempty"`
-
-	// Maximum number of network objects that can be deployed in this VDC. Defaults to 0, which means no networks can be deployed.
-	ProvisionedNetworkQuota int `xml:"ProvisionedNetworkQuota,omitempty"`
-
-	// A set of name of Storage Profiles, with corresponding limit value, that all Provider VDCs must have, and that are selected at the time of VDC Template instantiation.
-	StorageProfile *VdcStorageProfiles `xml:"StorageProfile,omitempty"`
-
 	// Boolean to request thin provisioning. Request will be honored only if the underlying datastore supports it.
 	// Thin provisioning saves storage space by committing it on demand. This allows over-allocation of storage.
-	ThinProvision bool `xml:"ThinProvision,omitempty"`
+	ThinProvision bool `xml:"vmext:ThinProvision,omitempty"`
 
-	// The quota of VMs that can be created in this VDC. Includes VMs in both vApps and vApp templates, deployed, or otherwise.
-	// Defaults to 0, which specifies an unlimited number.
-	VmQuota int `xml:"VmQuota,omitempty"`
+	// Boolean to request fast provisioning. Request will be honored only if the underlying datastore supports it.
+	// Fast provisioning can reduce the time it takes to create virtual machines by using vSphere linked clones.
+	// If you disable fast provisioning, all provisioning operations will result in full clones.
+	FastProvisioningEnabled bool `xml:"vmext:FastProvisioningEnabled,omitempty"`
+
+	// Reference to a network pool in the Provider VDC. Must be empty if you specify AutomaticNetworkPoolReference.
+	NetworkPoolReference        *Reference                 `xml:"vmext:NetworkPoolReference,omitempty"`
+	NetworkProfileConfiguration *VdcTemplateNetworkProfile `xml:"vmext:NetworkProfileConfiguration,omitempty"`
+
+	// Only in Flex VDCs
+	CpuAllocationMhz           *int `xml:"CpuAllocationMhz,omitempty"`
+	CpuLimitMhzPerVcpu         *int `xml:"CpuLimitMhzPerVcpu,omitempty"`
+	CpuLimitMhz                *int `xml:"CpuLimitMhz,omitempty"`
+	MemoryAllocationMB         *int `xml:"MemoryAllocationMB,omitempty"`
+	MemoryLimitMb              *int `xml:"MemoryLimitMb,omitempty"`
+	CpuGuaranteedPercentage    *int `xml:"CpuGuaranteedPercentage,omitempty"`
+	MemoryGuaranteedPercentage *int `xml:"MemoryGuaranteedPercentage,omitempty"`
 }
 
 // VdcTemplateSpecificationGatewayConfiguration specifies the Edge Gateway configuration for a VDC Template.
@@ -788,9 +805,9 @@ type VdcTemplateSpecificationGatewayConfiguration struct {
 // properties. When VDC is instantiated, based on PVDC and binding name appropriate binding value is selected to configure network profiles.
 // Since: 35.2
 type VdcTemplateNetworkProfile struct {
-	PrimaryEdgeCluster   *Reference `xml:"PrimaryEdgeCluster,omitempty"`
-	SecondaryEdgeCluster *Reference `xml:"SecondaryEdgeCluster,omitempty"`
-	ServicesEdgeCluster  *Reference `xml:"ServicesEdgeCluster,omitempty"`
+	PrimaryEdgeCluster   *Reference `xml:"vmext:PrimaryEdgeCluster,omitempty"`
+	SecondaryEdgeCluster *Reference `xml:"vmext:SecondaryEdgeCluster,omitempty"`
+	ServicesEdgeCluster  *Reference `xml:"vmext:ServicesEdgeCluster,omitempty"`
 }
 
 // Task represents an asynchronous operation in VMware Cloud Director.
@@ -2113,7 +2130,7 @@ type GatewayConfiguration struct {
 	BackwardCompatibilityMode bool `xml:"BackwardCompatibilityMode,omitempty"`
 	// GatewayBackingConfig defines configuration of the vShield edge VM for this gateway. One of:
 	// compact, full.
-	GatewayBackingConfig string `xml:"GatewayBackingConfig"`
+	GatewayBackingConfig string `xml:"GatewayBackingConfig,omitempty"`
 	// GatewayInterfaces holds configuration for edge gateway interfaces, ip allocations, traffic
 	// rate limits and ip sub-allocations
 	GatewayInterfaces *GatewayInterfaces `xml:"GatewayInterfaces"`
@@ -2135,6 +2152,12 @@ type GatewayConfiguration struct {
 	// algorithms or protocols that are allowed by United States Federal Information Processing
 	// Standards (FIPS). FIPS mode turns on the cipher suites that comply with FIPS.
 	FipsModeEnabled *bool `xml:"FipsModeEnabled,omitempty"`
+	// EdgeClusterConfiguration represents the Edge Cluster Configuration for a given Edge Gateway.
+	// Can be changed if a gateway needs to be placed on a specific set of Edge Clusters.
+	// For NSX-V Edges, if nothing is specified on create or update, the Org VDC Default will be used.
+	// For NSX-T Edges, Open API must be used and this field is read only.
+	// If there is no value, the gateway uses the Edge Cluster of the connected External Network's backing Tier-0 router.
+	EdgeClusterConfiguration *EdgeClusterConfiguration `xml:"EdgeClusterConfiguration,omitempty"`
 }
 
 // GatewayInterfaces is a list of Gateway Interfaces.
@@ -2161,6 +2184,7 @@ type GatewayInterface struct {
 	InRateLimit         float64                `xml:"InRateLimit,omitempty"`         // Incoming rate limit expressed as Gbps.
 	OutRateLimit        float64                `xml:"OutRateLimit,omitempty"`        // Outgoing rate limit expressed as Gbps.
 	UseForDefaultRoute  bool                   `xml:"UseForDefaultRoute,omitempty"`  // True if this network is default route for the gateway.
+	Connected           bool                   `xml:"Connected,omitempty"`           // True if interface is marked as connected in NSX
 }
 
 // SortBySubnetParticipationGateway allows to sort SubnetParticipation property slice by gateway
@@ -2322,6 +2346,18 @@ type IpsecVpnSubnet struct {
 type GatewayDhcpService struct {
 	IsEnabled bool               `xml:"IsEnabled,omitempty"` // Enable or disable the service using this flag
 	Pool      []*DhcpPoolService `xml:"Pool,omitempty"`      // A DHCP pool.
+}
+
+// EdgeClusterConfiguration configures Edge clusters in an Edge Gateway.
+// Type: EdgeClusterConfigurationType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Used for specifying specific Edge Cluster(s) for a given Edge Gateway. Specification is only applicable
+// for NSX-V Edges, and if specified this takes precedence over the Edge Cluster configuration on an Org vDC. For NSX-T Edges,
+// this is only read-only and edge management must be done via Cloud API.
+// Since: 5.1
+type EdgeClusterConfiguration struct {
+	PrimaryEdgeCluster   *Reference `xml:"PrimaryEdgeCluster,omitempty"`
+	SecondaryEdgeCluster *Reference `xml:"SecondaryEdgeCluster,omitempty"`
 }
 
 // DhcpPoolService represents DHCP pool service.
