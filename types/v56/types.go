@@ -670,14 +670,14 @@ type VMWVdcTemplate struct {
 	Name         string `xml:"name,attr"`
 	Status       int    `xml:"status,attr,omitempty"`
 
-	Link                     LinkList                                `xml:"Link,omitempty"`
-	Description              string                                  `xml:"Description,omitempty"`
-	Tasks                    *TasksInProgress                        `xml:"Tasks,omitempty"`
-	TenantName               string                                  `xml:"TenantName,omitempty"`
-	TenantDescription        string                                  `xml:"TenantDescription,omitempty"`
-	NetworkBackingType       string                                  `xml:"NetworkBackingType,omitempty"` // "NSX_V" or "NSX_T"
-	ProviderVdcReference     *VMWVdcTemplateProviderVdcSpecification `xml:"ProviderVdcReference,omitempty"`
-	VdcTemplateSpecification *VMWVdcTemplateSpecification            `xml:"VdcTemplateSpecification,omitempty"`
+	Link                     LinkList                                  `xml:"Link,omitempty"`
+	Description              string                                    `xml:"Description,omitempty"`
+	Tasks                    *TasksInProgress                          `xml:"Tasks,omitempty"`
+	TenantName               string                                    `xml:"TenantName,omitempty"`
+	TenantDescription        string                                    `xml:"TenantDescription,omitempty"`
+	NetworkBackingType       string                                    `xml:"NetworkBackingType,omitempty"` // "NSX_V" or "NSX_T"
+	ProviderVdcReference     []*VMWVdcTemplateProviderVdcSpecification `xml:"ProviderVdcReference,omitempty"`
+	VdcTemplateSpecification *VMWVdcTemplateSpecification              `xml:"VdcTemplateSpecification,omitempty"`
 }
 
 // VMWVdcTemplateProviderVdcSpecification references a Provider VDC for a VDC Template.
@@ -690,7 +690,7 @@ type VMWVdcTemplateProviderVdcSpecification struct {
 	ID   string `xml:"id,attr,omitempty"`
 	Name string `xml:"name,attr"`
 
-	Binding *VMWVdcTemplateBinding `xml:"Binding,omitempty"`
+	Binding []*VMWVdcTemplateBinding `xml:"Binding,omitempty"`
 }
 
 // VMWVdcTemplateBinding specifies a binding for a VDC Template
