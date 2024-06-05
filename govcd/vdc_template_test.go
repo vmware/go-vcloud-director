@@ -173,8 +173,16 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 	check.Assert(templateById, NotNil)
 	check.Assert(templateById, DeepEquals, template)
 
+	_, err = vcd.client.GetVdcTemplateById("urn:vcloud:vdctemplate:00000000-0000-0000-00000-000000000000")
+	check.Assert(err, NotNil)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
 	templateByName, err := vcd.client.GetVdcTemplateByName(template.VdcTemplate.Name)
 	check.Assert(err, IsNil)
 	check.Assert(templateByName, NotNil)
 	check.Assert(templateByName, DeepEquals, templateById)
+
+	_, err = vcd.client.GetVdcTemplateByName("IDoNotExist")
+	check.Assert(err, NotNil)
+	check.Assert(ContainsNotFound(err), Equals, true)
 }

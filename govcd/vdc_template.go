@@ -9,6 +9,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type VdcTemplate struct {
@@ -27,11 +28,10 @@ func (vcdClient *VCDClient) CreateVdcTemplate(input types.VMWVdcTemplate) (*VdcT
 	result := &types.VMWVdcTemplate{}
 
 	resp, err := vcdClient.Client.executeJsonRequest(href.String(), http.MethodPost, input, "error creating VDC Template: %s")
+	defer closeBody(resp)
 	if err != nil {
 		return nil, err
 	}
-
-	defer closeBody(resp)
 
 	vdcTemplate := VdcTemplate{
 		VdcTemplate: result,
@@ -56,11 +56,14 @@ func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) 
 
 	result := &types.VMWVdcTemplate{}
 	resp, err := vcdClient.Client.executeJsonRequest(href.String(), http.MethodGet, nil, "error getting VDC Template: %s")
+	defer closeBody(resp)
+
 	if err != nil {
+		if strings.Contains(err.Error(), "RESOURCE_NOT_FOUND") {
+			return nil, fmt.Errorf("%s: %s", ErrorEntityNotFound, err)
+		}
 		return nil, err
 	}
-
-	defer closeBody(resp)
 
 	vdcTemplate := VdcTemplate{
 		VdcTemplate: result,
@@ -88,7 +91,10 @@ func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, err
 	if err != nil {
 		return nil, err
 	}
-	if len(results.Results.AdminOrgVdcTemplateRecord) != 1 {
+	if len(results.Results.AdminOrgVdcTemplateRecord) == 0 {
+		return nil, fmt.Errorf("could not find any VDC Template with name '%s': %s", name, ErrorEntityNotFound)
+	}
+	if len(results.Results.AdminOrgVdcTemplateRecord) > 1 {
 		return nil, fmt.Errorf("expected one VDC Template with name '%s', but got %d", name, len(results.Results.AdminOrgVdcTemplateRecord))
 	}
 	return vcdClient.GetVdcTemplateById(extractUuid(results.Results.AdminOrgVdcTemplateRecord[0].HREF))
