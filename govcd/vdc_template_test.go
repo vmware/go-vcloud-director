@@ -120,7 +120,7 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 								IsInherited:        false,
 								Gateway:            "1.1.1.1",
 								Netmask:            "255.255.240.0",
-								SubnetPrefixLength: "20",
+								SubnetPrefixLength: addrOf(20),
 								IPRanges: &types.IPRanges{IPRange: []*types.IPRange{
 									{
 										StartAddress: "1.1.1.1",
@@ -163,6 +163,18 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(template, NotNil)
 
-	err = template.Delete()
+	defer func() {
+		err = template.Delete()
+		check.Assert(err, IsNil)
+	}()
+
+	templateById, err := vcd.client.GetVdcTemplateById(template.VdcTemplate.ID)
 	check.Assert(err, IsNil)
+	check.Assert(templateById, NotNil)
+	check.Assert(templateById, DeepEquals, template)
+
+	templateByName, err := vcd.client.GetVdcTemplateByName(template.VdcTemplate.Name)
+	check.Assert(err, IsNil)
+	check.Assert(templateByName, NotNil)
+	check.Assert(templateByName, DeepEquals, templateById)
 }

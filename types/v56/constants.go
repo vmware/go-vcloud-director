@@ -161,7 +161,7 @@ const (
 	// Mime to handle virtual hardware versions
 	MimeVirtualHardwareVersion = "application/vnd.vmware.vcloud.virtualHardwareVersion+xml"
 	// Mime to handle VDC Templates
-	MimeVdcTemplateXml = "application/vnd.vmware.admin.vmwVdcTemplate+xml"
+	MimeVdcTemplate = "application/vnd.vmware.admin.vmwVdcTemplate+json"
 )
 
 const (
@@ -745,6 +745,6 @@ const (
 
 // Values used to create a VDC Template
 const (
-	VdcTemplateFlexType       = "vmext:VMWFlexVdcTemplateSpecificationType"
-	VdcTemplatePayAsYouGoType = "vmext:VMWAllocationVappVdcTemplateSpecificationType"
+	VdcTemplateFlexType       = "VMWFlexVdcTemplateSpecificationType"
+	VdcTemplatePayAsYouGoType = "VMWAllocationVappVdcTemplateSpecificationType"
 )

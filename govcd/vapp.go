@@ -40,7 +40,7 @@ type VappNetworkSettings struct {
 	Description        string
 	Gateway            string
 	NetMask            string
-	SubnetPrefixLength string
+	SubnetPrefixLength *int
 	DNS1               string
 	DNS2               string
 	DNSSuffix          string
@@ -1208,11 +1208,11 @@ func validateNetworkConfigSettings(networkSettings *VappNetworkSettings) error {
 		return errors.New("network gateway IP is missing")
 	}
 
-	if networkSettings.NetMask == "" && networkSettings.SubnetPrefixLength == "" {
+	if networkSettings.NetMask == "" && networkSettings.SubnetPrefixLength == nil {
 		return errors.New("network mask and subnet prefix length config is missing, exactly one is required")
 	}
 
-	if networkSettings.NetMask != "" && networkSettings.SubnetPrefixLength != "" {
+	if networkSettings.NetMask != "" && networkSettings.SubnetPrefixLength != nil {
 		return errors.New("exactly one of netmask and prefix length can be supplied")
 	}
 

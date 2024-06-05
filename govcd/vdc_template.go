@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/http"
+	"net/url"
 )
 
 type VdcTemplate struct {
@@ -15,6 +16,7 @@ type VdcTemplate struct {
 	client      *Client
 }
 
+// CreateVdcTemplate creates a VDC Template with the given settings.
 func (vcdClient *VCDClient) CreateVdcTemplate(input types.VMWVdcTemplate) (*VdcTemplate, error) {
 	if !vcdClient.Client.IsSysAdmin {
 		return nil, fmt.Errorf("functionality requires System Administrator privileges")
@@ -22,34 +24,74 @@ func (vcdClient *VCDClient) CreateVdcTemplate(input types.VMWVdcTemplate) (*VdcT
 	href := vcdClient.Client.VCDHREF
 	href.Path += "/admin/extension/vdcTemplates"
 
-	// Set the correct namespaces before sending the payload
-	input.Xmlns = types.XMLNamespaceVCloud
-	input.XmlnsVmext = types.XMLNamespaceExtension
-	input.XmlnsVmw = types.XMLNamespaceVMW
-	input.VdcTemplateSpecification.Xmlns = types.XMLNamespaceXSI
-
 	result := &types.VMWVdcTemplate{}
-	_, err := vcdClient.Client.ExecuteRequest(href.String(), http.MethodPost, types.MimeVdcTemplateXml,
-		"error creating VDC Template: %s", input, result)
+
+	resp, err := vcdClient.Client.executeJsonRequest(href.String(), http.MethodPost, input, "error creating VDC Template: %s")
 	if err != nil {
 		return nil, err
 	}
 
-	return &VdcTemplate{
+	defer closeBody(resp)
+
+	vdcTemplate := VdcTemplate{
 		VdcTemplate: result,
 		client:      &vcdClient.Client,
-	}, nil
+	}
+
+	err = decodeBody(types.BodyTypeJSON, resp, vdcTemplate.VdcTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vdcTemplate, nil
 }
 
-func (vcdClient *VCDClient) GetVdcTemplateById() (*VdcTemplate, error) {
-	// /api/admin/extension/vdcTemplate/876b75ff-1ee1-4508-a701-2d2ff3e6f662
-	return nil, nil
+func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) {
+	if !vcdClient.Client.IsSysAdmin {
+		return nil, fmt.Errorf("functionality requires System Administrator privileges")
+	}
+
+	href := vcdClient.Client.VCDHREF
+	href.Path += "/admin/extension/vdcTemplate/" + extractUuid(id)
+
+	result := &types.VMWVdcTemplate{}
+	resp, err := vcdClient.Client.executeJsonRequest(href.String(), http.MethodGet, nil, "error getting VDC Template: %s")
+	if err != nil {
+		return nil, err
+	}
+
+	defer closeBody(resp)
+
+	vdcTemplate := VdcTemplate{
+		VdcTemplate: result,
+		client:      &vcdClient.Client,
+	}
+
+	err = decodeBody(types.BodyTypeJSON, resp, vdcTemplate.VdcTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vdcTemplate, nil
 }
 
-func (vcdClient *VCDClient) GetVdcTemplateByName() (*VdcTemplate, error) {
-	// /api/admin/extension/vdcTemplate/
-	// loop per names
-	return nil, nil
+// GetVdcTemplateByName retrieves the VDC Template with the given name
+func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, error) {
+	if !vcdClient.Client.IsSysAdmin {
+		return nil, fmt.Errorf("functionality requires System Administrator privileges")
+	}
+	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
+		"type":         "adminOrgVdcTemplate",
+		"filter":       fmt.Sprintf("name==%s", url.QueryEscape(name)),
+		"filterEncode": "true",
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(results.Results.AdminOrgVdcTemplateRecord) != 1 {
+		return nil, fmt.Errorf("expected one VDC Template with name '%s', but got %d", name, len(results.Results.AdminOrgVdcTemplateRecord))
+	}
+	return vcdClient.GetVdcTemplateById(extractUuid(results.Results.AdminOrgVdcTemplateRecord[0].HREF))
 }
 
 func (vdcTemplate *VdcTemplate) Update(input types.VMWVdcTemplate) (*VdcTemplate, error) {
