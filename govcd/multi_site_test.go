@@ -191,9 +191,10 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 		vcd.config.Tenants[0].SysOrg, true)
 	check.Assert(err, IsNil)
 	localOrg, err := localUser.GetAdminOrgByName(vcd.config.Tenants[0].SysOrg)
-	fmt.Printf("Using Org user '%s@%s' (site 1)\n", vcd.config.Tenants[0].User, vcd.config.Tenants[0].SysOrg)
+	fmt.Printf("Using Org user '%s@%s' (site 1 %s)\n", vcd.config.Tenants[0].User, vcd.config.Tenants[0].SysOrg, firstVcdClient.Client.VCDHREF.String())
 	check.Assert(err, IsNil)
 
+	fmt.Println("org1 (site1) connected")
 	remoteOrgName := os.Getenv(secondVcdOrg2)
 	remoteOrgUserName := os.Getenv(secondVcdOrgUser2)
 	remoteOrgPassword := os.Getenv(secondVcdOrgUserPassword2)
@@ -201,15 +202,21 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 		fmt.Printf("one or more of [%s %s %s] was not defined\n", secondVcdOrg2, secondVcdOrgUser2, secondVcdOrgUserPassword2)
 		return
 	}
+	_, err = secondVcdClient.GetOrgByName(remoteOrgName)
+	if err != nil {
+		fmt.Printf("Error retrieving Org '%s' in site %s\n", remoteOrgName, secondVcdClient.Client.VCDHREF.String())
+	}
+	check.Assert(err, IsNil)
+	fmt.Printf("Using Org user '%s@%s' (site 2 %s)\n", remoteOrgUserName, remoteOrgName, secondVcdClient.Client.VCDHREF.String())
 	remoteUser, err := newUserConnection(
 		secondVcdClient.Client.VCDHREF.String(),
 		remoteOrgUserName,
 		remoteOrgPassword,
 		remoteOrgName, true)
 	check.Assert(err, IsNil)
-	fmt.Printf("Using Org user '%s@%s' (site 2)\n", remoteOrgUserName, remoteOrgName)
 	remoteOrg, err := remoteUser.GetAdminOrgByName(remoteOrgName)
 	check.Assert(err, IsNil)
+	fmt.Println("org2 (site2) connected")
 
 	orgAssociationData1, err := localOrg.GetOrgAssociationData()
 	check.Assert(err, IsNil)
