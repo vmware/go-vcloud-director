@@ -745,6 +745,8 @@ const (
 
 // Values used to create a VDC Template
 const (
-	VdcTemplateFlexType       = "VMWFlexVdcTemplateSpecificationType"
-	VdcTemplatePayAsYouGoType = "VMWAllocationVappVdcTemplateSpecificationType"
+	VdcTemplateFlexType            = "VMWFlexVdcTemplateSpecificationType"
+	VdcTemplatePayAsYouGoType      = "VMWAllocationVappVdcTemplateSpecificationType"
+	VdcTemplateAllocationPoolType  = "VMWAllocationPoolVdcTemplateSpecificationType"
+	VdcTemplateReservationPoolType = "VMWReservationPoolVdcTemplateSpecificationType"
 )
