@@ -289,7 +289,7 @@ func (clusterSettings *cseClusterSettingsInternal) generateAutoscalerYaml() (str
 	if err := autoscaler.Execute(buf, map[string]string{
 		"TargetNamespace":    clusterSettings.Name + "-ns",
 		"AutoscalerReplicas": "1",
-		"AutoscalerVersion":  fmt.Sprintf("v%d.%d.%d", k8sVersionSegments[0], k8sVersionSegments[1], k8sVersionSegments[2]),
+		"AutoscalerVersion":  fmt.Sprintf("v%d.%d.0", k8sVersionSegments[0], k8sVersionSegments[1]), // Autoscaler version matches the Kubernetes minor
 	}); err != nil {
 		return "", fmt.Errorf("could not generate a correct Autoscaler YAML block: %s", err)
 	}
