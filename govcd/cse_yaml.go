@@ -414,6 +414,9 @@ func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, clusterNa
 		} else {
 			d["spec"].(map[string]interface{})["replicas"] = float64(0) // As it was originally unmarshalled as a float64
 		}
+		// We also keep the image up-to-date with the Kubernetes version
+		k8sVersionSegments := kubernetesVersion.Segments()
+		d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["image"] = fmt.Sprintf("k8s.gcr.io/autoscaling/cluster-autoscaler:v%d.%d.0", k8sVersionSegments[0], k8sVersionSegments[1])
 		return yamlDocuments, nil
 	}
 
