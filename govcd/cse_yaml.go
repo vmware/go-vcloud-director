@@ -167,7 +167,7 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, k
 					return err
 				}
 				k8sVersionSegments := k8sVersion.Segments()
-				d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["image"] = fmt.Sprintf("k8s.gcr.io/autoscaling/cluster-autoscaler:v%d.%d.%d", k8sVersionSegments[0], k8sVersionSegments[1], k8sVersionSegments[2])
+				d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["image"] = fmt.Sprintf("k8s.gcr.io/autoscaling/cluster-autoscaler:v%d.%d.0", k8sVersionSegments[0], k8sVersionSegments[1])
 			}
 		}
 	}
