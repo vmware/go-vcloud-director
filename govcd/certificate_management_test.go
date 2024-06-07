@@ -93,7 +93,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(matchingCertificates, NotNil)
 
-	foundCertificates, err := vcd.client.Client.FoundCertificateInLibrary(certificate)
+	foundCertificates, err := vcd.client.Client.CountMatchingCertificates(certificate)
 	check.Assert(err, IsNil)
 	check.Assert(foundCertificates, Equals, len(matchingCertificates))
 	check.Assert(foundCertificates, Equals, 1)

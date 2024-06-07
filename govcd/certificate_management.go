@@ -167,9 +167,9 @@ func (client *Client) GetAllCertificatesFromLibrary(queryParameters url.Values) 
 	return getAllCertificateFromLibrary(client, queryParameters, nil)
 }
 
-// FoundCertificateInLibrary searches among all certificates and return the number of certificates
+// CountMatchingCertificates searches among all certificates and return the number of certificates
 // with the text that matches the given PEM
-func (client *Client) FoundCertificateInLibrary(pem string) (int, error) {
+func (client *Client) CountMatchingCertificates(pem string) (int, error) {
 	matchingCertificates, err := client.MatchingCertificatesInLibrary(pem)
 	if err != nil {
 		return 0, err

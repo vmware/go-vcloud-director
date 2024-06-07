@@ -296,7 +296,7 @@ func (vcdClient *VCDClient) TrustAddOnImageCertificate(certificateText, source s
 		return fmt.Errorf("source field is empty")
 	}
 
-	foundCertificateInLibrary, err := vcdClient.Client.FoundCertificateInLibrary(certificateText)
+	foundCertificateInLibrary, err := vcdClient.Client.CountMatchingCertificates(certificateText)
 	if err != nil {
 		return err
 	}
