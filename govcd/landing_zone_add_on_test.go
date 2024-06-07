@@ -99,9 +99,16 @@ func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error)
 	cacheFilePath := cacheDirPath + "/" + fileName
 	printVerbose("# Using '%s' file to cache Solution Add-On\n", cacheFilePath)
 
-	if _, err := os.Stat(cacheFilePath); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(cacheFilePath); errors.Is(err, os.ErrNotExist) || !dirExists(cacheDirPath) {
 		// Create cache directory if it doesn't exist
-		if _, err := os.Stat(cacheDirPath); os.IsNotExist(err) {
+		if fileInfo, err := os.Stat(cacheDirPath); os.IsNotExist(err) || !fileInfo.IsDir() {
+			// test-resources/cache is a file, not a directory, it should be removed
+			if !os.IsNotExist(err) && !fileInfo.IsDir() {
+				fmt.Printf("# %s is a file, not a directory - removing\n", cacheDirPath)
+				err := os.Remove(cacheDirPath)
+				check.Assert(err, IsNil)
+			}
+
 			printVerbose("# Creating directory '%s'\n", cacheDirPath)
 			err := os.Mkdir(cacheDirPath, 0750)
 			check.Assert(err, IsNil)
@@ -123,4 +130,14 @@ func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error)
 	}
 
 	return cacheFilePath, nil
+}
+
+// Checks if a directory exists
+func dirExists(filename string) bool {
+	f, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	fileMode := f.Mode()
+	return fileMode.IsDir()
 }
