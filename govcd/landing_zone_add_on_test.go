@@ -90,6 +90,9 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 	allSolutionAddOnsAfterCleanup, err := vcd.client.GetAllSolutionAddons(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allSolutionAddOnsAfterCleanup), Equals, len(allSolutionAddOns)-1)
+
+	err = slz.Delete()
+	check.Assert(err, IsNil)
 }
 
 func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error) {
