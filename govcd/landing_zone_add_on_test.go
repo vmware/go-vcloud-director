@@ -82,6 +82,17 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(saoByName.RdeId(), Equals, solutionAddOn.RdeId())
 
+	// Update - pointing at wrong catalog image
+	catItemPhoton, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.NsxtCatalogItem, false)
+	check.Assert(err, IsNil)
+
+	solutionAddOnUpdate := saoByName.SolutionAddOnEntity
+	solutionAddOnUpdate.Origin.CatalogItemId = catItemPhoton.CatalogItem.ID
+
+	updatedSao, err := sao.Update(solutionAddOnUpdate)
+	check.Assert(err, IsNil)
+	check.Assert(updatedSao.RdeId(), Equals, sao.RdeId())
+
 	// Delete
 	err = sao.Delete()
 	check.Assert(err, IsNil)

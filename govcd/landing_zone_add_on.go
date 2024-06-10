@@ -249,24 +249,23 @@ func (s *SolutionAddOn) Update(saoCfg *types.SolutionAddOn) (*SolutionAddOn, err
 		return nil, err
 	}
 
-	s.DefinedEntity.DefinedEntity.Entity = unmarshalledRdeEntityJson
-	err = s.DefinedEntity.Update(*s.DefinedEntity.DefinedEntity)
+	newStructure, err := s.vcdClient.GetSolutionAddonById(s.RdeId())
+	if err != nil {
+		return nil, fmt.Errorf("error creating a copy of Solution Add-On: %s", err)
+	}
+
+	newStructure.DefinedEntity.DefinedEntity.Entity = unmarshalledRdeEntityJson
+	err = newStructure.DefinedEntity.Update(*newStructure.DefinedEntity.DefinedEntity)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := convertRdeEntityToAny[types.SolutionAddOn](s.DefinedEntity.DefinedEntity.Entity)
+	newStructure.SolutionAddOnEntity, err = convertRdeEntityToAny[types.SolutionAddOn](s.DefinedEntity.DefinedEntity.Entity)
 	if err != nil {
 		return nil, err
 	}
 
-	packages := SolutionAddOn{
-		SolutionAddOnEntity: result,
-		vcdClient:           s.vcdClient,
-		DefinedEntity:       s.DefinedEntity,
-	}
-
-	return &packages, nil
+	return newStructure, nil
 }
 
 func (s *SolutionAddOn) Delete() error {
