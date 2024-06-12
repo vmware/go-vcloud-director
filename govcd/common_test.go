@@ -772,11 +772,12 @@ func spawnTestVdc(vcd *TestVCD, check *C, adminOrgName string) *Vdc {
 		ProviderVdcReference: &types.Reference{
 			HREF: providerVdcHref,
 		},
-		IsEnabled:             true,
-		IsThinProvision:       true,
-		UsesFastProvisioning:  true,
-		IsElastic:             addrOf(true),
-		IncludeMemoryOverhead: addrOf(true),
+		IsEnabled:                true,
+		IsThinProvision:          true,
+		UsesFastProvisioning:     true,
+		IsElastic:                addrOf(true),
+		IncludeMemoryOverhead:    addrOf(true),
+		ResourceGuaranteedMemory: addrOf(1.00),
 	}
 
 	vdc, err := adminOrg.CreateOrgVdc(vdcConfiguration)
