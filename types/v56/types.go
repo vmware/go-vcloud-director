@@ -379,10 +379,10 @@ type OrgVDCNetwork struct {
 	Type            string                `xml:"type,attr,omitempty" json:"type,omitempty"`
 	ID              string                `xml:"id,attr,omitempty" json:"id,omitempty"`
 	OperationKey    string                `xml:"operationKey,attr,omitempty" json:"operationKey,omitempty"`
-	Name            string                `xml:"name,attr" json:"name,omitempty"`
+	Name            string                `xml:"name" json:"name"`
 	Status          string                `xml:"status,attr,omitempty" json:"status,omitempty"`
 	Link            []Link                `xml:"Link,omitempty" json:"link,omitempty"`
-	Description     string                `xml:"Description,omitempty" json:"description,omitempty"`
+	Description     string                `xml:"Description" json:"description"`
 	Configuration   *NetworkConfiguration `xml:"Configuration,omitempty" json:"configuration,omitempty"`
 	EdgeGateway     *Reference            `xml:"EdgeGateway,omitempty" json:"edgeGateway,omitempty"`
 	ServiceConfig   *GatewayFeatures      `xml:"ServiceConfig,omitempty" json:"serviceConfig,omitempty"` // Specifies the service configuration for an isolated Org VDC networks
@@ -718,6 +718,8 @@ type VMWVdcTemplateBinding struct {
 type VMWVdcTemplateSpecification struct {
 	Type string `json:"_type,omitempty"`
 
+	AutomaticNetworkPoolReference *AutomaticNetworkPoolReference `json:"automaticNetworkPoolReference,omitempty"`
+
 	// Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number.
 	NicQuota int `json:"nicQuota"`
 
@@ -763,11 +765,19 @@ type VMWVdcTemplateSpecification struct {
 	// Only in Flex VDCs
 	CpuAllocationMhz           int `json:"cpuAllocationMhz"`
 	CpuLimitMhzPerVcpu         int `json:"cpuLimitMhzPerVcpu"`
+	VCpuInMhz                  int `json:"vCpuInMhz"`
 	CpuLimitMhz                int `json:"cpuLimitMhz"`
 	MemoryAllocationMB         int `json:"memoryAllocationMB"`
 	MemoryLimitMb              int `json:"memoryLimitMb"`
 	CpuGuaranteedPercentage    int `json:"cpuGuaranteedPercentage"`
 	MemoryGuaranteedPercentage int `json:"memoryGuaranteedPercentage"`
+}
+
+// AutomaticNetworkPoolReference is an empty struct that states that the Network pool of the Edge Gateway in a VDC Template must
+// be chosen automatically.
+// Type: AutomaticNetworkPoolReferenceType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+type AutomaticNetworkPoolReference struct {
 }
 
 // VdcTemplateSpecificationGatewayConfiguration specifies the Edge Gateway configuration for a VDC Template.
@@ -2100,13 +2110,13 @@ type EdgeGateway struct {
 	Type         string `xml:"type,attr,omitempty" json:"type,omitempty"`                 // The MIME type of the entity.
 	ID           string `xml:"id,attr,omitempty" json:"id,omitempty"`                     // The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused
 	OperationKey string `xml:"operationKey,attr,omitempty" json:"operationKey,omitempty"` // Optional unique identifier to support idempotent semantics for create and delete operations.
-	Name         string `xml:"name,attr" json:"name,omitempty"`                           // The name of the entity.
+	Name         string `xml:"name,attr" json:"name"`                                     // The name of the entity.
 	Status       int    `xml:"status,attr,omitempty" json:"status,omitempty"`             // Creation status of the gateway. One of: 0 (The gateway is still being created) 1 (The gateway is ready) -1 (There was an error while creating the gateway).
 	// Elements
-	Link          LinkList              `xml:"Link,omitempty" json:"link,omitempty"`               // A link to an operation on this section.
-	Description   string                `xml:"Description,omitempty" json:"description,omitempty"` // Optional description.
-	Tasks         *TasksInProgress      `xml:"Tasks,omitempty" json:"tasks,omitempty"`             //	A list of queued, running, or recently completed tasks associated with this entity.
-	Configuration *GatewayConfiguration `xml:"Configuration" json:"configuration,omitempty"`       // Gateway configuration.
+	Link          LinkList              `xml:"Link,omitempty" json:"link,omitempty"`         // A link to an operation on this section.
+	Description   string                `xml:"Description" json:"description"`               // Description.
+	Tasks         *TasksInProgress      `xml:"Tasks,omitempty" json:"tasks,omitempty"`       //	A list of queued, running, or recently completed tasks associated with this entity.
+	Configuration *GatewayConfiguration `xml:"Configuration" json:"configuration,omitempty"` // Gateway configuration.
 }
 
 // GatewayConfiguration is the gateway configuration

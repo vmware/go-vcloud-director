@@ -74,7 +74,7 @@ func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) 
 	defer closeBody(resp)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "RESOURCE_NOT_FOUND") {
+		if strings.Contains(err.Error(), "RESOURCE_NOT_FOUND") || strings.Contains(err.Error(), "not exist") {
 			return nil, fmt.Errorf("%s: %s", ErrorEntityNotFound, err)
 		}
 		return nil, err
