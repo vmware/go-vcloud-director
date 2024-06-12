@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	semver "github.com/hashicorp/go-version"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
@@ -16,12 +18,20 @@ import (
 // * Automatically generated tests where available VCD version does not satisfy it
 // * Automatically generated tests to check if each elevated API version is returned for endpoints that have it defined
 func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
+	semverMinVcdApiVersion, err := semver.NewSemver(minVcdApiVersion)
+	if err != nil {
+		t.Fatalf("error parsing 'minVcdApiVersion': %s", err)
+	}
+
 	type testCase struct {
 		name              string
 		supportedVersions SupportedVersions
 		endpoint          string
 		wantVersion       string
 		wantErr           bool
+		// overRideclientMinApiVersion is an option to override default expected version that is
+		// defined in global variable`minVcdApiVersion`
+		overRideclientMinApiVersion string
 	}
 
 	// Start with some statically defined tests for known endpoints
@@ -34,30 +44,50 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 			wantErr:           true, // NAT requires at least version 34.0
 		},
 		{
-			name:              "VCD_minimum_required_version_only",
-			supportedVersions: renderSupportedVersions([]string{"28.0", "29.0", "30.0", "31.0", "32.0", "33.0", "34.0"}),
-			endpoint:          types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules,
-			wantVersion:       "34.0",
-			wantErr:           false, // NAT minimum requirement is version 34.0
+			name:                        "VCD_minimum_required_version_only",
+			supportedVersions:           renderSupportedVersions([]string{"28.0", "29.0", "30.0", "31.0", "32.0", "33.0", "34.0"}),
+			endpoint:                    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules,
+			wantVersion:                 "34.0",
+			wantErr:                     false, // NAT minimum requirement is version 34.0
+			overRideclientMinApiVersion: "34.0",
 		},
 		{
 			name: "VCD_minimum_required_version_only_unordered",
 			// Explicitly pass in unordered VCD API supported versions to ensure that ordering and matching works well
-			supportedVersions: renderSupportedVersions([]string{"33.0", "34.0", "30.0", "31.0", "32.0", "28.0", "29.0"}),
-			endpoint:          types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules,
-			wantVersion:       "34.0",
-			wantErr:           false, // NAT minimum requirement is version 34.0
+			supportedVersions:           renderSupportedVersions([]string{"33.0", "34.0", "30.0", "31.0", "32.0", "28.0", "29.0"}),
+			endpoint:                    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules,
+			wantVersion:                 "34.0",
+			wantErr:                     false, // NAT minimum requirement is version 34.0
+			overRideclientMinApiVersion: "34.0",
+		},
+		{
+			name:              "VCD_version_higher_than_elevated_version_entries",
+			supportedVersions: renderSupportedVersions([]string{"37.0", "37.1", "37.2", "37.3", "38.0", "38.1", "39.0"}),
+			endpoint:          types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups,
+			wantVersion:       minVcdApiVersion,
+			wantErr:           false,
 		},
 	}
 
 	// Generate unit tests for each defined endpoint in endpointMinApiVersions which does not have an elevated
 	// version entry in endpointElevatedApiVersions.
-	// Always expect to get minimal version returned without error
+	// Expect to get minimal supported version returned without error
 	for endpointName, minimumRequiredVersion := range endpointMinApiVersions {
 		// Do not create a test case for those endpoints which explicitly have elevated versions defined in
 		// endpointElevatedApiVersions
 		if _, hasEntry := endpointElevatedApiVersions[endpointName]; hasEntry {
 			continue
+		}
+
+		wantVersion := minimumRequiredVersion
+		semverWantVersion, err := semver.NewSemver(wantVersion)
+		if err != nil {
+			t.Fatalf("error parsing 'singleElevatedApiVersion': %s", err)
+		}
+
+		if semverWantVersion.LessThan(semverMinVcdApiVersion) {
+			semverMinVcdApiVersionSegments := semverMinVcdApiVersion.Segments()
+			wantVersion = fmt.Sprintf("%d.%d", semverMinVcdApiVersionSegments[0], semverMinVcdApiVersionSegments[1])
 		}
 
 		tCase := testCase{
@@ -67,7 +97,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 				"27.0", "28.0", "29.0", "30.0", "31.0", "32.0", "33.0", "34.0", "35.0", "35.1", "35.2", "36.0", "37.0", "38.0",
 			}),
 			endpoint:    endpointName,
-			wantVersion: minimumRequiredVersion,
+			wantVersion: wantVersion,
 			wantErr:     false,
 		}
 		tests = append(tests, tCase)
@@ -89,6 +119,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 	}
 
 	// Generate tests for each elevated API version in endpoints which do have elevated rights defined
+	// Expect to get either that version or minimum supported version
 	for endpointName := range endpointMinApiVersions {
 		// Do not create a test case for those endpoints which do not have endpointElevatedApiVersions specified
 		if _, hasEntry := endpointElevatedApiVersions[endpointName]; !hasEntry {
@@ -96,16 +127,27 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 		}
 
 		// generate tests for all elevated rights and expect to get
-		for _, singleElevatedApiVerion := range endpointElevatedApiVersions[endpointName] {
+		for _, singleElevatedApiVersion := range endpointElevatedApiVersions[endpointName] {
+			wantVersion := singleElevatedApiVersion
+
+			semverWantVersion, err := semver.NewSemver(wantVersion)
+			if err != nil {
+				t.Fatalf("error parsing 'singleElevatedApiVersion': %s", err)
+			}
+
+			if semverWantVersion.LessThan(semverMinVcdApiVersion) {
+				semverMinVcdApiVersionSegments := semverMinVcdApiVersion.Segments()
+				wantVersion = fmt.Sprintf("%d.%d", semverMinVcdApiVersionSegments[0], semverMinVcdApiVersionSegments[1])
+			}
 
 			tCase := testCase{
-				name: fmt.Sprintf("elevated_up_to_%s_for_%s", singleElevatedApiVerion, endpointName),
+				name: fmt.Sprintf("elevated_up_to_%s_for_%s", singleElevatedApiVersion, endpointName),
 				// Insert some older versions and make it so that the highest elevated API version matches
 				supportedVersions: renderSupportedVersions([]string{
-					"27.0", singleElevatedApiVerion, "23.0", "30.0",
+					"27.0", singleElevatedApiVersion, "23.0", "30.0",
 				}),
 				endpoint:    endpointName,
-				wantVersion: singleElevatedApiVerion,
+				wantVersion: wantVersion,
 				wantErr:     false,
 			}
 			tests = append(tests, tCase)
@@ -117,7 +159,13 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client := &Client{
 				supportedVersions: tt.supportedVersions,
+				APIVersion:        minVcdApiVersion,
 			}
+
+			if tt.overRideclientMinApiVersion != "" {
+				client.APIVersion = tt.overRideclientMinApiVersion
+			}
+
 			got, err := client.getOpenApiHighestElevatedVersion(tt.endpoint)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getOpenApiHighestElevatedVersion() error = %v, wantErr %v", err, tt.wantErr)

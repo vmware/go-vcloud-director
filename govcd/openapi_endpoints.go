@@ -297,6 +297,9 @@ func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string,
 		util.Logger.Printf("[DEBUG] Checking if elevated version '%s' is supported by VCD instance for endpoint '%s'",
 			elevatedVersion.Original(), endpoint)
 		// Check if maximum VCD API version supported is greater or equal to elevated version
+
+		// if client.APIVCDMaxVersionIs(fmt.Sprintf(">= %s", elevatedVersion.Original())) &&
+		// 	!client.APIClientVersionIs(fmt.Sprintf("> %s", elevatedVersion.Original())) {
 		if client.APIVCDMaxVersionIs(fmt.Sprintf(">= %s", elevatedVersion.Original())) {
 			util.Logger.Printf("[DEBUG] Elevated version '%s' is supported by VCD instance for endpoint '%s'",
 				elevatedVersion.Original(), endpoint)
@@ -304,6 +307,7 @@ func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string,
 			supportedElevatedVersion = elevatedVersion.Original()
 			break
 		}
+
 		util.Logger.Printf("[DEBUG] API version '%s' is not supported by VCD instance for endpoint '%s'",
 			elevatedVersion.Original(), endpoint)
 	}
