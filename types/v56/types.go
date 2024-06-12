@@ -719,14 +719,14 @@ type VMWVdcTemplateSpecification struct {
 	Type string `json:"_type,omitempty"`
 
 	// Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number.
-	NicQuota int `json:"nicQuota,omitempty"`
+	NicQuota int `json:"nicQuota"`
 
 	// The quota of VMs that can be created in this VDC. Includes VMs in both vApps and vApp templates, deployed, or otherwise.
 	// Defaults to 0, which specifies an unlimited number.
-	VmQuota int `json:"vmQuota,omitempty"`
+	VmQuota int `json:"vmQuota"`
 
 	// Maximum number of network objects that can be deployed in this VDC. Defaults to 0, which means no networks can be deployed.
-	ProvisionedNetworkQuota int `json:"provisionedNetworkQuota,omitempty"`
+	ProvisionedNetworkQuota int `json:"provisionedNetworkQuota"`
 
 	// Indicates that the Provider VDC's automatically-created VXLAN network pool should be used.
 	// NetworkPoolReference must be empty if this element appears in the request.
@@ -736,16 +736,16 @@ type VMWVdcTemplateSpecification struct {
 	GatewayConfiguration *VdcTemplateSpecificationGatewayConfiguration `json:"gatewayConfiguration,omitempty"`
 
 	// A set of name of Storage Profiles, with corresponding limit value, that all Provider VDCs must have, and that are selected at the time of VDC Template instantiation.
-	StorageProfile []VdcStorageProfile `json:"storageProfile,omitempty"`
+	StorageProfile []*VdcStorageProfile `json:"storageProfile,omitempty"`
 
 	// Set to true to indicate if the FLEX vDC is to be elastic. This field can only be set on input for FLEX VDC templates
 	// and Allocation VApp vDC templates. However, this field will be returned properly when read.
-	IsElastic bool `json:"isElastic,omitempty"`
+	IsElastic *bool `json:"isElastic,omitempty"`
 
 	// Set to true to indicate if the FLEX vDC is to include memory overhead into its accounting for admission control.
 	// This field can only be set on input for FLEX vDC templates and Allocation VApp VDC templates.
 	// However, this field will be returned properly when read.
-	IncludeMemoryOverhead bool `json:"includeMemoryOverhead,omitempty"`
+	IncludeMemoryOverhead *bool `json:"includeMemoryOverhead,omitempty"`
 
 	// Boolean to request thin provisioning. Request will be honored only if the underlying datastore supports it.
 	// Thin provisioning saves storage space by committing it on demand. This allows over-allocation of storage.
@@ -761,13 +761,13 @@ type VMWVdcTemplateSpecification struct {
 	NetworkProfileConfiguration *VdcTemplateNetworkProfile `json:"networkProfileConfiguration,omitempty"`
 
 	// Only in Flex VDCs
-	CpuAllocationMhz           *int `json:"cpuAllocationMhz,omitempty"`
-	CpuLimitMhzPerVcpu         *int `json:"cpuLimitMhzPerVcpu,omitempty"`
-	CpuLimitMhz                *int `json:"cpuLimitMhz,omitempty"`
-	MemoryAllocationMB         *int `json:"memoryAllocationMB,omitempty"`
-	MemoryLimitMb              *int `json:"memoryLimitMb,omitempty"`
-	CpuGuaranteedPercentage    *int `json:"cpuGuaranteedPercentage,omitempty"`
-	MemoryGuaranteedPercentage *int `json:"memoryGuaranteedPercentage,omitempty"`
+	CpuAllocationMhz           int `json:"cpuAllocationMhz"`
+	CpuLimitMhzPerVcpu         int `json:"cpuLimitMhzPerVcpu"`
+	CpuLimitMhz                int `json:"cpuLimitMhz"`
+	MemoryAllocationMB         int `json:"memoryAllocationMB"`
+	MemoryLimitMb              int `json:"memoryLimitMb"`
+	CpuGuaranteedPercentage    int `json:"cpuGuaranteedPercentage"`
+	MemoryGuaranteedPercentage int `json:"memoryGuaranteedPercentage"`
 }
 
 // VdcTemplateSpecificationGatewayConfiguration specifies the Edge Gateway configuration for a VDC Template.
@@ -2168,16 +2168,17 @@ type GatewayInterfaces struct {
 // Description: Gateway Interface configuration.
 // Since: 5.1
 type GatewayInterface struct {
-	Name                string                 `xml:"Name,omitempty" json:"name,omitempty"`                               // Internally generated name for the Gateway Interface.
-	DisplayName         string                 `xml:"DisplayName,omitempty" json:"displayName,omitempty"`                 // Gateway Interface display name.
-	Network             *Reference             `xml:"Network" json:"network,omitempty"`                                   // A reference to the network connected to the gateway interface.
-	InterfaceType       string                 `xml:"InterfaceType" json:"interfaceType,omitempty"`                       // The type of interface: One of: Uplink, Internal
-	SubnetParticipation []*SubnetParticipation `xml:"SubnetParticipation,omitempty" json:"subnetParticipation,omitempty"` // Slice of subnets for IP allocations.
-	ApplyRateLimit      bool                   `xml:"ApplyRateLimit,omitempty" json:"applyRateLimit,omitempty"`           // True if rate limiting is applied on this interface.
-	InRateLimit         float64                `xml:"InRateLimit,omitempty" json:"inRateLimit,omitempty"`                 // Incoming rate limit expressed as Gbps.
-	OutRateLimit        float64                `xml:"OutRateLimit,omitempty" json:"outRateLimit,omitempty"`               // Outgoing rate limit expressed as Gbps.
-	UseForDefaultRoute  bool                   `xml:"UseForDefaultRoute,omitempty" json:"useForDefaultRoute,omitempty"`   // True if this network is default route for the gateway.
-	Connected           bool                   `xml:"Connected,omitempty" json:"connected,omitempty"`                     // True if interface is marked as connected in NSX
+	Name                     string                 `xml:"Name,omitempty" json:"name,omitempty"`                                         // Internally generated name for the Gateway Interface.
+	DisplayName              string                 `xml:"DisplayName,omitempty" json:"displayName,omitempty"`                           // Gateway Interface display name.
+	Network                  *Reference             `xml:"Network" json:"network,omitempty"`                                             // A reference to the network connected to the gateway interface.
+	InterfaceType            string                 `xml:"InterfaceType" json:"interfaceType,omitempty"`                                 // The type of interface: One of: Uplink, Internal
+	SubnetParticipation      []*SubnetParticipation `xml:"SubnetParticipation,omitempty" json:"subnetParticipation,omitempty"`           // Slice of subnets for IP allocations.
+	ApplyRateLimit           bool                   `xml:"ApplyRateLimit,omitempty" json:"applyRateLimit,omitempty"`                     // True if rate limiting is applied on this interface.
+	InRateLimit              float64                `xml:"InRateLimit,omitempty" json:"inRateLimit,omitempty"`                           // Incoming rate limit expressed as Gbps.
+	OutRateLimit             float64                `xml:"OutRateLimit,omitempty" json:"outRateLimit,omitempty"`                         // Outgoing rate limit expressed as Gbps.
+	UseForDefaultRoute       bool                   `xml:"UseForDefaultRoute,omitempty" json:"useForDefaultRoute,omitempty"`             // True if this network is default route for the gateway.
+	Connected                bool                   `xml:"Connected,omitempty" json:"connected,omitempty"`                               // True if interface is marked as connected in NSX
+	QuickAddAllocatedIpCount int                    `xml:"QuickAddAllocatedIpCount,omitempty" json:"quickAddAllocatedIpCount,omitempty"` // If set on create or update api calls, the specified number of IP addresses will be additionally allocated for this uplink. IPs will be allocated from multiple subnets if needed
 }
 
 // SortBySubnetParticipationGateway allows to sort SubnetParticipation property slice by gateway
@@ -3491,9 +3492,9 @@ type AccessSettingList struct {
 
 // LocalSubject is the user, group, or organization to which control access settings apply.
 type LocalSubject struct {
-	HREF string `xml:"href,attr"` // Required - The URL with the full identification of the subject
-	Name string `xml:"name,attr"` // The name of the subject. Not needed in input, but it is returned on reading
-	Type string `xml:"type,attr"` // Required - The MIME type of the subject. So far, we are using users, groups, and organizations
+	HREF string `xml:"href,attr"`           // Required - The URL with the full identification of the subject
+	Name string `xml:"name,attr,omitempty"` // The name of the subject. Not needed in input, but it is returned on reading
+	Type string `xml:"type,attr,omitempty"` // The MIME type of the subject. So far, we are using users, groups, and organizations
 }
 
 // AccessSetting controls access to the resource.

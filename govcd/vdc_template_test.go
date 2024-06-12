@@ -134,7 +134,7 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 					IsShared: false,
 				},
 			},
-			StorageProfile: []types.VdcStorageProfile{
+			StorageProfile: []*types.VdcStorageProfile{
 				{
 					Name:    "Development2",
 					Enabled: addrOf(true),
@@ -143,21 +143,21 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 					Default: true,
 				},
 			},
-			IsElastic:               false,
-			IncludeMemoryOverhead:   true,
+			IsElastic:               addrOf(false),
+			IncludeMemoryOverhead:   addrOf(true),
 			ThinProvision:           true,
 			FastProvisioningEnabled: true,
 			NetworkPoolReference:    networkPoolRef,
 			NetworkProfileConfiguration: &types.VdcTemplateNetworkProfile{
 				ServicesEdgeCluster: &types.Reference{HREF: edgeClusterBindingId},
 			},
-			CpuAllocationMhz:           addrOf(0),
-			CpuLimitMhzPerVcpu:         addrOf(1000),
-			CpuLimitMhz:                addrOf(0),
-			MemoryAllocationMB:         addrOf(0),
-			MemoryLimitMb:              addrOf(0),
-			CpuGuaranteedPercentage:    addrOf(20),
-			MemoryGuaranteedPercentage: addrOf(20),
+			CpuAllocationMhz:           256,
+			CpuLimitMhzPerVcpu:         1000,
+			CpuLimitMhz:                256,
+			MemoryAllocationMB:         1024,
+			MemoryLimitMb:              1024,
+			CpuGuaranteedPercentage:    20,
+			MemoryGuaranteedPercentage: 30,
 		},
 	})
 	check.Assert(err, IsNil)
@@ -185,4 +185,21 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 	_, err = vcd.client.GetVdcTemplateByName("IDoNotExist")
 	check.Assert(err, NotNil)
 	check.Assert(ContainsNotFound(err), Equals, true)
+
+	access, err := template.GetAccess()
+	check.Assert(err, IsNil)
+	check.Assert(access, NotNil)
+	check.Assert(access.AccessSettings, IsNil)
+
+	err = template.SetAccess([]string{org.AdminOrg.ID})
+	check.Assert(err, IsNil)
+
+	access, err = template.GetAccess()
+	check.Assert(err, IsNil)
+	check.Assert(access, NotNil)
+	check.Assert(access.AccessSettings, NotNil)
+	check.Assert(len(access.AccessSettings.AccessSetting), Equals, 1)
+	check.Assert(access.AccessSettings.AccessSetting[0].Subject, NotNil)
+	check.Assert(access.AccessSettings.AccessSetting[0].Subject.HREF, Equals, org.AdminOrg.HREF)
+
 }

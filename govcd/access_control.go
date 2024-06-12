@@ -88,7 +88,7 @@ func (client *Client) setAccessControlWithHttpMethod(httpMethod string, accessCo
 				return fmt.Errorf("[client.SetAccessControl] subject %s (%s) used more than once", setting.Subject.Name, setting.Subject.HREF)
 			}
 			used[setting.Subject.HREF] = true
-			if setting.Subject.Type == "" {
+			if setting.Subject.Type == "" && entityType != "VDC Template" { // VDC Templates must not send subject type, otherwise calls fail
 				return fmt.Errorf("[client.SetAccessControl] subject %s (%s) has no type defined", setting.Subject.Name, setting.Subject.HREF)
 			}
 		}

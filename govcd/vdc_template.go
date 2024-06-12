@@ -19,15 +19,29 @@ type VdcTemplate struct {
 
 // CreateVdcTemplate creates a VDC Template with the given settings.
 func (vcdClient *VCDClient) CreateVdcTemplate(input types.VMWVdcTemplate) (*VdcTemplate, error) {
-	if !vcdClient.Client.IsSysAdmin {
-		return nil, fmt.Errorf("functionality requires System Administrator privileges")
-	}
 	href := vcdClient.Client.VCDHREF
 	href.Path += "/admin/extension/vdcTemplates"
 
+	return genericVdcTemplateRequest(&vcdClient.Client, input, &href, http.MethodPost)
+}
+
+// Update updates an existing VDC Template with the given settings
+func (vdcTemplate *VdcTemplate) Update(input types.VMWVdcTemplate) (*VdcTemplate, error) {
+	href := vdcTemplate.client.VCDHREF
+	href.Path += fmt.Sprintf("/admin/extension/vdcTemplate/%s", extractUuid(vdcTemplate.VdcTemplate.ID))
+
+	return genericVdcTemplateRequest(vdcTemplate.client, input, &href, http.MethodPut)
+}
+
+// genericVdcTemplateRequest creates or updates a VDC Template with the given settings
+func genericVdcTemplateRequest(client *Client, input types.VMWVdcTemplate, href *url.URL, method string) (*VdcTemplate, error) {
+	if !client.IsSysAdmin {
+		return nil, fmt.Errorf("functionality requires System Administrator privileges")
+	}
+
 	result := &types.VMWVdcTemplate{}
 
-	resp, err := vcdClient.Client.executeJsonRequest(href.String(), http.MethodPost, input, "error creating VDC Template: %s")
+	resp, err := client.executeJsonRequest(href.String(), method, input, "error when performing a "+method+" for VDC Template: %s")
 	defer closeBody(resp)
 	if err != nil {
 		return nil, err
@@ -35,7 +49,7 @@ func (vcdClient *VCDClient) CreateVdcTemplate(input types.VMWVdcTemplate) (*VdcT
 
 	vdcTemplate := VdcTemplate{
 		VdcTemplate: result,
-		client:      &vcdClient.Client,
+		client:      client,
 	}
 
 	err = decodeBody(types.BodyTypeJSON, resp, vdcTemplate.VdcTemplate)
@@ -46,6 +60,7 @@ func (vcdClient *VCDClient) CreateVdcTemplate(input types.VMWVdcTemplate) (*VdcT
 	return &vdcTemplate, nil
 }
 
+// GetVdcTemplateById retrieves the VDC Template with the given ID
 func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) {
 	if !vcdClient.Client.IsSysAdmin {
 		return nil, fmt.Errorf("functionality requires System Administrator privileges")
@@ -78,7 +93,8 @@ func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) 
 	return &vdcTemplate, nil
 }
 
-// GetVdcTemplateByName retrieves the VDC Template with the given name
+// GetVdcTemplateByName retrieves the VDC Template with the given name.
+// NOTE: 'name' refers to the "System name", not "Tenant name".
 func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, error) {
 	if !vcdClient.Client.IsSysAdmin {
 		return nil, fmt.Errorf("functionality requires System Administrator privileges")
@@ -100,13 +116,11 @@ func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, err
 	return vcdClient.GetVdcTemplateById(extractUuid(results.Results.AdminOrgVdcTemplateRecord[0].HREF))
 }
 
-func (vdcTemplate *VdcTemplate) Update(input types.VMWVdcTemplate) (*VdcTemplate, error) {
-	// PUT /api/admin/extension/vdcTemplate/876b75ff-1ee1-4508-a701-2d2ff3e6f662
-	return nil, nil
-}
-
+// Delete deletes the receiver VDC Template
 func (vdcTemplate *VdcTemplate) Delete() error {
-	// DELETE /api/admin/extension/vdcTemplate/876b75ff-1ee1-4508-a701-2d2ff3e6f662
+	if !vdcTemplate.client.IsSysAdmin {
+		return fmt.Errorf("functionality requires System Administrator privileges")
+	}
 	if vdcTemplate.VdcTemplate.HREF == "" {
 		return fmt.Errorf("cannot delete the VDC Template, its HREF is empty")
 	}
@@ -116,4 +130,44 @@ func (vdcTemplate *VdcTemplate) Delete() error {
 		return err
 	}
 	return nil
+}
+
+// SetAccess sets the Access control configuration for the receiver VDC Template,
+// which specifies which Organizations can read it.
+func (vdcTemplate *VdcTemplate) SetAccess(organizationIds []string) error {
+	if !vdcTemplate.client.IsSysAdmin {
+		return fmt.Errorf("functionality requires System Administrator privileges")
+	}
+	if vdcTemplate.VdcTemplate.HREF == "" {
+		return fmt.Errorf("cannot delete the VDC Template, its HREF is empty")
+	}
+	accessSettings := make([]*types.AccessSetting, len(organizationIds))
+	for i, organizationId := range organizationIds {
+		accessSettings[i] = &types.AccessSetting{
+			Subject: &types.LocalSubject{
+				HREF: fmt.Sprintf("%s/org/%s", vdcTemplate.client.VCDHREF.String(), extractUuid(organizationId))},
+			AccessLevel: types.ControlAccessReadOnly,
+		}
+	}
+	payload := &types.ControlAccessParams{AccessSettings: &types.AccessSettingList{AccessSetting: accessSettings}}
+
+	return vdcTemplate.client.setAccessControlWithHttpMethod(http.MethodPut, payload, vdcTemplate.VdcTemplate.HREF, "VDC Template", vdcTemplate.VdcTemplate.Name, nil)
+}
+
+// GetAccess retrieves the Control access configuration for the receiver VDC Template, which
+// contains the Organizations that can read it.
+func (vdcTemplate *VdcTemplate) GetAccess() (*types.ControlAccessParams, error) {
+	if !vdcTemplate.client.IsSysAdmin {
+		return nil, fmt.Errorf("functionality requires System Administrator privileges")
+	}
+	if vdcTemplate.VdcTemplate.HREF == "" {
+		return nil, fmt.Errorf("cannot delete the VDC Template, its HREF is empty")
+	}
+	result := &types.ControlAccessParams{}
+	href := fmt.Sprintf("%s/controlAccess", vdcTemplate.VdcTemplate.HREF)
+	_, err := vdcTemplate.client.ExecuteRequest(href, http.MethodGet, types.AnyXMLMime, "error getting access of VDC Template: %s", nil, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
