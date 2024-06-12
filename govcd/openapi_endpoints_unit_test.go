@@ -29,9 +29,9 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 		endpoint          string
 		wantVersion       string
 		wantErr           bool
-		// overRideclientMinApiVersion is an option to override default expected version that is
+		// overrideClientMinApiVersion is an option to override default expected version that is
 		// defined in global variable`minVcdApiVersion`
-		overRideclientMinApiVersion string
+		overrideClientMinApiVersion string
 	}
 
 	// Start with some statically defined tests for known endpoints
@@ -49,7 +49,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 			endpoint:                    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules,
 			wantVersion:                 "34.0",
 			wantErr:                     false, // NAT minimum requirement is version 34.0
-			overRideclientMinApiVersion: "34.0",
+			overrideClientMinApiVersion: "34.0",
 		},
 		{
 			name: "VCD_minimum_required_version_only_unordered",
@@ -58,7 +58,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 			endpoint:                    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtNatRules,
 			wantVersion:                 "34.0",
 			wantErr:                     false, // NAT minimum requirement is version 34.0
-			overRideclientMinApiVersion: "34.0",
+			overrideClientMinApiVersion: "34.0",
 		},
 		{
 			name:              "VCD_version_higher_than_elevated_version_entries",
@@ -162,8 +162,8 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 				APIVersion:        minVcdApiVersion,
 			}
 
-			if tt.overRideclientMinApiVersion != "" {
-				client.APIVersion = tt.overRideclientMinApiVersion
+			if tt.overrideClientMinApiVersion != "" {
+				client.APIVersion = tt.overrideClientMinApiVersion
 			}
 
 			got, err := client.getOpenApiHighestElevatedVersion(tt.endpoint)
