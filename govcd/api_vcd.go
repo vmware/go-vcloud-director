@@ -29,6 +29,8 @@ func init() {
 	requestCounter = &counter
 }
 
+var minVcdApiVersion = "37.0" // supported by 10.4+
+
 // VCDClientOption defines signature for customizing VCDClient using
 // functional options pattern.
 type VCDClientOption func(*VCDClient) error
@@ -136,7 +138,6 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 // NewVCDClient initializes VMware VMware Cloud Director client with reasonable defaults.
 // It accepts functions of type VCDClientOption for adjusting defaults.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
-	minVcdApiVersion := "37.0" // supported by 10.4+
 	userDefinedApiVersion := os.Getenv("GOVCD_API_VERSION")
 	if userDefinedApiVersion != "" {
 		_, err := semver.NewVersion(userDefinedApiVersion)

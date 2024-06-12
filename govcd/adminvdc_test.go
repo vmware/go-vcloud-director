@@ -97,6 +97,7 @@ func (vcd *TestVCD) Test_CreateOrgVdcWithFlex(check *C) {
 		if allocationModel == "Flex" {
 			vdcConfiguration.IsElastic = &trueValue
 			vdcConfiguration.IncludeMemoryOverhead = &trueValue
+			vdcConfiguration.ResourceGuaranteedMemory = addrOf(1.00)
 		}
 
 		if secondStorageProfileHref != "" {

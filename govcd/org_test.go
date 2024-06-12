@@ -687,6 +687,7 @@ func setupVdc(vcd *TestVCD, check *C, allocationModel string) (AdminOrg, *types.
 	if allocationModel == "Flex" {
 		vdcConfiguration.IsElastic = &falseValue
 		vdcConfiguration.IncludeMemoryOverhead = &trueValue
+		vdcConfiguration.ResourceGuaranteedMemory = addrOf(1.00)
 	}
 
 	vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
