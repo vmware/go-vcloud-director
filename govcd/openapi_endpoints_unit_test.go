@@ -88,6 +88,9 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 		if semverWantVersion.LessThan(semverMinVcdApiVersion) {
 			semverMinVcdApiVersionSegments := semverMinVcdApiVersion.Segments()
 			wantVersion = fmt.Sprintf("%d.%d", semverMinVcdApiVersionSegments[0], semverMinVcdApiVersionSegments[1])
+			if testVerbose {
+				fmt.Printf("# Overriding wanted version to %s for endpoint %s\n", wantVersion, endpointName)
+			}
 		}
 
 		tCase := testCase{
@@ -138,6 +141,9 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 			if semverWantVersion.LessThan(semverMinVcdApiVersion) {
 				semverMinVcdApiVersionSegments := semverMinVcdApiVersion.Segments()
 				wantVersion = fmt.Sprintf("%d.%d", semverMinVcdApiVersionSegments[0], semverMinVcdApiVersionSegments[1])
+				if testVerbose {
+					fmt.Printf("# Overriding wanted version to %s for endpoint %s\n", wantVersion, endpointName)
+				}
 			}
 
 			tCase := testCase{

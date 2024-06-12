@@ -305,6 +305,9 @@ func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string,
 			// highest version found - store it and abort the loop
 			supportedElevatedVersion = elevatedVersion.Original()
 			break
+		} else {
+			util.Logger.Printf("[DEBUG] Skipped Elevated version '%s' for endpoint '%s', Default minimum version '%s'",
+				elevatedVersion.Original(), endpoint, client.APIVersion)
 		}
 
 		util.Logger.Printf("[DEBUG] API version '%s' is not supported by VCD instance for endpoint '%s'",
