@@ -388,7 +388,7 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 	return nil, fmt.Errorf("link not found")
 }
 
-// QueryAllOrgs returns all Org VDCs using query endpoint
+// QueryAllOrgs returns all Orgs using query endpoint
 func (vcdclient *VCDClient) QueryAllOrgs() ([]*types.QueryResultOrgRecordType, error) {
 	return vcdclient.Client.queryOrgList(nil)
 }
