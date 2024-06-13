@@ -958,7 +958,7 @@ func (vcd *TestVCD) Test_AddAndRemoveIsolatedVappNetworkIpv6(check *C) {
 
 	check.Assert(networkFound.Description, Equals, description)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].Gateway, Equals, gateway)
-	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].SubnetPrefixLengthString, Equals, prefixlength)
+	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].SubnetPrefixLength, Equals, prefixlength)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS1, Equals, dns1)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNS2, Equals, dns2)
 	check.Assert(networkFound.Configuration.IPScopes.IPScope[0].DNSSuffix, Equals, dnsSuffix)
