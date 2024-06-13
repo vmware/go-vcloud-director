@@ -373,7 +373,7 @@ type InstantiationParams struct {
 // Description: Represents an Org VDC network in the vCloud model.
 // Since: 5.1
 type OrgVDCNetwork struct {
-	// XMLName         xml.Name              `xml:"OrgVdcNetwork"`
+	XMLName         xml.Name              `xml:"OrgVdcNetwork"`
 	Xmlns           string                `xml:"xmlns,attr,omitempty"`
 	HREF            string                `xml:"href,attr,omitempty" json:"href,omitempty"`
 	Type            string                `xml:"type,attr,omitempty" json:"type,omitempty"`
