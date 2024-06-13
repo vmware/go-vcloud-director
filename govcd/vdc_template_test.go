@@ -287,7 +287,7 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 			ProvisionedNetworkQuota: 1000,
 			StorageProfile: []*types.VdcStorageProfile{
 				{
-					Name:    "Development2",
+					Name:    vcd.config.VCD.NsxtProviderVdc.StorageProfile2,
 					Enabled: addrOf(true),
 					Units:   "MB",
 					Limit:   1024,
