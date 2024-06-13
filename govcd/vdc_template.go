@@ -148,7 +148,7 @@ func (vdcTemplate *VdcTemplate) SetAccess(organizationIds []string) error {
 		return fmt.Errorf("functionality requires System Administrator privileges")
 	}
 	if vdcTemplate.VdcTemplate.HREF == "" {
-		return fmt.Errorf("cannot delete the VDC Template, its HREF is empty")
+		return fmt.Errorf("cannot set the Access list for the VDC Template, its HREF is empty")
 	}
 	accessSettings := make([]*types.AccessSetting, len(organizationIds))
 	for i, organizationId := range organizationIds {
@@ -170,7 +170,7 @@ func (vdcTemplate *VdcTemplate) GetAccess() (*types.ControlAccessParams, error) 
 		return nil, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 	if vdcTemplate.VdcTemplate.HREF == "" {
-		return nil, fmt.Errorf("cannot delete the VDC Template, its HREF is empty")
+		return nil, fmt.Errorf("cannot get the Access list for the VDC Template, its HREF is empty")
 	}
 	result := &types.ControlAccessParams{}
 	href := fmt.Sprintf("%s/controlAccess", vdcTemplate.VdcTemplate.HREF)
