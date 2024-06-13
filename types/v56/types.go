@@ -171,17 +171,18 @@ type IPRanges struct {
 // Description: Specify network settings like gateway, network mask, DNS servers, IP ranges, etc.
 // Since: 0.9
 type IPScope struct {
-	IsInherited          bool            `xml:"IsInherited" json:"isInherited,omitempty"`                             // True if the IP scope is inherit from parent network.
-	Gateway              string          `xml:"Gateway,omitempty" json:"gateway,omitempty"`                           // Gateway of the network.
-	Netmask              string          `xml:"Netmask,omitempty" json:"netmask,omitempty"`                           // Network mask.
-	SubnetPrefixLength   *int            `xml:"SubnetPrefixLength,omitempty" json:"subnetPrefixLength,omitempty"`     // Prefix length.
-	DNS1                 string          `xml:"Dns1,omitempty" json:"dns1,omitempty"`                                 // Primary DNS server.
-	DNS2                 string          `xml:"Dns2,omitempty" json:"dns2,omitempty"`                                 // Secondary DNS server.
-	DNSSuffix            string          `xml:"DnsSuffix,omitempty" json:"dnsSuffix,omitempty"`                       // DNS suffix.
-	IsEnabled            bool            `xml:"IsEnabled,omitempty" json:"isEnabled,omitempty"`                       // Indicates if subnet is enabled or not. Default value is True.
-	IPRanges             *IPRanges       `xml:"IpRanges,omitempty" json:"ipRanges,omitempty"`                         // IP ranges used for static pool allocation in the network.
-	AllocatedIPAddresses *IPAddresses    `xml:"AllocatedIpAddresses,omitempty" json:"allocatedIPAddresses,omitempty"` // Read-only list of allocated IP addresses in the network.
-	SubAllocations       *SubAllocations `xml:"SubAllocations,omitempty" json:"subAllocations,omitempty"`             // Read-only list of IP addresses that are sub allocated to edge gateways.
+	IsInherited              bool            `xml:"IsInherited" json:"isInherited,omitempty"`                             // True if the IP scope is inherit from parent network.
+	Gateway                  string          `xml:"Gateway,omitempty" json:"gateway,omitempty"`                           // Gateway of the network.
+	Netmask                  string          `xml:"Netmask,omitempty" json:"netmask,omitempty"`                           // Network mask.
+	SubnetPrefixLengthString string          `xml:"SubnetPrefixLength,omitempty"`                                         // Prefix length (as an string, used everywhere).
+	SubnetPrefixLengthInt    *int            `json:"subnetPrefixLength,omitempty"`                                        // Prefix length (as an int, used in VDC Templates).
+	DNS1                     string          `xml:"Dns1,omitempty" json:"dns1,omitempty"`                                 // Primary DNS server.
+	DNS2                     string          `xml:"Dns2,omitempty" json:"dns2,omitempty"`                                 // Secondary DNS server.
+	DNSSuffix                string          `xml:"DnsSuffix,omitempty" json:"dnsSuffix,omitempty"`                       // DNS suffix.
+	IsEnabled                bool            `xml:"IsEnabled,omitempty" json:"isEnabled,omitempty"`                       // Indicates if subnet is enabled or not. Default value is True.
+	IPRanges                 *IPRanges       `xml:"IpRanges,omitempty" json:"ipRanges,omitempty"`                         // IP ranges used for static pool allocation in the network.
+	AllocatedIPAddresses     *IPAddresses    `xml:"AllocatedIpAddresses,omitempty" json:"allocatedIPAddresses,omitempty"` // Read-only list of allocated IP addresses in the network.
+	SubAllocations           *SubAllocations `xml:"SubAllocations,omitempty" json:"subAllocations,omitempty"`             // Read-only list of IP addresses that are sub allocated to edge gateways.
 }
 
 // SubAllocations a list of IP addresses that are sub allocated to edge gateways.

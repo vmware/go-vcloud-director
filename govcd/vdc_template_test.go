@@ -126,10 +126,10 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 					Configuration: &types.NetworkConfiguration{
 						IPScopes: &types.IPScopes{IPScope: []*types.IPScope{
 							{
-								IsInherited:        false,
-								Gateway:            "1.1.1.1",
-								Netmask:            "255.255.240.0",
-								SubnetPrefixLength: addrOf(20),
+								IsInherited:           false,
+								Gateway:               "1.1.1.1",
+								Netmask:               "255.255.240.0",
+								SubnetPrefixLengthInt: addrOf(20),
 								IPRanges: &types.IPRanges{IPRange: []*types.IPRange{
 									{
 										StartAddress: "1.1.1.1",
