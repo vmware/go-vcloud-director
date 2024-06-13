@@ -5,13 +5,16 @@
 package govcd
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	semver "github.com/hashicorp/go-version"
@@ -19,6 +22,14 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
+
+func init() {
+	// Initialize global API request counter that is used by VcloudRequestIdBuilderFunc
+	counter := apiRequestCount(0)
+	requestCounter = &counter
+}
+
+var minVcdApiVersion = "37.0" // supported by 10.4+
 
 // VCDClientOption defines signature for customizing VCDClient using
 // functional options pattern.
@@ -99,6 +110,14 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 		}
 	}(resp.Body)
 
+	// read from resp.Body io.Reader for debug output if it has body
+	bodyBytes, err := rewrapRespBodyNoopCloser(resp)
+	if err != nil {
+		return resp, err
+	}
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, string(bodyBytes))
+	debugShowResponse(resp, bodyBytes)
+
 	// Catch HTTP 401 (Status Unauthorized) to return an error as otherwise this library would return
 	// odd errors while doing lookup of resources and confuse user.
 	if resp.StatusCode == http.StatusUnauthorized {
@@ -119,7 +138,6 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 // NewVCDClient initializes VMware VMware Cloud Director client with reasonable defaults.
 // It accepts functions of type VCDClientOption for adjusting defaults.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
-	minVcdApiVersion := "37.0" // supported by 10.4+
 	userDefinedApiVersion := os.Getenv("GOVCD_API_VERSION")
 	if userDefinedApiVersion != "" {
 		_, err := semver.NewVersion(userDefinedApiVersion)
@@ -152,6 +170,12 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 			},
 			MaxRetryTimeout: 60, // Default timeout in seconds for retries calls in functions
 		},
+	}
+
+	// Attach function that will generate unique 'X-VMWARE-VCLOUD-CLIENT-REQUEST-ID' headers for
+	// each request unless it is specifically disabled
+	if os.Getenv("GOVCD_SKIP_LOG_TRACING") == "" {
+		vcdClient.Client.RequestIdFunc = VcloudRequestIdBuilderFunc
 	}
 
 	// Override defaults with functional options
@@ -347,4 +371,74 @@ func WithIgnoredMetadata(ignoredMetadata []IgnoredMetadata) VCDClientOption {
 		vcdClient.Client.IgnoredMetadata = ignoredMetadata
 		return nil
 	}
+}
+
+// WithVcloudRequestIdFunc enables sending 'X-VMWARE-VCLOUD-CLIENT-REQUEST-ID' header by supplying a
+// function that will return unique value for each time it is executed. The code of this SDK will
+// make sure that the header is populated every time.
+//
+// The X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header must contain only alpha-numeric characters or
+// dashes. The header must contain at least one alpha-numeric character, and VMware Cloud Director
+// shortens it if it's longer than 128 characters long. The X-VMWARE-VCLOUD-REQUEST-ID response
+// header is formed from the first 128 characters of X-VMWARE-VCLOUD-CLIENT-REQUEST-ID, followed by
+// a dash and a random UUID that the server generates. If the X-VMWARE-VCLOUD-CLIENT-REQUEST-ID
+// header is invalid, null, or empty, the X-VMWARE-VCLOUD-REQUEST-ID is a random UUID. VMware Cloud
+// Director adds this value to every VMware Cloud Director, vCenter Server, and ESXi log message
+// related to processing the request, and provides a way to correlate the processing of a request
+// across all participating systems. If a request does not supply a
+// X-VMWARE-VCLOUD-CLIENT-REQUEST-ID header, the response contains an X-VMWARE-VCLOUD-REQUEST-ID
+// header with a generated value that cannot be used for log correlation.
+//
+// There is a builtin function VcloudRequestIdBuilderFunc that can be used to add sequence number
+// and time-id for each request
+func WithVcloudRequestIdFunc(vcloudRequestItBuilder func() string) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.RequestIdFunc = vcloudRequestItBuilder
+		return nil
+	}
+}
+
+// VcloudRequestIdBuilderFunc can be used in 'WithVcloudRequestIdFunc'
+// It would populate 'X-Vmware-Vcloud-Client-Request-Id' formatted so:
+// {sequence-number}-{date-time-hyphen-separated}
+// (e.g. 1-2024-04-13-01-58-25-733-)
+func VcloudRequestIdBuilderFunc() string {
+	incrementCounter := requestCounter.inc()
+
+	timeNow := time.Now()
+	// milliseconds include a "." by default that is not allowed in header so it is replaced with hyphen
+	// Sample time is "2024-04-13-01-58-25-733"
+	timeString := strings.ReplaceAll(timeNow.Format("2006-01-02-15-04-05.000"), ".", "-")
+	return fmt.Sprintf("%d-%s-", incrementCounter, timeString)
+}
+
+// requestCounter is used by VcloudRequestIdBuilderFunc
+// it is being initalized to 0 in `init`
+var requestCounter *apiRequestCount
+
+// apiRequestCount is a type used to count number of API calls performed in the code when
+// VcloudRequestIdBuilderFunc is used
+type apiRequestCount uint64
+
+// inc increments counter by one and returns new value
+func (c *apiRequestCount) inc() uint64 {
+	// prevent overflowing counter
+	if *c == math.MaxUint64 {
+		*c = 0
+	}
+	return atomic.AddUint64((*uint64)(c), 1)
+}
+
+func rewrapRespBodyNoopCloser(resp *http.Response) ([]byte, error) {
+	var bodyBytes []byte
+	if resp.Body != nil {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return bodyBytes, fmt.Errorf("could not read response body: %s", err)
+		}
+		// Restore the io.ReadCloser to its original state with no-op closer
+		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}
+
+	return bodyBytes, nil
 }

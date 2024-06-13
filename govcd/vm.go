@@ -126,6 +126,7 @@ func (vm *VM) UpdateNetworkConnectionSection(networks *types.NetworkConnectionSe
 	updateNetwork.PrimaryNetworkConnectionIndex = networks.PrimaryNetworkConnectionIndex
 	updateNetwork.NetworkConnection = networks.NetworkConnection
 	updateNetwork.Ovf = types.XMLNamespaceOVF
+	updateNetwork.Xmlns = types.XMLNamespaceVCloud
 
 	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/networkConnectionSection/", http.MethodPut,
 		types.MimeNetworkConnectionSection, "error updating network connection: %s", updateNetwork)
@@ -2103,4 +2104,115 @@ func (vm *VM) ConsolidateDisks() error {
 		return err
 	}
 	return task.WaitTaskCompletion()
+}
+
+// GetExtraConfig retrieves the extra configuration items from a VM
+func (vm *VM) GetExtraConfig() ([]*types.ExtraConfigMarshal, error) {
+	if vm.VM.HREF == "" {
+		return nil, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
+	}
+
+	virtualHardwareSection := &types.ResponseVirtualHardwareSection{}
+	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet, types.MimeVirtualHardwareSection, "error retrieving virtual hardware: %s", nil, virtualHardwareSection)
+	if err != nil {
+		return nil, err
+	}
+
+	convertedExtraConfig := convertExtraConfig(virtualHardwareSection.ExtraConfigs)
+
+	return convertedExtraConfig, nil
+}
+
+// UpdateExtraConfig adds or changes items in the VM Extra Configuration set
+// Returns the modified set
+// Note: an item with an empty `Value` will be deleted.
+func (vm *VM) UpdateExtraConfig(update []*types.ExtraConfigMarshal) ([]*types.ExtraConfigMarshal, error) {
+	return vm.updateExtraConfig(update, false)
+}
+
+// DeleteExtraConfig removes items from the VM Extra Configuration set
+// Returns the modified set
+func (vm *VM) DeleteExtraConfig(deleteItems []*types.ExtraConfigMarshal) ([]*types.ExtraConfigMarshal, error) {
+	return vm.updateExtraConfig(deleteItems, true)
+}
+
+// updateExtraConfig adds, changes, or delete items in the VM Extra Configuration set
+func (vm *VM) updateExtraConfig(update []*types.ExtraConfigMarshal, wantDelete bool) ([]*types.ExtraConfigMarshal, error) {
+	if vm.VM.HREF == "" {
+		return nil, fmt.Errorf("cannot update VM spec section, VM HREF is unset")
+	}
+
+	virtualHardwareSection := &types.ResponseVirtualHardwareSection{}
+	_, err := vm.client.ExecuteRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodGet, types.MimeVirtualHardwareSection, "error retrieving virtual hardware: %s", nil, virtualHardwareSection)
+	if err != nil {
+		return nil, err
+	}
+
+	var newExtraConfig []*types.ExtraConfigMarshal
+
+	var invalidKeys []string
+
+	if wantDelete {
+		for _, ec := range update {
+			newExtraConfig = append(newExtraConfig, &types.ExtraConfigMarshal{Key: ec.Key, Value: ""})
+		}
+
+	} else {
+		for _, ec := range update {
+			if strings.Contains(ec.Key, " ") {
+				invalidKeys = append(invalidKeys, ec.Key)
+				continue
+			}
+			newExtraConfig = append(newExtraConfig, ec)
+		}
+		if len(invalidKeys) > 0 {
+			return nil, fmt.Errorf("[vm.UpdateExtraConfig] invalid keys provided: [%s]", strings.Join(invalidKeys, ","))
+		}
+	}
+
+	requestVirtualHardwareSection := &types.RequestVirtualHardwareSection{
+		Info: "Virtual hardware requirements",
+		Ovf:  types.XMLNamespaceOVF,
+		Rasd: types.XMLNamespaceRASD,
+		Vssd: types.XMLNamespaceVSSD,
+		Ns4:  types.XMLNamespaceVCloud,
+		Vmw:  types.XMLNamespaceVMW,
+
+		Type:   virtualHardwareSection.Type,
+		System: virtualHardwareSection.System,
+		Item:   virtualHardwareSection.Item,
+
+		ExtraConfigs: newExtraConfig,
+	}
+
+	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/virtualHardwareSection/", http.MethodPut,
+		types.MimeVirtualHardwareSection, "error updating VM spec section: %s", requestVirtualHardwareSection)
+	if err != nil {
+		return nil, err
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return nil, fmt.Errorf("error waiting task: %s", err)
+	}
+
+	xtraCfg, err := vm.GetExtraConfig()
+	if err != nil {
+		return nil, fmt.Errorf("got error while retrieving extra config: %s", err)
+	}
+
+	return xtraCfg, nil
+}
+
+func convertExtraConfig(source []*types.ExtraConfig) []*types.ExtraConfigMarshal {
+	resp := make([]*types.ExtraConfigMarshal, len(source))
+	for index, field := range source {
+		resp[index] = &types.ExtraConfigMarshal{
+			Key:      field.Key,
+			Value:    field.Value,
+			Required: field.Required,
+		}
+	}
+
+	return resp
 }

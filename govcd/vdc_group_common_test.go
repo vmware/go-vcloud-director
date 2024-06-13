@@ -366,11 +366,12 @@ func createNewVdc(vcd *TestVCD, check *C, vdcName string) *Vdc {
 		ProviderVdcReference: &types.Reference{
 			HREF: providerVdcHref,
 		},
-		IsEnabled:             true,
-		IsThinProvision:       true,
-		UsesFastProvisioning:  true,
-		IsElastic:             &trueValue,
-		IncludeMemoryOverhead: &trueValue,
+		IsEnabled:                true,
+		IsThinProvision:          true,
+		UsesFastProvisioning:     true,
+		IsElastic:                &trueValue,
+		IncludeMemoryOverhead:    &trueValue,
+		ResourceGuaranteedMemory: addrOf(1.00),
 	}
 
 	vdc, err := adminOrg.CreateOrgVdc(vdcConfiguration)
