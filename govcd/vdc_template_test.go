@@ -13,7 +13,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_VdcTemplate(check *C) {
+func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip("test requires system administrator privileges")
 	}
@@ -56,16 +56,17 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 	}
 	check.Assert(networkPoolRef, NotNil)
 
-	gatewayBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
-	edgeClusterBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
+	externalNetworkBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
+	gatewayEdgeClusterBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
+	servicesEdgeClusterBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
 
-	template, err := vcd.client.CreateVdcTemplate(types.VMWVdcTemplate{
+	settings := types.VMWVdcTemplate{
 		NetworkBackingType: "NSX_T",
 		ProviderVdcReference: []*types.VMWVdcTemplateProviderVdcSpecification{{
 			HREF: providerVdc.ProviderVdc.HREF,
 			Binding: []*types.VMWVdcTemplateBinding{
 				{
-					Name: edgeClusterBindingId,
+					Name: gatewayEdgeClusterBindingId,
 					Value: &types.Reference{
 						ID:   fmt.Sprintf("urn:vcloud:backingEdgeCluster:%s", edgeCluster.NsxtEdgeCluster.ID),
 						HREF: fmt.Sprintf("urn:vcloud:backingEdgeCluster:%s", edgeCluster.NsxtEdgeCluster.ID),
@@ -73,7 +74,15 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 					},
 				},
 				{
-					Name: gatewayBindingId,
+					Name: servicesEdgeClusterBindingId,
+					Value: &types.Reference{
+						ID:   fmt.Sprintf("urn:vcloud:backingEdgeCluster:%s", edgeCluster.NsxtEdgeCluster.ID),
+						HREF: fmt.Sprintf("urn:vcloud:backingEdgeCluster:%s", edgeCluster.NsxtEdgeCluster.ID),
+						Type: "application/json",
+					},
+				},
+				{
+					Name: externalNetworkBindingId,
 					Value: &types.Reference{
 						ID:   networkRef.ID,
 						HREF: networkRef.HREF,
@@ -94,21 +103,21 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 			ProvisionedNetworkQuota: 1000,
 			GatewayConfiguration: &types.VdcTemplateSpecificationGatewayConfiguration{
 				Gateway: &types.EdgeGateway{
-					Name:        check.TestName() + "_Gateway",
-					Description: check.TestName() + "_Gateway",
+					Name:        check.TestName(),
+					Description: check.TestName(),
 					Configuration: &types.GatewayConfiguration{
 						GatewayInterfaces: &types.GatewayInterfaces{GatewayInterface: []*types.GatewayInterface{
 							{
-								Name:          gatewayBindingId,
-								DisplayName:   gatewayBindingId,
+								Name:          gatewayEdgeClusterBindingId,
+								DisplayName:   gatewayEdgeClusterBindingId,
 								Connected:     true,
 								InterfaceType: "UPLINK",
 								Network: &types.Reference{
-									HREF: gatewayBindingId,
+									HREF: gatewayEdgeClusterBindingId,
 								},
 							},
 						}},
-						EdgeClusterConfiguration: &types.EdgeClusterConfiguration{PrimaryEdgeCluster: &types.Reference{HREF: edgeClusterBindingId}},
+						EdgeClusterConfiguration: &types.EdgeClusterConfiguration{PrimaryEdgeCluster: &types.Reference{HREF: gatewayEdgeClusterBindingId}},
 					},
 				},
 				Network: &types.OrgVDCNetwork{
@@ -149,7 +158,7 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 			FastProvisioningEnabled: true,
 			NetworkPoolReference:    networkPoolRef,
 			NetworkProfileConfiguration: &types.VdcTemplateNetworkProfile{
-				ServicesEdgeCluster: &types.Reference{HREF: edgeClusterBindingId},
+				ServicesEdgeCluster: &types.Reference{HREF: servicesEdgeClusterBindingId},
 			},
 			CpuAllocationMhz:           256,
 			CpuLimitMhzPerVcpu:         1000,
@@ -159,7 +168,9 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 			CpuGuaranteedPercentage:    20,
 			MemoryGuaranteedPercentage: 30,
 		},
-	})
+	}
+
+	template, err := vcd.client.CreateVdcTemplate(settings)
 	check.Assert(err, IsNil)
 	check.Assert(template, NotNil)
 
@@ -186,6 +197,16 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
+	settings.Description = "Updated"
+	settings.VdcTemplateSpecification.CpuLimitMhz = 500
+	settings.VdcTemplateSpecification.NicQuota = 500
+	template, err = template.Update(settings)
+	check.Assert(err, IsNil)
+	check.Assert(template, NotNil)
+	check.Assert(template.VdcTemplate.Description, Equals, "Updated")
+	check.Assert(template.VdcTemplate.VdcTemplateSpecification.CpuLimitMhz, Equals, 500)
+	check.Assert(template.VdcTemplate.VdcTemplateSpecification.NicQuota, Equals, 500)
+
 	access, err := template.GetAccess()
 	check.Assert(err, IsNil)
 	check.Assert(access, NotNil)
@@ -201,5 +222,142 @@ func (vcd *TestVCD) Test_VdcTemplate(check *C) {
 	check.Assert(len(access.AccessSettings.AccessSetting), Equals, 1)
 	check.Assert(access.AccessSettings.AccessSetting[0].Subject, NotNil)
 	check.Assert(access.AccessSettings.AccessSetting[0].Subject.HREF, Equals, org.AdminOrg.HREF)
+}
 
+func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
+	if !vcd.client.Client.IsSysAdmin {
+		check.Skip("test requires system administrator privileges")
+	}
+
+	// Pre-requisites: We need information such as Provider VDC and External networks (Provider Gateways)
+	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
+	check.Assert(err, IsNil)
+	check.Assert(providerVdc, NotNil)
+	check.Assert(providerVdc.ProviderVdc.AvailableNetworks, NotNil)
+	check.Assert(providerVdc.ProviderVdc.NetworkPoolReferences, NotNil)
+
+	var networkRef *types.Reference
+	for _, netRef := range providerVdc.ProviderVdc.AvailableNetworks.Network {
+		if netRef.Name == vcd.config.VCD.Nsxt.ExternalNetwork {
+			networkRef = netRef
+			break
+		}
+	}
+	check.Assert(networkRef, NotNil)
+
+	var networkPoolRef *types.Reference
+	for _, netPoolRef := range providerVdc.ProviderVdc.NetworkPoolReferences.NetworkPoolReference {
+		if netPoolRef.Name == vcd.config.VCD.NsxtProviderVdc.NetworkPool {
+			networkPoolRef = netPoolRef
+			break
+		}
+	}
+	check.Assert(networkPoolRef, NotNil)
+
+	externalNetworkBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
+
+	template, err := vcd.client.CreateVdcTemplate(types.VMWVdcTemplate{
+		NetworkBackingType: "NSX_T",
+		ProviderVdcReference: []*types.VMWVdcTemplateProviderVdcSpecification{{
+			HREF: providerVdc.ProviderVdc.HREF,
+			Binding: []*types.VMWVdcTemplateBinding{
+				{
+					Name: externalNetworkBindingId,
+					Value: &types.Reference{
+						ID:   networkRef.ID,
+						HREF: networkRef.HREF,
+						Type: networkRef.Type,
+					},
+				},
+			},
+		}},
+		Name:              check.TestName(),
+		Description:       check.TestName(),
+		TenantName:        check.TestName() + "_Tenant",
+		TenantDescription: check.TestName() + "_Tenant",
+
+		VdcTemplateSpecification: &types.VMWVdcTemplateSpecification{
+			Type:                    types.VdcTemplateFlexType,
+			NicQuota:                100,
+			VmQuota:                 100,
+			ProvisionedNetworkQuota: 1000,
+			StorageProfile: []*types.VdcStorageProfile{
+				{
+					Name:    "Development2",
+					Enabled: addrOf(true),
+					Units:   "MB",
+					Limit:   1024,
+					Default: true,
+				},
+			},
+			IsElastic:                  addrOf(false),
+			IncludeMemoryOverhead:      addrOf(true),
+			ThinProvision:              true,
+			FastProvisioningEnabled:    true,
+			CpuAllocationMhz:           256,
+			CpuLimitMhzPerVcpu:         1000,
+			CpuLimitMhz:                256,
+			MemoryAllocationMB:         1024,
+			MemoryLimitMb:              1024,
+			CpuGuaranteedPercentage:    20,
+			MemoryGuaranteedPercentage: 30,
+		},
+	})
+	check.Assert(err, IsNil)
+	check.Assert(template, NotNil)
+
+	defer func() {
+		err = template.Delete()
+		check.Assert(err, IsNil)
+	}()
+
+	err = template.SetAccess([]string{org.AdminOrg.ID})
+	check.Assert(err, IsNil)
+
+	// Instantiate the VDC Template as System administrator
+	vdcId, err := template.Instantiate(check.TestName(), check.TestName(), org.AdminOrg.ID)
+	check.Assert(err, IsNil)
+	check.Assert(vdcId, Not(Equals), "")
+
+	vdc, err := org.GetVDCById(vdcId, true)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+	check.Assert(vdc.Vdc.ID, Equals, vdcId)
+
+	err = vdc.DeleteWait(true, true)
+	check.Assert(err, IsNil)
+
+	// Instantiate the VDC Template as a Tenant
+	if len(vcd.config.Tenants) > 0 {
+		orgName := vcd.config.Tenants[0].SysOrg
+		userName := vcd.config.Tenants[0].User
+		password := vcd.config.Tenants[0].Password
+
+		vcdClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+		err := vcdClient.Authenticate(userName, password, orgName)
+		check.Assert(err, IsNil)
+
+		templateAsTenant, err := vcdClient.GetVdcTemplateById(template.VdcTemplate.ID)
+		check.Assert(err, IsNil)
+		check.Assert(templateAsTenant, NotNil)
+
+		vdcId, err := templateAsTenant.Instantiate(check.TestName(), check.TestName(), org.AdminOrg.ID)
+		check.Assert(err, IsNil)
+		check.Assert(vdcId, Not(Equals), "")
+
+		// Check that it really exists and delete it afterward. We do this as the System admin, as we don't need
+		// the tenant user anymore.
+		vdc, err := org.GetVDCById(vdcId, true)
+		check.Assert(err, IsNil)
+		check.Assert(vdc, NotNil)
+		check.Assert(vdc.Vdc.ID, Equals, vdcId)
+
+		err = vdc.DeleteWait(true, true)
+		check.Assert(err, IsNil)
+
+	}
 }

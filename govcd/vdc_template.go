@@ -62,10 +62,6 @@ func genericVdcTemplateRequest(client *Client, input types.VMWVdcTemplate, href 
 
 // GetVdcTemplateById retrieves the VDC Template with the given ID
 func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) {
-	if !vcdClient.Client.IsSysAdmin {
-		return nil, fmt.Errorf("functionality requires System Administrator privileges")
-	}
-
 	href := vcdClient.Client.VCDHREF
 	href.Path += "/admin/extension/vdcTemplate/" + extractUuid(id)
 
@@ -96,9 +92,6 @@ func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) 
 // GetVdcTemplateByName retrieves the VDC Template with the given name.
 // NOTE: 'name' refers to the "System name", not "Tenant name".
 func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, error) {
-	if !vcdClient.Client.IsSysAdmin {
-		return nil, fmt.Errorf("functionality requires System Administrator privileges")
-	}
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":         "adminOrgVdcTemplate",
 		"filter":       fmt.Sprintf("name==%s", url.QueryEscape(name)),
@@ -170,4 +163,41 @@ func (vdcTemplate *VdcTemplate) GetAccess() (*types.ControlAccessParams, error) 
 		return nil, err
 	}
 	return result, nil
+}
+
+// Instantiate creates a new VDC from the template and returns its ID if the operation finishes successfully.
+func (vdcTemplate *VdcTemplate) Instantiate(vdcName, description, organizationId string) (string, error) {
+	if vdcName == "" {
+		return "", fmt.Errorf("the VDC name is required to instantiate VDC Template '%s'", vdcTemplate.VdcTemplate.Name)
+	}
+	if organizationId == "" {
+		return "", fmt.Errorf("the Organization ID is required to instantiate VDC Template '%s'", vdcTemplate.VdcTemplate.Name)
+	}
+
+	payload := &types.InstantiateVdcTemplateParams{
+		Xmlns: types.XMLNamespaceVCloud,
+		Name:  vdcName,
+		Source: &types.Reference{
+			HREF: vdcTemplate.VdcTemplate.HREF,
+			Type: types.MimeVdcTemplateInstantiateType,
+		},
+	}
+	if description != "" {
+		payload.Description = description
+	}
+
+	href := vdcTemplate.client.VCDHREF
+	href.Path += fmt.Sprintf("/org/%s/action/instantiate", extractUuid(organizationId))
+	task, err := vdcTemplate.client.ExecuteTaskRequest(href.String(), http.MethodPost, types.MimeVdcTemplateInstantiate, "error getting access of VDC Template: %s", payload)
+	if err != nil {
+		return "", err
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return "", err
+	}
+	if task.Task.Owner == nil {
+		return "", fmt.Errorf("the VDC was instantiated but could not retrieve its ID from the finished task")
+	}
+	return task.Task.Owner.ID, nil
 }

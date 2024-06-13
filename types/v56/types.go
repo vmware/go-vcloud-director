@@ -813,6 +813,20 @@ type VdcTemplateNetworkProfile struct {
 	ServicesEdgeCluster  *Reference `json:"servicesEdgeCluster,omitempty"`
 }
 
+// InstantiateVdcTemplateParams specifies the network profile for a VDC Template.
+// Type: InstantiateVdcTemplateParamsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: A basic type used to pass arguments to the instantiate VDC template operation, this provides a name and
+// optional description for a VDC instantiated from a template.
+// Since: 5.7
+type InstantiateVdcTemplateParams struct {
+	XMLName     xml.Name   `xml:"InstantiateVdcTemplateParams"`
+	Xmlns       string     `xml:"xmlns,attr"`
+	Name        string     `xml:"name,attr"`
+	Source      *Reference `xml:"Source,omitempty"`
+	Description string     `xml:"Description,omitempty"`
+}
+
 // Task represents an asynchronous operation in VMware Cloud Director.
 // Type: TaskType
 // Namespace: http://www.vmware.com/vcloud/v1.5

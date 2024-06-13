@@ -160,8 +160,9 @@ const (
 	MimeOpenIdProviderInfoXml = "application/vnd.vmware.vcloud.admin.openIdProviderInfo+xml"
 	// Mime to handle virtual hardware versions
 	MimeVirtualHardwareVersion = "application/vnd.vmware.vcloud.virtualHardwareVersion+xml"
-	// Mime to handle VDC Templates
-	MimeVdcTemplate = "application/vnd.vmware.admin.vmwVdcTemplate+json"
+	// Mime to instantiate VDC Templates
+	MimeVdcTemplateInstantiate     = "application/vnd.vmware.vcloud.instantiateVdcTemplateParams+xml"
+	MimeVdcTemplateInstantiateType = "application/vnd.vmware.vcloud.orgVdcTemplate+xml"
 )
 
 const (
