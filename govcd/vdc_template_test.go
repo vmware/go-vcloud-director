@@ -145,7 +145,7 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 			},
 			StorageProfile: []*types.VdcStorageProfile{
 				{
-					Name:    "Development2",
+					Name:    vcd.config.VCD.NsxtProviderVdc.StorageProfile2,
 					Enabled: addrOf(true),
 					Units:   "MB",
 					Limit:   1024,
