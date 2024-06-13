@@ -93,7 +93,7 @@ func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) 
 // NOTE: 'name' refers to the "System name", not "Tenant name".
 func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, error) {
 	queryType := types.QtAdminOrgVdcTemplate
-	if vcdClient.Client.IsSysAdmin {
+	if !vcdClient.Client.IsSysAdmin {
 		queryType = types.QtOrgVdcTemplate
 	}
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
@@ -110,7 +110,7 @@ func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, err
 	if len(results.Results.AdminOrgVdcTemplateRecord) > 1 {
 		return nil, fmt.Errorf("expected one VDC Template with name '%s', but got %d", name, len(results.Results.AdminOrgVdcTemplateRecord))
 	}
-	return vcdClient.GetVdcTemplateById(extractUuid(results.Results.AdminOrgVdcTemplateRecord[0].HREF))
+	return vcdClient.GetVdcTemplateById(results.Results.AdminOrgVdcTemplateRecord[0].HREF)
 }
 
 // Delete deletes the receiver VDC Template
