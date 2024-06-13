@@ -91,6 +91,8 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 		if allocationModel == "Flex" {
 			vdcConfiguration.IsElastic = &trueValue
 			vdcConfiguration.IncludeMemoryOverhead = &trueValue
+			// Memory guaranteed percentage is required when IncludeMemoryOverhead is true in VCD 10.6+
+			vdcConfiguration.ResourceGuaranteedMemory = addrOf(1.00)
 		}
 
 		vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
