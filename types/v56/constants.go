@@ -293,6 +293,8 @@ const (
 	QtProviderVdcStorageProfile = "providerVdcStorageProfile" // StorageProfile of Provider VDC
 	QtVappNetwork               = "vAppNetwork"
 	QtAdminVappNetwork          = "adminVAppNetwork"
+	QtAdminOrgVdcTemplate       = "adminOrgVdcTemplate"
+	QtOrgVdcTemplate            = "orgVdcTemplate"
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type

@@ -92,8 +92,12 @@ func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) 
 // GetVdcTemplateByName retrieves the VDC Template with the given name.
 // NOTE: 'name' refers to the "System name", not "Tenant name".
 func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, error) {
+	queryType := types.QtAdminOrgVdcTemplate
+	if vcdClient.Client.IsSysAdmin {
+		queryType = types.QtOrgVdcTemplate
+	}
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
-		"type":         "adminOrgVdcTemplate",
+		"type":         queryType,
 		"filter":       fmt.Sprintf("name==%s", url.QueryEscape(name)),
 		"filterEncode": "true",
 	})
