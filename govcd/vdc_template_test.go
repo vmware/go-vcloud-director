@@ -341,7 +341,7 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		err := vcdClient.Authenticate(userName, password, orgName)
 		check.Assert(err, IsNil)
 
-		templateAsTenant, err := vcdClient.GetVdcTemplateByName(template.VdcTemplate.Name)
+		templateAsTenant, err := vcdClient.GetVdcTemplateByName(template.VdcTemplate.TenantName) // Careful, we must use the Tenant name now
 		check.Assert(err, IsNil)
 		check.Assert(templateAsTenant, NotNil)
 

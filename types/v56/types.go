@@ -2621,6 +2621,7 @@ type QueryResultRecordsType struct {
 	VappNetworkRecord               []*QueryResultVappNetworkRecordType               `xml:"VAppNetworkRecord"`               // A record representing a vApp network
 	AdminVappNetworkRecord          []*QueryResultVappNetworkRecordType               `xml:"AdminVAppNetworkRecord"`          // A record representing an admin vApp network
 	AdminOrgVdcTemplateRecord       []*QueryResultAdminOrgVdcTemplateRecordType       `xml:"AdminOrgVdcTemplateRecord"`       // A record representing an admin VDC Template
+	OrgVdcTemplateRecord            []*QueryResultOrgVdcTemplateRecordType            `xml:"OrgVdcTemplateRecord"`            // A record representing an VDC Template
 }
 
 // QueryResultVmGroupsRecordType represent a VM Groups record
@@ -2643,6 +2644,15 @@ type QueryResultAdminOrgVdcTemplateRecordType struct {
 	TenantVisibleName        string `xml:"tenantVisibleName,attr,omitempty"`
 	TenantVisibleDescription string `xml:"tenantVisibleDescription,attr,omitempty"`
 	NetworkBackingType       string `xml:"networkBackingType,attr,omitempty"`
+}
+
+// QueryResultOrgVdcTemplateRecordType represents an admin VDC Template
+type QueryResultOrgVdcTemplateRecordType struct {
+	HREF        string `xml:"href,attr,omitempty"`
+	ID          string `xml:"id,attr,omitempty"`
+	Name        string `xml:"name,attr,omitempty"`
+	Description string `xml:"description,attr,omitempty"`
+	OrgHref     string `xml:"org,attr,omitempty"`
 }
 
 type QueryResultVappNetworkRecordType struct {

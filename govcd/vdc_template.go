@@ -90,11 +90,12 @@ func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) 
 }
 
 // GetVdcTemplateByName retrieves the VDC Template with the given name.
-// NOTE: 'name' refers to the "System name", not "Tenant name".
+// NOTE: System administrators must use the name as seen by System administrators (VMWVdcTemplate.Name), while Tenants must use the
+// name as seen by tenants (VMWVdcTemplate.TenantName)
 func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, error) {
-	queryType := types.QtAdminOrgVdcTemplate
-	if !vcdClient.Client.IsSysAdmin {
-		queryType = types.QtOrgVdcTemplate
+	queryType := types.QtOrgVdcTemplate
+	if vcdClient.Client.IsSysAdmin {
+		queryType = types.QtAdminOrgVdcTemplate
 	}
 	results, err := vcdClient.QueryWithNotEncodedParams(nil, map[string]string{
 		"type":         queryType,
@@ -104,13 +105,24 @@ func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, err
 	if err != nil {
 		return nil, err
 	}
-	if len(results.Results.AdminOrgVdcTemplateRecord) == 0 {
-		return nil, fmt.Errorf("could not find any VDC Template with name '%s': %s", name, ErrorEntityNotFound)
+	if vcdClient.Client.IsSysAdmin {
+		if len(results.Results.AdminOrgVdcTemplateRecord) == 0 {
+			return nil, fmt.Errorf("could not find any VDC Template with name '%s': %s", name, ErrorEntityNotFound)
+		}
+		if len(results.Results.AdminOrgVdcTemplateRecord) > 1 {
+			return nil, fmt.Errorf("expected one VDC Template with name '%s', but got %d", name, len(results.Results.AdminOrgVdcTemplateRecord))
+		}
+		return vcdClient.GetVdcTemplateById(results.Results.AdminOrgVdcTemplateRecord[0].HREF)
+	} else {
+		if len(results.Results.OrgVdcTemplateRecord) == 0 {
+			return nil, fmt.Errorf("could not find any VDC Template with name '%s': %s", name, ErrorEntityNotFound)
+		}
+		if len(results.Results.OrgVdcTemplateRecord) > 1 {
+			return nil, fmt.Errorf("expected one VDC Template with name '%s', but got %d", name, len(results.Results.OrgVdcTemplateRecord))
+		}
+		return vcdClient.GetVdcTemplateById(results.Results.OrgVdcTemplateRecord[0].HREF)
 	}
-	if len(results.Results.AdminOrgVdcTemplateRecord) > 1 {
-		return nil, fmt.Errorf("expected one VDC Template with name '%s', but got %d", name, len(results.Results.AdminOrgVdcTemplateRecord))
-	}
-	return vcdClient.GetVdcTemplateById(results.Results.AdminOrgVdcTemplateRecord[0].HREF)
+
 }
 
 // Delete deletes the receiver VDC Template
