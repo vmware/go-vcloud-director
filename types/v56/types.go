@@ -379,10 +379,10 @@ type OrgVDCNetwork struct {
 	Type            string                `xml:"type,attr,omitempty" json:"type,omitempty"`
 	ID              string                `xml:"id,attr,omitempty" json:"id,omitempty"`
 	OperationKey    string                `xml:"operationKey,attr,omitempty" json:"operationKey,omitempty"`
-	Name            string                `xml:"name" json:"name"`
+	Name            string                `xml:"name,attr" json:"name"`
 	Status          string                `xml:"status,attr,omitempty" json:"status,omitempty"`
 	Link            []Link                `xml:"Link,omitempty" json:"link,omitempty"`
-	Description     string                `xml:"Description" json:"description"`
+	Description     string                `xml:"Description,omitempty" json:"description"`
 	Configuration   *NetworkConfiguration `xml:"Configuration,omitempty" json:"configuration,omitempty"`
 	EdgeGateway     *Reference            `xml:"EdgeGateway,omitempty" json:"edgeGateway,omitempty"`
 	ServiceConfig   *GatewayFeatures      `xml:"ServiceConfig,omitempty" json:"serviceConfig,omitempty"` // Specifies the service configuration for an isolated Org VDC networks
