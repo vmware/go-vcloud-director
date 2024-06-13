@@ -204,7 +204,7 @@ func (vdcTemplate *VdcTemplate) Instantiate(vdcName, description, organizationId
 
 	href := vdcTemplate.client.VCDHREF
 	href.Path += fmt.Sprintf("/org/%s/action/instantiate", extractUuid(organizationId))
-	task, err := vdcTemplate.client.ExecuteTaskRequest(href.String(), http.MethodPost, types.MimeVdcTemplateInstantiate, "error getting access of VDC Template: %s", payload)
+	task, err := vdcTemplate.client.ExecuteTaskRequest(href.String(), http.MethodPost, types.MimeVdcTemplateInstantiate, "error instantiating the VDC Template: %s", payload)
 	if err != nil {
 		return "", err
 	}
