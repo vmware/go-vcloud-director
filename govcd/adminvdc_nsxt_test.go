@@ -91,6 +91,7 @@ func (vcd *TestVCD) Test_CreateNsxtOrgVdc(check *C) {
 		if allocationModel == "Flex" {
 			vdcConfiguration.IsElastic = &trueValue
 			vdcConfiguration.IncludeMemoryOverhead = &trueValue
+			vdcConfiguration.ResourceGuaranteedMemory = addrOf(1.00)
 		}
 
 		vdc, _ := adminOrg.GetVDCByName(vdcConfiguration.Name, false)
