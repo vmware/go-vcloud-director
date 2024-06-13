@@ -8,7 +8,6 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -56,9 +55,10 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 	}
 	check.Assert(networkPoolRef, NotNil)
 
-	externalNetworkBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
-	gatewayEdgeClusterBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
-	servicesEdgeClusterBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
+	// Bindings must be random UUIDs generated manually
+	externalNetworkBindingId := "urn:vcloud:binding:b871f699-50e6-4a65-ab8b-428324735ff2"
+	gatewayEdgeClusterBindingId := "urn:vcloud:binding:36038940-dbbf-4346-94d9-e99e54c8e43a"
+	servicesEdgeClusterBindingId := "urn:vcloud:binding:8e7e2480-ba77-4dd0-a7d4-2d1155e4d087"
 
 	settings := types.VMWVdcTemplate{
 		NetworkBackingType: "NSX_T",
@@ -258,7 +258,8 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 	}
 	check.Assert(networkPoolRef, NotNil)
 
-	externalNetworkBindingId := fmt.Sprintf("urn:vcloud:binding:%s", uuid.NewString())
+	// Bindings must be random UUIDs generated manually
+	externalNetworkBindingId := "urn:vcloud:binding:10d82a8a-f0a9-4c98-a462-d6a1b65ae210"
 
 	template, err := vcd.client.CreateVdcTemplate(types.VMWVdcTemplate{
 		NetworkBackingType: "NSX_T",
