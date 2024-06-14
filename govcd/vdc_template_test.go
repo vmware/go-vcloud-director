@@ -327,10 +327,14 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 	vdc, err := org.GetVDCById(vdcId, true)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
-	check.Assert(vdc.Vdc.ID, Equals, vdcId)
+	defer func() {
+		err = vdc.DeleteWait(true, true)
+		check.Assert(err, IsNil)
+	}()
 
-	err = vdc.DeleteWait(true, true)
-	check.Assert(err, IsNil)
+	check.Assert(vdc.Vdc.ID, Equals, vdcId)
+	check.Assert(vdc.Vdc.Name, Equals, check.TestName())
+	check.Assert(vdc.Vdc.Description, Equals, check.TestName())
 
 	// Instantiate the VDC Template as a Tenant
 	if len(vcd.config.Tenants) > 0 {
@@ -346,7 +350,7 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(templateAsTenant, NotNil)
 
-		vdcId, err := templateAsTenant.Instantiate(check.TestName(), check.TestName(), org.AdminOrg.ID)
+		vdcId, err := templateAsTenant.Instantiate(check.TestName()+"2", check.TestName()+"2", org.AdminOrg.ID)
 		check.Assert(err, IsNil)
 		check.Assert(vdcId, Not(Equals), "")
 
@@ -355,10 +359,13 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		vdc, err := org.GetVDCById(vdcId, true)
 		check.Assert(err, IsNil)
 		check.Assert(vdc, NotNil)
+		defer func() {
+			err = vdc.DeleteWait(true, true)
+			check.Assert(err, IsNil)
+		}()
+
 		check.Assert(vdc.Vdc.ID, Equals, vdcId)
-
-		err = vdc.DeleteWait(true, true)
-		check.Assert(err, IsNil)
-
+		check.Assert(vdc.Vdc.Name, Equals, check.TestName()+"2")
+		check.Assert(vdc.Vdc.Description, Equals, check.TestName()+"2")
 	}
 }
