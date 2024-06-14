@@ -365,8 +365,8 @@ func (cluster *CseKubernetesCluster) Delete(timeout time.Duration) error {
 			return fmt.Errorf("could not retrieve the Kubernetes cluster with ID '%s': %s", cluster.ID, err)
 		}
 
-		markForDelete = traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.markForDelete")
-		forceDelete = traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.forceDelete")
+		markForDelete = traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.markForDelete", ".")
+		forceDelete = traverseMapAndGet[bool](rde.DefinedEntity.Entity, "spec.vcdKe.forceDelete", ".")
 
 		if !markForDelete || !forceDelete {
 			// Mark the cluster for deletion

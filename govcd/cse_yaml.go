@@ -5,6 +5,7 @@ import (
 	semver "github.com/hashicorp/go-version"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"sigs.k8s.io/yaml"
+	"strconv"
 	"strings"
 )
 
@@ -33,6 +34,12 @@ func (cluster *CseKubernetesCluster) updateCapiYaml(input CseClusterUpdateInput)
 		if err != nil {
 			return cluster.capvcdType.Spec.CapiYaml, err
 		}
+	}
+
+	// Modify or add the autoscaler capabilities
+	yamlDocs, err = cseUpdateAutoscalerInYaml(yamlDocs, cluster.Name, cluster.CseVersion, cluster.KubernetesVersion, input.WorkerPools, input.NewWorkerPools)
+	if err != nil {
+		return cluster.capvcdType.Spec.CapiYaml, err
 	}
 
 	if input.WorkerPools != nil {
@@ -113,44 +120,55 @@ func cseUpdateKubernetesTemplateInYaml(yamlDocuments []map[string]interface{}, k
 	for _, d := range yamlDocuments {
 		switch d["kind"] {
 		case "VCDMachineTemplate":
-			ok := traverseMapAndGet[string](d, "spec.template.spec.template") != ""
+			ok := traverseMapAndGet[string](d, "spec.template.spec.template", ".") != ""
 			if !ok {
 				return fmt.Errorf("the VCDMachineTemplate 'spec.template.spec.template' field is missing")
 			}
 			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["template"] = kubernetesTemplateOva.Name
 		case "MachineDeployment":
-			ok := traverseMapAndGet[string](d, "spec.template.spec.version") != ""
+			ok := traverseMapAndGet[string](d, "spec.template.spec.version", ".") != ""
 			if !ok {
 				return fmt.Errorf("the MachineDeployment 'spec.template.spec.version' field is missing")
 			}
 			d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["version"] = tkgBundle.KubernetesVersion
 		case "Cluster":
-			ok := traverseMapAndGet[string](d, "metadata.annotations.TKGVERSION") != ""
+			ok := traverseMapAndGet[string](d, "metadata.annotations.TKGVERSION", ".") != ""
 			if !ok {
 				return fmt.Errorf("the Cluster 'metadata.annotations.TKGVERSION' field is missing")
 			}
 			d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["TKGVERSION"] = tkgBundle.TkgVersion
-			ok = traverseMapAndGet[string](d, "metadata.labels.tanzuKubernetesRelease") != ""
+			ok = traverseMapAndGet[string](d, "metadata.labels.tanzuKubernetesRelease", ".") != ""
 			if !ok {
 				return fmt.Errorf("the Cluster 'metadata.labels.tanzuKubernetesRelease' field is missing")
 			}
 			d["metadata"].(map[string]interface{})["labels"].(map[string]interface{})["tanzuKubernetesRelease"] = tkgBundle.TkrVersion
 		case "KubeadmControlPlane":
-			ok := traverseMapAndGet[string](d, "spec.version") != ""
+			ok := traverseMapAndGet[string](d, "spec.version", ".") != ""
 			if !ok {
 				return fmt.Errorf("the KubeadmControlPlane 'spec.version' field is missing")
 			}
 			d["spec"].(map[string]interface{})["version"] = tkgBundle.KubernetesVersion
-			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag") != ""
+			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag", ".") != ""
 			if !ok {
 				return fmt.Errorf("the KubeadmControlPlane 'spec.kubeadmConfigSpec.clusterConfiguration.dns.imageTag' field is missing")
 			}
 			d["spec"].(map[string]interface{})["kubeadmConfigSpec"].(map[string]interface{})["clusterConfiguration"].(map[string]interface{})["dns"].(map[string]interface{})["imageTag"] = tkgBundle.CoreDnsVersion
-			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag") != ""
+			ok = traverseMapAndGet[string](d, "spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag", ".") != ""
 			if !ok {
 				return fmt.Errorf("the KubeadmControlPlane 'spec.kubeadmConfigSpec.clusterConfiguration.etcd.local.imageTag' field is missing")
 			}
 			d["spec"].(map[string]interface{})["kubeadmConfigSpec"].(map[string]interface{})["clusterConfiguration"].(map[string]interface{})["etcd"].(map[string]interface{})["local"].(map[string]interface{})["imageTag"] = tkgBundle.EtcdVersion
+		case "Deployment":
+			// Update also the autoscaler version
+			deploymentName := traverseMapAndGet[string](d, "metadata.name", ".")
+			if deploymentName == "cluster-autoscaler" {
+				k8sVersion, err := semver.NewVersion(tkgBundle.KubernetesVersion)
+				if err != nil {
+					return err
+				}
+				k8sVersionSegments := k8sVersion.Segments()
+				d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["image"] = fmt.Sprintf("k8s.gcr.io/autoscaling/cluster-autoscaler:v%d.%d.0", k8sVersionSegments[0], k8sVersionSegments[1])
+			}
 		}
 	}
 	return nil
@@ -180,12 +198,13 @@ func cseUpdateControlPlaneInYaml(yamlDocuments []map[string]interface{}, input C
 // the existing Worker Pools with the input parameters.
 func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPools map[string]CseWorkerPoolUpdateInput) error {
 	updated := 0
+
 	for _, d := range yamlDocuments {
 		if d["kind"] != "MachineDeployment" {
 			continue
 		}
 
-		workerPoolName := traverseMapAndGet[string](d, "metadata.name")
+		workerPoolName := traverseMapAndGet[string](d, "metadata.name", ".")
 		if workerPoolName == "" {
 			return fmt.Errorf("the MachineDeployment 'metadata.name' field is empty")
 		}
@@ -201,11 +220,28 @@ func cseUpdateWorkerPoolsInYaml(yamlDocuments []map[string]interface{}, workerPo
 			continue
 		}
 
-		if workerPools[workerPoolToUpdate].MachineCount < 0 {
-			return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
-		}
+		if workerPools[workerPoolToUpdate].Autoscaler != nil {
+			if workerPools[workerPoolToUpdate].Autoscaler.MinSize > workerPools[workerPoolToUpdate].Autoscaler.MaxSize {
+				return fmt.Errorf("incorrect MinSize for worker pool %s: %d should be less than the maximum %d", workerPoolToUpdate, workerPools[workerPoolToUpdate].Autoscaler.MinSize, workerPools[workerPoolToUpdate].Autoscaler.MaxSize)
+			}
+			if d["metadata"].(map[string]interface{})["annotations"] == nil {
+				d["metadata"].(map[string]interface{})["annotations"] = map[string]interface{}{}
+			}
+			d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MaxSize)
+			d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{})["cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"] = strconv.Itoa(workerPools[workerPoolToUpdate].Autoscaler.MinSize)
+			delete(d["spec"].(map[string]interface{}), "replicas") // This is required to avoid conflicts with Autoscaler
+		} else {
+			if workerPools[workerPoolToUpdate].MachineCount < 0 {
+				return fmt.Errorf("incorrect machine count for worker pool %s: %d. Should be at least 0", workerPoolToUpdate, workerPools[workerPoolToUpdate].MachineCount)
+			}
+			d["spec"].(map[string]interface{})["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
 
-		d["spec"].(map[string]interface{})["replicas"] = float64(workerPools[workerPoolToUpdate].MachineCount) // As it was originally unmarshalled as a float64
+			// Removes the autoscaler information, as we used static replicas
+			if d["metadata"].(map[string]interface{})["annotations"] != nil {
+				delete(d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{}), "cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size")
+				delete(d["metadata"].(map[string]interface{})["annotations"].(map[string]interface{}), "cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size")
+			}
+		}
 		updated++
 	}
 	if updated != len(workerPools) {
@@ -245,19 +281,25 @@ func cseAddWorkerPoolsInYaml(docs []map[string]interface{}, cluster CseKubernete
 			VGpuPolicyName:      idToNameCache[workerPool.VGpuPolicyId],
 			PlacementPolicyName: idToNameCache[workerPool.PlacementPolicyId],
 		}
+		if workerPool.Autoscaler != nil {
+			internalSettings.WorkerPools[i].Autoscaler = &CseWorkerPoolAutoscaler{
+				MaxSize: workerPool.Autoscaler.MaxSize,
+				MinSize: workerPool.Autoscaler.MinSize,
+			}
+		}
 	}
 
 	// Extra information needed to render the YAML. As all the worker pools share the same
 	// Kubernetes OVA name, version and Catalog, we pick this info from any of the available ones.
 	for _, doc := range docs {
 		if internalSettings.CatalogName == "" && doc["kind"] == "VCDMachineTemplate" {
-			internalSettings.CatalogName = traverseMapAndGet[string](doc, "spec.template.spec.catalog")
+			internalSettings.CatalogName = traverseMapAndGet[string](doc, "spec.template.spec.catalog", ".")
 		}
 		if internalSettings.KubernetesTemplateOvaName == "" && doc["kind"] == "VCDMachineTemplate" {
-			internalSettings.KubernetesTemplateOvaName = traverseMapAndGet[string](doc, "spec.template.spec.template")
+			internalSettings.KubernetesTemplateOvaName = traverseMapAndGet[string](doc, "spec.template.spec.template", ".")
 		}
 		if internalSettings.TkgVersionBundle.KubernetesVersion == "" && doc["kind"] == "MachineDeployment" {
-			internalSettings.TkgVersionBundle.KubernetesVersion = traverseMapAndGet[string](doc, "spec.template.spec.version")
+			internalSettings.TkgVersionBundle.KubernetesVersion = traverseMapAndGet[string](doc, "spec.template.spec.version", ".")
 		}
 		if internalSettings.CatalogName != "" && internalSettings.KubernetesTemplateOvaName != "" && internalSettings.TkgVersionBundle.KubernetesVersion != "" {
 			break
@@ -329,6 +371,73 @@ func cseUpdateNodeHealthCheckInYaml(yamlDocuments []map[string]interface{}, clus
 	return result, nil
 }
 
+// cseUpdateAutoscalerInYaml adds a new YAML document (Autoscaler) to the output if the input worker pools require it and it's not present.
+// If it's present, modifies the YAML documents by scaling the Autoscaler replicas to 1.
+// If none of the input worker pools requires autoscaling, the YAML documents are modified to reduce the Autoscaler replicas to 0.
+func cseUpdateAutoscalerInYaml(yamlDocuments []map[string]interface{}, clusterName string, cseVersion, kubernetesVersion semver.Version,
+	existingWorkerPools *map[string]CseWorkerPoolUpdateInput, newWorkerPools *[]CseWorkerPoolSettings) ([]map[string]interface{}, error) {
+	autoscalerNeeded := false
+	// We'll need the Autoscaler YAML document if at least one Worker Pool uses it
+	if existingWorkerPools != nil {
+		for _, wp := range *existingWorkerPools {
+			if wp.Autoscaler != nil {
+				autoscalerNeeded = true
+				break
+			}
+		}
+	}
+
+	// We'll need the Autoscaler YAML document if at least one of the new Worker Pools uses it
+	if !autoscalerNeeded && newWorkerPools != nil {
+		for _, wp := range *newWorkerPools {
+			if wp.Autoscaler != nil {
+				autoscalerNeeded = true
+				break
+			}
+		}
+	}
+
+	// Search for Autoscaler YAML document
+	for _, d := range yamlDocuments {
+		if d["kind"] != "Deployment" {
+			continue
+		}
+		if traverseMapAndGet[string](d, "metadata.name", ".") != "cluster-autoscaler" {
+			continue
+		}
+		if traverseMapAndGet[string](d, "metadata.namespace", ".") != "kube-system" {
+			continue
+		}
+		// Reaching here means that an Autoscaler was found. We need to modify its configuration.
+		if autoscalerNeeded {
+			d["spec"].(map[string]interface{})["replicas"] = float64(1) // As it was originally unmarshalled as a float64
+		} else {
+			d["spec"].(map[string]interface{})["replicas"] = float64(0) // As it was originally unmarshalled as a float64
+		}
+		// We also keep the image up-to-date with the Kubernetes version
+		k8sVersionSegments := kubernetesVersion.Segments()
+		d["spec"].(map[string]interface{})["template"].(map[string]interface{})["spec"].(map[string]interface{})["containers"].([]interface{})[0].(map[string]interface{})["image"] = fmt.Sprintf("k8s.gcr.io/autoscaling/cluster-autoscaler:v%d.%d.0", k8sVersionSegments[0], k8sVersionSegments[1])
+		return yamlDocuments, nil
+	}
+
+	// This part is only reached if we didn't find any Autoscaler document, so we add it new if it's needed.
+	if autoscalerNeeded {
+		settings := &cseClusterSettingsInternal{Name: clusterName, CseVersion: cseVersion, TkgVersionBundle: tkgVersionBundle{KubernetesVersion: kubernetesVersion.String()}}
+		autoscalerYaml, err := settings.generateAutoscalerYaml()
+		if err != nil {
+			return nil, err
+		}
+		autoscaler, err := unmarshalMultipleYamlDocuments(autoscalerYaml)
+		if err != nil {
+			return nil, err
+		}
+		return append(yamlDocuments, autoscaler...), nil
+	}
+
+	// Otherwise the documents are returned without change
+	return yamlDocuments, nil
+}
+
 // marshalMultipleYamlDocuments takes a slice of maps representing multiple YAML documents (one per item in the slice) and
 // marshals all of them into a single string with the corresponding separators "---".
 func marshalMultipleYamlDocuments(yamlDocuments []map[string]interface{}) (string, error) {
@@ -366,10 +475,11 @@ func unmarshalMultipleYamlDocuments(yamlDocuments string) ([]map[string]interfac
 }
 
 // traverseMapAndGet traverses the input interface{}, which should be a map of maps, by following the path specified as
-// "keyA.keyB.keyC.keyD", doing something similar to, visually speaking, map["keyA"]["keyB"]["keyC"]["keyD"], or in other words,
-// it goes inside every inner map iteratively, until the given path is finished.
+// "keyA%keyB%keyC%keyD" (if keySeparator="%"), or "keyA.keyB.keyC.keyD" (if keySeparator="."), etc. doing something similar to,
+// visually speaking, map["keyA"]["keyB"]["keyC"]["keyD"], or in other words, it goes inside every inner map iteratively,
+// until the given path is finished.
 // If the path doesn't lead to any value, or if the value is nil, or there is any other issue, returns the "zero" value of T.
-func traverseMapAndGet[T any](input interface{}, path string) T {
+func traverseMapAndGet[T any](input interface{}, path string, keySeparator string) T {
 	var nothing T
 	if input == nil {
 		return nothing
@@ -381,7 +491,7 @@ func traverseMapAndGet[T any](input interface{}, path string) T {
 	if len(inputMap) == 0 {
 		return nothing
 	}
-	pathUnits := strings.Split(path, ".")
+	pathUnits := strings.Split(path, keySeparator)
 	completed := false
 	i := 0
 	var result interface{}
