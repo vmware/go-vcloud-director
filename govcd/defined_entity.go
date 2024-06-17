@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	labelDefinedEntity            = "Defined Entity"
-	labelDefinedEntityType        = "Defined Entity Type"
-	labelRdeBehavior              = "RDE Behavior"
-	labelRdeBehaviorOverride      = "RDE Behavior Override"
-	labelRdeBehaviorAccessControl = "RDE Behavior Access Control"
+	labelDefinedEntity              = "Defined Entity"
+	labelDefinedEntityAccessControl = "Defined Entity Access Control"
+	labelDefinedEntityType          = "Defined Entity Type"
+	labelRdeBehavior                = "RDE Behavior"
+	labelRdeBehaviorOverride        = "RDE Behavior Override"
+	labelRdeBehaviorAccessControl   = "RDE Behavior Access Control"
 )
 
 // DefinedEntityType is a type for handling Runtime Defined Entity (RDE) Type definitions.
@@ -457,6 +458,16 @@ func getRdeFromTask(client *Client, task *Task) (*DefinedEntity, error) {
 	return getRdeById(client, rdeId)
 }
 
+// State is a function to check if any of the elements in the path to 'rde.DefinedEntity.State' are
+// nil and return 'string' value instead of '*string'
+func (rde *DefinedEntity) State() string {
+	if rde == nil || rde.DefinedEntity == nil || rde.DefinedEntity.State == nil {
+		return ""
+	}
+
+	return *rde.DefinedEntity.State
+}
+
 // Resolve needs to be called after an RDE is successfully created. It makes the receiver RDE usable if the JSON entity
 // is valid, reaching a state of RESOLVED. If it fails, the state will be RESOLUTION_ERROR,
 // and it will need to Update the JSON entity.
@@ -604,4 +615,26 @@ func (rde *DefinedEntity) InvokeBehaviorAndMarshal(behaviorId string, invocation
 	}
 
 	return nil
+}
+
+// SetAccessControl sets Defined Entity Access Control
+func (de *DefinedEntity) SetAccessControl(acl *types.DefinedEntityAccess) (*types.DefinedEntityAccess, error) {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
+		endpointParams: []string{de.DefinedEntity.ID},
+		entityLabel:    labelDefinedEntityAccessControl,
+	}
+	return createInnerEntity(de.client, c, acl)
+}
+
+// GetAllAccessControls gets all Defined Entity Access Controls from the receiver DefinedEntity.
+// Query parameters can be supplied to modify pagination.
+func (de *DefinedEntity) GetAllAccessControls(queryParameters url.Values) ([]*types.DefinedEntityAccess, error) {
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
+		queryParameters: queryParameters,
+		endpointParams:  []string{de.DefinedEntity.ID},
+		entityLabel:     labelDefinedEntityAccessControl,
+	}
+	return getAllInnerEntities[types.DefinedEntityAccess](de.client, c)
 }
