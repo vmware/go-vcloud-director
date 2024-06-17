@@ -331,6 +331,10 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 	check.Assert(vdc.Vdc.Name, Equals, check.TestName())
 	check.Assert(vdc.Vdc.Description, Equals, check.TestName())
 
+	org, err := vdc.getParentOrg()
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg.AdminOrg.ID, Equals, org.orgId())
+
 	// Instantiate the VDC Template as a Tenant
 	if len(vcd.config.Tenants) > 0 {
 		orgName := vcd.config.Tenants[0].SysOrg
@@ -357,5 +361,9 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		}()
 		check.Assert(vdc2.Vdc.Name, Equals, check.TestName()+"2")
 		check.Assert(vdc2.Vdc.Description, Equals, check.TestName()+"2")
+
+		org, err := vdc.getParentOrg()
+		check.Assert(err, IsNil)
+		check.Assert(adminOrg.AdminOrg.ID, Equals, org.orgId())
 	}
 }
