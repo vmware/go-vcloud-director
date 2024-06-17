@@ -230,9 +230,9 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 	}
 
 	// Pre-requisites: We need information such as Provider VDC and External networks (Provider Gateways)
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
+	check.Assert(adminOrg, NotNil)
 
 	providerVdc, err := vcd.client.GetProviderVdcByName(vcd.config.VCD.NsxtProviderVdc.Name)
 	check.Assert(err, IsNil)
@@ -316,23 +316,18 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		check.Assert(err, IsNil)
 	}()
 
-	err = template.SetAccess([]string{org.AdminOrg.ID})
+	err = template.SetAccess([]string{adminOrg.AdminOrg.ID})
 	check.Assert(err, IsNil)
 
 	// Instantiate the VDC Template as System administrator
-	vdcId, err := template.Instantiate(check.TestName(), check.TestName(), org.AdminOrg.ID)
-	check.Assert(err, IsNil)
-	check.Assert(vdcId, Not(Equals), "")
-
-	vdc, err := org.GetVDCById(vdcId, true)
+	vdc, err := template.InstantiateVdc(check.TestName(), check.TestName(), adminOrg.AdminOrg.ID)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 	defer func() {
+		// Delete the instantiated VDC even on test errors
 		err = vdc.DeleteWait(true, true)
 		check.Assert(err, IsNil)
 	}()
-
-	check.Assert(vdc.Vdc.ID, Equals, vdcId)
 	check.Assert(vdc.Vdc.Name, Equals, check.TestName())
 	check.Assert(vdc.Vdc.Description, Equals, check.TestName())
 
@@ -350,22 +345,17 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(templateAsTenant, NotNil)
 
-		vdcId, err := templateAsTenant.Instantiate(check.TestName()+"2", check.TestName()+"2", org.AdminOrg.ID)
+		vdc2, err := templateAsTenant.InstantiateVdc(check.TestName()+"2", check.TestName()+"2", adminOrg.AdminOrg.ID)
 		check.Assert(err, IsNil)
-		check.Assert(vdcId, Not(Equals), "")
-
-		// Check that it really exists and delete it afterward. We do this as the System admin, as we don't need
-		// the tenant user anymore.
-		vdc, err := org.GetVDCById(vdcId, true)
-		check.Assert(err, IsNil)
-		check.Assert(vdc, NotNil)
+		check.Assert(vdc2, NotNil)
 		defer func() {
-			err = vdc.DeleteWait(true, true)
+			// Also delete the second instantiated VDC even on test errors. We need to retrieve it as Admin for that.
+			adminVdc2, err := adminOrg.GetVDCById(vdc2.Vdc.ID, true)
+			check.Assert(err, IsNil)
+			err = adminVdc2.DeleteWait(true, true)
 			check.Assert(err, IsNil)
 		}()
-
-		check.Assert(vdc.Vdc.ID, Equals, vdcId)
-		check.Assert(vdc.Vdc.Name, Equals, check.TestName()+"2")
-		check.Assert(vdc.Vdc.Description, Equals, check.TestName()+"2")
+		check.Assert(vdc2.Vdc.Name, Equals, check.TestName()+"2")
+		check.Assert(vdc2.Vdc.Description, Equals, check.TestName()+"2")
 	}
 }

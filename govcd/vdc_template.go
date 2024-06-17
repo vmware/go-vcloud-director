@@ -25,7 +25,8 @@ func (vcdClient *VCDClient) CreateVdcTemplate(input types.VMWVdcTemplate) (*VdcT
 	return genericVdcTemplateRequest(&vcdClient.Client, input, &href, http.MethodPost)
 }
 
-// Update updates an existing VDC Template with the given settings
+// Update updates an existing VDC Template with the given settings.
+// Returns the updated VDC Template.
 func (vdcTemplate *VdcTemplate) Update(input types.VMWVdcTemplate) (*VdcTemplate, error) {
 	href := vdcTemplate.client.VCDHREF
 	href.Path += fmt.Sprintf("/admin/extension/vdcTemplate/%s", extractUuid(vdcTemplate.VdcTemplate.ID))
@@ -122,7 +123,6 @@ func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, err
 		}
 		return vcdClient.GetVdcTemplateById(results.Results.OrgVdcTemplateRecord[0].HREF)
 	}
-
 }
 
 // Delete deletes the receiver VDC Template
@@ -181,13 +181,15 @@ func (vdcTemplate *VdcTemplate) GetAccess() (*types.ControlAccessParams, error) 
 	return result, nil
 }
 
-// Instantiate creates a new VDC from the template and returns its ID if the operation finishes successfully.
-func (vdcTemplate *VdcTemplate) Instantiate(vdcName, description, organizationId string) (string, error) {
+// InstantiateVdcAsync creates a new VDC by instantiating the receiver VDC Template. This method finishes immediately after
+// requesting the VDC instance, by returning the Task associated to the VDC instantiation process. If there's any error
+// during the process, returns a nil Task and an error.
+func (vdcTemplate *VdcTemplate) InstantiateVdcAsync(vdcName, description, organizationId string) (*Task, error) {
 	if vdcName == "" {
-		return "", fmt.Errorf("the VDC name is required to instantiate VDC Template '%s'", vdcTemplate.VdcTemplate.Name)
+		return nil, fmt.Errorf("the VDC name is required to instantiate VDC Template '%s'", vdcTemplate.VdcTemplate.Name)
 	}
 	if organizationId == "" {
-		return "", fmt.Errorf("the Organization ID is required to instantiate VDC Template '%s'", vdcTemplate.VdcTemplate.Name)
+		return nil, fmt.Errorf("the Organization ID is required to instantiate VDC Template '%s'", vdcTemplate.VdcTemplate.Name)
 	}
 
 	payload := &types.InstantiateVdcTemplateParams{
@@ -206,14 +208,31 @@ func (vdcTemplate *VdcTemplate) Instantiate(vdcName, description, organizationId
 	href.Path += fmt.Sprintf("/org/%s/action/instantiate", extractUuid(organizationId))
 	task, err := vdcTemplate.client.ExecuteTaskRequest(href.String(), http.MethodPost, types.MimeVdcTemplateInstantiate, "error instantiating the VDC Template: %s", payload)
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+	return &task, nil
+}
+
+// InstantiateVdc creates a new VDC by instantiating the receiver VDC Template. This method waits for the associated Task
+// to complete and returns the instantiated VDC. If there's any error during the process or in the Task, returns a nil VDC and an error.
+func (vdcTemplate *VdcTemplate) InstantiateVdc(vdcName, description, organizationId string) (*Vdc, error) {
+	task, err := vdcTemplate.InstantiateVdcAsync(vdcName, description, organizationId)
+	if err != nil {
+		return nil, err
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("failed instantiating the VDC Template: %s", err)
 	}
-	if task.Task.Owner == nil {
-		return "", fmt.Errorf("the VDC was instantiated but could not retrieve its ID from the finished task")
+	if task.Task.Owner == nil || task.Task.Owner.HREF == "" {
+		return nil, fmt.Errorf("the VDC was instantiated but could not retrieve its ID from the finished task")
 	}
-	return task.Task.Owner.ID, nil
+	vdc, err := getVDCByHref(vdcTemplate.client, task.Task.Owner.HREF)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve the VDC from Task's HREF '%s': %s", task.Task.Owner.HREF, err)
+	}
+	return &Vdc{
+		Vdc:    vdc,
+		client: vdcTemplate.client,
+	}, nil
 }
