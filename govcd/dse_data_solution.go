@@ -188,6 +188,10 @@ func (ds *DataSolution) UnpublishRightsBundle(tenantId string) error {
 // Publish Data Solution to a slice of tenants
 // It is a bundle of operations that mimics what UI does
 func (ds *DataSolution) Publish(tenantId string) error {
+	if ds.Name() == defaultDsoName {
+		return fmt.Errorf("cannot publish Data Solutions Operator")
+	}
+
 	err := ds.PublishRightsBundle(tenantId)
 	if err != nil {
 		return fmt.Errorf("error publishing Rights Bundle: %s", err)
@@ -196,26 +200,29 @@ func (ds *DataSolution) Publish(tenantId string) error {
 	// Publish ACLs to a given Data Solution
 	_, err = ds.PublishAcls(tenantId)
 	if err != nil {
-		return fmt.Errorf("error Publishing Access Rights to '%s': %s", ds.Name(), err)
+		return fmt.Errorf("error publishing Access Rights to '%s': %s", ds.Name(), err)
 	}
 
 	// If current Data Solution is not "VCD Data Solutions" - additionally set the same ACL for it
 	// Note. Names will not change.
-	if ds.Name() != defaultDsoName {
-		dso, err := ds.vcdClient.GetDataSolutionByName(defaultDsoName)
-		if err != nil {
-			return err
-		}
+	dso, err := ds.vcdClient.GetDataSolutionByName(defaultDsoName)
+	if err != nil {
+		return err
+	}
 
-		_, err = dso.PublishAcls(tenantId)
-		if err != nil {
-			return fmt.Errorf("error Publishing Access Rights to '%s': %s", dso.Name(), err)
-		}
+	_, err = dso.PublishAcls(tenantId)
+	if err != nil {
+		return fmt.Errorf("error publishing Access Rights to '%s': %s", dso.Name(), err)
+	}
+
+	// PublishAllInstanceTemplates
+
+	_, err = ds.PublishAllInstanceTemplates(tenantId)
+	if err != nil {
+		return fmt.Errorf("error publishing ")
 	}
 
 	// Publish all templates of a given
-
-	dsInstanceTemplates, err := ds.GetAllInstanceTemplates()
 
 	// acl := &types.DefinedEntityAccess{
 	// 	Tenant:        types.OpenApiReference{ID: tenantId},
@@ -248,19 +255,39 @@ func (ds *DataSolution) PublishAcls(tenantId string) (*types.DefinedEntityAccess
 	return accessControl, nil
 }
 
+func (ds *DataSolution) PublishAllInstanceTemplates(tenantId string) ([]*types.DefinedEntityAccess, error) {
+	allTemplates, err := ds.GetAllInstanceTemplates()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving all Data Solution Instance Templates: %s", err)
+	}
+
+	definedEntityAccess := make([]*types.DefinedEntityAccess, 0)
+	for _, template := range allTemplates {
+		access, err := template.Publish(tenantId)
+		if err != nil {
+			return nil, fmt.Errorf("error setting ACL to Data Solution Instance Template '%s': %s",
+				template.DefinedEntity.DefinedEntity.Name, err)
+		}
+
+		definedEntityAccess = append(definedEntityAccess, access)
+	}
+
+	return definedEntityAccess, nil
+}
+
 // ####
 
 func (vcdClient *VCDClient) GetAllInstanceTemplates(queryParameters url.Values) ([]*DataSolutionInstanceTemplate, error) {
 	allDseInstanceTemplates, err := vcdClient.GetAllRdes(dataSolutionTemplateInstanceRdeType[0], dataSolutionTemplateInstanceRdeType[1], dataSolutionTemplateInstanceRdeType[2], queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving all Solution Add-on Instances: %s", err)
+		return nil, fmt.Errorf("error retrieving all Data Solution Instance Templates: %s", err)
 	}
 
 	results := make([]*DataSolutionInstanceTemplate, len(allDseInstanceTemplates))
 	for index, rde := range allDseInstanceTemplates {
 		dseConfig, err := convertRdeEntityToAny[types.DataSolutionInstanceTemplate](rde.DefinedEntity.Entity)
 		if err != nil {
-			return nil, fmt.Errorf("error converting RDE to Solution Add-on Instance: %s", err)
+			return nil, fmt.Errorf("error converting RDE to Data Solution Instance Template: %s", err)
 		}
 
 		results[index] = &DataSolutionInstanceTemplate{

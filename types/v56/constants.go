@@ -432,6 +432,7 @@ const (
 	OpenApiEndpointRdeTypeBehaviors                   = "entityTypes/%s/behaviors/"
 	OpenApiEndpointRdeTypeBehaviorAccessControls      = "entityTypes/%s/behaviorAccessControls"
 	OpenApiEndpointRdeEntities                        = "entities/"
+	OpenApiEndpointRdeEntityAccessControls            = "entities/%s/accessControls"
 	OpenApiEndpointRdeEntitiesTypes                   = "entities/types/"
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 	OpenApiEndpointRdeEntitiesBehaviorsInvocations    = "entities/%s/behaviors/%s/invocations"

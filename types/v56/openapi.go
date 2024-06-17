@@ -519,6 +519,19 @@ type DefinedEntity struct {
 	State      *string                `json:"state,omitempty"`      // Every entity is created in the "PRE_CREATED" state. Once an entity is ready to be validated against its schema, it will transition in another state - RESOLVED, if the entity is valid according to the schema, or RESOLUTION_ERROR otherwise. If an entity in an "RESOLUTION_ERROR" state is updated, it will transition to the inital "PRE_CREATED" state without performing any validation. If its in the "RESOLVED" state, then it will be validated against the entity type schema and throw an exception if its invalid
 	Owner      *OpenApiReference      `json:"owner,omitempty"`      // The owner of the defined entity
 	Org        *OpenApiReference      `json:"org,omitempty"`        // The organization of the defined entity.
+	Message    string                 `json:"message,omitempty"`    // A message field that might be populated in case entity Resolution fails
+}
+
+type DefinedEntityAccess struct {
+	Id            string           `json:"id,omitempty"`
+	Tenant        OpenApiReference `json:"tenant"`
+	GrantType     string           `json:"grantType"`
+	ObjectId      string           `json:"objectId,omitempty"`
+	AccessLevelID string           `json:"accessLevelId"`
+	MemberID      string           `json:"memberId"`
+}
+
+type DefinedEntityAccessId struct {
 }
 
 type VSphereVirtualCenter struct {
