@@ -38,6 +38,10 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(nsxtExternalNetwork, NotNil)
 
+	edgeCluster, err := nsxtVdc.GetNsxtEdgeClusterByName(vcd.config.VCD.Nsxt.NsxtEdgeCluster)
+	check.Assert(err, IsNil)
+	check.Assert(edgeCluster, NotNil)
+
 	egwDefinition := &types.OpenAPIEdgeGateway{
 		Name:        "nsx-t-edge",
 		Description: "nsx-t-edge-description",
@@ -63,6 +67,11 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	AddToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
 
 	createdEdge.EdgeGateway.Name = "renamed-edge"
+	createdEdge.EdgeGateway.EdgeClusterConfig = &types.OpenAPIEdgeGatewayEdgeClusterConfig{
+		PrimaryEdgeCluster: types.OpenAPIEdgeGatewayEdgeCluster{
+			BackingID: edgeCluster.NsxtEdgeCluster.ID,
+		},
+	}
 	updatedEdge, err := createdEdge.Update(createdEdge.EdgeGateway)
 	check.Assert(err, IsNil)
 	check.Assert(updatedEdge.EdgeGateway.Name, Equals, "renamed-edge")
