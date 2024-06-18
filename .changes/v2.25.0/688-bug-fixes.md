@@ -1,2 +1,2 @@
-* Fixed an error that occurred when sending a `OpenAPIEdgeGatewayEdgeClusterConfig` section from an Edge Gateway configuration,
-when the struct was sent with empty fields, and it should not be sent at all [GH-688]
+* Fixed an error that occurred when updating an Edge Gateway configuration, with an Edge cluster configuration section
+  (`OpenAPIEdgeGatewayEdgeClusterConfig`). If this section was added, the update operation failed in VCD 10.6+ [GH-688]
