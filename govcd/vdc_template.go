@@ -141,14 +141,14 @@ func (vdcTemplate *VdcTemplate) Delete() error {
 	return nil
 }
 
-// SetAccess sets the Access control configuration for the receiver VDC Template,
+// SetAccessControl sets the Access control configuration for the receiver VDC Template,
 // which specifies which Organizations can read it.
-func (vdcTemplate *VdcTemplate) SetAccess(organizationIds []string) error {
+func (vdcTemplate *VdcTemplate) SetAccessControl(organizationIds []string) error {
 	if !vdcTemplate.client.IsSysAdmin {
 		return fmt.Errorf("functionality requires System Administrator privileges")
 	}
 	if vdcTemplate.VdcTemplate.HREF == "" {
-		return fmt.Errorf("cannot set the Access list for the VDC Template, its HREF is empty")
+		return fmt.Errorf("cannot set the Access control for the VDC Template, its HREF is empty")
 	}
 	accessSettings := make([]*types.AccessSetting, len(organizationIds))
 	for i, organizationId := range organizationIds {
@@ -163,18 +163,18 @@ func (vdcTemplate *VdcTemplate) SetAccess(organizationIds []string) error {
 	return vdcTemplate.client.setAccessControlWithHttpMethod(http.MethodPut, payload, vdcTemplate.VdcTemplate.HREF, "VDC Template", vdcTemplate.VdcTemplate.Name, nil)
 }
 
-// GetAccess retrieves the Control access configuration for the receiver VDC Template, which
+// GetAccessControl retrieves the Access control configuration for the receiver VDC Template, which
 // contains the Organizations that can read it.
-func (vdcTemplate *VdcTemplate) GetAccess() (*types.ControlAccessParams, error) {
+func (vdcTemplate *VdcTemplate) GetAccessControl() (*types.ControlAccessParams, error) {
 	if !vdcTemplate.client.IsSysAdmin {
 		return nil, fmt.Errorf("functionality requires System Administrator privileges")
 	}
 	if vdcTemplate.VdcTemplate.HREF == "" {
-		return nil, fmt.Errorf("cannot get the Access list for the VDC Template, its HREF is empty")
+		return nil, fmt.Errorf("cannot get the Access control for the VDC Template, its HREF is empty")
 	}
 	result := &types.ControlAccessParams{}
 	href := fmt.Sprintf("%s/controlAccess", vdcTemplate.VdcTemplate.HREF)
-	_, err := vdcTemplate.client.ExecuteRequest(href, http.MethodGet, types.AnyXMLMime, "error getting access of VDC Template: %s", nil, result)
+	_, err := vdcTemplate.client.ExecuteRequest(href, http.MethodGet, types.AnyXMLMime, "error getting the Access control of VDC Template: %s", nil, result)
 	if err != nil {
 		return nil, err
 	}

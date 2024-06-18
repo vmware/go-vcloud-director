@@ -207,15 +207,15 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 	check.Assert(template.VdcTemplate.VdcTemplateSpecification.CpuLimitMhz, Equals, 500)
 	check.Assert(template.VdcTemplate.VdcTemplateSpecification.NicQuota, Equals, 500)
 
-	access, err := template.GetAccess()
+	access, err := template.GetAccessControl()
 	check.Assert(err, IsNil)
 	check.Assert(access, NotNil)
 	check.Assert(access.AccessSettings, IsNil)
 
-	err = template.SetAccess([]string{org.AdminOrg.ID})
+	err = template.SetAccessControl([]string{org.AdminOrg.ID})
 	check.Assert(err, IsNil)
 
-	access, err = template.GetAccess()
+	access, err = template.GetAccessControl()
 	check.Assert(err, IsNil)
 	check.Assert(access, NotNil)
 	check.Assert(access.AccessSettings, NotNil)
@@ -316,7 +316,7 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		check.Assert(err, IsNil)
 	}()
 
-	err = template.SetAccess([]string{adminOrg.AdminOrg.ID})
+	err = template.SetAccessControl([]string{adminOrg.AdminOrg.ID})
 	check.Assert(err, IsNil)
 
 	// Instantiate the VDC Template as System administrator
