@@ -741,12 +741,12 @@ type VMWVdcTemplateSpecification struct {
 	// A set of name of Storage Profiles, with corresponding limit value, that all Provider VDCs must have, and that are selected at the time of VDC Template instantiation.
 	StorageProfile []*VdcStorageProfile `json:"storageProfile,omitempty"`
 
-	// Set to true to indicate if the FLEX vDC is to be elastic. This field can only be set on input for FLEX VDC templates
-	// and Allocation VApp vDC templates. However, this field will be returned properly when read.
+	// Set to true to indicate if the FLEX VDC is to be elastic. This field can only be set on input for FLEX VDC templates
+	// and Allocation VApp VDC templates. However, this field will be returned properly when read.
 	IsElastic *bool `json:"isElastic,omitempty"`
 
-	// Set to true to indicate if the FLEX vDC is to include memory overhead into its accounting for admission control.
-	// This field can only be set on input for FLEX vDC templates and Allocation VApp VDC templates.
+	// Set to true to indicate if the FLEX VDC is to include memory overhead into its accounting for admission control.
+	// This field can only be set on input for FLEX VDC templates and Allocation VApp VDC templates.
 	// However, this field will be returned properly when read.
 	IncludeMemoryOverhead *bool `json:"includeMemoryOverhead,omitempty"`
 
