@@ -6,8 +6,10 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
+	"regexp"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
 // Certificate is a structure defining a certificate in VCD
@@ -165,6 +167,36 @@ func (client *Client) GetAllCertificatesFromLibrary(queryParameters url.Values) 
 	return getAllCertificateFromLibrary(client, queryParameters, nil)
 }
 
+// CountMatchingCertificates searches among all certificates and return the number of certificates
+// with the text that matches the given PEM
+func (client *Client) CountMatchingCertificates(pem string) (int, error) {
+	matchingCertificates, err := client.MatchingCertificatesInLibrary(pem)
+	if err != nil {
+		return 0, err
+	}
+	return len(matchingCertificates), nil
+}
+
+// MatchingCertificatesInLibrary searches among all certificates and return all certificates
+// with the text that matches the given PEM
+func (client *Client) MatchingCertificatesInLibrary(pem string) ([]*Certificate, error) {
+	certificates, err := client.GetAllCertificatesFromLibrary(nil)
+	if err != nil {
+		return nil, err
+	}
+	var matchingCertificates []*Certificate
+	for _, cert := range certificates {
+		isSame, err := cert.SameAs(pem)
+		if err != nil {
+			return nil, err
+		}
+		if isSame {
+			matchingCertificates = append(matchingCertificates, cert)
+		}
+	}
+	return matchingCertificates, nil
+}
+
 // GetAllCertificatesFromLibrary r retrieves all available certificates from certificate library.
 // Query parameters can be supplied to perform additional filtering
 func (adminOrg *AdminOrg) GetAllCertificatesFromLibrary(queryParameters url.Values) ([]*Certificate, error) {
@@ -294,4 +326,37 @@ func (certificate *Certificate) Delete() error {
 	}
 
 	return nil
+}
+
+// getCertificateText returns the stripped text of the certificate, without the
+// starting and ending markers
+func getCertificateText(pem string) (string, error) {
+	reText, err := regexp.Compile(
+		`(?s)` + // treats newline as any other character
+			`-----BEGIN CERTIFICATE-----` + // the 'begin certificate' marker
+			`(.+)` + // any sequence of characters after the 'begin certificate' marker
+			`-----END CERTIFICATE-----`) // the 'end certificate' marker
+	if err != nil {
+		return "", err
+	}
+
+	text := reText.FindStringSubmatch(pem)
+	if len(text) < 2 {
+		return "", fmt.Errorf("start marker 'BEGIN CERTIFICATE' or end marker 'END CERTIFICATE' not found in input certificate")
+	}
+	return text[1], nil
+}
+
+// SameAs returns true if the certificate text matches the text of the provided PEM
+// (without the BEGIN CERTIFICATE and END CERTIFICATE markers)
+func (certificate *Certificate) SameAs(pem string) (bool, error) {
+	internalValue, err := getCertificateText(certificate.CertificateLibrary.Certificate)
+	if err != nil {
+		return false, err
+	}
+	compareValue, err := getCertificateText(pem)
+	if err != nil {
+		return false, err
+	}
+	return internalValue == compareValue, nil
 }
