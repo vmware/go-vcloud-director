@@ -134,8 +134,8 @@ type OpenAPIEdgeGatewayBacking struct {
 
 // OpenAPIEdgeGatewayEdgeCluster allows users to specify edge cluster reference
 type OpenAPIEdgeGatewayEdgeCluster struct {
-	EdgeClusterRef OpenApiReference `json:"edgeClusterRef"`
-	BackingID      string           `json:"backingId"`
+	EdgeClusterRef *OpenApiReference `json:"edgeClusterRef"`
+	BackingID      string            `json:"backingId"`
 }
 
 type OpenAPIEdgeGatewayEdgeClusterConfig struct {
