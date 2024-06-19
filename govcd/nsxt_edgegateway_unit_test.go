@@ -367,6 +367,7 @@ func Test_ipSliceDifference(t *testing.T) {
 func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 	type args struct {
 		uplinks []types.EdgeGatewayUplinks
+		limitTo int64
 	}
 	tests := []struct {
 		name    string
@@ -399,6 +400,64 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 			want: []netip.Addr{
 				netip.MustParseAddr("10.10.10.1"),
 				netip.MustParseAddr("10.10.10.2"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "IPv6BigSubnetLimit3",
+			args: args{
+				uplinks: []types.EdgeGatewayUplinks{
+					{
+						Subnets: types.OpenAPIEdgeGatewaySubnets{
+							Values: []types.OpenAPIEdgeGatewaySubnetValue{
+								{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											{
+												StartAddress: "2a02:a404:11:0:0:0:0:1",
+												EndAddress:   "2a02:a404:11:0:ffff:ffff:ffff:fffd",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				limitTo: 3,
+			},
+			want: []netip.Addr{
+				netip.MustParseAddr("2a02:a404:11:0:0:0:0:1"),
+				netip.MustParseAddr("2a02:a404:11:0:0:0:0:2"),
+				netip.MustParseAddr("2a02:a404:11:0:0:0:0:3"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "IPv6BigSubnetLimit1",
+			args: args{
+				uplinks: []types.EdgeGatewayUplinks{
+					{
+						Subnets: types.OpenAPIEdgeGatewaySubnets{
+							Values: []types.OpenAPIEdgeGatewaySubnetValue{
+								{
+									IPRanges: &types.OpenApiIPRanges{
+										Values: []types.OpenApiIPRangeValues{
+											{
+												StartAddress: "2a02:a404:11:0:0:0:0:1",
+												EndAddress:   "2a02:a404:11:0:ffff:ffff:ffff:fffd",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				limitTo: 1,
+			},
+			want: []netip.Addr{
+				netip.MustParseAddr("2a02:a404:11:0:0:0:0:1"),
 			},
 			wantErr: false,
 		},
@@ -557,7 +616,7 @@ func Test_flattenEdgeGatewayUplinkToIpSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := flattenEdgeGatewayUplinkToIpSlice(tt.args.uplinks)
+			got, err := flattenEdgeGatewayUplinkToIpSlice(tt.args.uplinks, tt.args.limitTo)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ipSliceFromEdgeGatewayUplinks() error = %v, wantErr %v", err, tt.wantErr)
 				return
