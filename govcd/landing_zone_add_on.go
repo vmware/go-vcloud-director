@@ -15,7 +15,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/govcd/internal/udf"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"sigs.k8s.io/yaml"
@@ -26,9 +25,9 @@ var slzAddOnRdeType = [3]string{"vmware", "solutions_add_on", "1.0.0"}
 // SolutionAddOn is the main structure to handle Solution Add-Ons within Solution Landing Zone. It
 // packs parent RDE and Solution Add-On entity itself
 type SolutionAddOn struct {
-	SolutionEntity *types.SolutionAddOn
-	DefinedEntity  *DefinedEntity
-	vcdClient      *VCDClient
+	SolutionAddOnEntity *types.SolutionAddOn
+	DefinedEntity       *DefinedEntity
+	vcdClient           *VCDClient
 }
 
 // SolutionAddOnConfig defines configuration for Solution Add-On creation which is used for
@@ -102,6 +101,7 @@ func createSolutionAddOnValidator(cfg SolutionAddOnConfig) error {
 // * Create the 'Entity' payload for creating RDE based on the given image
 // * Get Solution Add-On RDE Name from the manifest within 'isoFilePath'
 // * If 'autoTrustCertificate' is set to true - the code will check if VCD trusts the certificate
+// and trust it if it wasn't already trusted
 // * Lookup RDE type 'vmware:solutions_add_on:1.0.0'
 // * Create an RDE entity with payload from the 'isoFilePath' contents
 func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*SolutionAddOn, error) {
@@ -170,9 +170,9 @@ func (vcdClient *VCDClient) CreateSolutionAddOn(cfg SolutionAddOnConfig) (*Solut
 	}
 
 	returnType := SolutionAddOn{
-		SolutionEntity: result,
-		vcdClient:      vcdClient,
-		DefinedEntity:  createdRdeEntity,
+		SolutionAddOnEntity: result,
+		vcdClient:           vcdClient,
+		DefinedEntity:       createdRdeEntity,
 	}
 
 	return &returnType, nil
@@ -193,9 +193,9 @@ func (vcdClient *VCDClient) GetAllSolutionAddons(queryParameters url.Values) ([]
 		}
 
 		results[index] = &SolutionAddOn{
-			vcdClient:      vcdClient,
-			DefinedEntity:  rde,
-			SolutionEntity: addon,
+			vcdClient:           vcdClient,
+			DefinedEntity:       rde,
+			SolutionAddOnEntity: addon,
 		}
 	}
 
@@ -218,9 +218,9 @@ func (vcdClient *VCDClient) GetSolutionAddonById(id string) (*SolutionAddOn, err
 	}
 
 	packages := &SolutionAddOn{
-		SolutionEntity: result,
-		vcdClient:      vcdClient,
-		DefinedEntity:  rde,
+		SolutionAddOnEntity: result,
+		vcdClient:           vcdClient,
+		DefinedEntity:       rde,
 	}
 
 	return packages, nil
@@ -249,24 +249,23 @@ func (s *SolutionAddOn) Update(saoCfg *types.SolutionAddOn) (*SolutionAddOn, err
 		return nil, err
 	}
 
-	s.DefinedEntity.DefinedEntity.Entity = unmarshalledRdeEntityJson
-	err = s.DefinedEntity.Update(*s.DefinedEntity.DefinedEntity)
+	newStructure, err := s.vcdClient.GetSolutionAddonById(s.RdeId())
+	if err != nil {
+		return nil, fmt.Errorf("error creating a copy of Solution Add-On: %s", err)
+	}
+
+	newStructure.DefinedEntity.DefinedEntity.Entity = unmarshalledRdeEntityJson
+	err = newStructure.DefinedEntity.Update(*newStructure.DefinedEntity.DefinedEntity)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := convertRdeEntityToAny[types.SolutionAddOn](s.DefinedEntity.DefinedEntity.Entity)
+	newStructure.SolutionAddOnEntity, err = convertRdeEntityToAny[types.SolutionAddOn](s.DefinedEntity.DefinedEntity.Entity)
 	if err != nil {
 		return nil, err
 	}
 
-	packages := SolutionAddOn{
-		SolutionEntity: result,
-		vcdClient:      s.vcdClient,
-		DefinedEntity:  s.DefinedEntity,
-	}
-
-	return &packages, nil
+	return newStructure, nil
 }
 
 func (s *SolutionAddOn) Delete() error {
@@ -275,42 +274,6 @@ func (s *SolutionAddOn) Delete() error {
 	}
 	return s.DefinedEntity.Delete()
 }
-
-func (s *SolutionAddOn) Inputs() (*SolutionAddOn, error) {
-	inputs := s.SolutionEntity.Manifest["inputs"]
-	inputsSlice := inputs.([]types.SolutionAddOnInputField)
-
-	spew.Dump(inputsSlice)
-
-	// unmarshalledRdeEntityJson, err := convertAnyToRdeEntity(saoCfg)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// s.DefinedEntity.DefinedEntity.Entity = unmarshalledRdeEntityJson
-	// err = s.DefinedEntity.Update(*s.DefinedEntity.DefinedEntity)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// result, err := convertRdeEntityToAny[types.SolutionAddOn](s.DefinedEntity.DefinedEntity.Entity)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// packages := SolutionAddOn{
-	// 	SolutionEntity: result,
-	// 	vcdClient:      s.vcdClient,
-	// 	DefinedEntity:  s.DefinedEntity,
-	// }
-
-	return nil, nil
-}
-
-// func inputs(inputs interface{}) {
-// 	inputsSlice := inputs.([]types.SolutionAddOnInputField)
-
-// }
 
 // RdeId is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
 func (s *SolutionAddOn) RdeId() string {
@@ -332,7 +295,7 @@ func (vcdClient *VCDClient) TrustAddOnImageCertificate(certificateText, source s
 		return fmt.Errorf("source field is empty")
 	}
 
-	foundCertificateInLibrary, err := vcdClient.Client.FoundCertificateInLibrary(certificateText)
+	foundCertificateInLibrary, err := vcdClient.Client.CountMatchingCertificates(certificateText)
 	if err != nil {
 		return err
 	}

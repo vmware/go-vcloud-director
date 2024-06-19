@@ -398,7 +398,7 @@ func (addon *SolutionAddOn) ConvertInputTypes(userInputs map[string]interface{})
 // extractInputs retrieves input field definitions for instantiating and removing Solution Add-On from manifest
 func (addon *SolutionAddOn) extractInputs() ([]*types.SolutionAddOnInputField, error) {
 	// Extract inputs definition / Manifest["inputs"]
-	inputValidation := addon.SolutionEntity.Manifest["inputs"]
+	inputValidation := addon.SolutionAddOnEntity.Manifest["inputs"]
 	inputValidationSlice, ok := inputValidation.([]any)
 	if !ok {
 		return nil, fmt.Errorf("error processing Solution Add-On input validation metadata")

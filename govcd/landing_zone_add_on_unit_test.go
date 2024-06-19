@@ -121,7 +121,7 @@ func TestSolutionAddOn_ValidateInputs(t *testing.T) {
 
 			addon := SolutionAddOn{
 				DefinedEntity: &DefinedEntity{DefinedEntity: &types.DefinedEntity{Name: "vmware.ds-1.4.0-23376809"}},
-				SolutionEntity: &types.SolutionAddOn{
+				SolutionAddOnEntity: &types.SolutionAddOn{
 					Manifest: addOnManifest,
 				},
 			}
@@ -209,7 +209,7 @@ func TestSolutionAddOn_ConvertInputTypes(t *testing.T) {
 
 			addon := SolutionAddOn{
 				DefinedEntity: &DefinedEntity{DefinedEntity: &types.DefinedEntity{Name: "vmware.ds-1.4.0-23376809"}},
-				SolutionEntity: &types.SolutionAddOn{
+				SolutionAddOnEntity: &types.SolutionAddOn{
 					Manifest: addOnManifest,
 				},
 			}
