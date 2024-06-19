@@ -125,6 +125,32 @@ func (vcdClient *VCDClient) GetVdcTemplateByName(name string) (*VdcTemplate, err
 	}
 }
 
+// QueryAdminVdcTemplates gets the list of VDC Templates as System Administrator
+func (vcdClient *VCDClient) QueryAdminVdcTemplates() ([]*types.QueryResultAdminOrgVdcTemplateRecordType, error) {
+	if !vcdClient.Client.IsSysAdmin {
+		return nil, fmt.Errorf("querying %s requires System administrator privileges", types.QtAdminOrgVdcTemplate)
+	}
+
+	results, err := vcdClient.Client.cumulativeQuery(types.QtAdminOrgVdcTemplate, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return results.Results.AdminOrgVdcTemplateRecord, nil
+}
+
+// QueryVdcTemplates gets the list of VDC Templates as a tenant
+func (vcdClient *VCDClient) QueryVdcTemplates() ([]*types.QueryResultOrgVdcTemplateRecordType, error) {
+	if vcdClient.Client.IsSysAdmin {
+		return nil, fmt.Errorf("querying %s requires a tenant user", types.QtOrgVdcTemplate)
+	}
+
+	results, err := vcdClient.Client.cumulativeQuery(types.QtOrgVdcTemplate, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return results.Results.OrgVdcTemplateRecord, nil
+}
+
 // Delete deletes the receiver VDC Template
 func (vdcTemplate *VdcTemplate) Delete() error {
 	if !vdcTemplate.client.IsSysAdmin {

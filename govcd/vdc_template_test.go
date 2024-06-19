@@ -197,6 +197,22 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
+	_, err = vcd.client.QueryVdcTemplates()
+	check.Assert(err, NotNil)
+
+	adminTemplates, err := vcd.client.QueryAdminVdcTemplates()
+	check.Assert(err, IsNil)
+	check.Assert(true, Equals, len(adminTemplates) > 0)
+	found := false
+	for _, adminTemplate := range adminTemplates {
+		// Comparing HREFs as IDs are empty
+		if adminTemplate.HREF == templateByName.VdcTemplate.HREF {
+			found = true
+			break
+		}
+	}
+	check.Assert(found, Equals, true)
+
 	settings.Description = "Updated"
 	settings.VdcTemplateSpecification.CpuLimitMhz = 500
 	settings.VdcTemplateSpecification.NicQuota = 500
@@ -348,6 +364,22 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		templateAsTenant, err := vcdClient.GetVdcTemplateByName(template.VdcTemplate.TenantName) // Careful, we must use the Tenant name now
 		check.Assert(err, IsNil)
 		check.Assert(templateAsTenant, NotNil)
+
+		_, err = vcdClient.QueryAdminVdcTemplates()
+		check.Assert(err, NotNil)
+
+		tenantTemplates, err := vcdClient.QueryVdcTemplates()
+		check.Assert(err, IsNil)
+		check.Assert(true, Equals, len(tenantTemplates) > 0)
+		found := false
+		for _, tenantTemplate := range tenantTemplates {
+			// Comparing HREFs as IDs are empty
+			if tenantTemplate.HREF == templateAsTenant.VdcTemplate.HREF {
+				found = true
+				break
+			}
+		}
+		check.Assert(found, Equals, true)
 
 		vdc2, err := templateAsTenant.InstantiateVdc(check.TestName()+"2", check.TestName()+"2", adminOrg.AdminOrg.ID)
 		check.Assert(err, IsNil)
