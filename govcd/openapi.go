@@ -251,6 +251,10 @@ func (client *Client) OpenApiPostItemAsyncWithHeaders(apiVersion string, urlRef 
 		return Task{}, fmt.Errorf("POST request expected async task (HTTP response 202), got %d", resp.StatusCode)
 	}
 
+	// The response shouldn't have payload as the main information should be in "Location" header
+	util.ProcessResponseOutput(util.FuncNameCallStack(), resp, "")
+	debugShowResponse(resp, []byte("SKIPPED RESPONSE"))
+
 	err = resp.Body.Close()
 	if err != nil {
 		return Task{}, fmt.Errorf("error closing response body: %s", err)
