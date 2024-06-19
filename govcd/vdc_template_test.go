@@ -19,11 +19,11 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 
 	// Pre-requisites: We need information such as Provider VDC, External networks (Provider Gateways)
 	// and Edge Clusters.
-	org, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
 	check.Assert(err, IsNil)
-	check.Assert(org, NotNil)
+	check.Assert(adminOrg, NotNil)
 
-	vdc, err := org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	vdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
@@ -197,16 +197,16 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
-	_, err = vcd.client.QueryVdcTemplates()
-	check.Assert(err, NotNil)
+	org, err := vcd.client.GetOrgByName(adminOrg.AdminOrg.Name)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
 
 	adminTemplates, err := vcd.client.QueryAdminVdcTemplates()
 	check.Assert(err, IsNil)
 	check.Assert(true, Equals, len(adminTemplates) > 0)
 	found := false
 	for _, adminTemplate := range adminTemplates {
-		// Comparing HREFs as IDs are empty
-		if adminTemplate.HREF == templateByName.VdcTemplate.HREF {
+		if extractUuid(adminTemplate.HREF) == extractUuid(templateByName.VdcTemplate.HREF) {
 			found = true
 			break
 		}
@@ -228,7 +228,7 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 	check.Assert(access, NotNil)
 	check.Assert(access.AccessSettings, IsNil)
 
-	err = template.SetAccessControl([]string{org.AdminOrg.ID})
+	err = template.SetAccessControl([]string{adminOrg.AdminOrg.ID})
 	check.Assert(err, IsNil)
 
 	access, err = template.GetAccessControl()
@@ -237,7 +237,20 @@ func (vcd *TestVCD) Test_VdcTemplateCRUD(check *C) {
 	check.Assert(access.AccessSettings, NotNil)
 	check.Assert(len(access.AccessSettings.AccessSetting), Equals, 1)
 	check.Assert(access.AccessSettings.AccessSetting[0].Subject, NotNil)
-	check.Assert(access.AccessSettings.AccessSetting[0].Subject.HREF, Equals, org.AdminOrg.HREF)
+	check.Assert(access.AccessSettings.AccessSetting[0].Subject.HREF, Equals, adminOrg.AdminOrg.HREF)
+
+	// Now that the tenant has permissions, the query should return it
+	templates, err := org.QueryVdcTemplates()
+	check.Assert(err, IsNil)
+	check.Assert(true, Equals, len(adminTemplates) > 0)
+	found = false
+	for _, t := range templates {
+		if extractUuid(t.HREF) == extractUuid(templateByName.VdcTemplate.HREF) {
+			found = true
+			break
+		}
+	}
+	check.Assert(found, Equals, true)
 }
 
 func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
@@ -368,13 +381,16 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		_, err = vcdClient.QueryAdminVdcTemplates()
 		check.Assert(err, NotNil)
 
-		tenantTemplates, err := vcdClient.QueryVdcTemplates()
+		org, err := vcdClient.GetOrgByName(orgName)
+		check.Assert(err, IsNil)
+		check.Assert(org, NotNil)
+
+		tenantTemplates, err := org.QueryVdcTemplates()
 		check.Assert(err, IsNil)
 		check.Assert(true, Equals, len(tenantTemplates) > 0)
 		found := false
 		for _, tenantTemplate := range tenantTemplates {
-			// Comparing HREFs as IDs are empty
-			if tenantTemplate.HREF == templateAsTenant.VdcTemplate.HREF {
+			if extractUuid(tenantTemplate.HREF) == extractUuid(templateAsTenant.VdcTemplate.HREF) {
 				found = true
 				break
 			}
@@ -394,8 +410,8 @@ func (vcd *TestVCD) Test_VdcTemplateInstantiate(check *C) {
 		check.Assert(vdc2.Vdc.Name, Equals, check.TestName()+"2")
 		check.Assert(vdc2.Vdc.Description, Equals, check.TestName()+"2")
 
-		org, err := vdc.getParentOrg()
+		vdcOrg, err := vdc.getParentOrg()
 		check.Assert(err, IsNil)
-		check.Assert(adminOrg.AdminOrg.ID, Equals, org.orgId())
+		check.Assert(adminOrg.AdminOrg.ID, Equals, vdcOrg.orgId())
 	}
 }

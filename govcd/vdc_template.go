@@ -138,13 +138,12 @@ func (vcdClient *VCDClient) QueryAdminVdcTemplates() ([]*types.QueryResultAdminO
 	return results.Results.AdminOrgVdcTemplateRecord, nil
 }
 
-// QueryVdcTemplates gets the list of VDC Templates as a tenant
-func (vcdClient *VCDClient) QueryVdcTemplates() ([]*types.QueryResultOrgVdcTemplateRecordType, error) {
-	if vcdClient.Client.IsSysAdmin {
-		return nil, fmt.Errorf("querying %s requires a tenant user", types.QtOrgVdcTemplate)
-	}
-
-	results, err := vcdClient.Client.cumulativeQuery(types.QtOrgVdcTemplate, nil, nil)
+// QueryVdcTemplates gets the list of VDC Templates from the receiver Org, as a tenant
+func (org *Org) QueryVdcTemplates() ([]*types.QueryResultOrgVdcTemplateRecordType, error) {
+	results, err := org.client.cumulativeQueryWithHeaders(types.QtOrgVdcTemplate, nil, nil, getTenantContextHeader(&TenantContext{
+		OrgId:   org.Org.ID,
+		OrgName: org.Org.Name,
+	}))
 	if err != nil {
 		return nil, err
 	}
