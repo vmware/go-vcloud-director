@@ -23,9 +23,6 @@ var slzAddOnInstanceRdeType = [3]string{"vmware", "solutions_add_on_instance", "
 
 var addOnCreateInstanceBehaviorId = "urn:vcloud:behavior-interface:createInstance:vmware:solutions_add_on:1.0.0"
 var addOnInstanceRemovalBehaviorId = "urn:vcloud:behavior-interface:invoke:vmware:solutions_add_on_instance:1.0.0"
-var addOnInstancePublishBehaviorId = "urn:vcloud:behavior-interface:invoke:vmware:solutions_add_on_instance:1.0.0"
-
-// var addOnInstanceRemovalBehaviorId = "urn:vcloud:behavior-interface:invoke:vmware:solutions_add_on_instance:1.0.0"
 
 type SolutionAddOnInstance struct {
 	SolutionAddOnInstance *types.SolutionAddOnInstance
@@ -33,6 +30,9 @@ type SolutionAddOnInstance struct {
 	vcdClient             *VCDClient
 }
 
+// CreateSolutionAddOnInstance instantiates a new Solution Add-On. Some inputs may be mandatory for
+// creation depending on the Solution Add-On itself. Methods 'ValidateInputs' can help to
+// dynamically validate inputs based on the requirements in Solution Add-On.
 func (addon *SolutionAddOn) CreateSolutionAddOnInstance(inputs map[string]interface{}) (*SolutionAddOnInstance, string, error) {
 	// copy inputs to prevent mutation of function argument
 	inputsCopy := make(map[string]interface{})
@@ -45,11 +45,6 @@ func (addon *SolutionAddOn) CreateSolutionAddOnInstance(inputs map[string]interf
 	if name == "" {
 		return nil, "", fmt.Errorf("'name' field must be present in the inputs")
 	}
-
-	// err := addon.vali(inputsCopy, false)
-	// if err != nil {
-	// 	return nil, "", fmt.Errorf("validation error: %s", err)
-	// }
 
 	behaviorInvocation := types.BehaviorInvocation{
 		Arguments: inputsCopy,
@@ -70,6 +65,7 @@ func (addon *SolutionAddOn) CreateSolutionAddOnInstance(inputs map[string]interf
 	return createdAddOnInstance, result, nil
 }
 
+// GetAllInstances retrieves all Solution Add-On Instances
 func (addon *SolutionAddOn) GetAllInstances() ([]*SolutionAddOnInstance, error) {
 	vcdClient := addon.vcdClient
 
@@ -81,6 +77,8 @@ func (addon *SolutionAddOn) GetAllInstances() ([]*SolutionAddOnInstance, error) 
 	return vcdClient.GetAllSolutionAddonInstances(queryParams)
 }
 
+// GetInstanceByName retrieves Solution Add-On Instance by name for a particular Solution Add-On.
+// It will return an error if there is more than one Solution Add-On Instance with such name.
 func (addon *SolutionAddOn) GetInstanceByName(name string) (*SolutionAddOnInstance, error) {
 	vcdClient := addon.vcdClient
 
@@ -95,6 +93,7 @@ func (addon *SolutionAddOn) GetInstanceByName(name string) (*SolutionAddOnInstan
 	return oneOrError("name", name, addOnInstances)
 }
 
+// GetAllSolutionAddonInstancesByName will retrieve all Solution Add-On Instances available
 func (vcdClient *VCDClient) GetAllSolutionAddonInstancesByName(name string) ([]*SolutionAddOnInstance, error) {
 	queryParams := copyOrNewUrlValues(nil)
 	queryParams = queryParameterFilterAnd(fmt.Sprintf("entity.name==%s", name), queryParams)
@@ -102,6 +101,7 @@ func (vcdClient *VCDClient) GetAllSolutionAddonInstancesByName(name string) ([]*
 	return vcdClient.GetAllSolutionAddonInstances(queryParams)
 }
 
+// GetSolutionAddonInstanceByName will retrieve a single Solution Add-On Instance by name or fail
 func (vcdClient *VCDClient) GetSolutionAddonInstanceByName(name string) (*SolutionAddOnInstance, error) {
 	queryParams := copyOrNewUrlValues(nil)
 	queryParams = queryParameterFilterAnd(fmt.Sprintf("entity.name==%s", name), queryParams)
@@ -114,6 +114,7 @@ func (vcdClient *VCDClient) GetSolutionAddonInstanceByName(name string) (*Soluti
 	return oneOrError("name", name, addOnInstances)
 }
 
+// GetAllSolutionAddonInstances will retrieve Solution Add-On Instances based on given query parameters
 func (vcdClient *VCDClient) GetAllSolutionAddonInstances(queryParameters url.Values) ([]*SolutionAddOnInstance, error) {
 	allAddonInstances, err := vcdClient.GetAllRdes(slzAddOnInstanceRdeType[0], slzAddOnInstanceRdeType[1], slzAddOnInstanceRdeType[2], queryParameters)
 	if err != nil {
@@ -137,6 +138,7 @@ func (vcdClient *VCDClient) GetAllSolutionAddonInstances(queryParameters url.Val
 	return results, nil
 }
 
+// GetSolutionAddOnInstanceById retrieves a Solution Add-On Instance with a given ID
 func (vcdClient *VCDClient) GetSolutionAddOnInstanceById(id string) (*SolutionAddOnInstance, error) {
 	addOnInstanceRde, err := getRdeById(&vcdClient.Client, id)
 	if err != nil {
@@ -156,6 +158,9 @@ func (vcdClient *VCDClient) GetSolutionAddOnInstanceById(id string) (*SolutionAd
 	return result, nil
 }
 
+// Delete will delete a Solution Add-On instance with given 'deleteInputs'. Some fields in
+// 'deleteInputs' might be mandatory for deletion of an instance. One can use 'ValidateInputs'
+// method to check what inputs are defined for a particular Solution Add-On
 func (addonInstance *SolutionAddOnInstance) Delete(deleteInputs map[string]interface{}) (string, error) {
 	// copy deleteInputs to prevent mutation of function argument
 	deleteInputsCopy := make(map[string]interface{})
@@ -176,32 +181,6 @@ func (addonInstance *SolutionAddOnInstance) Delete(deleteInputs map[string]inter
 	return result, nil
 }
 
-// Publish and Unpublish operations are managed in the same API call
-// For Unpublishing the `scopeAll` has to be `false and `scope`
-func (addonInstance *SolutionAddOnInstance) Publishing(scope []string, scopeAll bool) (string, error) {
-	arguments := make(map[string]interface{})
-	arguments["operation"] = "publish instance"
-	arguments["name"] = addonInstance.SolutionAddOnInstance.Name
-	if scope != nil {
-		arguments["scope"] = strings.Join(scope, ",")
-	} else {
-		arguments["scope"] = ""
-	}
-	arguments["scope-all"] = scopeAll
-
-	behaviorInvocation := types.BehaviorInvocation{
-		Arguments: arguments,
-	}
-
-	parentRde := addonInstance.DefinedEntity
-	result, err := parentRde.InvokeBehavior(addOnInstancePublishBehaviorId, behaviorInvocation)
-	if err != nil {
-		return "", fmt.Errorf("error invoking publish behavior of Solution Add-On instance '%s': %s", addonInstance.SolutionAddOnInstance.Name, err)
-	}
-
-	return result, nil
-}
-
 // GetParentSolutionAddOn retrieves parent Solution Add-On that is specified in the Prototype field
 func (addOnInstance *SolutionAddOnInstance) GetParentSolutionAddOn() (*SolutionAddOn, error) {
 	if addOnInstance == nil || addOnInstance.DefinedEntity == nil || addOnInstance.DefinedEntity.DefinedEntity == nil {
@@ -211,6 +190,7 @@ func (addOnInstance *SolutionAddOnInstance) GetParentSolutionAddOn() (*SolutionA
 	return addOnInstance.vcdClient.GetSolutionAddonById(addOnInstance.SolutionAddOnInstance.Prototype)
 }
 
+// RdeId is a shortcut to retrieve parent RDE ID
 func (addOnInstance *SolutionAddOnInstance) RdeId() string {
 	if addOnInstance == nil || addOnInstance.DefinedEntity == nil || addOnInstance.DefinedEntity.DefinedEntity == nil {
 		return ""
@@ -219,6 +199,8 @@ func (addOnInstance *SolutionAddOnInstance) RdeId() string {
 	return addOnInstance.DefinedEntity.DefinedEntity.ID
 }
 
+// ReadCreationInputValues will read all input values that were specified upon instance creation and return them
+// either in their natural types, or all values converted to strings
 func (addOnInstance *SolutionAddOnInstance) ReadCreationInputValues(convertAllValuesToStrings bool) (map[string]interface{}, error) {
 	if addOnInstance == nil || addOnInstance.SolutionAddOnInstance == nil || addOnInstance.SolutionAddOnInstance.Properties == nil {
 		return nil, fmt.Errorf("cannot extract properties - they are nil")
@@ -265,7 +247,8 @@ func (addOnInstance *SolutionAddOnInstance) ReadCreationInputValues(convertAllVa
 	return resultMap, nil
 }
 
-// isDeleteOperation
+// ValidateInputs will check if 'userInputs' match required fields as defined in the Solution Add-On
+// itself. Error will contained detailed information about missing fields.
 func (addon *SolutionAddOn) ValidateInputs(userInputs map[string]interface{}, validateOnlyRequired, isDeleteOperation bool) error {
 	schemaInputs, err := addon.extractInputs()
 	if err != nil {
@@ -289,8 +272,6 @@ func (addon *SolutionAddOn) ValidateInputs(userInputs map[string]interface{}, va
 		// Setting the key, but not marking as found yet
 		requiredFields[si.Name] = false
 	}
-
-	// util.Logger.Printf("[TRACE] Solution Add-On ValidateInputs - found required fields: %s", requiredFields)
 
 	// Check if all required fields are set in inputs
 	for requiredFieldKey := range requiredFields {
