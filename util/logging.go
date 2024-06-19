@@ -373,6 +373,8 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	outTextSize := len(outText)
 	if outTextSize != dataSize {
 		Logger.Printf("Response text: [%d -> %d]\n%s\n", dataSize, outTextSize, hideSensitive(outText, false))
+	} else if dataSize == 0 {
+		Logger.Printf("Response text: [%d]\n", dataSize)
 	} else {
 		Logger.Printf("Response text: [%d]\n%s\n", dataSize, hideSensitive(outText, false))
 	}

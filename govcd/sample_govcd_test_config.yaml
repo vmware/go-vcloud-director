@@ -145,6 +145,8 @@ vcd:
         catalogItemWithMultiVms: my item with multi VMs
         # Name of VM in `catalogItemWithMultiVms` template or in `ovaMultiVmPath` if `catalogItemWithMultiVms` isn't provided. Default vmName `thirdVM` in default OVA.
         vmNameInMultiVmItem: thirdVM
+        # DSE Solution Add-On catalog media name within 'nsxtBackedCatalogName'
+        nsxtCatalogAddonDse: vmware-vcd-ds-1.4.0-23376809.iso
     # Existing VDC networks. At least one is needed.
     network:
       # First vdc network (mandatory)
