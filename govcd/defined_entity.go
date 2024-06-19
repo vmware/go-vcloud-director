@@ -457,6 +457,16 @@ func getRdeFromTask(client *Client, task *Task) (*DefinedEntity, error) {
 	return getRdeById(client, rdeId)
 }
 
+// State is a function to check if any of the elements in the path to 'rde.DefinedEntity.State' are
+// nil and return 'string' value instead of '*string'
+func (rde *DefinedEntity) State() string {
+	if rde == nil || rde.DefinedEntity == nil || rde.DefinedEntity.State == nil {
+		return ""
+	}
+
+	return *rde.DefinedEntity.State
+}
+
 // Resolve needs to be called after an RDE is successfully created. It makes the receiver RDE usable if the JSON entity
 // is valid, reaching a state of RESOLVED. If it fails, the state will be RESOLUTION_ERROR,
 // and it will need to Update the JSON entity.
