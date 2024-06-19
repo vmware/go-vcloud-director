@@ -76,6 +76,9 @@ func (vcd *TestVCD) Test_SiteAssociations(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip(fmt.Sprintf("test %s requires system administrator privileges\n", check.TestName()))
 	}
+	if !vcd.client.Client.APIClientVersionIs(">= 37.0") {
+		check.Skip(fmt.Sprintf("Minimum API version required for this test is 37.0. Found: %s", vcd.client.Client.APIVersion))
+	}
 
 	firstVcdClient := vcd.client
 	secondVcdClient, err := getClientConnectionFromEnv()

@@ -38,7 +38,7 @@ type SiteAssociationMember struct {
 	Description             string `xml:"Description,omitempty"`             // Optional Description
 	BaseUiEndpoint          string `xml:"BaseUiEndpoint"`                    // The base URI of the UI end-point for the site.
 	PublicKey               string `xml:"PublicKey,omitempty"`               // PEM-encoded public key for the remote site.
-	RestEndpoint            string `xml:"RestEndpoint"`                      //  The URI of the REST API end-point for the site.
+	RestEndpoint            string `xml:"RestEndpoint"`                      // The URI of the REST API end-point for the site.
 	RestEndpointCertificate string `xml:"RestEndpointCertificate,omitempty"` // Optional PEM-encoded certificate to use when connecting to the REST API end-point.
 	SiteID                  string `xml:"SiteId"`                            // The URN of the remote site
 	SiteName                string `xml:"SiteName"`                          // The name of the remote site

@@ -14,6 +14,9 @@ import (
 
 func (vcd *TestVCD) Test_GetOrgs(check *C) {
 
+	if !vcd.client.Client.APIClientVersionIs(">= 37.0") {
+		check.Skip(fmt.Sprintf("Minimum API version required for this test is 37.0. Found: %s", vcd.client.Client.APIVersion))
+	}
 	orgs, err := vcd.client.GetAllOrgs(nil, true)
 	check.Assert(err, IsNil)
 	for i, org := range orgs {

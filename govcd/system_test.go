@@ -846,15 +846,13 @@ func (vcd *TestVCD) Test_QueryAllOrgs(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(orgs, NotNil)
 
-	if vcd.config.VCD.Org != "" {
-		foundOrg := false
-		for _, org := range orgs {
-			if org.Name == vcd.config.VCD.Org {
-				foundOrg = true
-			}
+	foundOrg := false
+	for _, org := range orgs {
+		if org.Name == vcd.config.VCD.Org {
+			foundOrg = true
 		}
-		check.Assert(foundOrg, Equals, true)
 	}
+	check.Assert(foundOrg, Equals, true)
 }
 
 // Tests Org retrieval by name, by ID, and by a combination of name and ID
