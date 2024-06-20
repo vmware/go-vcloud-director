@@ -43,10 +43,10 @@ func genericVdcTemplateRequest(client *Client, input types.VMWVdcTemplate, href 
 	result := &types.VMWVdcTemplate{}
 
 	resp, err := client.executeJsonRequest(href.String(), method, input, "error when performing a "+method+" for VDC Template: %s")
-	defer closeBody(resp)
 	if err != nil {
 		return nil, err
 	}
+	defer closeBody(resp)
 
 	vdcTemplate := VdcTemplate{
 		VdcTemplate: result,
@@ -68,14 +68,13 @@ func (vcdClient *VCDClient) GetVdcTemplateById(id string) (*VdcTemplate, error) 
 
 	result := &types.VMWVdcTemplate{}
 	resp, err := vcdClient.Client.executeJsonRequest(href.String(), http.MethodGet, nil, "error getting VDC Template: %s")
-	defer closeBody(resp)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "RESOURCE_NOT_FOUND") || strings.Contains(err.Error(), "not exist") {
 			return nil, fmt.Errorf("%s: %s", ErrorEntityNotFound, err)
 		}
 		return nil, err
 	}
+	defer closeBody(resp)
 
 	vdcTemplate := VdcTemplate{
 		VdcTemplate: result,

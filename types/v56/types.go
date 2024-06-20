@@ -719,6 +719,8 @@ type VMWVdcTemplateBinding struct {
 type VMWVdcTemplateSpecification struct {
 	Type string `json:"_type,omitempty"`
 
+	// Indicates that the Provider VDC's automatically-created VXLAN network pool should be used.
+	// NetworkPoolReference must be empty if this element appears in the request.
 	AutomaticNetworkPoolReference *AutomaticNetworkPoolReference `json:"automaticNetworkPoolReference,omitempty"`
 
 	// Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number.
@@ -730,10 +732,6 @@ type VMWVdcTemplateSpecification struct {
 
 	// Maximum number of network objects that can be deployed in this VDC. Defaults to 0, which means no networks can be deployed.
 	ProvisionedNetworkQuota int `json:"provisionedNetworkQuota"`
-
-	// Indicates that the Provider VDC's automatically-created VXLAN network pool should be used.
-	// NetworkPoolReference must be empty if this element appears in the request.
-	// AutomaticNetworkPoolReference *Reference `xml:"vmext:AutomaticNetworkPoolReference,omitempty"`
 
 	// Defines a gateway and NAT Routed organization VDC network to be created.
 	GatewayConfiguration *VdcTemplateSpecificationGatewayConfiguration `json:"gatewayConfiguration,omitempty"`
