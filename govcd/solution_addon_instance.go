@@ -345,9 +345,7 @@ func (addon *SolutionAddOn) ConvertInputTypes(userInputs map[string]interface{})
 		// Only attempting to convert fields that are in the schema
 		if foundField != nil && typeOfUserInputValue.String() == "string" && foundField.Type != "String" {
 			userInputStringValue := userInputValue.(string)
-
 			util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - found field in schema %#v", foundField)
-
 			switch foundField.Type {
 			case "Boolean":
 				util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - converting field '%s' to bool", userInputKey)
