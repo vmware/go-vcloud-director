@@ -112,8 +112,8 @@ type UpdateLeaseSettingsSection struct {
 // Description: Represents a range of IP addresses, start and end inclusive.
 // Since: 0.9
 type IPRange struct {
-	StartAddress string `xml:"StartAddress"` // Start address of the IP range.
-	EndAddress   string `xml:"EndAddress"`   // End address of the IP range.
+	StartAddress string `xml:"StartAddress" json:"startAddress,omitempty"` // Start address of the IP range.
+	EndAddress   string `xml:"EndAddress" json:"endAddress,omitempty"`     // End address of the IP range.
 }
 
 // DhcpService represents a DHCP network service.
@@ -153,7 +153,7 @@ type NetworkFeatures struct {
 // Description: A list of IP addresses.
 // Since: 0.9
 type IPAddresses struct {
-	IPAddress []string `xml:"IpAddress,omitempty"` // A list of IP addresses.
+	IPAddress []string `xml:"IpAddress,omitempty" json:"ipAddress,omitempty"` // A list of IP addresses.
 }
 
 // IPRanges represents a list of IP ranges.
@@ -162,7 +162,7 @@ type IPAddresses struct {
 // Description: Represents a list of IP ranges.
 // Since: 0.9
 type IPRanges struct {
-	IPRange []*IPRange `xml:"IpRange,omitempty"` // IP range.
+	IPRange []*IPRange `xml:"IpRange,omitempty" json:"ipRange,omitempty"` // IP range.
 }
 
 // IPScope specifies network settings like gateway, network mask, DNS servers IP ranges etc
@@ -171,17 +171,18 @@ type IPRanges struct {
 // Description: Specify network settings like gateway, network mask, DNS servers, IP ranges, etc.
 // Since: 0.9
 type IPScope struct {
-	IsInherited          bool            `xml:"IsInherited"`                    // True if the IP scope is inherit from parent network.
-	Gateway              string          `xml:"Gateway,omitempty"`              // Gateway of the network.
-	Netmask              string          `xml:"Netmask,omitempty"`              // Network mask.
-	SubnetPrefixLength   string          `xml:"SubnetPrefixLength,omitempty"`   // Prefix length.
-	DNS1                 string          `xml:"Dns1,omitempty"`                 // Primary DNS server.
-	DNS2                 string          `xml:"Dns2,omitempty"`                 // Secondary DNS server.
-	DNSSuffix            string          `xml:"DnsSuffix,omitempty"`            // DNS suffix.
-	IsEnabled            bool            `xml:"IsEnabled,omitempty"`            // Indicates if subnet is enabled or not. Default value is True.
-	IPRanges             *IPRanges       `xml:"IpRanges,omitempty"`             // IP ranges used for static pool allocation in the network.
-	AllocatedIPAddresses *IPAddresses    `xml:"AllocatedIpAddresses,omitempty"` // Read-only list of allocated IP addresses in the network.
-	SubAllocations       *SubAllocations `xml:"SubAllocations,omitempty"`       // Read-only list of IP addresses that are sub allocated to edge gateways.
+	IsInherited           bool            `xml:"IsInherited" json:"isInherited,omitempty"`                             // True if the IP scope is inherit from parent network.
+	Gateway               string          `xml:"Gateway,omitempty" json:"gateway,omitempty"`                           // Gateway of the network.
+	Netmask               string          `xml:"Netmask,omitempty" json:"netmask,omitempty"`                           // Network mask.
+	SubnetPrefixLength    string          `xml:"SubnetPrefixLength,omitempty"`                                         // Prefix length (as an string, used everywhere).
+	SubnetPrefixLengthInt *int            `json:"subnetPrefixLength,omitempty"`                                        // Prefix length (as an int, used in VDC Templates).
+	DNS1                  string          `xml:"Dns1,omitempty" json:"dns1,omitempty"`                                 // Primary DNS server.
+	DNS2                  string          `xml:"Dns2,omitempty" json:"dns2,omitempty"`                                 // Secondary DNS server.
+	DNSSuffix             string          `xml:"DnsSuffix,omitempty" json:"dnsSuffix,omitempty"`                       // DNS suffix.
+	IsEnabled             bool            `xml:"IsEnabled,omitempty" json:"isEnabled,omitempty"`                       // Indicates if subnet is enabled or not. Default value is True.
+	IPRanges              *IPRanges       `xml:"IpRanges,omitempty" json:"ipRanges,omitempty"`                         // IP ranges used for static pool allocation in the network.
+	AllocatedIPAddresses  *IPAddresses    `xml:"AllocatedIpAddresses,omitempty" json:"allocatedIPAddresses,omitempty"` // Read-only list of allocated IP addresses in the network.
+	SubAllocations        *SubAllocations `xml:"SubAllocations,omitempty" json:"subAllocations,omitempty"`             // Read-only list of IP addresses that are sub allocated to edge gateways.
 }
 
 // SubAllocations a list of IP addresses that are sub allocated to edge gateways.
@@ -191,11 +192,11 @@ type IPScope struct {
 // Since: 5.1
 type SubAllocations struct {
 	// Attributes
-	HREF string `xml:"href,attr,omitempty"` // The URI of the entity.
-	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	HREF string `xml:"href,attr,omitempty" json:"href,omitempty"` // The URI of the entity.
+	Type string `xml:"type,attr,omitempty" json:"type,omitempty"` // The MIME type of the entity.
 	// Elements
-	Link          LinkList       `xml:"Link,omitempty"`          // A reference to an entity or operation associated with this object.
-	SubAllocation *SubAllocation `xml:"SubAllocation,omitempty"` // IP Range sub allocated to a edge gateway.
+	Link          LinkList       `xml:"Link,omitempty" json:"link,omitempty"`                   // A reference to an entity or operation associated with this object.
+	SubAllocation *SubAllocation `xml:"SubAllocation,omitempty" json:"subAllocation,omitempty"` // IP Range sub allocated to a edge gateway.
 }
 
 // SubAllocation IP range sub allocated to an edge gateway.
@@ -204,8 +205,8 @@ type SubAllocations struct {
 // Description: IP range sub allocated to an edge gateway.
 // Since: 5.1
 type SubAllocation struct {
-	EdgeGateway *Reference `xml:"EdgeGateway,omitempty"` // Edge gateway that uses this sub allocation.
-	IPRanges    *IPRanges  `xml:"IpRanges,omitempty"`    // IP range sub allocated to the edge gateway.
+	EdgeGateway *Reference `xml:"EdgeGateway,omitempty" json:"edgeGateway,omitempty"` // Edge gateway that uses this sub allocation.
+	IPRanges    *IPRanges  `xml:"IpRanges,omitempty" json:"ipRanges,omitempty"`       // IP range sub allocated to the edge gateway.
 }
 
 // IPScopes represents a list of IP scopes.
@@ -214,7 +215,7 @@ type SubAllocation struct {
 // Description: Represents a list of IP scopes.
 // Since: 5.1
 type IPScopes struct {
-	IPScope []*IPScope `xml:"IpScope"` // IP scope.
+	IPScope []*IPScope `xml:"IpScope" json:"ipScope,omitempty"` // IP scope.
 }
 
 // NetworkConfiguration is the configuration applied to a network. This is an abstract base type.
@@ -225,12 +226,12 @@ type IPScopes struct {
 // Since: 0.9
 type NetworkConfiguration struct {
 	Xmlns                          string           `xml:"xmlns,attr,omitempty"`
-	BackwardCompatibilityMode      bool             `xml:"BackwardCompatibilityMode"`
-	IPScopes                       *IPScopes        `xml:"IpScopes,omitempty"`
-	ParentNetwork                  *Reference       `xml:"ParentNetwork,omitempty"`
-	FenceMode                      string           `xml:"FenceMode"`
-	RetainNetInfoAcrossDeployments *bool            `xml:"RetainNetInfoAcrossDeployments,omitempty"`
-	Features                       *NetworkFeatures `xml:"Features,omitempty"`
+	BackwardCompatibilityMode      bool             `xml:"BackwardCompatibilityMode" json:"backwardCompatibilityMode,omitempty"`
+	IPScopes                       *IPScopes        `xml:"IpScopes,omitempty" json:"ipScopes,omitempty"`
+	ParentNetwork                  *Reference       `xml:"ParentNetwork,omitempty" json:"parentNetwork,omitempty"`
+	FenceMode                      string           `xml:"FenceMode" json:"fenceMode,omitempty"`
+	RetainNetInfoAcrossDeployments *bool            `xml:"RetainNetInfoAcrossDeployments,omitempty" json:"retainNetInfoAcrossDeployments,omitempty"`
+	Features                       *NetworkFeatures `xml:"Features,omitempty" json:"features,omitempty"`
 
 	// SubInterface and DistributedInterface are mutually exclusive
 	// When they are both nil, it means the "internal" interface (the default) will be used.
@@ -375,20 +376,20 @@ type InstantiationParams struct {
 type OrgVDCNetwork struct {
 	XMLName         xml.Name              `xml:"OrgVdcNetwork"`
 	Xmlns           string                `xml:"xmlns,attr,omitempty"`
-	HREF            string                `xml:"href,attr,omitempty"`
-	Type            string                `xml:"type,attr,omitempty"`
-	ID              string                `xml:"id,attr,omitempty"`
-	OperationKey    string                `xml:"operationKey,attr,omitempty"`
-	Name            string                `xml:"name,attr"`
-	Status          string                `xml:"status,attr,omitempty"`
-	Link            []Link                `xml:"Link,omitempty"`
-	Description     string                `xml:"Description,omitempty"`
-	Configuration   *NetworkConfiguration `xml:"Configuration,omitempty"`
-	EdgeGateway     *Reference            `xml:"EdgeGateway,omitempty"`
-	ServiceConfig   *GatewayFeatures      `xml:"ServiceConfig,omitempty"` // Specifies the service configuration for an isolated Org VDC networks
-	IsShared        bool                  `xml:"IsShared"`
-	VimPortGroupRef []*VimObjectRef       `xml:"VimPortGroupRef,omitempty"` // Needed to set up DHCP inside ServiceConfig
-	Tasks           *TasksInProgress      `xml:"Tasks,omitempty"`
+	HREF            string                `xml:"href,attr,omitempty" json:"href,omitempty"`
+	Type            string                `xml:"type,attr,omitempty" json:"type,omitempty"`
+	ID              string                `xml:"id,attr,omitempty" json:"id,omitempty"`
+	OperationKey    string                `xml:"operationKey,attr,omitempty" json:"operationKey,omitempty"`
+	Name            string                `xml:"name,attr" json:"name"`
+	Status          string                `xml:"status,attr,omitempty" json:"status,omitempty"`
+	Link            []Link                `xml:"Link,omitempty" json:"link,omitempty"`
+	Description     string                `xml:"Description,omitempty" json:"description"`
+	Configuration   *NetworkConfiguration `xml:"Configuration,omitempty" json:"configuration,omitempty"`
+	EdgeGateway     *Reference            `xml:"EdgeGateway,omitempty" json:"edgeGateway,omitempty"`
+	ServiceConfig   *GatewayFeatures      `xml:"ServiceConfig,omitempty" json:"serviceConfig,omitempty"` // Specifies the service configuration for an isolated Org VDC networks
+	IsShared        bool                  `xml:"IsShared" json:"isShared,omitempty"`
+	VimPortGroupRef []*VimObjectRef       `xml:"VimPortGroupRef,omitempty" json:"vimPortGroupRef,omitempty"` // Needed to set up DHCP inside ServiceConfig
+	Tasks           *TasksInProgress      `xml:"Tasks,omitempty" json:"tasks,omitempty"`
 }
 
 // SupportedHardwareVersions contains a list of VMware virtual hardware versions supported in this vDC.
@@ -583,17 +584,17 @@ type VdcStorageProfileConfiguration struct {
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/7a028e78-bd37-4a6a-8298-9c26c7eeb9aa/09142237-dd46-4dee-8326-e07212fb63a8/doc/doc/types/VdcStorageProfileType.html
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/AdminVdcStorageProfileType.html
 type VdcStorageProfile struct {
-	ID                        string                         `xml:"id,attr"`
-	Xmlns                     string                         `xml:"xmlns,attr"`
-	Name                      string                         `xml:"name,attr"`
-	Enabled                   *bool                          `xml:"Enabled,omitempty"`
-	Units                     string                         `xml:"Units"`
-	Limit                     int64                          `xml:"Limit"`
-	Default                   bool                           `xml:"Default"`
-	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettings"`
-	StorageUsedMB             int64                          `xml:"StorageUsedMB"`
-	IopsAllocated             int64                          `xml:"IopsAllocated"`
-	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile"`
+	ID                        string                         `xml:"id,attr,omitempty" json:"id,omitempty"`
+	Xmlns                     string                         `xml:"xmlns,attr,omitempty"`
+	Name                      string                         `xml:"name,attr" json:"name,omitempty"`
+	Enabled                   *bool                          `xml:"Enabled,omitempty" json:"enabled,omitempty"`
+	Units                     string                         `xml:"Units" json:"units,omitempty"`
+	Limit                     int64                          `xml:"Limit" json:"limit,omitempty"`
+	Default                   bool                           `xml:"Default" json:"default,omitempty"`
+	IopsSettings              *VdcStorageProfileIopsSettings `xml:"IopsSettings" json:"iopsSettings,omitempty"`
+	StorageUsedMB             int64                          `xml:"StorageUsedMB" json:"storageUsedMB,omitempty"`
+	IopsAllocated             int64                          `xml:"IopsAllocated" json:"iopsAllocated,omitempty"`
+	ProviderVdcStorageProfile *Reference                     `xml:"ProviderVdcStorageProfile" json:"providerVdcStorageProfile,omitempty"`
 }
 
 // AdminVdcStorageProfile represents the parameters for fetched storage profile
@@ -618,11 +619,11 @@ type AdminVdcStorageProfile struct {
 // https://vdc-repo.vmware.com/vmwb-repository/dcr-public/71e12563-bc11-4d64-821d-92d30f8fcfa1/7424bf8e-aec2-44ad-be7d-b98feda7bae0/doc/doc/types/VdcStorageProfileIopsSettingsType.html
 type VdcStorageProfileIopsSettings struct {
 	Xmlns                   string `xml:"xmlns,attr"`
-	Enabled                 bool   `xml:"Enabled"`
-	DiskIopsMax             int64  `xml:"DiskIopsMax"`
-	DiskIopsDefault         int64  `xml:"DiskIopsDefault"`
-	StorageProfileIopsLimit int64  `xml:"StorageProfileIopsLimit,omitempty"`
-	DiskIopsPerGbMax        int64  `xml:"DiskIopsPerGbMax"`
+	Enabled                 bool   `xml:"Enabled" json:"enabled,omitempty"`
+	DiskIopsMax             int64  `xml:"DiskIopsMax" json:"diskIopsMax,omitempty"`
+	DiskIopsDefault         int64  `xml:"DiskIopsDefault" json:"diskIopsDefault,omitempty"`
+	StorageProfileIopsLimit int64  `xml:"StorageProfileIopsLimit,omitempty" json:"storageProfileIopsLimit,omitempty"`
+	DiskIopsPerGbMax        int64  `xml:"DiskIopsPerGbMax" json:"diskIopsPerGbMax,omitempty"`
 }
 
 // VdcConfiguration models the payload for creating a VDC.
@@ -655,6 +656,174 @@ type VdcConfiguration struct {
 	VmDiscoveryEnabled       bool                              `xml:"VmDiscoveryEnabled,omitempty"`
 	IsElastic                *bool                             `xml:"IsElastic,omitempty"`             // Supported from 32.0 for the Flex model
 	IncludeMemoryOverhead    *bool                             `xml:"IncludeMemoryOverhead,omitempty"` // Supported from 32.0 for the Flex model
+}
+
+// VMWVdcTemplate references a VDC Template.
+// Type: VMWVdcTemplateType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: A reference to a VDC template.
+// Since: 5.7
+type VMWVdcTemplate struct {
+	HREF         string `json:"href,omitempty"`
+	Type         string `json:"type,omitempty"`
+	ID           string `json:"id,omitempty"`
+	OperationKey string `json:"operationKey,omitempty"`
+	Name         string `json:"name,omitempty"`
+
+	Link                     LinkList                                  `json:"link,omitempty"`
+	Description              string                                    `json:"description,omitempty"`
+	Tasks                    *TasksInProgress                          `json:"tasks,omitempty"`
+	TenantName               string                                    `json:"tenantName,omitempty"`
+	TenantDescription        string                                    `json:"tenantDescription,omitempty"`
+	NetworkBackingType       string                                    `json:"networkBackingType,omitempty"` // "NSX_V" or "NSX_T"
+	ProviderVdcReference     []*VMWVdcTemplateProviderVdcSpecification `json:"providerVdcReference,omitempty"`
+	VdcTemplateSpecification *VMWVdcTemplateSpecification              `json:"vdcTemplateSpecification,omitempty"`
+}
+
+// VMWVdcTemplateProviderVdcSpecification references a Provider VDC for a VDC Template.
+// Type: VMWVdcTemplateProviderVdcSpecificationType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Since: 5.7
+type VMWVdcTemplateProviderVdcSpecification struct {
+	HREF string `json:"href,omitempty"`
+	Type string `json:"type,omitempty"`
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+
+	Binding []*VMWVdcTemplateBinding `json:"binding,omitempty"`
+}
+
+// VMWVdcTemplateBinding specifies a binding for a VDC Template
+// Type: VMWVdcTemplateBindingType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: A Binding pairs a Name element that contains a user-specified identifier in URN format with a Value element
+// that contains a reference to an object. The Name can then be used anywhere in the request where a reference
+// to that type of object is allowed. For example, when specifying multiple Provider VDCs in a VMWVdcTemplate,
+// create a Binding where the Value is a reference to an external network in a candidate Provider VDC, then use
+// the Name from that binding in place of the href attribute required by the Network element in the GatewayConfiguration
+// of the VdcTemplateSpecification. When the template is instantiated, the Name is replaced by the network reference
+// in the Value part of the Binding associated with the Provider VDC that the system selects during instantiation.
+// Supported binding values are references to External networks and Edge clusters.
+//
+// Since: 5.10
+type VMWVdcTemplateBinding struct {
+	Name  string     `json:"name,omitempty"` // URI format
+	Value *Reference `json:"value,omitempty"`
+}
+
+// VMWVdcTemplateSpecification references a VDC for a VDC Template.
+// Type: VMWVdcTemplateSpecificationType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: A reference to a Provider VDC.
+// Since: 5.7
+type VMWVdcTemplateSpecification struct {
+	Type string `json:"_type,omitempty"`
+
+	// Indicates that the Provider VDC's automatically-created VXLAN network pool should be used.
+	// NetworkPoolReference must be empty if this element appears in the request.
+	AutomaticNetworkPoolReference *AutomaticNetworkPoolReference `json:"automaticNetworkPoolReference,omitempty"`
+
+	// Maximum number of virtual NICs allowed in this VDC. Defaults to 0, which specifies an unlimited number.
+	NicQuota int `json:"nicQuota"`
+
+	// The quota of VMs that can be created in this VDC. Includes VMs in both vApps and vApp templates, deployed, or otherwise.
+	// Defaults to 0, which specifies an unlimited number.
+	VmQuota int `json:"vmQuota"`
+
+	// Maximum number of network objects that can be deployed in this VDC. Defaults to 0, which means no networks can be deployed.
+	ProvisionedNetworkQuota int `json:"provisionedNetworkQuota"`
+
+	// Defines a gateway and NAT Routed organization VDC network to be created.
+	GatewayConfiguration *VdcTemplateSpecificationGatewayConfiguration `json:"gatewayConfiguration,omitempty"`
+
+	// A set of name of Storage Profiles, with corresponding limit value, that all Provider VDCs must have, and that are selected at the time of VDC Template instantiation.
+	StorageProfile []*VdcStorageProfile `json:"storageProfile,omitempty"`
+
+	// Set to true to indicate if the FLEX VDC is to be elastic. This field can only be set on input for FLEX VDC templates
+	// and Allocation VApp VDC templates. However, this field will be returned properly when read.
+	IsElastic *bool `json:"isElastic,omitempty"`
+
+	// Set to true to indicate if the FLEX VDC is to include memory overhead into its accounting for admission control.
+	// This field can only be set on input for FLEX VDC templates and Allocation VApp VDC templates.
+	// However, this field will be returned properly when read.
+	IncludeMemoryOverhead *bool `json:"includeMemoryOverhead,omitempty"`
+
+	// Boolean to request thin provisioning. Request will be honored only if the underlying datastore supports it.
+	// Thin provisioning saves storage space by committing it on demand. This allows over-allocation of storage.
+	ThinProvision bool `json:"thinProvision,omitempty"`
+
+	// Boolean to request fast provisioning. Request will be honored only if the underlying datastore supports it.
+	// Fast provisioning can reduce the time it takes to create virtual machines by using vSphere linked clones.
+	// If you disable fast provisioning, all provisioning operations will result in full clones.
+	FastProvisioningEnabled bool `json:"fastProvisioningEnabled,omitempty"`
+
+	// Reference to a network pool in the Provider VDC. Must be empty if you specify AutomaticNetworkPoolReference.
+	NetworkPoolReference        *Reference                 `json:"networkPoolReference,omitempty"`
+	NetworkProfileConfiguration *VdcTemplateNetworkProfile `json:"networkProfileConfiguration,omitempty"`
+
+	// Only in Flex VDCs
+	CpuAllocationMhz           int `json:"cpuAllocationMhz"`
+	CpuLimitMhzPerVcpu         int `json:"cpuLimitMhzPerVcpu"`
+	VCpuInMhz                  int `json:"vCpuInMhz"`
+	CpuLimitMhz                int `json:"cpuLimitMhz"`
+	MemoryAllocationMB         int `json:"memoryAllocationMB"`
+	MemoryLimitMb              int `json:"memoryLimitMb"`
+	CpuGuaranteedPercentage    int `json:"cpuGuaranteedPercentage"`
+	MemoryGuaranteedPercentage int `json:"memoryGuaranteedPercentage"`
+}
+
+// AutomaticNetworkPoolReference is an empty struct that states that the Network pool of the Edge Gateway in a VDC Template must
+// be chosen automatically.
+// Type: AutomaticNetworkPoolReferenceType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+type AutomaticNetworkPoolReference struct {
+}
+
+// VdcTemplateSpecificationGatewayConfiguration specifies the Edge Gateway configuration for a VDC Template.
+// Type: VdcTemplateSpecificationGatewayConfigurationType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: Defines a gateway and NAT Routed organization VDC network to be created.
+// Since: 5.7
+type VdcTemplateSpecificationGatewayConfiguration struct {
+	// EdgeGateway configuration for the VDC created by this template. The following restrictions apply:
+	// * You may not specify a BackwardCompatibilityMode or an EdgeGatewayServiceConfiguration.
+	// * The GatewayInterfaces element must contain exactly one GatewayInterface. That GatewayInterface must have an InterfaceType
+	//   of uplink and must not contain a SubnetParticipation element.
+	Gateway *EdgeGateway `json:"gateway,omitempty"`
+
+	// Org VDC network configuration created by this template. The following restrictions apply:
+	// * You may not specify a BackwardCompatibilityMode, EdgeGatewayServiceConfiguration, or NetworkFeatures.
+	// * The NetworkConfiguration must specify a FenceMode of natRouted.
+	Network *OrgVDCNetwork `json:"network,omitempty"`
+}
+
+// VdcTemplateNetworkProfile specifies the network profile for a VDC Template.
+// Type: VdcTemplateNetworkProfileType
+// Namespace: http://www.vmware.com/vcloud/extension/v1.5
+// Description: Network Profile configuration that is applied to VDC instantiated from a template.
+// In NSX_V VDCs Primary and Secondary Edge Clusters can be configured and used for Edge Gateway deployments.
+// In NSX_T VDC only Services Edge Cluster can be configured and used for deploying DHCP/VApp services. Binding name from
+// the binding names needs to specified as ReferenceType to PrimaryEdgeCluster SecondaryEdgeCluster and ServicesEdgeCluster
+// properties. When VDC is instantiated, based on PVDC and binding name appropriate binding value is selected to configure network profiles.
+// Since: 35.2
+type VdcTemplateNetworkProfile struct {
+	PrimaryEdgeCluster   *Reference `json:"primaryEdgeCluster,omitempty"`
+	SecondaryEdgeCluster *Reference `json:"secondaryEdgeCluster,omitempty"`
+	ServicesEdgeCluster  *Reference `json:"servicesEdgeCluster,omitempty"`
+}
+
+// InstantiateVdcTemplateParams specifies the network profile for a VDC Template.
+// Type: InstantiateVdcTemplateParamsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: A basic type used to pass arguments to the instantiate VDC template operation, this provides a name and
+// optional description for a VDC instantiated from a template.
+// Since: 5.7
+type InstantiateVdcTemplateParams struct {
+	XMLName     xml.Name   `xml:"InstantiateVdcTemplateParams"`
+	Xmlns       string     `xml:"xmlns,attr"`
+	Name        string     `xml:"name,attr"`
+	Source      *Reference `xml:"Source,omitempty"`
+	Description string     `xml:"Description,omitempty"`
 }
 
 // Task represents an asynchronous operation in VMware Cloud Director.
@@ -1950,17 +2119,17 @@ type CloneVAppParams struct {
 type EdgeGateway struct {
 	// Attributes
 	Xmlns        string `xml:"xmlns,attr,omitempty"`
-	HREF         string `xml:"href,attr,omitempty"`         // The URI of the entity.
-	Type         string `xml:"type,attr,omitempty"`         // The MIME type of the entity.
-	ID           string `xml:"id,attr,omitempty"`           // The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused
-	OperationKey string `xml:"operationKey,attr,omitempty"` // Optional unique identifier to support idempotent semantics for create and delete operations.
-	Name         string `xml:"name,attr"`                   // The name of the entity.
-	Status       int    `xml:"status,attr,omitempty"`       // Creation status of the gateway. One of: 0 (The gateway is still being created) 1 (The gateway is ready) -1 (There was an error while creating the gateway).
+	HREF         string `xml:"href,attr,omitempty" json:"href,omitempty"`                 // The URI of the entity.
+	Type         string `xml:"type,attr,omitempty" json:"type,omitempty"`                 // The MIME type of the entity.
+	ID           string `xml:"id,attr,omitempty" json:"id,omitempty"`                     // The entity identifier, expressed in URN format. The value of this attribute uniquely identifies the entity, persists for the life of the entity, and is never reused
+	OperationKey string `xml:"operationKey,attr,omitempty" json:"operationKey,omitempty"` // Optional unique identifier to support idempotent semantics for create and delete operations.
+	Name         string `xml:"name,attr" json:"name"`                                     // The name of the entity.
+	Status       int    `xml:"status,attr,omitempty" json:"status,omitempty"`             // Creation status of the gateway. One of: 0 (The gateway is still being created) 1 (The gateway is ready) -1 (There was an error while creating the gateway).
 	// Elements
-	Link          LinkList              `xml:"Link,omitempty"`        // A link to an operation on this section.
-	Description   string                `xml:"Description,omitempty"` // Optional description.
-	Tasks         *TasksInProgress      `xml:"Tasks,omitempty"`       //	A list of queued, running, or recently completed tasks associated with this entity.
-	Configuration *GatewayConfiguration `xml:"Configuration"`         // Gateway configuration.
+	Link          LinkList              `xml:"Link,omitempty" json:"link,omitempty"`         // A link to an operation on this section.
+	Description   string                `xml:"Description" json:"description"`               // Description.
+	Tasks         *TasksInProgress      `xml:"Tasks,omitempty" json:"tasks,omitempty"`       //	A list of queued, running, or recently completed tasks associated with this entity.
+	Configuration *GatewayConfiguration `xml:"Configuration" json:"configuration,omitempty"` // Gateway configuration.
 }
 
 // GatewayConfiguration is the gateway configuration
@@ -1974,31 +2143,37 @@ type GatewayConfiguration struct {
 	// rules in the old 1.5 format. The new format does not require to use direction in firewall
 	// rules. Also, for firewall rules to allow NAT traffic the filter is applied on the original IP
 	// addresses. Once set to true cannot be reverted back to false.
-	BackwardCompatibilityMode bool `xml:"BackwardCompatibilityMode,omitempty"`
+	BackwardCompatibilityMode bool `xml:"BackwardCompatibilityMode,omitempty" json:"backwardCompatibilityMode,omitempty"`
 	// GatewayBackingConfig defines configuration of the vShield edge VM for this gateway. One of:
 	// compact, full.
-	GatewayBackingConfig string `xml:"GatewayBackingConfig"`
+	GatewayBackingConfig string `xml:"GatewayBackingConfig" json:"gatewayBackingConfig,omitempty"`
 	// GatewayInterfaces holds configuration for edge gateway interfaces, ip allocations, traffic
 	// rate limits and ip sub-allocations
-	GatewayInterfaces *GatewayInterfaces `xml:"GatewayInterfaces"`
+	GatewayInterfaces *GatewayInterfaces `xml:"GatewayInterfaces" json:"gatewayInterfaces,omitempty"`
 	// EdgeGatewayServiceConfiguration represents Gateway Features.
-	EdgeGatewayServiceConfiguration *GatewayFeatures `xml:"EdgeGatewayServiceConfiguration,omitempty"`
+	EdgeGatewayServiceConfiguration *GatewayFeatures `xml:"EdgeGatewayServiceConfiguration,omitempty" json:"edgeGatewayServiceConfiguration,omitempty"`
 	// True if this gateway is highly available. (Requires two vShield edge VMs.)
-	HaEnabled *bool `xml:"HaEnabled,omitempty"`
+	HaEnabled *bool `xml:"HaEnabled,omitempty" json:"haEnabled,omitempty"`
 	// UseDefaultRouteForDNSRelay defines if the default gateway on the external network selected
 	// for default route should be used as the DNS relay.
-	UseDefaultRouteForDNSRelay *bool `xml:"UseDefaultRouteForDnsRelay,omitempty"`
+	UseDefaultRouteForDNSRelay *bool `xml:"UseDefaultRouteForDnsRelay,omitempty" json:"useDefaultRouteForDNSRelay,omitempty"`
 	// AdvancedNetworkingEnabled allows to use NSX capabilities such dynamic routing (BGP, OSPF),
 	// zero trust networking (DLR), enchanced VPN support (IPsec VPN, SSL VPN-Plus).
-	AdvancedNetworkingEnabled *bool `xml:"AdvancedNetworkingEnabled,omitempty"`
+	AdvancedNetworkingEnabled *bool `xml:"AdvancedNetworkingEnabled,omitempty" json:"advancedNetworkingEnabled,omitempty"`
 	// DistributedRoutingEnabled enables distributed routing on the gateway to allow creation of
 	// many more organization VDC networks. Traffic in those networks is optimized for VM-to-VM
 	// communication.
-	DistributedRoutingEnabled *bool `xml:"DistributedRoutingEnabled,omitempty"`
+	DistributedRoutingEnabled *bool `xml:"DistributedRoutingEnabled,omitempty" json:"distributedRoutingEnabled,omitempty"`
 	// FipsModeEnabled allows any secure communication to or from the NSX Edge uses cryptographic
 	// algorithms or protocols that are allowed by United States Federal Information Processing
 	// Standards (FIPS). FIPS mode turns on the cipher suites that comply with FIPS.
-	FipsModeEnabled *bool `xml:"FipsModeEnabled,omitempty"`
+	FipsModeEnabled *bool `xml:"FipsModeEnabled,omitempty" json:"fipsModeEnabled,omitempty"`
+	// EdgeClusterConfiguration represents the Edge Cluster Configuration for a given Edge Gateway.
+	// Can be changed if a gateway needs to be placed on a specific set of Edge Clusters.
+	// For NSX-V Edges, if nothing is specified on create or update, the Org VDC Default will be used.
+	// For NSX-T Edges, Open API must be used and this field is read only.
+	// If there is no value, the gateway uses the Edge Cluster of the connected External Network's backing Tier-0 router.
+	EdgeClusterConfiguration *EdgeClusterConfiguration `xml:"EdgeClusterConfiguration,omitempty" json:"edgeClusterConfiguration,omitempty"`
 }
 
 // GatewayInterfaces is a list of Gateway Interfaces.
@@ -2007,7 +2182,7 @@ type GatewayConfiguration struct {
 // Description: A list of Gateway Interfaces.
 // Since: 5.1
 type GatewayInterfaces struct {
-	GatewayInterface []*GatewayInterface `xml:"GatewayInterface"` // Gateway Interface.
+	GatewayInterface []*GatewayInterface `xml:"GatewayInterface" json:"gatewayInterface,omitempty"` // Gateway Interface.
 }
 
 // GatewayInterface is a gateway interface configuration.
@@ -2016,15 +2191,17 @@ type GatewayInterfaces struct {
 // Description: Gateway Interface configuration.
 // Since: 5.1
 type GatewayInterface struct {
-	Name                string                 `xml:"Name,omitempty"`                // Internally generated name for the Gateway Interface.
-	DisplayName         string                 `xml:"DisplayName,omitempty"`         // Gateway Interface display name.
-	Network             *Reference             `xml:"Network"`                       // A reference to the network connected to the gateway interface.
-	InterfaceType       string                 `xml:"InterfaceType"`                 // The type of interface: One of: Uplink, Internal
-	SubnetParticipation []*SubnetParticipation `xml:"SubnetParticipation,omitempty"` // Slice of subnets for IP allocations.
-	ApplyRateLimit      bool                   `xml:"ApplyRateLimit,omitempty"`      // True if rate limiting is applied on this interface.
-	InRateLimit         float64                `xml:"InRateLimit,omitempty"`         // Incoming rate limit expressed as Gbps.
-	OutRateLimit        float64                `xml:"OutRateLimit,omitempty"`        // Outgoing rate limit expressed as Gbps.
-	UseForDefaultRoute  bool                   `xml:"UseForDefaultRoute,omitempty"`  // True if this network is default route for the gateway.
+	Name                     string                 `xml:"Name,omitempty" json:"name,omitempty"`                                         // Internally generated name for the Gateway Interface.
+	DisplayName              string                 `xml:"DisplayName,omitempty" json:"displayName,omitempty"`                           // Gateway Interface display name.
+	Network                  *Reference             `xml:"Network" json:"network,omitempty"`                                             // A reference to the network connected to the gateway interface.
+	InterfaceType            string                 `xml:"InterfaceType" json:"interfaceType,omitempty"`                                 // The type of interface: One of: Uplink, Internal
+	SubnetParticipation      []*SubnetParticipation `xml:"SubnetParticipation,omitempty" json:"subnetParticipation,omitempty"`           // Slice of subnets for IP allocations.
+	ApplyRateLimit           bool                   `xml:"ApplyRateLimit,omitempty" json:"applyRateLimit,omitempty"`                     // True if rate limiting is applied on this interface.
+	InRateLimit              float64                `xml:"InRateLimit,omitempty" json:"inRateLimit,omitempty"`                           // Incoming rate limit expressed as Gbps.
+	OutRateLimit             float64                `xml:"OutRateLimit,omitempty" json:"outRateLimit,omitempty"`                         // Outgoing rate limit expressed as Gbps.
+	UseForDefaultRoute       bool                   `xml:"UseForDefaultRoute,omitempty" json:"useForDefaultRoute,omitempty"`             // True if this network is default route for the gateway.
+	Connected                bool                   `xml:"Connected,omitempty" json:"connected,omitempty"`                               // True if interface is marked as connected in NSX
+	QuickAddAllocatedIpCount int                    `xml:"QuickAddAllocatedIpCount,omitempty" json:"quickAddAllocatedIpCount,omitempty"` // If set on create or update api calls, the specified number of IP addresses will be additionally allocated for this uplink. IPs will be allocated from multiple subnets if needed
 }
 
 // SortBySubnetParticipationGateway allows to sort SubnetParticipation property slice by gateway
@@ -2044,11 +2221,11 @@ func (g *GatewayInterface) SortBySubnetParticipationGateway() {
 // Note. Field order is important and should not be changed as API returns errors if IPRanges come
 // before Gateway and Netmask
 type SubnetParticipation struct {
-	Gateway            string    `xml:"Gateway"`                      // Gateway for subnet
-	Netmask            string    `xml:"Netmask"`                      // Netmask for the subnet.
-	IPAddress          string    `xml:"IpAddress,omitempty"`          // Ip Address to be assigned. Keep empty or omit element for auto assignment
-	IPRanges           *IPRanges `xml:"IpRanges,omitempty"`           // Range of IP addresses available for external interfaces.
-	UseForDefaultRoute bool      `xml:"UseForDefaultRoute,omitempty"` // True if this network is default route for the gateway.
+	Gateway            string    `xml:"Gateway" json:"gateway,omitempty"`                                 // Gateway for subnet
+	Netmask            string    `xml:"Netmask" json:"netmask,omitempty"`                                 // Netmask for the subnet.
+	IPAddress          string    `xml:"IpAddress,omitempty" json:"ipAddress,omitempty"`                   // Ip Address to be assigned. Keep empty or omit element for auto assignment
+	IPRanges           *IPRanges `xml:"IpRanges,omitempty" json:"ipRanges,omitempty"`                     // Range of IP addresses available for external interfaces.
+	UseForDefaultRoute bool      `xml:"UseForDefaultRoute,omitempty" json:"useForDefaultRoute,omitempty"` // True if this network is default route for the gateway.
 }
 
 type EdgeGatewayServiceConfiguration struct {
@@ -2186,6 +2363,18 @@ type IpsecVpnSubnet struct {
 type GatewayDhcpService struct {
 	IsEnabled bool               `xml:"IsEnabled,omitempty"` // Enable or disable the service using this flag
 	Pool      []*DhcpPoolService `xml:"Pool,omitempty"`      // A DHCP pool.
+}
+
+// EdgeClusterConfiguration configures Edge clusters in an Edge Gateway.
+// Type: EdgeClusterConfigurationType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Used for specifying specific Edge Cluster(s) for a given Edge Gateway. Specification is only applicable
+// for NSX-V Edges, and if specified this takes precedence over the Edge Cluster configuration on an Org vDC. For NSX-T Edges,
+// this is only read-only and edge management must be done via Cloud API.
+// Since: 5.1
+type EdgeClusterConfiguration struct {
+	PrimaryEdgeCluster   *Reference `xml:"PrimaryEdgeCluster,omitempty" json:"primaryEdgeCluster,omitempty"`
+	SecondaryEdgeCluster *Reference `xml:"SecondaryEdgeCluster,omitempty" json:"secondaryEdgeCluster,omitempty"`
 }
 
 // DhcpPoolService represents DHCP pool service.
@@ -2433,6 +2622,8 @@ type QueryResultRecordsType struct {
 	SiteAssociationRecord           []*QueryResultSiteAssociationRecord               `xml:"SiteAssociationRecord"`           // A record representing a site association
 	OrgAssociationRecord            []*QueryResultOrgAssociationRecord                `xml:"OrgAssociationRecord"`            // A record representing an Org association
 	OrgRecord                       []*QueryResultOrgRecordType                       `xml:"OrgRecord"`                       // A record representing an Organisation
+	AdminOrgVdcTemplateRecord       []*QueryResultAdminOrgVdcTemplateRecordType       `xml:"AdminOrgVdcTemplateRecord"`       // A record representing an admin VDC Template
+	OrgVdcTemplateRecord            []*QueryResultOrgVdcTemplateRecordType            `xml:"OrgVdcTemplateRecord"`            // A record representing an VDC Template
 }
 
 // QueryResultVmGroupsRecordType represent a VM Groups record
@@ -2444,6 +2635,26 @@ type QueryResultVmGroupsRecordType struct {
 	ClusterName    string `xml:"clusterName,attr,omitempty"`
 	VcenterId      string `xml:"vcId,attr,omitempty"`
 	NamedVmGroupId string `xml:"namedVmGroupId,attr,omitempty"`
+}
+
+// QueryResultAdminOrgVdcTemplateRecordType represents an admin VDC Template
+type QueryResultAdminOrgVdcTemplateRecordType struct {
+	HREF                     string `xml:"href,attr,omitempty"`
+	ID                       string `xml:"id,attr,omitempty"`
+	Name                     string `xml:"name,attr,omitempty"`
+	Description              string `xml:"description,attr,omitempty"`
+	TenantVisibleName        string `xml:"tenantVisibleName,attr,omitempty"`
+	TenantVisibleDescription string `xml:"tenantVisibleDescription,attr,omitempty"`
+	NetworkBackingType       string `xml:"networkBackingType,attr,omitempty"`
+}
+
+// QueryResultOrgVdcTemplateRecordType represents an admin VDC Template
+type QueryResultOrgVdcTemplateRecordType struct {
+	HREF        string `xml:"href,attr,omitempty"`
+	ID          string `xml:"id,attr,omitempty"`
+	Name        string `xml:"name,attr,omitempty"`
+	Description string `xml:"description,attr,omitempty"`
+	OrgHref     string `xml:"org,attr,omitempty"`
 }
 
 type QueryResultVappNetworkRecordType struct {
@@ -3317,9 +3528,9 @@ type AccessSettingList struct {
 
 // LocalSubject is the user, group, or organization to which control access settings apply.
 type LocalSubject struct {
-	HREF string `xml:"href,attr"` // Required - The URL with the full identification of the subject
-	Name string `xml:"name,attr"` // The name of the subject. Not needed in input, but it is returned on reading
-	Type string `xml:"type,attr"` // Required - The MIME type of the subject. So far, we are using users, groups, and organizations
+	HREF string `xml:"href,attr"`           // Required - The URL with the full identification of the subject
+	Name string `xml:"name,attr,omitempty"` // The name of the subject. Not needed in input, but it is returned on reading
+	Type string `xml:"type,attr,omitempty"` // The MIME type of the subject. So far, we are using users, groups, and organizations
 }
 
 // AccessSetting controls access to the resource.

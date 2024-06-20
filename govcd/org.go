@@ -291,14 +291,25 @@ func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog,
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
 func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
-	vdc := NewVdc(org.client)
-	_, err := org.client.ExecuteRequest(vdcHref, http.MethodGet,
-		"", "error retrieving VDC: %s", nil, vdc.Vdc)
+	vdc, err := getVDCByHref(org.client, vdcHref)
 	if err != nil {
 		return nil, err
 	}
 	// The request was successful
-	vdc.parent = org
+	result := NewVdc(org.client)
+	result.Vdc = vdc
+	result.parent = org
+	return result, nil
+}
+
+// getVDCByHref gets a plain VDC object from its HREF.
+func getVDCByHref(client *Client, vdcHref string) (*types.Vdc, error) {
+	vdc := &types.Vdc{}
+	_, err := client.ExecuteRequest(vdcHref, http.MethodGet,
+		"", "error retrieving VDC: %s", nil, vdc)
+	if err != nil {
+		return nil, err
+	}
 	return vdc, nil
 }
 

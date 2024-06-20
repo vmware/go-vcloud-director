@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/netip"
 	"net/url"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -512,6 +513,9 @@ func (egw *NsxtEdgeGateway) GetUnusedExternalIPAddresses(requiredIpCount int, op
 
 // GetAllUnusedExternalIPAddresses will retrieve all unassigned IP addresses for Edge Gateway It is
 // similar to GetUnusedExternalIPAddresses but returns all unused IPs instead of a specific amount
+//
+// Note. In case a very large subnet of IPv6 is present this function might exhaust memory. Please
+// use GetUnusedExternalIPAddressesWithCountLimit in such cases
 func (egw *NsxtEdgeGateway) GetAllUnusedExternalIPAddresses(refresh bool) ([]netip.Addr, error) {
 	if refresh {
 		err := egw.Refresh()
@@ -524,7 +528,35 @@ func (egw *NsxtEdgeGateway) GetAllUnusedExternalIPAddresses(refresh bool) ([]net
 		return nil, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)
 	}
 
-	return getAllUnusedExternalIPAddresses(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, netip.Prefix{})
+	return getAllUnusedExternalIPAddresses(egw.EdgeGateway.EdgeGatewayUplinks, usedIpAddresses, netip.Prefix{}, 0)
+}
+
+// GetUsedAndUnusedExternalIPAddressCountWithLimit will count IPs and can limit their total count up
+// to 'limitTo' which can be used to count IPs with huge IPv6 subnets
+//
+// Return order - usedIpCount, unusedIpCount, error
+func (egw *NsxtEdgeGateway) GetUsedAndUnusedExternalIPAddressCountWithLimit(refresh bool, limitTo int64) (int64, int64, error) {
+	if refresh {
+		err := egw.Refresh()
+		if err != nil {
+			return 0, 0, fmt.Errorf("error refreshing Edge Gateway: %s", err)
+		}
+	}
+	usedIpAddresses, err := egw.GetUsedIpAddresses(nil)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error getting used IP addresses for Edge Gateway: %s", err)
+	}
+
+	assignedIpAddresses, err := flattenEdgeGatewayUplinkToIpSlice(egw.EdgeGateway.EdgeGatewayUplinks, limitTo)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error listing all IPs in Edge Gateway: %s", err)
+	}
+
+	usedIpCount := int64(len(usedIpAddresses))
+	assignedIpCount := int64(len(assignedIpAddresses))
+	unusedIpCount := assignedIpCount - usedIpCount
+
+	return usedIpCount, unusedIpCount, nil
 }
 
 // GetAllocatedIpCount traverses all subnets in Edge Gateway and returns a count of allocated IP
@@ -890,11 +922,11 @@ func (egw *NsxtEdgeGateway) UpdateSlaacProfile(slaacProfileConfig *types.NsxtEdg
 	return updatedSlaacProfile, nil
 }
 
-func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
+func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, optionalSubnet netip.Prefix, limitTo int64) ([]netip.Addr, error) {
 	// 1. Flatten all IP ranges in Edge Gateway using Go's native 'netip.Addr' IP container instead
 	// of plain strings because it is more robust (supports IPv4 and IPv6 and also comparison
 	// operator)
-	assignedIpSlice, err := flattenEdgeGatewayUplinkToIpSlice(uplinks)
+	assignedIpSlice, err := flattenEdgeGatewayUplinkToIpSlice(uplinks, limitTo)
 	if err != nil {
 		return nil, fmt.Errorf("error listing all IPs in Edge Gateway: %s", err)
 	}
@@ -925,7 +957,7 @@ func getAllUnusedExternalIPAddresses(uplinks []types.EdgeGatewayUplinks, usedIpA
 }
 
 func getUnusedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddresses []*types.GatewayUsedIpAddress, requiredIpCount int, optionalSubnet netip.Prefix) ([]netip.Addr, error) {
-	unusedIps, err := getAllUnusedExternalIPAddresses(uplinks, usedIpAddresses, optionalSubnet)
+	unusedIps, err := getAllUnusedExternalIPAddresses(uplinks, usedIpAddresses, optionalSubnet, 0)
 	if err != nil {
 		return nil, fmt.Errorf("error getting all unused IPs: %s", err)
 	}
@@ -941,8 +973,16 @@ func getUnusedExternalIPAddress(uplinks []types.EdgeGatewayUplinks, usedIpAddres
 
 // flattenEdgeGatewayUplinkToIpSlice processes Edge Gateway Uplink structure and creates a slice of
 // all available IPs
-func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]netip.Addr, error) {
+// Note. Having a huge IPv6 block might become a long running task and potentially exhaust system
+// memory. One can use 'limitTo' setting to set upper limit for number of IPs that one wants to
+// retrieve. Setting `limitTo` to 0 means that not limitation is applied.
+func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks, limitTo int64) ([]netip.Addr, error) {
+	start := time.Now()
+	util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice starting at %s with limitTo %d", start.String(), limitTo)
+	util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice Edge Gateway uplink count %d", len(uplinks))
 	assignedIpSlice := make([]netip.Addr, 0)
+
+	var counter int64
 
 	for _, edgeGatewayUplink := range uplinks {
 		for _, edgeGatewayUplinkSubnet := range edgeGatewayUplink.Subnets.Values {
@@ -970,13 +1010,24 @@ func flattenEdgeGatewayUplinkToIpSlice(uplinks []types.EdgeGatewayUplinks) ([]ne
 					// Expression 'ip.Compare(endIp) == 1'  means that 'ip > endIp' and the loop should stop
 					for ip := startIp; ip.Compare(endIp) != 1; ip = ip.Next() {
 						assignedIpSlice = append(assignedIpSlice, ip)
+						counter++
+						if limitTo != 0 && counter >= limitTo {
+							util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice hit limitTo %d at %s with IP range", limitTo, time.Since(start))
+							return assignedIpSlice, nil
+						}
 					}
 				} else { // if there is no end address in the range, then it is only a single IP - startIp
 					assignedIpSlice = append(assignedIpSlice, startIp)
+					counter++
+					if limitTo != 0 && counter >= limitTo {
+						util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice hit limitTo %d at %s with single IP", limitTo, time.Since(start))
+						return assignedIpSlice, nil
+					}
 				}
 			}
 		}
 	}
+	util.Logger.Printf("[TRACE] flattenEdgeGatewayUplinkToIpSlice finished %s", time.Since(start))
 
 	return assignedIpSlice, nil
 }

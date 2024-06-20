@@ -164,6 +164,9 @@ const (
 	MimeOrgAssociation = "application/vnd.vmware.admin.organizationAssociations+xml"
 	// Mime to handle site associations
 	MimeSiteAssociation = "application/vnd.vmware.admin.siteAssociation+xml"
+	// Mime to instantiate VDC Templates
+	MimeVdcTemplateInstantiate     = "application/vnd.vmware.vcloud.instantiateVdcTemplateParams+xml"
+	MimeVdcTemplateInstantiateType = "application/vnd.vmware.vcloud.orgVdcTemplate+xml"
 )
 
 const (
@@ -297,6 +300,8 @@ const (
 	QtAdminVappNetwork          = "adminVAppNetwork"
 	QtSiteAssociation           = "siteAssociation"
 	QtOrgAssociation            = "orgAssociation"
+	QtAdminOrgVdcTemplate       = "adminOrgVdcTemplate"
+	QtOrgVdcTemplate            = "orgVdcTemplate"
 )
 
 // AdminQueryTypes returns the corresponding "admin" query type for each regular type
@@ -750,4 +755,12 @@ const (
 	BackingUseExplicit       BackingUseConstraint = "use-explicit-name"   // use explicitly named backing
 	BackingUseWhenOnlyOne    BackingUseConstraint = "use-when-only-one"   // use automatically when only one was found
 	BackingUseFirstAvailable BackingUseConstraint = "use-first-available" // use the first available backing with no conditions
+)
+
+// Values used to create a VDC Template
+const (
+	VdcTemplateFlexType            = "VMWFlexVdcTemplateSpecificationType"
+	VdcTemplatePayAsYouGoType      = "VMWAllocationVappVdcTemplateSpecificationType"
+	VdcTemplateAllocationPoolType  = "VMWAllocationPoolVdcTemplateSpecificationType"
+	VdcTemplateReservationPoolType = "VMWReservationPoolVdcTemplateSpecificationType"
 )
