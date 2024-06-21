@@ -13,8 +13,8 @@ import (
 
 var addOnInstancePublishBehaviorId = "urn:vcloud:behavior-interface:invoke:vmware:solutions_add_on_instance:1.0.0"
 
-// Publishing manages publish and Unpublish operations are managed in the same API call
-// To unpublish the `scopeAll` has to be `false and `scope` must be empty
+// Publishing manages publish and Unpublish operations, which are managed in the same API call
+// To unpublish, the `scopeAll` has to be `false and `scope` must be empty
 func (addonInstance *SolutionAddOnInstance) Publishing(scope []string, scopeAll bool) (string, error) {
 	arguments := make(map[string]interface{})
 	arguments["operation"] = "publish instance"
