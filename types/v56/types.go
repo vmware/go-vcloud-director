@@ -2619,6 +2619,9 @@ type QueryResultRecordsType struct {
 	AdminTaskRecord                 []*QueryResultTaskRecordType                      `xml:"AdminTaskRecord"`                 // A record representing an Admin Task
 	VappNetworkRecord               []*QueryResultVappNetworkRecordType               `xml:"VAppNetworkRecord"`               // A record representing a vApp network
 	AdminVappNetworkRecord          []*QueryResultVappNetworkRecordType               `xml:"AdminVAppNetworkRecord"`          // A record representing an admin vApp network
+	SiteAssociationRecord           []*QueryResultSiteAssociationRecord               `xml:"SiteAssociationRecord"`           // A record representing a site association
+	OrgAssociationRecord            []*QueryResultOrgAssociationRecord                `xml:"OrgAssociationRecord"`            // A record representing an Org association
+	OrgRecord                       []*QueryResultOrgRecordType                       `xml:"OrgRecord"`                       // A record representing an Organisation
 	AdminOrgVdcTemplateRecord       []*QueryResultAdminOrgVdcTemplateRecordType       `xml:"AdminOrgVdcTemplateRecord"`       // A record representing an admin VDC Template
 	OrgVdcTemplateRecord            []*QueryResultOrgVdcTemplateRecordType            `xml:"OrgVdcTemplateRecord"`            // A record representing an VDC Template
 }
@@ -3654,6 +3657,27 @@ type QueryResultTaskRecordType struct {
 	ServiceNamespace string    `xml:"serviceNamespace,attr,omitempty"` //	Service name space
 	Link             *Link     `xml:"Link,omitempty"`
 	Metadata         *Metadata `xml:"Metadata,omitempty"`
+}
+
+// QueryResultOrgVdcRecordType represents an Organisation record
+type QueryResultOrgRecordType struct {
+	HREF               string    `xml:"href,attr,omitempty"`
+	Type               string    `xml:"type,attr,omitempty"`
+	ID                 string    `xml:"id,attr,omitempty"`
+	Name               string    `xml:"name,attr"`
+	DisplayName        string    `xml:"displayName,attr,omitempty"`
+	IsEnabled          bool      `xml:"isEnabled,attr,omitempty"`
+	IsReadOnly         bool      `xml:"isReadOnly,attr,omitempty"`
+	CanPublishCatalogs bool      `xml:"canPublishCatalogs,attr,omitempty"`
+	DeployedVMQuota    *int      `xml:"deployedVMQuota,attr,omitempty"`
+	StoredVMQuota      *int      `xml:"storedVMQuota,attr,omitempty"`
+	NumberOfCatalogs   *int      `xml:"numberOfCatalogs,attr,omitempty"`
+	NumberOfVdcs       *int      `xml:"numberOfVdcs,attr,omitempty"`
+	NumberOfVApps      *int      `xml:"numberOfVApps,attr,omitempty"`
+	NumberOfGroups     *int      `xml:"numberOfGroups,attr,omitempty"`
+	NumberOfDisks      *int      `xml:"numberOfDisks,attr,omitempty"`
+	Link               *LinkList `xml:"Link,omitempty"`
+	Metadata           *Metadata `xml:"Metadata,omitempty"`
 }
 
 // ProviderVdcCreation contains the data needed to create a provider VDC.

@@ -78,6 +78,8 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			"cpuOverheadMhz", "isVCEnabled", "memoryReservedMB", "cpuReservedMhz", "storageOverheadMB", "memoryOverheadMB", "vc"}
 		taskFields = []string{"href", "id", "type", "org", "orgName", "name", "operationFull", "message", "startDate",
 			"endDate", "status", "progress", "ownerName", "object", "objectType", "objectName", "serviceNamespace"}
+		orgFields = []string{"href", "id", "type", "name", "displayName", "isEnabled", "isReadOnly", "canPublishCatalogs",
+			"deployedVMQuota", "storedVMQuota", "numberOfCatalogs", "numberOfVdcs", "numberOfVApps", "numberOfGroups", "numberOfDisks"}
 		fieldsOnDemand = map[string][]string{
 			types.QtVappTemplate:      vappTemplatefields,
 			types.QtAdminVappTemplate: vappTemplatefields,
@@ -97,6 +99,7 @@ func queryFieldsOnDemand(queryType string) ([]string, error) {
 			types.QtAdminOrgVdc:       orgVdcFields,
 			types.QtTask:              taskFields,
 			types.QtAdminTask:         taskFields,
+			types.QtOrg:               orgFields,
 		}
 	)
 
@@ -181,6 +184,15 @@ func addResults(queryType string, cumulativeResults, newResults Results) (Result
 	case types.QtAdminVappNetwork:
 		cumulativeResults.Results.AdminVappNetworkRecord = append(cumulativeResults.Results.AdminVappNetworkRecord, newResults.Results.AdminVappNetworkRecord...)
 		size = len(newResults.Results.AdminVappNetworkRecord)
+	case types.QtSiteAssociation:
+		cumulativeResults.Results.SiteAssociationRecord = append(cumulativeResults.Results.SiteAssociationRecord, newResults.Results.SiteAssociationRecord...)
+		size = len(newResults.Results.SiteAssociationRecord)
+	case types.QtOrgAssociation:
+		cumulativeResults.Results.OrgAssociationRecord = append(cumulativeResults.Results.OrgAssociationRecord, newResults.Results.OrgAssociationRecord...)
+		size = len(newResults.Results.OrgAssociationRecord)
+	case types.QtOrg:
+		cumulativeResults.Results.OrgRecord = append(cumulativeResults.Results.OrgRecord, newResults.Results.OrgRecord...)
+		size = len(newResults.Results.OrgRecord)
 	case types.QtAdminOrgVdcTemplate:
 		cumulativeResults.Results.AdminOrgVdcTemplateRecord = append(cumulativeResults.Results.AdminOrgVdcTemplateRecord, newResults.Results.AdminOrgVdcTemplateRecord...)
 		size = len(newResults.Results.AdminOrgVdcTemplateRecord)
@@ -225,6 +237,9 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 		types.QtProviderVdcStorageProfile,
 		types.QtVappNetwork,
 		types.QtAdminVappNetwork,
+		types.QtSiteAssociation,
+		types.QtOrgAssociation,
+		types.QtOrg,
 		types.QtOrgVdcTemplate,
 		types.QtAdminOrgVdcTemplate,
 	}
