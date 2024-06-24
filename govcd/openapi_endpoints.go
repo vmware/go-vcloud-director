@@ -143,6 +143,8 @@ var endpointMinApiVersions = map[string]string{
 
 	// Endpoint for managing vGPU profiles
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVgpuProfile: "36.2",
+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgs: "37.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
@@ -157,6 +159,7 @@ var endpointElevatedApiVersions = map[string][]string{
 		"35.0", // Deprecates field BackingType in favor of BackingTypeValue
 		"36.0", // Adds support new type of BackingTypeValue - IMPORTED_T_LOGICAL_SWITCH (backed by NSX-T segment)
 		"37.1", // Adds support for IP Spaces with new fields - UsingIpSpace, DedicatedOrg
+		"38.1", // Adds support for NAT, Firewall and Route Advertisement intention configuration
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules: {
 		//"35.0", // Basic minimum required version
@@ -298,13 +301,19 @@ func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string,
 		util.Logger.Printf("[DEBUG] Checking if elevated version '%s' is supported by VCD instance for endpoint '%s'",
 			elevatedVersion.Original(), endpoint)
 		// Check if maximum VCD API version supported is greater or equal to elevated version
-		if client.APIVCDMaxVersionIs(fmt.Sprintf(">= %s", elevatedVersion.Original())) {
+
+		if client.APIVCDMaxVersionIs(fmt.Sprintf(">= %s", elevatedVersion.Original())) &&
+			!client.APIClientVersionIs(fmt.Sprintf("> %s", elevatedVersion.Original())) {
 			util.Logger.Printf("[DEBUG] Elevated version '%s' is supported by VCD instance for endpoint '%s'",
 				elevatedVersion.Original(), endpoint)
 			// highest version found - store it and abort the loop
 			supportedElevatedVersion = elevatedVersion.Original()
 			break
+		} else {
+			util.Logger.Printf("[DEBUG] Skipped Elevated version '%s' for endpoint '%s', Default minimum version '%s'",
+				elevatedVersion.Original(), endpoint, client.APIVersion)
 		}
+
 		util.Logger.Printf("[DEBUG] API version '%s' is not supported by VCD instance for endpoint '%s'",
 			elevatedVersion.Original(), endpoint)
 	}

@@ -59,12 +59,19 @@ type CseControlPlaneSettings struct {
 // CseWorkerPoolSettings defines the required configuration of a Worker Pool of a Container Service Extension (CSE) Kubernetes cluster.
 type CseWorkerPoolSettings struct {
 	Name              string
-	MachineCount      int
+	MachineCount      int // If the Autoscaler is enabled, this field is ignored
 	DiskSizeGi        int
-	SizingPolicyId    string // Optional
-	PlacementPolicyId string // Optional
-	VGpuPolicyId      string // Optional
-	StorageProfileId  string // Optional
+	SizingPolicyId    string                   // Optional
+	PlacementPolicyId string                   // Optional
+	VGpuPolicyId      string                   // Optional
+	StorageProfileId  string                   // Optional
+	Autoscaler        *CseWorkerPoolAutoscaler // Optional, enables the Autoscaler if not nil. If it is nil for all worker pools, the Autoscaler will be disabled
+}
+
+// CseWorkerPoolAutoscaler defines the required configuration of the Autoscaling capabilities of a CSE Kubernetes cluster Worker Pool.
+type CseWorkerPoolAutoscaler struct {
+	MaxSize int
+	MinSize int
 }
 
 // CseDefaultStorageClassSettings defines the required configuration of a Default Storage Class of a Container Service Extension (CSE) Kubernetes cluster.
@@ -104,7 +111,8 @@ type CseControlPlaneUpdateInput struct {
 // CseWorkerPoolUpdateInput defines the required configuration that a Worker Pool of the Container Service Extension (CSE) Kubernetes cluster
 // needs in order to be updated.
 type CseWorkerPoolUpdateInput struct {
-	MachineCount int
+	MachineCount int                      // If the Autoscaler is enabled, this field is ignored
+	Autoscaler   *CseWorkerPoolAutoscaler // Optional, enables the Autoscaler if not nil. If it is nil for all worker pools, the Autoscaler will be disabled
 }
 
 // cseClusterSettingsInternal defines the required arguments that are required by the CSE Server used internally to specify
@@ -168,6 +176,7 @@ type cseWorkerPoolSettingsInternal struct {
 	PlacementPolicyName string
 	VGpuPolicyName      string
 	StorageProfileName  string
+	Autoscaler          *CseWorkerPoolAutoscaler
 }
 
 // cseDefaultStorageClassInternal defines a Default Storage Class inside cseClusterSettingsInternal
@@ -196,7 +205,7 @@ type cseComponentsVersions struct {
 	CseInterfaceVersion       string
 }
 
-// Constants that define the RDE Type of a CSE Kubernetes cluster
+// Constants used internally to manage CSE Kubernetes clusters
 const (
 	cseKubernetesClusterVendor    = "vmware"
 	cseKubernetesClusterNamespace = "capvcdCluster"

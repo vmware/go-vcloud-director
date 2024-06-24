@@ -9,6 +9,7 @@ package govcd
 import (
 	_ "embed"
 	"fmt"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 
 	. "gopkg.in/check.v1"
@@ -38,7 +39,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(createdCertificate.CertificateLibrary.Alias, Equals, alias)
 	check.Assert(createdCertificate.CertificateLibrary.Certificate, Equals, certificate)
 
-	matchesCert, err := createdCertificate.Same(certificate)
+	matchesCert, err := createdCertificate.SameAs(certificate)
 	check.Assert(err, IsNil)
 	check.Assert(matchesCert, Equals, true)
 
@@ -92,7 +93,7 @@ func (vcd *TestVCD) Test_CertificateInLibrary(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(matchingCertificates, NotNil)
 
-	foundCertificates, err := vcd.client.Client.FoundCertificateInLibrary(certificate)
+	foundCertificates, err := vcd.client.Client.CountMatchingCertificates(certificate)
 	check.Assert(err, IsNil)
 	check.Assert(foundCertificates, Equals, len(matchingCertificates))
 	check.Assert(foundCertificates, Equals, 1)

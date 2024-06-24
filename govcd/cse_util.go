@@ -286,8 +286,9 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	// Retrieve the Network ID
 	params := url.Values{}
 	params.Add("filter", fmt.Sprintf("name==%s", result.capvcdType.Status.Capvcd.VcdProperties.OrgVdcs[0].OvdcNetworkName))
-	params = queryParameterFilterAnd("ownerRef.id=="+result.VdcId, params)
-	networks, err := getAllOpenApiOrgVdcNetworks(rde.client, params)
+	params = queryParameterFilterAnd("orgVdc.id=="+result.VdcId, params)
+	params = queryParameterFilterAnd("_context==includeAccessible", params)
+	networks, err := getAllOpenApiOrgVdcNetworks(rde.client, params, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not read Org VDC Network from Capvcd type: %s", err)
 	}
@@ -352,28 +353,28 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 	for _, yamlDocument := range yamlDocuments {
 		switch yamlDocument["kind"] {
 		case "KubeadmControlPlane":
-			result.ControlPlane.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas"))
-			users := traverseMapAndGet[[]interface{}](yamlDocument, "spec.kubeadmConfigSpec.users")
+			result.ControlPlane.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas", "."))
+			users := traverseMapAndGet[[]interface{}](yamlDocument, "spec.kubeadmConfigSpec.users", ".")
 			if len(users) == 0 {
 				return nil, fmt.Errorf("expected 'spec.kubeadmConfigSpec.users' slice to not to be empty")
 			}
-			keys := traverseMapAndGet[[]interface{}](users[0], "sshAuthorizedKeys")
+			keys := traverseMapAndGet[[]interface{}](users[0], "sshAuthorizedKeys", ".")
 			if len(keys) > 0 {
 				result.SshPublicKey = keys[0].(string) // Optional field
 			}
 
-			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "spec.version"))
+			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "spec.version", "."))
 			if err != nil {
 				return nil, fmt.Errorf("could not read Kubernetes version: %s", err)
 			}
 			result.KubernetesVersion = *version
 
 		case "VCDMachineTemplate":
-			name := traverseMapAndGet[string](yamlDocument, "metadata.name")
-			sizingPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy")
-			placementPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.placementPolicy")
-			storageProfileName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.storageProfile")
-			diskSizeGi, err := strconv.Atoi(strings.ReplaceAll(traverseMapAndGet[string](yamlDocument, "spec.template.spec.diskSize"), "Gi", ""))
+			name := traverseMapAndGet[string](yamlDocument, "metadata.name", ".")
+			sizingPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.sizingPolicy", ".")
+			placementPolicyName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.placementPolicy", ".")
+			storageProfileName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.storageProfile", ".")
+			diskSizeGi, err := strconv.Atoi(strings.ReplaceAll(traverseMapAndGet[string](yamlDocument, "spec.template.spec.diskSize", "."), "Gi", ""))
 			if err != nil {
 				return nil, err
 			}
@@ -396,8 +397,8 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				result.ControlPlane.DiskSizeGi = diskSizeGi
 
 				// We retrieve the Kubernetes Template OVA just once for the Control Plane because all YAML blocks share the same
-				vAppTemplateName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template")
-				catalogName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog")
+				vAppTemplateName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.template", ".")
+				catalogName := traverseMapAndGet[string](yamlDocument, "spec.template.spec.catalog", ".")
 				vAppTemplates, err := queryVappTemplateListWithFilter(rde.client, map[string]string{
 					"catalogName": catalogName,
 					"name":        vAppTemplateName,
@@ -436,31 +437,51 @@ func cseConvertToCseKubernetesClusterType(rde *DefinedEntity) (*CseKubernetesClu
 				workerPools[name] = workerPool // Override the worker pool with the updated data
 			}
 		case "MachineDeployment":
-			name := traverseMapAndGet[string](yamlDocument, "metadata.name")
+			name := traverseMapAndGet[string](yamlDocument, "metadata.name", ".")
 			// This is one Worker Pool. We need to check the map of worker pools, just in case we already saved the
 			// other information from VCDMachineTemplate.
 			if _, ok := workerPools[name]; !ok {
 				workerPools[name] = CseWorkerPoolSettings{}
 			}
 			workerPool := workerPools[name]
-			workerPool.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas"))
+
+			// This will be 0 if Autoscaler is enabled
+			workerPool.MachineCount = int(traverseMapAndGet[float64](yamlDocument, "spec.replicas", "."))
+
+			// Get Autoscaler values
+			autoscalerMax := traverseMapAndGet[string](yamlDocument, "metadata#annotations#cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size", "#")
+			autoscalerMin := traverseMapAndGet[string](yamlDocument, "metadata#annotations#cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size", "#")
+			if autoscalerMax != "" && autoscalerMin != "" {
+				maxSize, err := strconv.Atoi(autoscalerMax)
+				if err != nil {
+					return nil, fmt.Errorf("error reading Autoscaler max size for pool '%s': %s", name, err)
+				}
+				minSize, err := strconv.Atoi(autoscalerMin)
+				if err != nil {
+					return nil, fmt.Errorf("error reading Autoscaler min size for pool '%s': %s", name, err)
+				}
+				workerPool.Autoscaler = &CseWorkerPoolAutoscaler{
+					MaxSize: maxSize,
+					MinSize: minSize,
+				}
+			}
 			workerPools[name] = workerPool // Override the worker pool with the updated data
 		case "VCDCluster":
-			result.VirtualIpSubnet = traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet")
+			result.VirtualIpSubnet = traverseMapAndGet[string](yamlDocument, "spec.loadBalancerConfigSpec.vipSubnet", ".")
 		case "Cluster":
-			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "metadata.annotations.TKGVERSION"))
+			version, err := semver.NewVersion(traverseMapAndGet[string](yamlDocument, "metadata.annotations.TKGVERSION", "."))
 			if err != nil {
 				return nil, fmt.Errorf("could not read TKG version: %s", err)
 			}
 			result.TkgVersion = *version
 
-			cidrBlocks := traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks")
+			cidrBlocks := traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.pods.cidrBlocks", ".")
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.pods.cidrBlocks' item")
 			}
 			result.PodCidr = cidrBlocks[0].(string)
 
-			cidrBlocks = traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.services.cidrBlocks")
+			cidrBlocks = traverseMapAndGet[[]interface{}](yamlDocument, "spec.clusterNetwork.services.cidrBlocks", ".")
 			if len(cidrBlocks) == 0 {
 				return nil, fmt.Errorf("expected at least one 'spec.clusterNetwork.services.cidrBlocks' item")
 			}
@@ -572,17 +593,31 @@ func (input *CseClusterSettings) validate() error {
 	}
 	existingWorkerPools := map[string]bool{}
 	for _, workerPool := range input.WorkerPools {
+		if !cseNamesRegex.MatchString(workerPool.Name) {
+			return fmt.Errorf("the Worker Pool name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", workerPool.Name)
+		}
 		if _, alreadyExists := existingWorkerPools[workerPool.Name]; alreadyExists {
 			return fmt.Errorf("the names of the Worker Pools must be unique, but '%s' is repeated", workerPool.Name)
 		}
-		if workerPool.MachineCount < 1 {
+		if workerPool.Autoscaler == nil && workerPool.MachineCount < 1 {
 			return fmt.Errorf("number of Worker Pool '%s' nodes must higher than 0, but it was '%d'", workerPool.Name, workerPool.MachineCount)
+		}
+		if workerPool.Autoscaler != nil {
+			if workerPool.MachineCount > 0 {
+				return fmt.Errorf("the Worker Pool '%s' is using Autoscaler (min=%d,max=%d), so can't set MachineCount to '%d'", workerPool.Name, workerPool.Autoscaler.MinSize, workerPool.Autoscaler.MaxSize, workerPool.MachineCount)
+			}
+			if workerPool.Autoscaler.MaxSize < workerPool.Autoscaler.MinSize {
+				return fmt.Errorf("the Autoscaler maximum size for Worker Pool '%s' cannot be less than the minimum", workerPool.Name)
+			}
+			if workerPool.Autoscaler.MaxSize < 0 {
+				return fmt.Errorf("the Autoscaler maximum size for Worker Pool '%s' must be a positive number", workerPool.Name)
+			}
+			if workerPool.Autoscaler.MinSize < 0 {
+				return fmt.Errorf("the Autoscaler minimum size for Worker Pool '%s' must be a positive number", workerPool.Name)
+			}
 		}
 		if workerPool.DiskSizeGi < 20 {
 			return fmt.Errorf("disk size for the Worker Pool '%s' in Gibibytes (Gi) must be at least 20, but it was '%d'", workerPool.Name, workerPool.DiskSizeGi)
-		}
-		if !cseNamesRegex.MatchString(workerPool.Name) {
-			return fmt.Errorf("the Worker Pool name '%s' must contain only lowercase alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric, and contain at most 31 characters", workerPool.Name)
 		}
 		existingWorkerPools[workerPool.Name] = true
 	}
@@ -596,7 +631,7 @@ func (input *CseClusterSettings) validate() error {
 		if input.DefaultStorageClass.ReclaimPolicy != "delete" && input.DefaultStorageClass.ReclaimPolicy != "retain" {
 			return fmt.Errorf("the Reclaim Policy for the Default Storage Class must be either 'delete' or 'retain', but it was '%s'", input.DefaultStorageClass.ReclaimPolicy)
 		}
-		if input.DefaultStorageClass.Filesystem != "ext4" && input.DefaultStorageClass.ReclaimPolicy != "xfs" {
+		if input.DefaultStorageClass.Filesystem != "ext4" && input.DefaultStorageClass.Filesystem != "xfs" {
 			return fmt.Errorf("the filesystem for the Default Storage Class must be either 'ext4' or 'xfs', but it was '%s'", input.DefaultStorageClass.Filesystem)
 		}
 	}
@@ -716,6 +751,13 @@ func (input *CseClusterSettings) toCseClusterSettingsInternal(org Org) (*cseClus
 		output.WorkerPools[i].PlacementPolicyName = idToNameCache[w.PlacementPolicyId]
 		output.WorkerPools[i].VGpuPolicyName = idToNameCache[w.VGpuPolicyId]
 		output.WorkerPools[i].StorageProfileName = idToNameCache[w.StorageProfileId]
+
+		if w.Autoscaler != nil {
+			output.WorkerPools[i].Autoscaler = &CseWorkerPoolAutoscaler{
+				MaxSize: w.Autoscaler.MaxSize,
+				MinSize: w.Autoscaler.MinSize,
+			}
+		}
 	}
 	output.ControlPlane = cseControlPlaneSettingsInternal{
 		MachineCount:        input.ControlPlane.MachineCount,

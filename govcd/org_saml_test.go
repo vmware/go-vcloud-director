@@ -113,6 +113,9 @@ func (vcd *TestVCD) TestClient_RetrieveRemoteDoc(check *C) {
 	// samltest.id is a well known test site for SAML services
 	metadataUrl := "https://samltest.id/saml/idp"
 	metadata, err := vcd.client.Client.RetrieveRemoteDocument(metadataUrl)
+	if err != nil {
+		check.Skip("samltest.id is not responding")
+	}
 	check.Assert(err, IsNil)
 	check.Assert(metadata, NotNil)
 	errors := ValidateSamlServiceProviderMetadata(string(metadata))

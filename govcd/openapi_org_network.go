@@ -35,7 +35,7 @@ func (org *Org) GetOpenApiOrgVdcNetworkByNameAndOwnerId(name, ownerId string) (*
 	queryParameters := url.Values{}
 	queryParameters = queryParameterFilterAnd(fmt.Sprintf("name==%s;ownerRef.id==%s", name, ownerId), queryParameters)
 
-	allEdges, err := getAllOpenApiOrgVdcNetworks(org.client, queryParameters)
+	allEdges, err := getAllOpenApiOrgVdcNetworks(org.client, queryParameters, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve Org VDC network by name '%s' in Owner '%s': %s", name, ownerId, err)
 	}
@@ -98,7 +98,7 @@ func (vdcGroup *VdcGroup) GetOpenApiOrgVdcNetworkByName(name string) (*OpenApiOr
 // higher number
 func (org *Org) GetAllOpenApiOrgVdcNetworks(queryParameters url.Values) ([]*OpenApiOrgVdcNetwork, error) {
 	filteredQueryParams := queryParameterFilterAnd("orgRef.id=="+org.Org.ID, queryParameters)
-	return getAllOpenApiOrgVdcNetworks(org.client, filteredQueryParams)
+	return getAllOpenApiOrgVdcNetworks(org.client, filteredQueryParams, nil)
 }
 
 // GetAllOpenApiOrgVdcNetworks allows to retrieve all NSX-T or NSX-V Org VDC networks in Vdc
@@ -107,7 +107,7 @@ func (org *Org) GetAllOpenApiOrgVdcNetworks(queryParameters url.Values) ([]*Open
 // higher number
 func (vdc *Vdc) GetAllOpenApiOrgVdcNetworks(queryParameters url.Values) ([]*OpenApiOrgVdcNetwork, error) {
 	filteredQueryParams := queryParameterFilterAnd("ownerRef.id=="+vdc.Vdc.ID, queryParameters)
-	return getAllOpenApiOrgVdcNetworks(vdc.client, filteredQueryParams)
+	return getAllOpenApiOrgVdcNetworks(vdc.client, filteredQueryParams, nil)
 }
 
 // GetAllOpenApiOrgVdcNetworks allows to retrieve all NSX-T or NSX-V Org VDC networks in Vdc
@@ -116,7 +116,7 @@ func (vdc *Vdc) GetAllOpenApiOrgVdcNetworks(queryParameters url.Values) ([]*Open
 // higher number
 func (vdcGroup *VdcGroup) GetAllOpenApiOrgVdcNetworks(queryParameters url.Values) ([]*OpenApiOrgVdcNetwork, error) {
 	filteredQueryParams := queryParameterFilterAnd("ownerRef.id=="+vdcGroup.VdcGroup.Id, queryParameters)
-	return getAllOpenApiOrgVdcNetworks(vdcGroup.client, filteredQueryParams)
+	return getAllOpenApiOrgVdcNetworks(vdcGroup.client, filteredQueryParams, nil)
 }
 
 // CreateOpenApiOrgVdcNetwork allows to create NSX-T or NSX-V Org VDC network
@@ -302,7 +302,7 @@ func returnSingleOpenApiOrgVdcNetwork(name string, allEdges []*OpenApiOrgVdcNetw
 //
 // Note. If pageSize > 32 it will be limited to maximum of 32 in this function because API validation does not allow
 // higher number
-func getAllOpenApiOrgVdcNetworks(client *Client, queryParameters url.Values) ([]*OpenApiOrgVdcNetwork, error) {
+func getAllOpenApiOrgVdcNetworks(client *Client, queryParameters url.Values, additionalHeader map[string]string) ([]*OpenApiOrgVdcNetwork, error) {
 
 	// Enforce maximum pageSize to be 32 as API endpoint throws error if it is > 32
 	pageSizeString := queryParameters.Get("pageSize")
@@ -335,7 +335,7 @@ func getAllOpenApiOrgVdcNetworks(client *Client, queryParameters url.Values) ([]
 	}
 
 	typeResponses := []*types.OpenApiOrgVdcNetwork{{}}
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses, nil)
+	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParameters, &typeResponses, additionalHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -396,4 +396,18 @@ func (orgVdcNet *OpenApiOrgVdcNetwork) UpdateSegmentProfile(entityConfig *types.
 		entityLabel:    labelOrgVdcNetworkSegmentProfile,
 	}
 	return updateInnerEntity(orgVdcNet.client, c, entityConfig)
+}
+
+// GetAllOpenApiOrgVdcNetworks checks all Org VDC networks available to the current user
+// When 'multiSite' is set, it will also check the networks available from associated organizations
+func (adminOrg *AdminOrg) GetAllOpenApiOrgVdcNetworks(queryParameters url.Values, multiSite bool) ([]*OpenApiOrgVdcNetwork, error) {
+	var additionalHeader map[string]string
+	if multiSite {
+		additionalHeader = map[string]string{"Accept": "{{MEDIA_TYPE}};version={{API_VERSION}};multisite=global"}
+	}
+	if queryParameters == nil {
+		queryParameters = make(url.Values)
+	}
+	result, err := getAllOpenApiOrgVdcNetworks(adminOrg.client, queryParameters, additionalHeader)
+	return result, err
 }

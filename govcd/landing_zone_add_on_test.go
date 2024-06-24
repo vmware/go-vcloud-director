@@ -11,12 +11,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
 func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
+	if vcd.client.Client.APIVCDMaxVersionIs("< 37.1") {
+		check.Skip("Solution Landing Zones are supported in VCD 10.4.1+")
+	}
+
 	if vcd.config.VCD.Catalog.NsxtCatalogAddonDse == "" {
 		check.Skip("missing 'VCD.Catalog.NsxtCatalogAddonDse' value")
 	}
@@ -78,7 +81,17 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 	saoByName, err := vcd.client.GetSolutionAddonByName(solutionAddOn.DefinedEntity.DefinedEntity.Name)
 	check.Assert(err, IsNil)
 	check.Assert(saoByName.RdeId(), Equals, solutionAddOn.RdeId())
-	spew.Dump(saoByName.DefinedEntity.DefinedEntity)
+
+	// Update - pointing at wrong catalog image
+	catItemPhoton, err := catalog.GetCatalogItemByName(vcd.config.VCD.Catalog.NsxtCatalogItem, false)
+	check.Assert(err, IsNil)
+
+	solutionAddOnUpdate := saoByName.SolutionAddOnEntity
+	solutionAddOnUpdate.Origin.CatalogItemId = catItemPhoton.CatalogItem.ID
+
+	updatedSao, err := sao.Update(solutionAddOnUpdate)
+	check.Assert(err, IsNil)
+	check.Assert(updatedSao.RdeId(), Equals, sao.RdeId())
 
 	// Delete
 	err = sao.Delete()
@@ -88,6 +101,9 @@ func (vcd *TestVCD) Test_SolutionAddOn(check *C) {
 	allSolutionAddOnsAfterCleanup, err := vcd.client.GetAllSolutionAddons(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allSolutionAddOnsAfterCleanup), Equals, len(allSolutionAddOns)-1)
+
+	err = slz.Delete()
+	check.Assert(err, IsNil)
 }
 
 func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error) {
@@ -97,9 +113,16 @@ func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error)
 	cacheFilePath := cacheDirPath + "/" + fileName
 	printVerbose("# Using '%s' file to cache Solution Add-On\n", cacheFilePath)
 
-	if _, err := os.Stat(cacheFilePath); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(cacheFilePath); errors.Is(err, os.ErrNotExist) || !dirExists(cacheDirPath) {
 		// Create cache directory if it doesn't exist
-		if _, err := os.Stat(cacheDirPath); os.IsNotExist(err) {
+		if fileInfo, err := os.Stat(cacheDirPath); os.IsNotExist(err) || !fileInfo.IsDir() {
+			// test-resources/cache is a file, not a directory, it should be removed
+			if !os.IsNotExist(err) && !fileInfo.IsDir() {
+				fmt.Printf("# %s is a file, not a directory - removing\n", cacheDirPath)
+				err := os.Remove(cacheDirPath)
+				check.Assert(err, IsNil)
+			}
+
 			printVerbose("# Creating directory '%s'\n", cacheDirPath)
 			err := os.Mkdir(cacheDirPath, 0750)
 			check.Assert(err, IsNil)
@@ -121,4 +144,14 @@ func fetchCacheFile(catalog *Catalog, fileName string, check *C) (string, error)
 	}
 
 	return cacheFilePath, nil
+}
+
+// Checks if a directory exists
+func dirExists(filename string) bool {
+	f, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	fileMode := f.Mode()
+	return fileMode.IsDir()
 }

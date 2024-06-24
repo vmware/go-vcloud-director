@@ -2073,16 +2073,25 @@ func skipOpenApiEndpointTest(vcd *TestVCD, check *C, endpoint string) {
 	}
 }
 
+// newUserConnection returns a connection for a given user
+func newUserConnection(href, userName, password, orgName string, insecure bool) (*VCDClient, error) {
+	u, err := url.ParseRequestURI(href)
+	if err != nil {
+		return nil, fmt.Errorf("[newUserConnection] unable to pass url: %s", err)
+	}
+	vcdClient := NewVCDClient(*u, insecure)
+	err = vcdClient.Authenticate(userName, password, orgName)
+	if err != nil {
+		return nil, fmt.Errorf("[newUserConnection] unable to authenticate: %s", err)
+	}
+	return vcdClient, nil
+}
+
 // newOrgUserConnection creates a new Org User and returns a connection to it.
 // Attention: Set the user to use only lowercase letters. If you put upper case letters the function fails on waiting
 // because VCD creates the user with lowercase letters.
 func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, insecure bool) (*VCDClient, *OrgUser, error) {
-	u, err := url.ParseRequestURI(href)
-	if err != nil {
-		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to pass url: %s", err)
-	}
-
-	_, err = adminOrg.GetUserByName(userName, false)
+	_, err := adminOrg.GetUserByName(userName, false)
 	if err == nil {
 		// user exists
 		return nil, nil, fmt.Errorf("user %s already exists", userName)
@@ -2105,16 +2114,14 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 	AddToCleanupList(userName, "user", adminOrg.AdminOrg.Name, "newOrgUserConnection")
 
 	_ = adminOrg.Refresh()
-	vcdClient := NewVCDClient(*u, insecure)
-	err = vcdClient.Authenticate(userName, password, adminOrg.AdminOrg.Name)
-	if err != nil {
-		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to authenticate: %s", err)
-	}
-
-	// return newUser
 	newUser, err := adminOrg.GetUserByName(userName, false)
 	if err != nil {
 		return nil, nil, fmt.Errorf("[newOrgUserConnection] unable to retrieve newly created user: %s", err)
+	}
+
+	vcdClient, err := newUserConnection(href, userName, password, adminOrg.AdminOrg.Name, insecure)
+	if err != nil {
+		return nil, nil, fmt.Errorf("[newOrgUserConnection] error connecting new user: %s", err)
 	}
 
 	return vcdClient, newUser, nil

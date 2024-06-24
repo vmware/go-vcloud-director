@@ -134,8 +134,8 @@ type OpenAPIEdgeGatewayBacking struct {
 
 // OpenAPIEdgeGatewayEdgeCluster allows users to specify edge cluster reference
 type OpenAPIEdgeGatewayEdgeCluster struct {
-	EdgeClusterRef OpenApiReference `json:"edgeClusterRef"`
-	BackingID      string           `json:"backingId"`
+	EdgeClusterRef *OpenApiReference `json:"edgeClusterRef"`
+	BackingID      string            `json:"backingId"`
 }
 
 type OpenAPIEdgeGatewayEdgeClusterConfig struct {
@@ -481,8 +481,18 @@ type NsxtFirewallRule struct {
 	ID string `json:"id,omitempty"`
 	// Name - API does not enforce uniqueness
 	Name string `json:"name"`
-	// Action 'ALLOW', 'DROP'
-	Action string `json:"action"`
+	// Action field. Can be 'ALLOW', 'DROP'
+	// Deprecated in favor of ActionValue in VCD 10.2.2+ (API V35.2)
+	Action string `json:"action,omitempty"`
+
+	// ActionValue replaces deprecated field Action and defines action to be applied to all the
+	// traffic that meets the firewall rule criteria. It determines if the rule permits or blocks
+	// traffic. Property is required if action is not set. Below are valid values:
+	// * ALLOW permits traffic to go through the firewall.
+	// * DROP blocks the traffic at the firewall. No response is sent back to the source.
+	// * REJECT blocks the traffic at the firewall. A response is sent back to the source.
+	ActionValue string `json:"actionValue,omitempty"`
+
 	// Enabled allows to enable or disable the rule
 	Enabled bool `json:"enabled"`
 	// SourceFirewallGroups contains a list of references to Firewall Groups. Empty list means 'Any'

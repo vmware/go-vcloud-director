@@ -8,7 +8,8 @@ type SolutionLandingZoneType struct {
 	// ID is the Org ID that the Solution Landing Zone is configured for
 	ID string `json:"id"`
 	// Name is the Org name that the Solution Landing Zone is configured for
-	Name     string                       `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
+	// Catalogs
 	Catalogs []SolutionLandingZoneCatalog `json:"catalogs"`
 	Vdcs     []SolutionLandingZoneVdc     `json:"vdcs"`
 }
@@ -36,6 +37,7 @@ type SolutionLandingZoneVdcChild struct {
 	Capabilities []string `json:"capabilities"`
 }
 
+// SolutionAddOn defines structure of Solution Add-On that is deployed in the Solution Landing Zone
 type SolutionAddOn struct {
 	Eula     string              `json:"eula"`
 	Icon     string              `json:"icon"`
@@ -54,10 +56,12 @@ type SolutionAddOnOrigin struct {
 type SolutionAddOnInput struct {
 	Inputs []SolutionAddOnInputField `json:"inputs"`
 }
+
 type SolutionAddOnInputFieldValues struct {
 	Slz      string `json:"SLZ"`
 	External string `json:"EXTERNAL"`
 }
+
 type SolutionAddOnInputField struct {
 	Name        string                        `json:"name"`
 	Type        string                        `json:"type"`

@@ -62,6 +62,15 @@ func (vcd *TestVCD) Test_NsxtEdgeCreate(check *C) {
 	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
 	AddToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
 
+	edgeCluster, err := nsxtVdc.GetNsxtEdgeClusterByName(vcd.config.VCD.Nsxt.NsxtEdgeCluster)
+	check.Assert(err, IsNil)
+	check.Assert(edgeCluster, NotNil)
+
+	createdEdge.EdgeGateway.EdgeClusterConfig = &types.OpenAPIEdgeGatewayEdgeClusterConfig{
+		PrimaryEdgeCluster: types.OpenAPIEdgeGatewayEdgeCluster{
+			BackingID: edgeCluster.NsxtEdgeCluster.ID,
+		},
+	}
 	createdEdge.EdgeGateway.Name = "renamed-edge"
 	updatedEdge, err := createdEdge.Update(createdEdge.EdgeGateway)
 	check.Assert(err, IsNil)
@@ -389,6 +398,12 @@ func (vcd *TestVCD) Test_NsxtEdgeGatewayUsedAndUnusedIPs(check *C) {
 	})
 	check.Assert(ipsCompared, Equals, true)
 	check.Assert(len(allIps), Equals, 22)
+
+	// Get used and unused IP counts
+	usedIpCount, unusedIpCount, err := createdEdge.GetUsedAndUnusedExternalIPAddressCountWithLimit(false, 5)
+	check.Assert(err, IsNil)
+	check.Assert(unusedIpCount, Equals, int64(4))
+	check.Assert(usedIpCount, Equals, int64(1))
 
 	// Verify that GetAllocatedIpCount returns correct number of allocated IPs
 	totalAllocationIpCount, err := createdEdge.GetAllocatedIpCount(true)
