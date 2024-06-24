@@ -638,3 +638,13 @@ func (de *DefinedEntity) GetAllAccessControls(queryParameters url.Values) ([]*ty
 	}
 	return getAllInnerEntities[types.DefinedEntityAccess](de.client, c)
 }
+
+// DeleteAccessControl removes a given Access Control
+func (de *DefinedEntity) DeleteAccessControl(acl *types.DefinedEntityAccess) error {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
+		endpointParams: []string{de.DefinedEntity.ID, acl.Id},
+		entityLabel:    labelDefinedEntityAccessControl,
+	}
+	return deleteEntityById(de.client, c)
+}
