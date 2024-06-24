@@ -16,6 +16,10 @@ func (vcd *TestVCD) Test_CreateLandingZone(check *C) {
 		check.Skip("Solution Landing Zones are supported in VCD 10.4.1+")
 	}
 
+	if vcd.config.VCD.Nsxt.RoutedNetwork == "" {
+		check.Skip("Solution Landing Zones require 'vcd.config.VCD.Nsxt.RoutedNetwork' to be present")
+	}
+
 	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.org.Org.Name)
 	check.Assert(err, IsNil)
 
