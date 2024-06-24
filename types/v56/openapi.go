@@ -734,3 +734,18 @@ type VgpuProfile struct {
 	AllowMultiplePerVm bool   `json:"allowMultiplePerVm"`
 	Count              int    `json:"count,omitempty"`
 }
+
+type OpenApiOrg struct {
+	Id             string `json:"id"`
+	Name           string `json:"name"`
+	DisplayName    string `json:"displayName"`
+	Description    string `json:"description"`
+	IsEnabled      bool   `json:"isEnabled"`
+	OrgVdcCount    int    `json:"orgVdcCount"`
+	CatalogCount   int    `json:"catalogCount"`
+	VappCount      int    `json:"vappCount"`
+	RunningVMCount int    `json:"runningVMCount"`
+	UserCount      int    `json:"userCount"`
+	DiskCount      int    `json:"diskCount"`
+	CanPublish     bool   `json:"canPublish"`
+}

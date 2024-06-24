@@ -291,14 +291,25 @@ func (org *Org) GetCatalogByNameOrId(identifier string, refresh bool) (*Catalog,
 // On success, returns a pointer to the VDC structure and a nil error
 // On failure, returns a nil pointer and an error
 func (org *Org) GetVDCByHref(vdcHref string) (*Vdc, error) {
-	vdc := NewVdc(org.client)
-	_, err := org.client.ExecuteRequest(vdcHref, http.MethodGet,
-		"", "error retrieving VDC: %s", nil, vdc.Vdc)
+	vdc, err := getVDCByHref(org.client, vdcHref)
 	if err != nil {
 		return nil, err
 	}
 	// The request was successful
-	vdc.parent = org
+	result := NewVdc(org.client)
+	result.Vdc = vdc
+	result.parent = org
+	return result, nil
+}
+
+// getVDCByHref gets a plain VDC object from its HREF.
+func getVDCByHref(client *Client, vdcHref string) (*types.Vdc, error) {
+	vdc := &types.Vdc{}
+	_, err := client.ExecuteRequest(vdcHref, http.MethodGet,
+		"", "error retrieving VDC: %s", nil, vdc)
+	if err != nil {
+		return nil, err
+	}
 	return vdc, nil
 }
 
@@ -386,6 +397,99 @@ func (org *Org) GetTaskList() (*types.TasksList, error) {
 	}
 
 	return nil, fmt.Errorf("link not found")
+}
+
+// QueryAllOrgs returns all Orgs using query endpoint
+func (vcdclient *VCDClient) QueryAllOrgs() ([]*types.QueryResultOrgRecordType, error) {
+	return vcdclient.Client.queryOrgList(nil)
+}
+
+// queryOrgList performs an `orgVdc` or `adminOrgVdc` (for System user) and optionally applies filterFields
+func (client *Client) queryOrgList(filterFields map[string]string) ([]*types.QueryResultOrgRecordType, error) {
+	util.Logger.Printf("[DEBUG] queryOrgList with filter %#v", filterFields)
+	queryType := client.GetQueryType(types.QtOrg)
+
+	filter := map[string]string{
+		"type": queryType,
+	}
+
+	// When a map of filters with non empty keys and values is supplied - apply it
+	if filterFields != nil {
+		filterSlice := make([]string, 0)
+
+		for filterFieldName, filterFieldValue := range filterFields {
+			// Do not inject 'org' filter for System user as API returns an error
+			if !client.IsSysAdmin && filterFieldName == "org" {
+				continue
+			}
+
+			if filterFieldName != "" && filterFieldValue != "" {
+				filterText := fmt.Sprintf("%s==%s", filterFieldName, url.QueryEscape(filterFieldValue))
+				filterSlice = append(filterSlice, filterText)
+			}
+		}
+
+		if len(filterSlice) > 0 {
+			filter["filter"] = strings.Join(filterSlice, ";")
+			filter["filterEncoded"] = "true"
+		}
+	}
+
+	results, err := client.cumulativeQuery(queryType, nil, filter)
+	if err != nil {
+		return nil, fmt.Errorf("error querying Orgs %s", err)
+	}
+
+	return results.Results.OrgRecord, nil
+}
+
+// QueryOrgByName retrieves an Org
+func (vcdclient *VCDClient) QueryOrgByName(name string) (*types.QueryResultOrgRecordType, error) {
+	return vcdclient.Client.queryOrgByName(name)
+}
+
+// queryOrgByName returns a single QueryResultOrgRecordType
+func (client *Client) queryOrgByName(orgName string) (*types.QueryResultOrgRecordType, error) {
+	filterMap := map[string]string{
+		"name": orgName,
+	}
+	allOrgs, err := client.queryOrgList(filterMap)
+	if err != nil {
+		return nil, err
+	}
+
+	if allOrgs == nil || len(allOrgs) < 1 {
+		return nil, ErrorEntityNotFound
+	}
+
+	if len(allOrgs) > 1 {
+		return nil, fmt.Errorf("found more than 1 Org with Name '%s'", orgName)
+	}
+
+	return allOrgs[0], nil
+}
+
+// QueryOrgByID retrieves an Org
+func (vcdclient *VCDClient) QueryOrgByID(id string) (*types.QueryResultOrgRecordType, error) {
+	return vcdclient.Client.queryOrgByID(id)
+}
+
+// queryOrgByID returns a single QueryResultOrgRecordType
+func (client *Client) queryOrgByID(orgId string) (*types.QueryResultOrgRecordType, error) {
+	filterMap := map[string]string{
+		"id": orgId,
+	}
+	allOrgs, err := client.queryOrgList(filterMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(allOrgs) < 1 {
+		return nil, ErrorEntityNotFound
+	}
+
+	return allOrgs[0], nil
 }
 
 // queryOrgVdcByName returns a single QueryResultOrgVdcRecordType
