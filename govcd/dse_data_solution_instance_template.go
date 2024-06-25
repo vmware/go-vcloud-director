@@ -43,6 +43,26 @@ func (ds *DataSolution) PublishAllInstanceTemplates(tenantIds []string) ([]*type
 	return definedEntityAccess, nil
 }
 
+func (ds *DataSolution) UnPublishAllInstanceTemplates(tenantIds []string) error {
+	allTemplates, err := ds.GetAllInstanceTemplates()
+	if err != nil {
+		return fmt.Errorf("error retrieving all Data Solution Instance Templates: %s", err)
+	}
+
+	for _, tenantId := range tenantIds {
+		for _, template := range allTemplates {
+			err := template.Unpublish(tenantId)
+			if err != nil {
+				return fmt.Errorf("error remove ACL for Data Solution Instance Template '%s': %s",
+					template.DefinedEntity.DefinedEntity.Name, err)
+			}
+
+		}
+	}
+
+	return nil
+}
+
 // ####
 
 func (vcdClient *VCDClient) GetAllInstanceTemplates(queryParameters url.Values) ([]*DataSolutionInstanceTemplate, error) {

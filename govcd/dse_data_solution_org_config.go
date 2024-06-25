@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -19,10 +20,19 @@ type DataSolutionOrgConfig struct {
 	vcdClient             *VCDClient
 }
 
+// RdeId is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
+func (dsOrgCfg *DataSolutionOrgConfig) RdeId() string {
+	if dsOrgCfg == nil || dsOrgCfg.DefinedEntity == nil || dsOrgCfg.DefinedEntity.DefinedEntity == nil {
+		return ""
+	}
+
+	return dsOrgCfg.DefinedEntity.DefinedEntity.ID
+}
+
 func (vcdClient *VCDClient) CreateDataSolutionOrgConfig(orgId string, cfg *types.DataSolutionOrgConfig) (*DataSolutionOrgConfig, error) {
 	rdeType, err := vcdClient.GetRdeType(dataSolutionOrgConfig[0], dataSolutionOrgConfig[1], dataSolutionOrgConfig[2])
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving RDE Type for VCD Data Solutions: %s", err)
+		return nil, fmt.Errorf("error retrieving RDE Type for VCD Data Solution Org Configuration: %s", err)
 	}
 
 	// 2. Convert more precise structure to fit DefinedEntity.DefinedEntity.Entity
@@ -69,4 +79,46 @@ func (vcdClient *VCDClient) CreateDataSolutionOrgConfig(orgId string, cfg *types
 	}
 
 	return &returnType, nil
+}
+
+func (vcdClient *VCDClient) GetAllDataSolutionOrgConfigs(queryParameters url.Values) ([]*DataSolutionOrgConfig, error) {
+	allDseInstances, err := vcdClient.GetAllRdes(dataSolutionOrgConfig[0], dataSolutionOrgConfig[1], dataSolutionOrgConfig[2], queryParameters)
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving all Data Solution Org Configs: %s", err)
+	}
+
+	results := make([]*DataSolutionOrgConfig, len(allDseInstances))
+	for index, rde := range allDseInstances {
+		dsOrgConfig, err := convertRdeEntityToAny[types.DataSolutionOrgConfig](rde.DefinedEntity.Entity)
+		if err != nil {
+			return nil, fmt.Errorf("error converting RDE to Solution Add-on Instance: %s", err)
+		}
+
+		results[index] = &DataSolutionOrgConfig{
+			vcdClient:             vcdClient,
+			DefinedEntity:         rde,
+			DataSolutionOrgConfig: dsOrgConfig,
+		}
+	}
+
+	return results, nil
+}
+
+func (ds *DataSolution) GetAllDataSolutionOrgConfigs() ([]*DataSolutionOrgConfig, error) {
+	if ds == nil || ds.DataSolution == nil {
+		return nil, fmt.Errorf("error - Data Solution structure is empty")
+	}
+
+	queryParams := copyOrNewUrlValues(nil)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("entity.spec.solutionType==%s", ds.DataSolution.Spec.SolutionType), queryParams)
+	queryParams = queryParameterFilterAnd("state==RESOLVED", queryParams)
+
+	return ds.vcdClient.GetAllDataSolutionOrgConfigs(queryParams)
+}
+
+func (s *DataSolutionOrgConfig) Delete() error {
+	if s.DefinedEntity == nil {
+		return fmt.Errorf("error - parent Defined Entity is nil")
+	}
+	return s.DefinedEntity.Delete()
 }

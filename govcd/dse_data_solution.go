@@ -17,7 +17,7 @@ var dataSolutionRdeType = [3]string{"vmware", "dsConfig", "0.1"}
 var dseRightsBundleName = "vmware:dataSolutionsRightsBundle" // Rights bundle name
 // Name of Data Solutions Operator package. It cannot be published itself, but it is still seen in
 // the list.
-var defaultDsoName = "VCD Data Solutions"
+var defaultDsoName = "VCD Data Solutions" // Data Solutions Operator (DSO) name
 
 type DataSolution struct {
 	DataSolution  *types.DataSolution
@@ -136,12 +136,23 @@ func (ds *DataSolution) Update(cfg *types.DataSolution) (*DataSolution, error) {
 }
 
 // Publish Data Solution to a slice of tenants
-// It is a bundle of operations that mimics what UI does
+// It is a bundle of operations that mimics what UI does when performing "publish" operation
+// * Publish rights bundle 'vmware:dataSolutionsRightsBundle' to the tenant
+// * Provision access to particular Data Solution
+// * Always provision access to special Data Solution 'VCD Data Solutions'. This is the package that
+// will install Data Solutions Operator (DSO) to Kubernetes cluster
+// * Publish all templates of the given instance. Note: UI will not show instance templates until the
+// tenant install Data Solutions Operator (DSO)
 func (ds *DataSolution) Publish(tenantIds []string) error {
+	if len(tenantIds) == 0 {
+		return nil
+	}
+
 	if ds.Name() == defaultDsoName {
 		return fmt.Errorf("cannot publish Data Solutions Operator")
 	}
 
+	// The operation is idempotent and can be run multiple times which is what the UI does
 	err := ds.PublishRightsBundle(tenantIds)
 	if err != nil {
 		return fmt.Errorf("error publishing Rights Bundle: %s", err)
@@ -175,50 +186,36 @@ func (ds *DataSolution) Publish(tenantIds []string) error {
 	return nil
 }
 
-// Publish Data Solution to a slice of tenants
-// It is a bundle of operations that mimics what UI does
+// Unpublish Data Solution to a slice of tenants
+// It is a bundle of operations that mimics what UI does when unpublishing and attempts to revert
+// what is done in 'Publish' method
+// * Remove access from given Data Solution
+//
+// Note. This method (and UI) is asymmetric in comparison to 'Publish' operation. It _does not_ do
+// the following operations:
+// * Unpublish all Data Solution Templates
+// * Unpublish access for Data Solutions Operator (DSO)
+// * Unpublish rights bundle 'vmware:dataSolutionsRightsBundle'
 func (ds *DataSolution) Unpublish(tenantIds []string) error {
+	if len(tenantIds) == 0 {
+		return nil
+	}
+
 	if ds.Name() == defaultDsoName {
 		return fmt.Errorf("cannot unpublish %s", defaultDsoName)
 	}
 
 	// Templates
+	// err := ds.UnPublishAllInstanceTemplates(tenantIds)
+	// if err != nil {
+	// 	return fmt.Errorf("error unpublishing all Data Solution '%s' Instance Templates: %s", ds.Name(), err)
+	// }
 
 	// ACLs
 	err := ds.UnpublishAccessControls(tenantIds)
 	if err != nil {
 		return fmt.Errorf("failed unpublishing Access Controls for %s: %s", ds.Name(), err)
 	}
-
-	// err := ds.PublishRightsBundle(tenantIds)
-	// if err != nil {
-	// 	return fmt.Errorf("error publishing Rights Bundle: %s", err)
-	// }
-
-	// Publish ACLs to a given Data Solution
-	/* _, err := ds.PublishAccessControls(tenantIds)
-	if err != nil {
-		return fmt.Errorf("error publishing Access Rights to '%s': %s", ds.Name(), err)
-	}
-
-	// If current Data Solution is not "VCD Data Solutions" - additionally set the same ACL for it
-	// Note. Names will not change.
-	dso, err := ds.vcdClient.GetDataSolutionByName(defaultDsoName)
-	if err != nil {
-		return err
-	}
-
-	_, err = dso.PublishAccessControls(tenantIds)
-	if err != nil {
-		return fmt.Errorf("error publishing Access Rights to '%s': %s", dso.Name(), err)
-	}
-
-	// PublishAllInstanceTemplates
-
-	_, err = ds.PublishAllInstanceTemplates(tenantIds)
-	if err != nil {
-		return fmt.Errorf("error publishing ")
-	} */
 
 	return nil
 }
@@ -320,6 +317,37 @@ func (ds *DataSolution) GetAllAccessControlsForTenants(tenantIds []string) ([]*t
 
 	return foundAcls, nil
 }
+
+// HasAccess checks if a particular tenant has a provisioned ACL for that Data Solution
+/* func (ds *DataSolution) HasAccess(tenantId string) (bool, error) {
+	if tenantId == "" {
+		return false, fmt.Errorf("tenant ID must be specified")
+	}
+
+	acls, err := ds.GetAllAccessControlsForTenants([]string{tenantId})
+	if err != nil {
+		return false, fmt.Errorf("error checking Access Controls for Tenant '%s': %s", tenantId, err)
+	}
+
+	if len(acls) ==
+
+	// // util.Logger.Printf("[TRACE] Data Solution '%s' getting Access Controls for tenants '%s'", ds.Name(), strings.Join(tenantIds, ","))
+	// allAcls, err := ds.GetAllAccessControls(nil)
+	// if err != nil {
+	// 	return false, fmt.Errorf("error retrieving all Access Controls for Data Solution: %s", err)
+	// }
+
+	// foundAcls := make([]*types.DefinedEntityAccess, 0)
+	// for _, acl := range allAcls {
+	// 	util.Logger.Printf("[TRACE] Data Solution '%s' checking Access Control ID '%s'", ds.Name(), acl.Id)
+	// 	if acl.Tenant.ID == tenantId {
+	// 		util.Logger.Printf("[TRACE] Data Solution '%s' Access Control '%s' matches tenant '%s'", ds.Name(), acl.Id, tenantId)
+	// 		foundAcls = append(foundAcls, acl)
+	// 	}
+	// }
+
+	return foundAcls, nil
+} */
 
 // func (ds *DataSolution) PublishAllInstanceTemplates(tenantIds []string) ([]*types.DefinedEntityAccess, error) {
 // 	allTemplates, err := ds.GetAllInstanceTemplates()
