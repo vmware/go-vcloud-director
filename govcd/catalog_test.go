@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 	. "gopkg.in/check.v1"
@@ -1091,7 +1090,7 @@ func (vcd *TestVCD) Test_CatalogQueryMediaList(check *C) {
 	// Check that number of medias is 1
 	// Dump all media structures to easily identify leftover objects if number is not 1
 	if len(medias) > 1 {
-		spew.Dump(medias)
+		fmt.Printf("%#v", medias)
 	}
 	check.Assert(len(medias), Equals, 1)
 

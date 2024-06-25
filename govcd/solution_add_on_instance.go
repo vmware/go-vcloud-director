@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
 )
@@ -369,7 +368,7 @@ func (addon *SolutionAddOn) ConvertInputTypes(userInputs map[string]interface{})
 		}
 	}
 
-	util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - final result %s", spew.Sdump(userInputsCopy))
+	util.Logger.Printf("[TRACE] Solution Add-On Schema conversion - final result %#v", userInputsCopy)
 
 	return userInputsCopy, nil
 }
