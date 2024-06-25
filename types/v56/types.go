@@ -2861,6 +2861,7 @@ type QueryResultVMRecordType struct {
 	VAppTemplate             bool      `xml:"isVAppTemplate,attr,omitempty"`
 	Deleted                  bool      `xml:"isDeleted,attr,omitempty"`
 	GuestOS                  string    `xml:"guestOs,attr,omitempty"`
+	DetectedGuestOS          string    `xml:"detectedGuestOs,attr,omitempty"`
 	Cpus                     int       `xml:"numberOfCpus,attr,omitempty"`
 	MemoryMB                 int       `xml:"memoryMB,attr,omitempty"`
 	Status                   string    `xml:"status,attr,omitempty"`

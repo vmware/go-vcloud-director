@@ -53,29 +53,7 @@ type SolutionAddOnOrigin struct {
 	CatalogItemId string `json:"catalogItemId"`
 }
 
-type SolutionAddOnInput struct {
-	Inputs []SolutionAddOnInputField `json:"inputs"`
-}
-
-type SolutionAddOnInputFieldValues struct {
-	Slz      string `json:"SLZ"`
-	External string `json:"EXTERNAL"`
-}
-
-type SolutionAddOnInputField struct {
-	Name        string                        `json:"name"`
-	Type        string                        `json:"type"`
-	Title       string                        `json:"title"`
-	Values      SolutionAddOnInputFieldValues `json:"values,omitempty"`
-	Default     any                           `json:"default,omitempty"`
-	Required    bool                          `json:"required,omitempty"`
-	Description string                        `json:"description"`
-	Secure      bool                          `json:"secure,omitempty"`
-	Validation  string                        `json:"validation,omitempty"`
-	View        string                        `json:"view,omitempty"`
-	Delete      bool                          `json:"delete,omitempty"`
-}
-
+// SolutionAddOnInstance represents the RDE Entity structure for Solution Add-On Instances
 type SolutionAddOnInstance struct {
 	Name                         string                          `json:"name"`
 	Scope                        SolutionAddOnInstanceScope      `json:"scope"`
@@ -110,4 +88,24 @@ type SolutionAddOnInstanceRequests struct {
 	StartedBy    string    `json:"startedBy"`
 	StartedOn    time.Time `json:"startedOn"`
 	InvocationID string    `json:"invocationId"`
+}
+
+// SolutionAddOnInputField represents the schema that is defined for each field that is specified in
+// a particular Solution Add-On
+type SolutionAddOnInputField struct {
+	Name        string            `json:"name"`
+	Type        string            `json:"type"`
+	Title       string            `json:"title"`
+	Values      map[string]string `json:"values,omitempty"`
+	Default     any               `json:"default,omitempty"`
+	Required    bool              `json:"required,omitempty"`
+	Description string            `json:"description"`
+	Secure      bool              `json:"secure,omitempty"`
+	Validation  string            `json:"validation,omitempty"`
+	View        string            `json:"view,omitempty"`
+	Delete      bool              `json:"delete,omitempty"`
+}
+
+type SolutionAddOnInput struct {
+	Inputs []SolutionAddOnInputField `json:"inputs"`
 }

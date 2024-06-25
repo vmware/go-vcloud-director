@@ -12,7 +12,6 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
@@ -257,7 +256,7 @@ func (vcd *TestVCD) Test_QueryVappTemplateList(check *C) {
 	// Check the number of vApp templates is one
 	// Dump all vApp template structures to easily identify leftover objects if number is not 1
 	if len(vAppTemplates) > 1 {
-		spew.Dump(vAppTemplates)
+		fmt.Printf("%#v", vAppTemplates)
 	}
 	check.Assert(len(vAppTemplates), Equals, 1)
 
