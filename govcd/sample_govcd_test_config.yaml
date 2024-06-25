@@ -281,3 +281,19 @@ cse:
   ovaCatalog: "tkgm_catalog"
   # The TKGm OVA which the Kubernetes clusters use
   ovaName: "ubuntu-2004-kube-v1.25.7+vmware.2-tkg.1-8a74b9f12e488c54605b3537acb683bc"
+# Config branch to test Solution Add-Ons (requires CSE to succesfully publish Add-On Instances)
+solutionAddOn:
+  # Org for Landing Zone configuration and Add-On deployment 
+  org: "solutions_org"
+  # VDC for Landing Zone configuration and Add-On deployment 
+  vdc: "solutions_vdc"
+  # Routed Network for Landing Zone configuration
+  routedNetwork: "solutions_routed_network"
+  # Compute Policy for Landing Zone configuration
+  computePolicy: "System Default"
+  # Storage Policy for Landing Zone configuration
+  storagePolicy: "*"
+  # Catalog Landing Zone configuration (that hosts Add-On images)
+  catalog: "cse_catalog"
+  # An existing Add-On image within catalog
+  addonImageDse: "vmware-vcd-ds-1.4.0-23376809.iso"
