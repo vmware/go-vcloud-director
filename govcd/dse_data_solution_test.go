@@ -127,10 +127,10 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 		cfg.Spec.Artifacts[0]["packageName"] = artifacts["defaultPackageName"].(string)
 	}
 
-	auths := make(map[string]types.Auth)
-	auths[check.TestName()+"1"] = types.Auth{Username: "user1", Password: "pass1", Description: "Test 1"}
-	auths[check.TestName()+"2"] = types.Auth{Username: "user2", Password: "pass2", Description: "Test 2"}
-	cfg.Spec.DockerConfig = &types.DockerConfig{Auths: auths}
+	auths := make(map[string]types.DseDockerAuth)
+	auths[check.TestName()+"1"] = types.DseDockerAuth{Username: "user1", Password: "pass1", Description: "Test 1"}
+	auths[check.TestName()+"2"] = types.DseDockerAuth{Username: "user2", Password: "pass2", Description: "Test 2"}
+	cfg.Spec.DockerConfig = &types.DseDockerConfig{Auths: auths}
 
 	updatedDs, err := dsoByName.Update(cfg)
 	check.Assert(err, IsNil)

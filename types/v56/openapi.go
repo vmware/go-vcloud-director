@@ -566,6 +566,7 @@ type DefinedEntity struct {
 	Message    string                 `json:"message,omitempty"`    // A message field that might be populated in case entity Resolution fails
 }
 
+// DefinedEntityAccess describes Access Control structure for an RDE
 type DefinedEntityAccess struct {
 	Id            string           `json:"id,omitempty"`
 	Tenant        OpenApiReference `json:"tenant"`
@@ -573,9 +574,6 @@ type DefinedEntityAccess struct {
 	ObjectId      string           `json:"objectId,omitempty"`
 	AccessLevelID string           `json:"accessLevelId"`
 	MemberID      string           `json:"memberId"`
-}
-
-type DefinedEntityAccessId struct {
 }
 
 type VSphereVirtualCenter struct {

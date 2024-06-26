@@ -1,14 +1,6 @@
 package types
 
-// type DseConfig struct {
-// 	// ID is the Org ID that the Solution Landing Zone is configured for
-// 	ID string `json:"id"`
-// 	// Name is the Org name that the Solution Landing Zone is configured for
-// 	Name     string                       `json:"name,omitempty"`
-// 	Catalogs []SolutionLandingZoneCatalog `json:"catalogs"`
-// 	Vdcs     []SolutionLandingZoneVdc     `json:"vdcs"`
-// }
-
+// DataSolution represents RDE Entity for Data Solution in Data Solution Extension (DSE)
 type DataSolution struct {
 	Kind       string            `json:"kind"`
 	Spec       DseConfigSpec     `json:"spec"`
@@ -21,38 +13,27 @@ type DseConfigMetadata struct {
 }
 
 type DseConfigSpec struct {
-	Artifacts    []ArtifactMap `json:"artifacts"`
-	Description  string        `json:"description"`
-	DockerConfig *DockerConfig `json:"dockerConfig,omitempty"`
-	SolutionType string        `json:"solutionType"`
+	Artifacts    []DseArtifactMap `json:"artifacts"`
+	Description  string           `json:"description"`
+	DockerConfig *DseDockerConfig `json:"dockerConfig,omitempty"`
+	SolutionType string           `json:"solutionType"`
 }
 
-type ArtifactMap map[string]interface{}
+type DseArtifactMap map[string]interface{}
 
-type Artifact struct {
-	Name                        string `json:"name"`
-	Type                        string `json:"type"`
-	Image                       string `json:"image"`
-	Version                     string `json:"version"`
-	Manifests                   string `json:"manifests"`
-	DefaultImage                string `json:"defaultImage"`
-	DefaultVersion              string `json:"defaultVersion"`
-	CompatibleVersions          string `json:"compatibleVersions"`
-	RequireVersionCompatibility bool   `json:"requireVersionCompatibility"`
+type DseDockerConfig struct {
+	Auths DseDockerAuths `json:"auths"`
 }
 
-type DockerConfig struct {
-	Auths Auths `json:"auths"`
-}
+type DseDockerAuths map[string]DseDockerAuth
 
-type Auths map[string]Auth
-
-type Auth struct {
+type DseDockerAuth struct {
 	Username    string `json:"username"`
 	Password    string `json:"password"`
 	Description string `json:"description"`
 }
 
+// DataSolutionOrgConfig represents RDE Entity structure for Data Solution Org Configuration
 type DataSolutionOrgConfig struct {
 	APIVersion string                 `json:"apiVersion"`
 	Kind       string                 `json:"kind"`
@@ -60,6 +41,8 @@ type DataSolutionOrgConfig struct {
 	Spec       map[string]interface{} `json:"spec"`
 }
 
+// DataSolutionInstanceTemplate represents a read-only structure for Data Solution Instance
+// Templates in Data Storage Extension (DSE)
 type DataSolutionInstanceTemplate struct {
 	Kind string `json:"kind"`
 	Spec struct {
