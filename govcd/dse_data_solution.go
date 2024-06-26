@@ -19,7 +19,7 @@ var dseRightsBundleName = "vmware:dataSolutionsRightsBundle" // Rights bundle na
 // the list.
 var defaultDsoName = "VCD Data Solutions" // Data Solutions Operator (DSO) name
 
-// DataSolution represents Data Solution entities and their repository confiurations as can be seen
+// DataSolution represents Data Solution entities and their repository configurations as can be seen
 // in "Container Registry" UI view
 type DataSolution struct {
 	DataSolution  *types.DataSolution
@@ -27,42 +27,18 @@ type DataSolution struct {
 	vcdClient     *VCDClient
 }
 
-// RdeId is a shorthand function retrieve parent RDE ID for a Data Solution.
-func (dsCfg *DataSolution) RdeId() string {
-	if dsCfg == nil || dsCfg.DefinedEntity == nil || dsCfg.DefinedEntity.DefinedEntity == nil {
-		return ""
-	}
-
-	return dsCfg.DefinedEntity.DefinedEntity.ID
-}
-
-// Name extracts the name from inside RDE configuration. This name is used in UI and is not always
-// the same as RDE name.
-func (dsCfg *DataSolution) Name() string {
-	if dsCfg.DataSolution == nil || dsCfg.DataSolution.Spec.Artifacts == nil || len(dsCfg.DataSolution.Spec.Artifacts) < 1 {
-		return ""
-	}
-
-	nameString, ok := dsCfg.DataSolution.Spec.Artifacts[0]["name"].(string)
-	if !ok {
-		return ""
-	}
-
-	return nameString
-}
-
 // GetAllDataSolutions retrieves all Data Solutions
 func (vcdClient *VCDClient) GetAllDataSolutions(queryParameters url.Values) ([]*DataSolution, error) {
 	allDseInstances, err := vcdClient.GetAllRdes(dataSolutionRdeType[0], dataSolutionRdeType[1], dataSolutionRdeType[2], queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving all Solution Add-on Instances: %s", err)
+		return nil, fmt.Errorf("error retrieving all Data Solutions: %s", err)
 	}
 
 	results := make([]*DataSolution, len(allDseInstances))
 	for index, rde := range allDseInstances {
 		dseConfig, err := convertRdeEntityToAny[types.DataSolution](rde.DefinedEntity.Entity)
 		if err != nil {
-			return nil, fmt.Errorf("error converting RDE to Solution Add-on Instance: %s", err)
+			return nil, fmt.Errorf("error converting RDE to Data Solution: %s", err)
 		}
 
 		results[index] = &DataSolution{
@@ -103,7 +79,7 @@ func (vcdClient *VCDClient) GetDataSolutionById(id string) (*DataSolution, error
 func (vcdClient *VCDClient) GetDataSolutionByName(name string) (*DataSolution, error) {
 	dseEntities, err := vcdClient.GetAllDataSolutions(nil)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving configuration item with name '%s': %s", name, err)
+		return nil, fmt.Errorf("error retrieving Data Solution with name '%s': %s", name, err)
 	}
 
 	for _, instance := range dseEntities {
@@ -111,7 +87,7 @@ func (vcdClient *VCDClient) GetDataSolutionByName(name string) (*DataSolution, e
 			return instance, nil
 		}
 	}
-	return nil, fmt.Errorf("%s DSE Config Instance by name '%s' not found", ErrorEntityNotFound, name)
+	return nil, fmt.Errorf("%s Data Solution by name '%s' not found", ErrorEntityNotFound, name)
 }
 
 // Update Data Solution with given configuration
@@ -148,7 +124,7 @@ func (ds *DataSolution) Update(cfg *types.DataSolution) (*DataSolution, error) {
 // * Always provision access to special Data Solution 'VCD Data Solutions'. This is the package that
 // will install Data Solutions Operator (DSO) to Kubernetes cluster
 // * Publish all templates of the given instance. Note: UI will not show instance templates until the
-// tenant install Data Solutions Operator (DSO)
+// tenant installs Data Solutions Operator (DSO)
 func (ds *DataSolution) Publish(tenantId string) (*types.DefinedEntityAccess, *types.DefinedEntityAccess, []*types.DefinedEntityAccess, error) {
 	if tenantId == "" {
 		return nil, nil, nil, fmt.Errorf("error - tenant ID empty")
@@ -205,10 +181,6 @@ func (ds *DataSolution) Unpublish(tenantId string) error {
 		return fmt.Errorf("error - tenant ID empty")
 	}
 
-	if ds.Name() == defaultDsoName {
-		return fmt.Errorf("cannot unpublish %s", defaultDsoName)
-	}
-
 	// ACLs
 	err := ds.UnpublishAccessControls(tenantId)
 	if err != nil {
@@ -228,7 +200,7 @@ func (ds *DataSolution) PublishRightsBundle(tenantIds []string) error {
 	references := convertSliceOfStringsToOpenApiReferenceIds(tenantIds)
 	err = rightsBundle.PublishTenants(references)
 	if err != nil {
-		return fmt.Errorf("error publishing %s to Tenants '%s': %s",
+		return fmt.Errorf("error publishing Rights Bundle '%s' to Tenants '%s': %s",
 			dseRightsBundleName, strings.Join(tenantIds, ","), err)
 	}
 
@@ -245,7 +217,7 @@ func (ds *DataSolution) UnpublishRightsBundle(tenantIds []string) error {
 	references := convertSliceOfStringsToOpenApiReferenceIds(tenantIds)
 	err = rightsBundle.UnpublishTenants(references)
 	if err != nil {
-		return fmt.Errorf("error publishing %s to Tenants '%s': %s",
+		return fmt.Errorf("error unpublishing %s for Tenants '%s': %s",
 			dseRightsBundleName, strings.Join(tenantIds, ","), err)
 	}
 
@@ -290,7 +262,7 @@ func (ds *DataSolution) UnpublishAccessControls(tenantId string) error {
 func (ds *DataSolution) GetAllAccessControls(queryParameters url.Values) ([]*types.DefinedEntityAccess, error) {
 	allAcls, err := ds.DefinedEntity.GetAllAccessControls(queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving all Access Controls for %s: %s", ds.Name(), err)
+		return nil, fmt.Errorf("error retrieving all Access Controls for Data Solution %s: %s", ds.Name(), err)
 	}
 
 	return localFilter("Data Solution ACL", allAcls, "ObjectId", ds.RdeId())
@@ -310,7 +282,7 @@ func (ds *DataSolution) GetAllAccessControlsForTenant(tenantId string) ([]*types
 	}
 
 	foundAcls := make([]*types.DefinedEntityAccess, 0)
-	util.Logger.Printf("[TRACE] Data Solution '%s' looking Access Controls for tenant '%s'", ds.Name(), tenantId)
+	util.Logger.Printf("[TRACE] Data Solution '%s' looking for Access Controls for tenant '%s'", ds.Name(), tenantId)
 	for _, acl := range allAcls {
 		util.Logger.Printf("[TRACE] Data Solution '%s' checking Access Control ID '%s'", ds.Name(), acl.Id)
 		if acl.Tenant.ID == tenantId {
@@ -320,4 +292,28 @@ func (ds *DataSolution) GetAllAccessControlsForTenant(tenantId string) ([]*types
 	}
 
 	return foundAcls, nil
+}
+
+// RdeId is a shorthand function to retrieve parent RDE ID for a Data Solution.
+func (dsCfg *DataSolution) RdeId() string {
+	if dsCfg == nil || dsCfg.DefinedEntity == nil || dsCfg.DefinedEntity.DefinedEntity == nil {
+		return ""
+	}
+
+	return dsCfg.DefinedEntity.DefinedEntity.ID
+}
+
+// Name extracts the name from inside RDE configuration. This name is used in UI and is not always
+// the same as RDE name. It is guaranteed to persist.
+func (dsCfg *DataSolution) Name() string {
+	if dsCfg.DataSolution == nil || dsCfg.DataSolution.Spec.Artifacts == nil || len(dsCfg.DataSolution.Spec.Artifacts) < 1 {
+		return ""
+	}
+
+	nameString, ok := dsCfg.DataSolution.Spec.Artifacts[0]["name"].(string)
+	if !ok {
+		return ""
+	}
+
+	return nameString
 }

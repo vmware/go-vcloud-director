@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 // Test_Dse attempts to perform a lot of checks for code in one function because it is quite expensive
 // to establish a Solution Add-On (measured to roughly 30mins)
 func (vcd *TestVCD) Test_Dse(check *C) {
+	vcd.skipIfNotSysAdmin(check)
 	if vcd.client.Client.APIVCDMaxVersionIs("< 37.1") {
 		check.Skip("Solution Landing Zones are supported in VCD 10.4.1+")
 	}
@@ -28,28 +30,39 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 	// Prerequisites - Data Solution Add-On instance must be created and published
 	// Note this block can be commented out to get more rapid testing if one already has DSE
 	// instantiated and deployed.
-	// slz, addOn, addOnInstance := createDseAddonInstanceAndPublish(vcd, check)
+	slz, addOn, addOnInstance := createDseAddonInstanceAndPublish(vcd, check)
 
-	// defer func() {
-	// 	_, err := addOnInstance.Publishing(nil, false)
-	// 	check.Assert(err, IsNil)
+	defer func() {
+		fmt.Println("# Cleaning up prerequisites")
+		_, err := addOnInstance.Publishing(nil, false)
+		check.Assert(err, IsNil)
 
-	// 	_, err = addOnInstance.Delete()
-	// 	check.Assert(err, IsNil)
+		deleteInputs := make(map[string]interface{})
+		deleteInputs["name"] = addOnInstance.SolutionAddOnInstance.AddonInstanceSolutionName
+		deleteInputs["input-force-delete"] = true
 
-	// 	err = addOn.Delete()
-	// 	check.Assert(err, IsNil)
+		_, err = addOnInstance.Delete(deleteInputs)
+		check.Assert(err, IsNil)
 
-	// 	err = slz.Delete()
-	// 	check.Assert(err, IsNil)
-	// }()
+		err = addOn.Delete()
+		check.Assert(err, IsNil)
 
-	// _, err = vcd.client.GetSolutionAddonInstanceByName("TestAccSolutionAddonInstanceAndPublishing")
-	// check.Assert(err, IsNil)
-
+		err = slz.Delete()
+		check.Assert(err, IsNil)
+	}()
 	// End of prerequisites
 
-	recipientOrg, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
+	fmt.Println("# Prerequisites created, starting test")
+
+	// Create new client session
+	orgName := vcd.config.Tenants[0].SysOrg
+	userName := vcd.config.Tenants[0].User
+	password := vcd.config.Tenants[0].Password
+	vcdClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
+	err := vcdClient.Authenticate(userName, password, orgName)
+	check.Assert(err, IsNil)
+
+	recipientOrg, err := vcdClient.GetOrgByName(vcd.config.Cse.TenantOrg)
 	check.Assert(err, IsNil)
 
 	dsNames := make([]string, 0)
@@ -58,7 +71,7 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 	}
 
 	// Lookup testing
-	allDataSolutions, err := vcd.client.GetAllDataSolutions(nil)
+	allDataSolutions, err := vcdClient.GetAllDataSolutions(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allDataSolutions), Equals, len(dsNames)+1) // +1 because of default "VCD Data Solutions"
 
@@ -69,11 +82,11 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 		}
 		check.Assert(strings.HasPrefix(ds.RdeId(), "urn:vcloud:entity:vmware:dsConfig:"), Equals, true)
 
-		byId, err := vcd.client.GetDataSolutionById(ds.RdeId())
+		byId, err := vcdClient.GetDataSolutionById(ds.RdeId())
 		check.Assert(err, IsNil)
 		check.Assert(byId.DataSolution, DeepEquals, ds.DataSolution)
 
-		byName, err := vcd.client.GetDataSolutionByName(ds.Name())
+		byName, err := vcdClient.GetDataSolutionByName(ds.Name())
 		check.Assert(err, IsNil)
 		check.Assert(byName.DataSolution, DeepEquals, ds.DataSolution)
 	}
@@ -82,7 +95,7 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 	for dsName, dsConfig := range vcd.config.SolutionAddOn.DseSolutions {
 		printVerbose("# Configuring Data Solution '%s'\n", dsName)
 
-		byName, err := vcd.client.GetDataSolutionByName(dsName)
+		byName, err := vcdClient.GetDataSolutionByName(dsName)
 		check.Assert(err, IsNil)
 
 		cfg := byName.DataSolution
@@ -112,7 +125,7 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 
 	// Configure DSO
 	printVerbose("# Configuring Default Data Solution '%s'\n", defaultDsoName)
-	dsoByName, err := vcd.client.GetDataSolutionByName(defaultDsoName)
+	dsoByName, err := vcdClient.GetDataSolutionByName(defaultDsoName)
 	check.Assert(err, IsNil)
 
 	// Simulate using default values, but also configure registry
@@ -151,7 +164,7 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 	for dsName := range vcd.config.SolutionAddOn.DseSolutions {
 		printVerbose("# Publishing Data Solution '%s' to tenant '%s'\n", dsName, recipientOrg.Org.Name)
 
-		ds, err := vcd.client.GetDataSolutionByName(dsName)
+		ds, err := vcdClient.GetDataSolutionByName(dsName)
 		check.Assert(err, IsNil)
 
 		dsAcl, dsoAcl, templateAcls, err := ds.Publish(recipientOrg.Org.ID)
@@ -169,7 +182,7 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 	for dsName := range vcd.config.SolutionAddOn.DseSolutions {
 		printVerbose("# Retrieve Data Solution '%s' Instance Templates\n", dsName)
 
-		ds, err := vcd.client.GetDataSolutionByName(dsName)
+		ds, err := vcdClient.GetDataSolutionByName(dsName)
 		check.Assert(err, IsNil)
 
 		allDst, err := ds.GetAllInstanceTemplates()

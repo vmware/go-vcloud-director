@@ -21,6 +21,8 @@ type DseConfigSpec struct {
 
 type DseArtifactMap map[string]interface{}
 
+// DseDockerConfig provides registry auth configuration that is available for "VCD Data Solutions"
+// Data Solution
 type DseDockerConfig struct {
 	Auths DseDockerAuths `json:"auths"`
 }

@@ -14,7 +14,7 @@ import (
 
 var dataSolutionTemplateInstanceRdeType = [3]string{"vmware", "dsInstanceTemplate", "0.1"}
 
-// DataSolutionInstanceTemplate represents Data Solution Instance Templates that come with a Data Solution
+// DataSolutionInstanceTemplate represents Data Solution Instance Templates that come with Data Solutions
 type DataSolutionInstanceTemplate struct {
 	DataSolutionInstanceTemplate *types.DataSolutionInstanceTemplate
 	DefinedEntity                *DefinedEntity
@@ -59,6 +59,7 @@ func (ds *DataSolution) GetAllInstanceTemplates() ([]*DataSolutionInstanceTempla
 	return ds.vcdClient.GetAllInstanceTemplates(queryParams)
 }
 
+// PublishAllInstanceTemplates creates Access Controls for all available Data Solution Instance Templates
 func (ds *DataSolution) PublishAllInstanceTemplates(tenantId string) ([]*types.DefinedEntityAccess, error) {
 	allTemplates, err := ds.GetAllInstanceTemplates()
 	if err != nil {
@@ -79,6 +80,7 @@ func (ds *DataSolution) PublishAllInstanceTemplates(tenantId string) ([]*types.D
 	return definedEntityAccess, nil
 }
 
+// UnPublishAllInstanceTemplates removes all ACLs of a given Data Solution from specified tenantId
 func (ds *DataSolution) UnPublishAllInstanceTemplates(tenantId string) error {
 	allTemplates, err := ds.GetAllInstanceTemplates()
 	if err != nil {
@@ -106,12 +108,12 @@ func (dst *DataSolutionInstanceTemplate) Name() string {
 	return dst.DefinedEntity.DefinedEntity.Name
 }
 
-// GetAllAccessControls retrieves all ACLs for a given Data Solution Instance Template
+// GetAllAccessControls retrieves all Access Controls for a given Data Solution Instance Template
 func (dst *DataSolutionInstanceTemplate) GetAllAccessControls(queryParameters url.Values) ([]*types.DefinedEntityAccess, error) {
 	return dst.DefinedEntity.GetAllAccessControls(queryParameters)
 }
 
-// GetAllAccessControlsForTenant retrieves all ACLs for a given tenant
+// GetAllAccessControlsForTenant retrieves all Access Controls for a given tenant
 func (dst *DataSolutionInstanceTemplate) GetAllAccessControlsForTenant(tenantId string) ([]*types.DefinedEntityAccess, error) {
 	util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' getting Access Controls for tenant '%s'", dst.Name(), tenantId)
 	allAcls, err := dst.GetAllAccessControls(nil)
@@ -120,7 +122,7 @@ func (dst *DataSolutionInstanceTemplate) GetAllAccessControlsForTenant(tenantId 
 	}
 
 	foundAcls := make([]*types.DefinedEntityAccess, 0)
-	util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' looking Access Controls for tenant '%s'", dst.Name(), tenantId)
+	util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' looking for Access Controls for tenant '%s'", dst.Name(), tenantId)
 	for _, acl := range allAcls {
 		util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' checking Access Control ID '%s'", dst.Name(), acl.Id)
 		if acl.Tenant.ID == tenantId {
@@ -132,6 +134,7 @@ func (dst *DataSolutionInstanceTemplate) GetAllAccessControlsForTenant(tenantId 
 	return foundAcls, nil
 }
 
+// Publish a single Data Solution Instance Template to a given tenant
 func (dst *DataSolutionInstanceTemplate) Publish(tenantId string) (*types.DefinedEntityAccess, error) {
 	acl := &types.DefinedEntityAccess{
 		Tenant:        types.OpenApiReference{ID: tenantId},
@@ -148,7 +151,7 @@ func (dst *DataSolutionInstanceTemplate) Publish(tenantId string) (*types.Define
 	return accessControl, nil
 }
 
-// Unpublish removes Access Control for a given tenant
+// Unpublish a single Data Solution Instance Template for a given tenant
 func (dst *DataSolutionInstanceTemplate) Unpublish(tenantId string) error {
 	queryParams := copyOrNewUrlValues(nil)
 	queryParams = queryParameterFilterAnd(fmt.Sprintf("tenant.id==%s", tenantId), queryParams)
