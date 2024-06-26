@@ -25,7 +25,9 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 		check.Skip("DSE configuration is not present")
 	}
 
-	// Prerequisites
+	// Prerequisites - Data Solution Add-On instance must be created and published
+	// Note this block can be commented out to get more rapid testing if one already has DSE
+	// instantiated and deployed.
 	// slz, addOn, addOnInstance := createDseAddonInstanceAndPublish(vcd, check)
 
 	// defer func() {
@@ -45,6 +47,11 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 	// _, err = vcd.client.GetSolutionAddonInstanceByName("TestAccSolutionAddonInstanceAndPublishing")
 	// check.Assert(err, IsNil)
 
+	// End of prerequisites
+
+	recipientOrg, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
+	check.Assert(err, IsNil)
+
 	dsNames := make([]string, 0)
 	for dsName := range vcd.config.SolutionAddOn.DseSolutions {
 		dsNames = append(dsNames, dsName)
@@ -56,7 +63,7 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 	check.Assert(len(allDataSolutions), Equals, len(dsNames)+1) // +1 because of default "VCD Data Solutions"
 
 	for _, ds := range allDataSolutions {
-		printVerbose("# Checking Data Solution '%s' retrieval methods\n", ds.Name())
+		printVerbose("# Testing Data Solution '%s' retrieval methods\n", ds.Name())
 		if ds.Name() != defaultDsoName {
 			check.Assert(slices.Contains(dsNames, ds.Name()), Equals, true)
 		}
@@ -141,11 +148,8 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 	}
 
 	// Publish to tenant
-	recipientOrg, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
-	check.Assert(err, IsNil)
-
 	for dsName := range vcd.config.SolutionAddOn.DseSolutions {
-		printVerbose("# Publishing Data Solution '%s' to tenant %s\n", dsName, recipientOrg.Org.Name)
+		printVerbose("# Publishing Data Solution '%s' to tenant '%s'\n", dsName, recipientOrg.Org.Name)
 
 		ds, err := vcd.client.GetDataSolutionByName(dsName)
 		check.Assert(err, IsNil)
@@ -162,6 +166,60 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 		check.Assert(err, IsNil)
 	}
 
+	for dsName := range vcd.config.SolutionAddOn.DseSolutions {
+		printVerbose("# Retrieve Data Solution '%s' Instance Templates\n", dsName)
+
+		ds, err := vcd.client.GetDataSolutionByName(dsName)
+		check.Assert(err, IsNil)
+
+		allDst, err := ds.GetAllInstanceTemplates()
+		check.Assert(err, IsNil)
+		for _, dst := range allDst {
+			printVerbose("## Got Template '%s' for Data Solution '%s'\n", dst.Name(), dsName)
+			check.Assert(strings.HasPrefix(dst.RdeId(), "urn:vcloud:entity:vmware:dsInstanceTemplate:"), Equals, true)
+
+			// Publishing / unpublishing to tenant
+			printVerbose("# Publishing Template '%s' for Data Solution '%s' to tenant '%s'\n", dst.Name(), dsName, recipientOrg.Org.Name)
+			createdAcl, err := dst.Publish(recipientOrg.Org.ID)
+			check.Assert(err, IsNil)
+
+			// Checking that ACLs can be found
+			allAcls, err := dst.GetAllAccessControls(nil)
+			check.Assert(err, IsNil)
+
+			var foundAcl bool
+			for _, singleAcl := range allAcls {
+				if singleAcl.Id == createdAcl.Id {
+					foundAcl = true
+					break
+				}
+			}
+			check.Assert(foundAcl, Equals, true)
+
+			allTenantAcls, err := dst.GetAllAccessControlsForTenant(recipientOrg.Org.ID)
+			check.Assert(err, IsNil)
+
+			foundAcl = false
+			for _, singleAcl := range allTenantAcls {
+				if singleAcl.Id == createdAcl.Id {
+					foundAcl = true
+					break
+				}
+			}
+			check.Assert(foundAcl, Equals, true)
+
+			printVerbose("# Unpublishing Template '%s' for Data Solution '%s' for tenant '%s'\n", dst.Name(), dsName, recipientOrg.Org.Name)
+			err = dst.Unpublish(recipientOrg.Org.ID)
+			check.Assert(err, IsNil)
+
+			// Check that ACL is removed after unpublishing the template
+			tenantAclsAfterRemoval, err := dst.GetAllAccessControlsForTenant(recipientOrg.Org.ID)
+			check.Assert(err, IsNil)
+			check.Assert(len(tenantAclsAfterRemoval), Equals, 0)
+		}
+	}
+
+	// cleanup is deferred at the top
 }
 
 func createDseAddonInstanceAndPublish(vcd *TestVCD, check *C) (*SolutionLandingZone, *SolutionAddOn, *SolutionAddOnInstance) {

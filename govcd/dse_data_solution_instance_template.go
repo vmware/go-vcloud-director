@@ -132,25 +132,6 @@ func (dst *DataSolutionInstanceTemplate) GetAllAccessControlsForTenant(tenantId 
 	return foundAcls, nil
 }
 
-// UnpublishAccessControlsForTenant removes Access Control for a given tenant
-// func (dst *DataSolutionInstanceTemplate) UnpublishAccessControlsForTenant(tenantId string) error {
-// 	queryParams := copyOrNewUrlValues(nil)
-// 	queryParams = queryParameterFilterAnd(fmt.Sprintf("tenant.id==%s", tenantId), queryParams)
-// 	acls, err := dst.DefinedEntity.GetAllAccessControls(queryParams)
-// 	if err != nil {
-// 		return fmt.Errorf("error getting Access Control for Data Solution Instance Template %s: %s", dst.DefinedEntity.DefinedEntity.Name, err)
-// 	}
-
-// 	for _, acl := range acls {
-// 		err = dst.DefinedEntity.DeleteAccessControl(acl)
-// 		if err != nil {
-// 			return fmt.Errorf("error deleting Access Control: %s", err)
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 func (dst *DataSolutionInstanceTemplate) Publish(tenantId string) (*types.DefinedEntityAccess, error) {
 	acl := &types.DefinedEntityAccess{
 		Tenant:        types.OpenApiReference{ID: tenantId},
