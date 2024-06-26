@@ -76,24 +76,9 @@ type DataSolutionInstanceTemplate struct {
 			Schema     string   `json:"$schema"`
 			Required   []string `json:"required"`
 			Properties struct {
-				CPU struct {
-					Ref         string `json:"$ref"`
-					Title       string `json:"title"`
-					Default     string `json:"default"`
-					Description string `json:"description"`
-				} `json:"cpu"`
-				Memory struct {
-					Ref         string `json:"$ref"`
-					Title       string `json:"title"`
-					Default     string `json:"default"`
-					Description string `json:"description"`
-				} `json:"memory"`
-				Storage struct {
-					Ref         string `json:"$ref"`
-					Title       string `json:"title"`
-					Default     string `json:"default"`
-					Description string `json:"description"`
-				} `json:"storage"`
+				CPU       DataSolutionInstanceTemplateComputeProperty `json:"cpu"`
+				Memory    DataSolutionInstanceTemplateComputeProperty `json:"memory"`
+				Storage   DataSolutionInstanceTemplateComputeProperty `json:"storage"`
 				Namespace struct {
 					Const string `json:"const"`
 				} `json:"namespace"`
@@ -121,4 +106,11 @@ type DataSolutionInstanceTemplate struct {
 		Name string `json:"name"`
 	} `json:"metadata"`
 	APIVersion string `json:"apiVersion"`
+}
+
+type DataSolutionInstanceTemplateComputeProperty struct {
+	Ref         string `json:"$ref"`
+	Title       string `json:"title"`
+	Default     string `json:"default"`
+	Description string `json:"description"`
 }
