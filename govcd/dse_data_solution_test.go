@@ -54,10 +54,10 @@ func (vcd *TestVCD) Test_Dse(check *C) {
 
 	fmt.Println("# Prerequisites created, starting test")
 
-	// Create new client session
-	orgName := vcd.config.Tenants[0].SysOrg
-	userName := vcd.config.Tenants[0].User
-	password := vcd.config.Tenants[0].Password
+	// Create new client session because the original one will not be able to query Data Solutions
+	orgName := vcd.config.Provider.SysOrg
+	userName := vcd.config.Provider.User
+	password := vcd.config.Provider.Password
 	vcdClient := NewVCDClient(vcd.client.Client.VCDHREF, true)
 	err := vcdClient.Authenticate(userName, password, orgName)
 	check.Assert(err, IsNil)
