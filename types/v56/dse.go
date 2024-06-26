@@ -58,16 +58,6 @@ type DataSolutionOrgConfig struct {
 	Kind       string                 `json:"kind"`
 	Metadata   map[string]interface{} `json:"metadata"`
 	Spec       map[string]interface{} `json:"spec"`
-	// struct {
-	// 	SolutionType string `json:"solutionType"`
-	// 	PrivateData  struct {
-	// 	} `json:"privateData"`
-	// 	Data struct {
-	// 		LicenseType string `json:"LicenseType"`
-	// 	} `json:"data"`
-	// 	PrivateSecureData struct {
-	// 	} `json:"privateSecureData"`
-	// } `json:"spec"`
 }
 
 type DataSolutionInstanceTemplate struct {

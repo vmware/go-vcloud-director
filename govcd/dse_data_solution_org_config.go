@@ -14,21 +14,17 @@ import (
 
 var dataSolutionOrgConfig = [3]string{"vmware", "dsOrgConfig", "0.1.1"}
 
+// DataSolutionOrgConfig structure represents Data Solution Org Configuration. This configuration
+// can cary additional information to Data Solutions if they require to. At the moment of
+// implementation the only known Data Solution that requires this configuration is `Confluent
+// Platform` that uses this structure to store licensing data.
 type DataSolutionOrgConfig struct {
 	DataSolutionOrgConfig *types.DataSolutionOrgConfig
 	DefinedEntity         *DefinedEntity
 	vcdClient             *VCDClient
 }
 
-// RdeId is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
-func (dsOrgCfg *DataSolutionOrgConfig) RdeId() string {
-	if dsOrgCfg == nil || dsOrgCfg.DefinedEntity == nil || dsOrgCfg.DefinedEntity.DefinedEntity == nil {
-		return ""
-	}
-
-	return dsOrgCfg.DefinedEntity.DefinedEntity.ID
-}
-
+// CreateDataSolutionOrgConfig creates Data Solution Org Configuration for a defined orgId
 func (vcdClient *VCDClient) CreateDataSolutionOrgConfig(orgId string, cfg *types.DataSolutionOrgConfig) (*DataSolutionOrgConfig, error) {
 	rdeType, err := vcdClient.GetRdeType(dataSolutionOrgConfig[0], dataSolutionOrgConfig[1], dataSolutionOrgConfig[2])
 	if err != nil {
@@ -81,6 +77,7 @@ func (vcdClient *VCDClient) CreateDataSolutionOrgConfig(orgId string, cfg *types
 	return &returnType, nil
 }
 
+// GetAllDataSolutionOrgConfigs retrieves all available Data Solution Org Configs
 func (vcdClient *VCDClient) GetAllDataSolutionOrgConfigs(queryParameters url.Values) ([]*DataSolutionOrgConfig, error) {
 	allDseInstances, err := vcdClient.GetAllRdes(dataSolutionOrgConfig[0], dataSolutionOrgConfig[1], dataSolutionOrgConfig[2], queryParameters)
 	if err != nil {
@@ -104,6 +101,8 @@ func (vcdClient *VCDClient) GetAllDataSolutionOrgConfigs(queryParameters url.Val
 	return results, nil
 }
 
+// GetAllDataSolutionOrgConfigs retrieves all available Data Solution Org Configs for a given Data
+// Solution
 func (ds *DataSolution) GetAllDataSolutionOrgConfigs() ([]*DataSolutionOrgConfig, error) {
 	if ds == nil || ds.DataSolution == nil {
 		return nil, fmt.Errorf("error - Data Solution structure is empty")
@@ -116,9 +115,53 @@ func (ds *DataSolution) GetAllDataSolutionOrgConfigs() ([]*DataSolutionOrgConfig
 	return ds.vcdClient.GetAllDataSolutionOrgConfigs(queryParams)
 }
 
-func (s *DataSolutionOrgConfig) Delete() error {
-	if s.DefinedEntity == nil {
+// GetDataSolutionOrgConfigForTenant retrieves all available Data Solution Org Configs for a given
+// Data Solution and then uses local filter to find the one for given tenantId
+func (ds *DataSolution) GetDataSolutionOrgConfigForTenant(tenantId string) (*DataSolutionOrgConfig, error) {
+	if ds == nil || ds.DataSolution == nil {
+		return nil, fmt.Errorf("error - Data Solution structure is empty")
+	}
+
+	if tenantId == "" {
+		return nil, fmt.Errorf("tenant ID is required")
+	}
+
+	allOrgConfigs, err := ds.GetAllDataSolutionOrgConfigs()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving all Data Solution Org Configs: %s", err)
+	}
+
+	var foundOrgCfg *DataSolutionOrgConfig
+	for _, orgCfg := range allOrgConfigs {
+		// tenant ID is stored in RDE Name
+		if orgCfg.DefinedEntity.DefinedEntity.Name == tenantId {
+			foundOrgCfg = orgCfg
+			break
+		}
+	}
+
+	if foundOrgCfg == nil {
+		return nil, fmt.Errorf("%s: could not find Data Solution '%s' Org Config for a given tenant '%s'",
+			ErrorEntityNotFound, ds.Name(), tenantId)
+	}
+
+	return foundOrgCfg, nil
+
+}
+
+// Delete Data Solution Org Config
+func (dsOrgCfg *DataSolutionOrgConfig) Delete() error {
+	if dsOrgCfg.DefinedEntity == nil {
 		return fmt.Errorf("error - parent Defined Entity is nil")
 	}
-	return s.DefinedEntity.Delete()
+	return dsOrgCfg.DefinedEntity.Delete()
+}
+
+// RdeId is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
+func (dsOrgCfg *DataSolutionOrgConfig) RdeId() string {
+	if dsOrgCfg == nil || dsOrgCfg.DefinedEntity == nil || dsOrgCfg.DefinedEntity.DefinedEntity == nil {
+		return ""
+	}
+
+	return dsOrgCfg.DefinedEntity.DefinedEntity.ID
 }

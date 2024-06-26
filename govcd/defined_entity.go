@@ -639,6 +639,17 @@ func (de *DefinedEntity) GetAllAccessControls(queryParameters url.Values) ([]*ty
 	return getAllInnerEntities[types.DefinedEntityAccess](de.client, c)
 }
 
+// GetAccessControlById gets all Defined Entity Access Controls from the receiver DefinedEntity.
+// Query parameters can be supplied to modify pagination.
+func (de *DefinedEntity) GetAccessControlById(id string) (*types.DefinedEntityAccess, error) {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
+		endpointParams: []string{de.DefinedEntity.ID, id},
+		entityLabel:    labelDefinedEntityAccessControl,
+	}
+	return getInnerEntity[types.DefinedEntityAccess](de.client, c)
+}
+
 // DeleteAccessControl removes a given Access Control
 func (de *DefinedEntity) DeleteAccessControl(acl *types.DefinedEntityAccess) error {
 	c := crudConfig{

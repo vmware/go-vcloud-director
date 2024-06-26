@@ -258,13 +258,14 @@ type TestConfig struct {
 		OvaName        string `yaml:"ovaName,omitempty"`
 	} `yaml:"cse,omitempty"`
 	SolutionAddOn struct {
-		Org           string `yaml:"org"`
-		Vdc           string `yaml:"vdc"`
-		RoutedNetwork string `yaml:"routedNetwork"`
-		ComputePolicy string `yaml:"computePolicy"`
-		StoragePolicy string `yaml:"storagePolicy"`
-		Catalog       string `yaml:"catalog"`
-		AddonImageDse string `yaml:"addonImageDse"`
+		Org           string                       `yaml:"org"`
+		Vdc           string                       `yaml:"vdc"`
+		RoutedNetwork string                       `yaml:"routedNetwork"`
+		ComputePolicy string                       `yaml:"computePolicy"`
+		StoragePolicy string                       `yaml:"storagePolicy"`
+		Catalog       string                       `yaml:"catalog"`
+		AddonImageDse string                       `yaml:"addonImageDse"`
+		DseSolutions  map[string]map[string]string `yaml:"dseSolutions,omitempty"`
 	} `yaml:"solutionAddOn,omitempty"`
 }
 

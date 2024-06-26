@@ -7,7 +7,6 @@ package govcd
 import (
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"github.com/vmware/go-vcloud-director/v2/util"
@@ -15,56 +14,15 @@ import (
 
 var dataSolutionTemplateInstanceRdeType = [3]string{"vmware", "dsInstanceTemplate", "0.1"}
 
+// DataSolutionInstanceTemplate represents Data Solution Instance Templates that come with a Data Solution
 type DataSolutionInstanceTemplate struct {
 	DataSolutionInstanceTemplate *types.DataSolutionInstanceTemplate
 	DefinedEntity                *DefinedEntity
 	vcdClient                    *VCDClient
 }
 
-func (ds *DataSolution) PublishAllInstanceTemplates(tenantIds []string) ([]*types.DefinedEntityAccess, error) {
-	allTemplates, err := ds.GetAllInstanceTemplates()
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving all Data Solution Instance Templates: %s", err)
-	}
-
-	definedEntityAccess := make([]*types.DefinedEntityAccess, 0)
-	for _, tenantId := range tenantIds {
-		for _, template := range allTemplates {
-			access, err := template.Publish(tenantId)
-			if err != nil {
-				return nil, fmt.Errorf("error setting ACL to Data Solution Instance Template '%s': %s",
-					template.DefinedEntity.DefinedEntity.Name, err)
-			}
-
-			definedEntityAccess = append(definedEntityAccess, access)
-		}
-	}
-
-	return definedEntityAccess, nil
-}
-
-func (ds *DataSolution) UnPublishAllInstanceTemplates(tenantIds []string) error {
-	allTemplates, err := ds.GetAllInstanceTemplates()
-	if err != nil {
-		return fmt.Errorf("error retrieving all Data Solution Instance Templates: %s", err)
-	}
-
-	for _, tenantId := range tenantIds {
-		for _, template := range allTemplates {
-			err := template.Unpublish(tenantId)
-			if err != nil {
-				return fmt.Errorf("error remove ACL for Data Solution Instance Template '%s': %s",
-					template.DefinedEntity.DefinedEntity.Name, err)
-			}
-
-		}
-	}
-
-	return nil
-}
-
-// ####
-
+// GetAllInstanceTemplates retrieves all Data Solution Instance Templates that are available in the
+// system
 func (vcdClient *VCDClient) GetAllInstanceTemplates(queryParameters url.Values) ([]*DataSolutionInstanceTemplate, error) {
 	allDseInstanceTemplates, err := vcdClient.GetAllRdes(dataSolutionTemplateInstanceRdeType[0], dataSolutionTemplateInstanceRdeType[1], dataSolutionTemplateInstanceRdeType[2], queryParameters)
 	if err != nil {
@@ -88,6 +46,7 @@ func (vcdClient *VCDClient) GetAllInstanceTemplates(queryParameters url.Values) 
 	return results, nil
 }
 
+// GetAllInstanceTemplates retrieves all Data Solution Instance Templates for a given Data Solution
 func (ds *DataSolution) GetAllInstanceTemplates() ([]*DataSolutionInstanceTemplate, error) {
 	if ds == nil || ds.DataSolution == nil {
 		return nil, fmt.Errorf("error - Data Solution structure is empty")
@@ -100,16 +59,45 @@ func (ds *DataSolution) GetAllInstanceTemplates() ([]*DataSolutionInstanceTempla
 	return ds.vcdClient.GetAllInstanceTemplates(queryParams)
 }
 
-func (dse *DataSolutionInstanceTemplate) RdeId() string {
-	if dse == nil || dse.DefinedEntity == nil || dse.DefinedEntity.DefinedEntity == nil {
-		return ""
+func (ds *DataSolution) PublishAllInstanceTemplates(tenantId string) ([]*types.DefinedEntityAccess, error) {
+	allTemplates, err := ds.GetAllInstanceTemplates()
+	if err != nil {
+		return nil, fmt.Errorf("error retrieving all Data Solution Instance Templates: %s", err)
 	}
 
-	return dse.DefinedEntity.DefinedEntity.ID
+	definedEntityAccess := make([]*types.DefinedEntityAccess, len(allTemplates))
+	for templateIndex, template := range allTemplates {
+		access, err := template.Publish(tenantId)
+		if err != nil {
+			return nil, fmt.Errorf("error setting ACL for Data Solution Instance Template '%s': %s",
+				template.DefinedEntity.DefinedEntity.Name, err)
+		}
+
+		definedEntityAccess[templateIndex] = access
+	}
+
+	return definedEntityAccess, nil
 }
 
-// Name extracts the name from inside RDE configuration. This name is used in UI and is not always
-// the same as RDE name.
+func (ds *DataSolution) UnPublishAllInstanceTemplates(tenantId string) error {
+	allTemplates, err := ds.GetAllInstanceTemplates()
+	if err != nil {
+		return fmt.Errorf("error retrieving all Data Solution Instance Templates: %s", err)
+	}
+
+	for _, template := range allTemplates {
+		err := template.Unpublish(tenantId)
+		if err != nil {
+			return fmt.Errorf("error removing ACL for Data Solution Instance Template '%s': %s",
+				template.DefinedEntity.DefinedEntity.Name, err)
+		}
+
+	}
+
+	return nil
+}
+
+// Name extracts the name from inside RDE configuration. This name is used in UI.
 func (dst *DataSolutionInstanceTemplate) Name() string {
 	if dst.DefinedEntity == nil || dst.DefinedEntity.DefinedEntity == nil {
 		return ""
@@ -118,50 +106,50 @@ func (dst *DataSolutionInstanceTemplate) Name() string {
 	return dst.DefinedEntity.DefinedEntity.Name
 }
 
+// GetAllAccessControls retrieves all ACLs for a given Data Solution Instance Template
 func (dst *DataSolutionInstanceTemplate) GetAllAccessControls(queryParameters url.Values) ([]*types.DefinedEntityAccess, error) {
 	return dst.DefinedEntity.GetAllAccessControls(queryParameters)
 }
 
-func (dst *DataSolutionInstanceTemplate) GetAllAccessControlsForTenants(tenantIds []string) ([]*types.DefinedEntityAccess, error) {
-	util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' getting Access Controls for tenants '%s'", dst.Name(), strings.Join(tenantIds, ","))
+// GetAllAccessControlsForTenant retrieves all ACLs for a given tenant
+func (dst *DataSolutionInstanceTemplate) GetAllAccessControlsForTenant(tenantId string) ([]*types.DefinedEntityAccess, error) {
+	util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' getting Access Controls for tenant '%s'", dst.Name(), tenantId)
 	allAcls, err := dst.GetAllAccessControls(nil)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving all Access Controls for Data Solution Solution Instance Template: %s", err)
 	}
 
 	foundAcls := make([]*types.DefinedEntityAccess, 0)
-	for _, tenantId := range tenantIds {
-		util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' looking Access Controls for tenant '%s'", dst.Name(), tenantId)
-		for _, acl := range allAcls {
-			util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' checking Access Control ID '%s'", dst.Name(), acl.Id)
-			if acl.Tenant.ID == tenantId {
-				util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' Access Control '%s' matches tenant '%s'", dst.Name(), acl.Id, tenantId)
-				foundAcls = append(foundAcls, acl)
-			}
+	util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' looking Access Controls for tenant '%s'", dst.Name(), tenantId)
+	for _, acl := range allAcls {
+		util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' checking Access Control ID '%s'", dst.Name(), acl.Id)
+		if acl.Tenant.ID == tenantId {
+			util.Logger.Printf("[TRACE] Data Solution Instance Template '%s' Access Control '%s' matches tenant '%s'", dst.Name(), acl.Id, tenantId)
+			foundAcls = append(foundAcls, acl)
 		}
 	}
 
 	return foundAcls, nil
 }
 
-// Unpublish removes Access Control for a given tenant
-func (dst *DataSolutionInstanceTemplate) UnpublishAccessControls(tenantId string) error {
-	queryParams := copyOrNewUrlValues(nil)
-	queryParams = queryParameterFilterAnd(fmt.Sprintf("tenant.id==%s", tenantId), queryParams)
-	acls, err := dst.DefinedEntity.GetAllAccessControls(queryParams)
-	if err != nil {
-		return fmt.Errorf("error getting Access Control for Data Solution Instance Template %s: %s", dst.DefinedEntity.DefinedEntity.Name, err)
-	}
+// UnpublishAccessControlsForTenant removes Access Control for a given tenant
+// func (dst *DataSolutionInstanceTemplate) UnpublishAccessControlsForTenant(tenantId string) error {
+// 	queryParams := copyOrNewUrlValues(nil)
+// 	queryParams = queryParameterFilterAnd(fmt.Sprintf("tenant.id==%s", tenantId), queryParams)
+// 	acls, err := dst.DefinedEntity.GetAllAccessControls(queryParams)
+// 	if err != nil {
+// 		return fmt.Errorf("error getting Access Control for Data Solution Instance Template %s: %s", dst.DefinedEntity.DefinedEntity.Name, err)
+// 	}
 
-	for _, acl := range acls {
-		err = dst.DefinedEntity.DeleteAccessControl(acl)
-		if err != nil {
-			return fmt.Errorf("error deleting Access Control: %s", err)
-		}
-	}
+// 	for _, acl := range acls {
+// 		err = dst.DefinedEntity.DeleteAccessControl(acl)
+// 		if err != nil {
+// 			return fmt.Errorf("error deleting Access Control: %s", err)
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (dst *DataSolutionInstanceTemplate) Publish(tenantId string) (*types.DefinedEntityAccess, error) {
 	acl := &types.DefinedEntityAccess{
@@ -198,4 +186,11 @@ func (dst *DataSolutionInstanceTemplate) Unpublish(tenantId string) error {
 	return nil
 }
 
-// ###########
+// RdeId is a shortcut of SolutionEntity.DefinedEntity.DefinedEntity.ID
+func (dst *DataSolutionInstanceTemplate) RdeId() string {
+	if dst == nil || dst.DefinedEntity == nil || dst.DefinedEntity.DefinedEntity == nil {
+		return ""
+	}
+
+	return dst.DefinedEntity.DefinedEntity.ID
+}
