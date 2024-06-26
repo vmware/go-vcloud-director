@@ -15,7 +15,7 @@ import (
 var dataSolutionOrgConfig = [3]string{"vmware", "dsOrgConfig", "0.1.1"}
 
 // DataSolutionOrgConfig structure represents Data Solution Org Configuration. This configuration
-// can cary additional information to Data Solutions if they require it. At the moment of
+// can carry additional information to Data Solutions if they require it. At the moment of
 // implementation the only known Data Solution that requires this configuration is `Confluent
 // Platform` that uses this structure to store licensing data.
 type DataSolutionOrgConfig struct {

@@ -258,14 +258,17 @@ type TestConfig struct {
 		OvaName        string `yaml:"ovaName,omitempty"`
 	} `yaml:"cse,omitempty"`
 	SolutionAddOn struct {
-		Org           string                       `yaml:"org"`
-		Vdc           string                       `yaml:"vdc"`
-		RoutedNetwork string                       `yaml:"routedNetwork"`
-		ComputePolicy string                       `yaml:"computePolicy"`
-		StoragePolicy string                       `yaml:"storagePolicy"`
-		Catalog       string                       `yaml:"catalog"`
-		AddonImageDse string                       `yaml:"addonImageDse"`
-		DseSolutions  map[string]map[string]string `yaml:"dseSolutions,omitempty"`
+		Org           string `yaml:"org"`
+		Vdc           string `yaml:"vdc"`
+		RoutedNetwork string `yaml:"routedNetwork"`
+		ComputePolicy string `yaml:"computePolicy"`
+		StoragePolicy string `yaml:"storagePolicy"`
+		Catalog       string `yaml:"catalog"`
+		AddonImageDse string `yaml:"addonImageDse"`
+		// DseSolutions contains a nested map of maps. This is done so that the structure is dynamic
+		// enough to add new entries, yet maintain the flexibility to have different fields for each
+		// of those entities
+		DseSolutions map[string]map[string]string `yaml:"dseSolutions,omitempty"`
 	} `yaml:"solutionAddOn,omitempty"`
 }
 

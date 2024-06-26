@@ -628,7 +628,7 @@ func (de *DefinedEntity) SetAccessControl(acl *types.DefinedEntityAccess) (*type
 }
 
 // GetAllAccessControls gets all Defined Entity Access Controls from the receiver DefinedEntity.
-// Query parameters can be supplied to modify pagination.
+// Query parameters can be supplied to modify search criteria.
 func (de *DefinedEntity) GetAllAccessControls(queryParameters url.Values) ([]*types.DefinedEntityAccess, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
@@ -640,7 +640,6 @@ func (de *DefinedEntity) GetAllAccessControls(queryParameters url.Values) ([]*ty
 }
 
 // GetAccessControlById gets all Defined Entity Access Controls from the receiver DefinedEntity.
-// Query parameters can be supplied to modify pagination.
 func (de *DefinedEntity) GetAccessControlById(id string) (*types.DefinedEntityAccess, error) {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
