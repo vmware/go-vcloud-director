@@ -226,6 +226,7 @@ type Adapter struct {
 type RequestVirtualHardwareSection struct {
 	// Extends OVF Section_Type
 	XMLName xml.Name `xml:"ovf:VirtualHardwareSection"`
+	Xmlns   string   `xml:"xmlns,attr,omitempty"`
 	Ovf     string   `xml:"xmlns:ovf,attr"`
 	Vssd    string   `xml:"xmlns:vssd,attr"`
 	Rasd    string   `xml:"xmlns:rasd,attr"`
