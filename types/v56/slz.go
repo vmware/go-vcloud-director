@@ -69,14 +69,12 @@ type SolutionAddOnInstance struct {
 	AddonInstanceSolutionVendor  string                          `json:"addonInstanceSolutionVendor"`
 	AddonInstanceSolutionVersion string                          `json:"addonInstanceSolutionVersion"`
 }
-
 type SolutionAddOnInstanceScope struct {
 	AllTenants     bool     `json:"allTenants"`
 	TenantScoped   bool     `json:"tenantScoped"`
 	Tenants        []string `json:"tenants"`
 	ProviderScoped bool     `json:"providerScoped"`
 }
-
 type SolutionAddOnInstanceRuntime struct {
 	GoVersion   string `json:"goVersion"`
 	SdkVersion  string `json:"sdkVersion"`

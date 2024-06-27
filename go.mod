@@ -16,7 +16,7 @@ require (
 
 require (
 	github.com/kr/text v0.1.0 // indirect
-	github.com/stretchr/testify v1.5.1 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 )
 
 replace (

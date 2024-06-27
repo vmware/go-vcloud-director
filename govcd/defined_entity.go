@@ -14,11 +14,12 @@ import (
 )
 
 const (
-	labelDefinedEntity            = "Defined Entity"
-	labelDefinedEntityType        = "Defined Entity Type"
-	labelRdeBehavior              = "RDE Behavior"
-	labelRdeBehaviorOverride      = "RDE Behavior Override"
-	labelRdeBehaviorAccessControl = "RDE Behavior Access Control"
+	labelDefinedEntity              = "Defined Entity"
+	labelDefinedEntityAccessControl = "Defined Entity Access Control"
+	labelDefinedEntityType          = "Defined Entity Type"
+	labelRdeBehavior                = "RDE Behavior"
+	labelRdeBehaviorOverride        = "RDE Behavior Override"
+	labelRdeBehaviorAccessControl   = "RDE Behavior Access Control"
 )
 
 // DefinedEntityType is a type for handling Runtime Defined Entity (RDE) Type definitions.
@@ -614,4 +615,46 @@ func (rde *DefinedEntity) InvokeBehaviorAndMarshal(behaviorId string, invocation
 	}
 
 	return nil
+}
+
+// SetAccessControl sets Defined Entity Access Control
+func (de *DefinedEntity) SetAccessControl(acl *types.DefinedEntityAccess) (*types.DefinedEntityAccess, error) {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
+		endpointParams: []string{de.DefinedEntity.ID},
+		entityLabel:    labelDefinedEntityAccessControl,
+	}
+	return createInnerEntity(de.client, c, acl)
+}
+
+// GetAllAccessControls gets all Defined Entity Access Controls from the receiver DefinedEntity.
+// Query parameters can be supplied to modify search criteria.
+func (de *DefinedEntity) GetAllAccessControls(queryParameters url.Values) ([]*types.DefinedEntityAccess, error) {
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
+		queryParameters: queryParameters,
+		endpointParams:  []string{de.DefinedEntity.ID},
+		entityLabel:     labelDefinedEntityAccessControl,
+	}
+	return getAllInnerEntities[types.DefinedEntityAccess](de.client, c)
+}
+
+// GetAccessControlById gets all Defined Entity Access Controls from the receiver DefinedEntity.
+func (de *DefinedEntity) GetAccessControlById(id string) (*types.DefinedEntityAccess, error) {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
+		endpointParams: []string{de.DefinedEntity.ID, id},
+		entityLabel:    labelDefinedEntityAccessControl,
+	}
+	return getInnerEntity[types.DefinedEntityAccess](de.client, c)
+}
+
+// DeleteAccessControl removes a given Access Control
+func (de *DefinedEntity) DeleteAccessControl(acl *types.DefinedEntityAccess) error {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntityAccessControls,
+		endpointParams: []string{de.DefinedEntity.ID, acl.Id},
+		entityLabel:    labelDefinedEntityAccessControl,
+	}
+	return deleteEntityById(de.client, c)
 }

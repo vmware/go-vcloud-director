@@ -831,17 +831,6 @@ func getVdcNetworkPoolHref(vcd *TestVCD, check *C) string {
 	return networkPoolHref
 }
 
-// convertSliceOfStringsToOpenApiReferenceIds converts []string to []types.OpenApiReference by filling
-// types.OpenApiReference.ID fields
-func convertSliceOfStringsToOpenApiReferenceIds(ids []string) []types.OpenApiReference {
-	resultReferences := make([]types.OpenApiReference, len(ids))
-	for i, v := range ids {
-		resultReferences[i].ID = v
-	}
-
-	return resultReferences
-}
-
 // extractIdsFromOpenApiReferences extracts []string with IDs from []types.OpenApiReference which contains ID and Names
 func extractIdsFromOpenApiReferences(refs []types.OpenApiReference) []string {
 	resultStrings := make([]string, len(refs))

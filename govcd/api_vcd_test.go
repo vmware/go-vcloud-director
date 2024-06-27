@@ -265,6 +265,10 @@ type TestConfig struct {
 		StoragePolicy string `yaml:"storagePolicy"`
 		Catalog       string `yaml:"catalog"`
 		AddonImageDse string `yaml:"addonImageDse"`
+		// DseSolutions contains a nested map of maps. This is done so that the structure is dynamic
+		// enough to add new entries, yet maintain the flexibility to have different fields for each
+		// of those entities
+		DseSolutions map[string]map[string]string `yaml:"dseSolutions,omitempty"`
 	} `yaml:"solutionAddOn,omitempty"`
 }
 

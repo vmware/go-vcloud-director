@@ -932,3 +932,14 @@ func isSuccessStatus(statusCode int) bool {
 	}
 	return false
 }
+
+// convertSliceOfStringsToOpenApiReferenceIds converts []string to []types.OpenApiReference by filling
+// types.OpenApiReference.ID fields
+func convertSliceOfStringsToOpenApiReferenceIds(ids []string) []types.OpenApiReference {
+	resultReferences := make([]types.OpenApiReference, len(ids))
+	for i, v := range ids {
+		resultReferences[i].ID = v
+	}
+
+	return resultReferences
+}
