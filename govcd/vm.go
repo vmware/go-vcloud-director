@@ -2171,12 +2171,13 @@ func (vm *VM) updateExtraConfig(update []*types.ExtraConfigMarshal, wantDelete b
 	}
 
 	requestVirtualHardwareSection := &types.RequestVirtualHardwareSection{
-		Info: "Virtual hardware requirements",
-		Ovf:  types.XMLNamespaceOVF,
-		Rasd: types.XMLNamespaceRASD,
-		Vssd: types.XMLNamespaceVSSD,
-		Ns4:  types.XMLNamespaceVCloud,
-		Vmw:  types.XMLNamespaceVMW,
+		Info:  "Virtual hardware requirements",
+		Ovf:   types.XMLNamespaceOVF,
+		Rasd:  types.XMLNamespaceRASD,
+		Vssd:  types.XMLNamespaceVSSD,
+		Ns4:   types.XMLNamespaceVCloud,
+		Vmw:   types.XMLNamespaceVMW,
+		Xmlns: types.XMLNamespaceVCloud,
 
 		Type:   virtualHardwareSection.Type,
 		System: virtualHardwareSection.System,
