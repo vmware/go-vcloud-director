@@ -3,7 +3,7 @@
 ### FEATURES
 * Added types `SolutionLandingZone` and `types.SolutionLandingZone` for Solution Add-on Landing Zone configuration ([#665](https://github.com/vmware/go-vcloud-director/pull/665))
 * Added method `DefinedEntity.Refresh` to reload RDE state ([#665](https://github.com/vmware/go-vcloud-director/pull/665))
-* Added `VDCClient` methods `CreateSolutionLandingZone`, `GetAllSolutionLandingZones`,
+* Added `VCDClient` methods `CreateSolutionLandingZone`, `GetAllSolutionLandingZones`,
   `GetExactlyOneSolutionLandingZone`, `GetSolutionLandingZoneById` for handling Solution Landing Zones ([#665](https://github.com/vmware/go-vcloud-director/pull/665))
 * Added  `SolutionLandingZone` methods `Refresh`, `RdeId`, `Update`,
   `Delete` to help handling of Solution Landing Zones ([#665](https://github.com/vmware/go-vcloud-director/pull/665))
@@ -44,11 +44,11 @@
   `GetInstanceByName`, `ValidateInputs`, `ConvertInputTypes` ([#679](https://github.com/vmware/go-vcloud-director/pull/679))
 * Added `SolutionAddOnInstance` methods `GetParentSolutionAddOn`, `ReadCreationInputValues`
   `Delete`, `RdeId`, `Publishing` ([#679](https://github.com/vmware/go-vcloud-director/pull/679))
-* Added methods to create, read, update and delete VDC Templates: `VDCClient.CreateVdcTemplate`, `VDCClient.GetVdcTemplateById`,
-`VDCClient.GetVdcTemplateByName`, `VdcTemplate.Update` and `VdcTemplate.Delete` ([#686](https://github.com/vmware/go-vcloud-director/pull/686))
+* Added methods to create, read, update and delete VDC Templates: `VCDClient.CreateVdcTemplate`, `VCDClient.GetVdcTemplateById`,
+`VCDClient.GetVdcTemplateByName`, `VdcTemplate.Update` and `VdcTemplate.Delete` ([#686](https://github.com/vmware/go-vcloud-director/pull/686))
 * Added methods to manage the access settings of VDC Templates: `VdcTemplate.SetAccessControl` and  `VdcTemplate.GetAccessControl` ([#686](https://github.com/vmware/go-vcloud-director/pull/686))
 * Added the `VdcTemplate.InstantiateVdcAsync` and `VdcTemplate.InstantiateVdc` methods to instantiate VDC Templates ([#686](https://github.com/vmware/go-vcloud-director/pull/686))
-* Added the `VDCClient.QueryAdminVdcTemplates` and `Org.QueryVdcTemplates` methods to get all VDC Template records ([#686](https://github.com/vmware/go-vcloud-director/pull/686))
+* Added the `VCDClient.QueryAdminVdcTemplates` and `Org.QueryVdcTemplates` methods to get all VDC Template records ([#686](https://github.com/vmware/go-vcloud-director/pull/686))
 * Added types `DataSolution` and `types.DataSolution` for Data Storage Extension (DSE) management
   ([#689](https://github.com/vmware/go-vcloud-director/pull/689))
 * Added `DataSolution` methods `RdeId`, `Name`, `Update`, `Publish`, `Unpublish`,
