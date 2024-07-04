@@ -482,7 +482,7 @@ func (cat *Catalog) IsSharedReadOnly() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if accessControl.AccessSettings != nil || accessControl.IsSharedToEveryone {
+	if accessControl.IsSharedToEveryone {
 		return false, nil
 	}
 	err = cat.Refresh()
@@ -498,7 +498,7 @@ func (cat *AdminCatalog) IsSharedReadOnly() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if accessControl.AccessSettings != nil || accessControl.IsSharedToEveryone {
+	if accessControl.IsSharedToEveryone {
 		return false, nil
 	}
 	err = cat.Refresh()
