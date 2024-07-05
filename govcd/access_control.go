@@ -478,14 +478,7 @@ func publishCatalog(client *Client, catalogUrl string, tenantContext *TenantCont
 
 // IsSharedReadOnly returns the state of the catalog read-only sharing to all organizations
 func (cat *Catalog) IsSharedReadOnly() (bool, error) {
-	accessControl, err := cat.GetAccessControl(true)
-	if err != nil {
-		return false, err
-	}
-	if accessControl.IsSharedToEveryone {
-		return false, nil
-	}
-	err = cat.Refresh()
+	err := cat.Refresh()
 	if err != nil {
 		return false, err
 	}
@@ -494,14 +487,7 @@ func (cat *Catalog) IsSharedReadOnly() (bool, error) {
 
 // IsSharedReadOnly returns the state of the catalog read-only sharing to all organizations
 func (cat *AdminCatalog) IsSharedReadOnly() (bool, error) {
-	accessControl, err := cat.GetAccessControl(true)
-	if err != nil {
-		return false, err
-	}
-	if accessControl.IsSharedToEveryone {
-		return false, nil
-	}
-	err = cat.Refresh()
+	err := cat.Refresh()
 	if err != nil {
 		return false, err
 	}
