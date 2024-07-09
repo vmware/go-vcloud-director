@@ -205,6 +205,7 @@ type TestConfig struct {
 			NsxtEdgeCluster           string `yaml:"nsxtEdgeCluster"`
 			RoutedNetwork             string `yaml:"routedNetwork"`
 			IsolatedNetwork           string `yaml:"isolatedNetwork"`
+			DualStackNetwork          string `yaml:"dualStackNetwork"`
 			NsxtAlbControllerUrl      string `yaml:"nsxtAlbControllerUrl"`
 			NsxtAlbControllerUser     string `yaml:"nsxtAlbControllerUser"`
 			NsxtAlbControllerPassword string `yaml:"nsxtAlbControllerPassword"`
