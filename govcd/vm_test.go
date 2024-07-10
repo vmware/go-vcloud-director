@@ -2390,12 +2390,6 @@ func (vcd *TestVCD) Test_AddIpv6(check *C) {
 	// check.Assert(media, NotNil)
 
 	var task Task
-	var sp types.Reference
-	var customSP = false
-
-	if vcd.config.VCD.StorageProfile.SP1 != "" {
-		sp, _ = vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	}
 
 	newDisk := types.DiskSettings{
 		AdapterType:       "5",
@@ -2436,10 +2430,6 @@ func (vcd *TestVCD) Test_AddIpv6(check *C) {
 	// Ensure network config was valid
 	actualNetConfig, err := createdVm.GetNetworkConnectionSection()
 	check.Assert(err, IsNil)
-
-	if customSP {
-		check.Assert(createdVm.VM.StorageProfile.HREF, Equals, sp.HREF)
-	}
 
 	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
 

@@ -318,6 +318,7 @@ func (n NetworkConfigSection) NetworkNames() []string {
 // Namespace: http://www.vmware.com/vcloud/v1.5
 // Description: Represents a network connection in the virtual machine.
 // Since: 0.9
+// Note. Order of fields does matter and shuffling it might cause API errors
 type NetworkConnection struct {
 	Network                          string `xml:"network,attr"`                      // Name of the network to which this NIC is connected.
 	NeedsCustomization               bool   `xml:"needsCustomization,attr,omitempty"` // True if this NIC needs customization.
@@ -327,9 +328,9 @@ type NetworkConnection struct {
 	SecondaryIpAddress               string `xml:"SecondaryIpAddress,omitempty"`
 	SecondaryIpType                  string `xml:"SecondaryIpType,omitempty"` // IPv6
 	IsConnected                      bool   `xml:"IsConnected"`               // If the virtual machine is undeployed, this value specifies whether the NIC should be connected upon deployment. If the virtual machine is deployed, this value reports the current status of this NIC's connection, and can be updated to change that connection status.
+	MACAddress                       string `xml:"MACAddress,omitempty"`      // MAC address associated with the NIC.
 	IPAddressAllocationMode          string `xml:"IpAddressAllocationMode"`   // IP address allocation mode for this connection. One of: POOL (A static IP address is allocated automatically from a pool of addresses.) DHCP (The IP address is obtained from a DHCP service.) MANUAL (The IP address is assigned manually in the IpAddress element.) NONE (No IP addressing mode specified.)
 	SecondaryIpAddressAllocationMode string `xml:"SecondaryIpAddressAllocationMode,omitempty"`
-	MACAddress                       string `xml:"MACAddress,omitempty"` // MAC address associated with the NIC.
 	NetworkAdapterType               string `xml:"NetworkAdapterType,omitempty"`
 	ExternalIPAddress                string `xml:"ExternalIpAddress,omitempty"` // If the network to which this NIC connects provides NAT services, the external address assigned to this NIC appears here.
 }
