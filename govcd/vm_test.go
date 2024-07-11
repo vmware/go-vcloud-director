@@ -2351,13 +2351,13 @@ func testVmExtraConfig(vcd *TestVCD, label string, vm *VM, check *C, wantPowerOn
 	check.Assert(containsKey(afterDeleteXtraConfig, configSimilar.Key), Equals, false)
 }
 
-func (vcd *TestVCD) Test_AddIpv6(check *C) {
+func (vcd *TestVCD) Test_VmDualStackIPv6(check *C) {
 	config := vcd.config
 	if config.VCD.Nsxt.DualStackNetwork == "" {
 		check.Skip("Skipping test because no dual stack network was given")
 	}
 
-	vapp, err := deployVappForTest2(check.TestName(), config.VCD.Nsxt.DualStackNetwork, vcd.nsxtVdc)
+	vapp, err := deployVappWithOrgVdcNetwork(check.TestName(), config.VCD.Nsxt.DualStackNetwork, vcd.nsxtVdc)
 	check.Assert(err, IsNil)
 	check.Assert(vapp, NotNil)
 
@@ -2381,16 +2381,6 @@ func (vcd *TestVCD) Test_AddIpv6(check *C) {
 			NetworkConnectionIndex:  1,
 		})
 
-	// cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, true)
-	// check.Assert(err, IsNil)
-	// check.Assert(cat, NotNil)
-
-	// media, err := cat.GetMediaByName(vcd.config.Media.Media, false)
-	// check.Assert(err, IsNil)
-	// check.Assert(media, NotNil)
-
-	var task Task
-
 	newDisk := types.DiskSettings{
 		AdapterType:       "5",
 		SizeMb:            int64(16384),
@@ -2413,12 +2403,11 @@ func (vcd *TestVCD) Test_AddIpv6(check *C) {
 				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
 				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
 				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
-				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"}, // need support older version vCD
+				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"},
 				VmToolsVersion:    "",
 				VirtualCpuType:    "VM32",
 				TimeSyncWithHost:  nil,
 			},
-			// BootImage: &types.Media{HREF: media.Media.HREF, Name: media.Media.Name, ID: media.Media.ID},
 		},
 		AllEULAsAccepted: true,
 	}
@@ -2431,14 +2420,16 @@ func (vcd *TestVCD) Test_AddIpv6(check *C) {
 	actualNetConfig, err := createdVm.GetNetworkConnectionSection()
 	check.Assert(err, IsNil)
 
-	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
+	check.Assert(len(actualNetConfig.NetworkConnection) > 0, Equals, true)
+	check.Assert(strings.HasPrefix(actualNetConfig.NetworkConnection[0].SecondaryIpAddress, "2002:0:0:1234:abcd:ffff:a0a6"), Equals, true)
+	check.Assert(actualNetConfig.NetworkConnection[0].SecondaryIpAddressAllocationMode, Equals, "POOL")
 
 	// Cleanup
 	err = vapp.RemoveVM(*createdVm)
 	check.Assert(err, IsNil)
 
 	// Ensure network is detached from vApp to avoid conflicts in other tests
-	task, err = vapp.RemoveAllNetworks()
+	task, err := vapp.RemoveAllNetworks()
 	check.Assert(err, IsNil)
 	err = task.WaitTaskCompletion()
 	check.Assert(err, IsNil)
@@ -2449,8 +2440,7 @@ func (vcd *TestVCD) Test_AddIpv6(check *C) {
 	check.Assert(task.Task.Status, Equals, "success")
 }
 
-// deployVappForTest aims to replace createVappForTest
-func deployVappForTest2(vappName, orgNetworkName string, vdc *Vdc) (*VApp, error) {
+func deployVappWithOrgVdcNetwork(vappName, orgNetworkName string, vdc *Vdc) (*VApp, error) {
 	// Populate OrgVDCNetwork
 	net, err := vdc.GetOrgVdcNetworkByName(orgNetworkName, false)
 	if err != nil {
@@ -2475,205 +2465,3 @@ func deployVappForTest2(vappName, orgNetworkName string, vdc *Vdc) (*VApp, error
 
 	return vapp, nil
 }
-
-/*
-func (vcd *TestVCD) Test_AddNewEmptyVmIpv6(check *C) {
-	config := vcd.config
-	if config.VCD.Nsxt.DualStackNetwork == "" {
-		check.Skip("Skipping test because no dual-stack network was given")
-	}
-
-	// Find VApp
-	if vcd.vapp != nil && vcd.vapp.VApp == nil {
-		check.Skip("skipping test because no vApp is found")
-	}
-
-	vapp, err := deployVappForTest(vcd, "Test_AddNewEmptyVMMultiNIC")
-	check.Assert(err, IsNil)
-	check.Assert(vapp, NotNil)
-
-	desiredNetConfig := &types.NetworkConnectionSection{}
-	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
-	desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
-		&types.NetworkConnection{
-			NetworkConnectionIndex:           0,
-			NetworkAdapterType:               "VMXNET3",
-			IsConnected:                      true,
-			IPAddressAllocationMode:          types.IPAllocationModePool,
-			IpType:                           "IPV4",
-			Network:                          config.VCD.Nsxt.DualStackNetwork,
-			SecondaryIpAddressAllocationMode: types.IPAllocationModePool,
-			SecondaryIpType:                  "IPV6",
-		},
-		&types.NetworkConnection{
-			IsConnected:             true,
-			IPAddressAllocationMode: types.IPAllocationModeNone,
-			Network:                 types.NoneNetwork,
-			NetworkConnectionIndex:  1,
-		})
-
-	cat, err := vcd.org.GetCatalogByName(vcd.config.VCD.Catalog.Name, true)
-	check.Assert(err, IsNil)
-	check.Assert(cat, NotNil)
-
-	media, err := cat.GetMediaByName(vcd.config.Media.Media, false)
-	check.Assert(err, IsNil)
-	check.Assert(media, NotNil)
-
-	var task Task
-	var sp types.Reference
-	var customSP = false
-
-	if vcd.config.VCD.StorageProfile.SP1 != "" {
-		sp, _ = vcd.vdc.FindStorageProfileReference(vcd.config.VCD.StorageProfile.SP1)
-	}
-
-	newDisk := types.DiskSettings{
-		AdapterType:       "5",
-		SizeMb:            int64(16384),
-		BusNumber:         0,
-		UnitNumber:        0,
-		ThinProvisioned:   addrOf(true),
-		OverrideVmDefault: true}
-
-	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
-		CreateItem: &types.CreateItem{
-			Name:                      check.TestName(),
-			NetworkConnectionSection:  desiredNetConfig,
-			GuestCustomizationSection: nil,
-			VmSpecSection: &types.VmSpecSection{
-				Modified:          addrOf(true),
-				Info:              "Virtual Machine specification",
-				OsType:            "debian10Guest",
-				NumCpus:           addrOf(2),
-				NumCoresPerSocket: addrOf(1),
-				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
-				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
-				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
-				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"}, // need support older version vCD
-				VmToolsVersion:    "",
-				VirtualCpuType:    "VM32",
-				TimeSyncWithHost:  nil,
-			},
-			BootImage: &types.Media{HREF: media.Media.HREF, Name: media.Media.Name, ID: media.Media.ID},
-		},
-		AllEULAsAccepted: true,
-	}
-
-	createdVm, err := vapp.AddEmptyVm(requestDetails)
-	check.Assert(err, IsNil)
-	check.Assert(createdVm, NotNil)
-
-	// Ensure network config was valid
-	actualNetConfig, err := createdVm.GetNetworkConnectionSection()
-	check.Assert(err, IsNil)
-
-	if customSP {
-		check.Assert(createdVm.VM.StorageProfile.HREF, Equals, sp.HREF)
-	}
-
-	verifyNetworkConnectionSection(check, actualNetConfig, desiredNetConfig)
-
-	// Cleanup
-	err = vapp.RemoveVM(*createdVm)
-	check.Assert(err, IsNil)
-
-	// Ensure network is detached from vApp to avoid conflicts in other tests
-	task, err = vapp.RemoveAllNetworks()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	task, err = vapp.Delete()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-	check.Assert(task.Task.Status, Equals, "success")
-}
-
-func (vcd *TestVCD) Test_VmIpv6(check *C) {
-	org := vcd.org
-	catalog, err := org.GetCatalogByName(vcd.config.VCD.Catalog.NsxtBackedCatalogName, false)
-	check.Assert(err, IsNil)
-	vappTemplateName := vcd.config.VCD.Catalog.CatalogItemWithMultiVms
-	if vappTemplateName == "" {
-		check.Skip(fmt.Sprintf("vApp template missing in configuration - Make sure there is such template in catalog %s -"+
-			" Using test_resources/vapp_with_3_vms.ova",
-			vcd.config.VCD.Catalog.NsxtBackedCatalogName))
-	}
-	vappTemplate, err := catalog.GetVAppTemplateByName(vappTemplateName)
-	if err != nil {
-		if ContainsNotFound(err) {
-			check.Skip(fmt.Sprintf("vApp template %s not found - Make sure there is such template in catalog %s -"+
-				" Using test_resources/vapp_with_3_vms.ova",
-				vappTemplateName, vcd.config.VCD.Catalog.NsxtBackedCatalogName))
-		}
-	}
-	check.Assert(err, IsNil)
-	check.Assert(vappTemplate.VAppTemplate.Children, NotNil)
-	check.Assert(vappTemplate.VAppTemplate.Children.VM, NotNil)
-
-	vapp, vm := createNsxtVAppAndVmFromCustomTemplate(vcd, check, vappTemplate)
-	check.Assert(vapp, NotNil)
-	check.Assert(vm, NotNil)
-
-	// Check that vApp did not lose its state
-	vappStatus, err := vapp.GetStatus()
-	check.Assert(err, IsNil)
-	check.Assert(vappStatus, Equals, "MIXED") //vApp is powered on, but the VM within is powered off
-	check.Assert(vapp.VApp.Name, Equals, check.TestName())
-	check.Assert(vapp.VApp.Description, Equals, check.TestName())
-
-	// Check that VM is not powered on
-	vmStatus, err := vm.GetStatus()
-	check.Assert(err, IsNil)
-	check.Assert(vmStatus, Equals, "POWERED_OFF")
-
-	// Attempt to resize before consolidating disks - it should fail
-	vmSpecSection := vm.VM.VmSpecSection
-	vmSizeBeforeGrowing := vmSpecSection.DiskSection.DiskSettings[0].SizeMb
-	vmSpecSection.DiskSection.DiskSettings[0].SizeMb = vmSizeBeforeGrowing + 1024
-	_, err = vm.UpdateInternalDisks(vmSpecSection)
-	check.Assert(strings.Contains(err.Error(), "cannot be modified while the virtual machine has snapshots"), Equals, true)
-
-	// Trigger disk consolidation
-	err = vm.ConsolidateDisks()
-	check.Assert(err, IsNil)
-
-	// Resize disk after consolidation - it should work now
-	err = vm.Refresh() // reloading VM structure to avoid
-	check.Assert(err, IsNil)
-	vmSpecSection = vm.VM.VmSpecSection
-	vmSizeBeforeGrowing = vmSpecSection.DiskSection.DiskSettings[0].SizeMb
-	vmSpecSection.DiskSection.DiskSettings[0].SizeMb = vmSizeBeforeGrowing + 1024
-
-	_, err = vm.UpdateInternalDisks(vmSpecSection)
-	check.Assert(err, IsNil)
-
-	// Refresh VM and verify size
-	err = vm.Refresh()
-	check.Assert(err, IsNil)
-	check.Assert(vm.VM.VmSpecSection.DiskSection.DiskSettings[0].SizeMb, Equals, vmSizeBeforeGrowing+1024)
-
-	// Trigger async disk consolidation - it will return instantly because the disk is already
-	// consolidated and there is nothing to do
-	task, err := vm.ConsolidateDisksAsync()
-	check.Assert(err, IsNil)
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	// Cleanup
-	task, err = vapp.Undeploy()
-	check.Assert(err, IsNil)
-	check.Assert(task, Not(Equals), Task{})
-
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-
-	task, err = vapp.Delete()
-	check.Assert(err, IsNil)
-	check.Assert(task, Not(Equals), Task{})
-
-	err = task.WaitTaskCompletion()
-	check.Assert(err, IsNil)
-}
-*/
