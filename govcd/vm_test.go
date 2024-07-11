@@ -2450,7 +2450,7 @@ func deployVappWithOrgVdcNetwork(vappName, orgNetworkName string, vdc *Vdc) (*VA
 	// Create empty vApp
 	vapp, err := vdc.CreateRawVApp(vappName, "description")
 	if err != nil {
-		return nil, fmt.Errorf("error creating vapp: %s", err)
+		return nil, fmt.Errorf("error creating vApp: %s", err)
 	}
 
 	// After a successful creation, the entity is added to the cleanup list.
