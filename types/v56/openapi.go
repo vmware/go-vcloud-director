@@ -760,3 +760,15 @@ type OpenApiOrg struct {
 	DiskCount      int    `json:"diskCount"`
 	CanPublish     bool   `json:"canPublish"`
 }
+
+// ExternalEndpoint is part of the API extensibility framework.
+// They allow requests to be directly proxied over HTTP to an external endpoint.
+type ExternalEndpoint struct {
+	Name        string `json:"name,omitempty"`        // The name of the external endpoint
+	ID          string `json:"id,omitempty"`          // The unique id of the external endpoint
+	Version     string `json:"version,omitempty"`     // The external endpoint's version. The version should follow semantic versioning rules. Versions with pre-release extension are not allowed. The combination of vendor-namespace-version must be unique
+	Vendor      string `json:"vendor,omitempty"`      // The vendor name. The combination of vendor-namespace-version must be unique
+	Enabled     bool   `json:"enabled,omitempty"`     // Whether the external endpoint is enabled or not
+	Description string `json:"description,omitempty"` // Description of the defined entity
+	RootUrl     string `json:"rootUrl,omitempty"`     // The external endpoint which requests will be redirected to. The rootUrl must be a valid URL of https protocol
+}
