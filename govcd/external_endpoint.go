@@ -100,9 +100,15 @@ func (externalEndpoint *ExternalEndpoint) Update(ep types.ExternalEndpoint) erro
 	}
 
 	// Name, version and vendor can't be changed
-	ep.Name = externalEndpoint.ExternalEndpoint.Name
-	ep.Vendor = externalEndpoint.ExternalEndpoint.Vendor
-	ep.Version = externalEndpoint.ExternalEndpoint.Version
+	if ep.Name != externalEndpoint.ExternalEndpoint.Name {
+		return fmt.Errorf("name of the receiver External Endpoint and the input Name don't match")
+	}
+	if ep.Vendor != externalEndpoint.ExternalEndpoint.Vendor {
+		return fmt.Errorf("vendor of the receiver External Endpoint and the input Vendor don't match")
+	}
+	if ep.Version != externalEndpoint.ExternalEndpoint.Version {
+		return fmt.Errorf("version of the receiver External Endpoint and the input Version don't match")
+	}
 
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalEndpoints,
