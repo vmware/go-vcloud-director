@@ -777,5 +777,22 @@ type ExternalEndpoint struct {
 // They allow external systems (external services and external endpoints) to extend the standard API included with VCD
 // with custom URLs or custom processing of request's responses.
 type ApiFilter struct {
-	ID string `json:"id,omitempty"` // The unique id of the API filter
+	ID             string            `json:"id,omitempty"`             // The unique id of the API filter
+	ExternalSystem *OpenApiReference `json:"externalSystem,omitempty"` // Entity reference used to describe VCD entities
+	UrlMatcher     *UrlMatcher       `json:"urlMatcher,omitempty"`
+
+	// The responseContentType is expressed as a MIME Content-Type string. Responses whose Content-Type attribute has a value
+	// that matches this string are routed to the service. responseContentType is mutually exclusive with urlMatcher.
+	ResponseContentType string `json:"responseContentType,omitempty"`
+}
+
+// UrlMatcher consists of urlPattern and urlScope which together identify a URL which will be serviced by an external system.
+// For example, if you want the external system to service all requests matching '/ext-api/custom/.', the URL Matcher object should be:
+// { "urlPattern": "/custom/.", "urlScope": "EXT_API" }.
+// It is important to note that in the case of EXT_UI_TENANT urlScope, the tenant name is not part of the urlPattern.
+// The urlPattern will match the request after the tenant name - if request is "/ext-ui/tenant/testOrg/custom/test",
+// the pattern will match against "/custom/test".
+type UrlMatcher struct {
+	UrlPattern string `json:"urlPattern,omitempty"`
+	UrlScope   string `json:"urlScope,omitempty"`
 }
