@@ -772,3 +772,10 @@ type ExternalEndpoint struct {
 	Description string `json:"description,omitempty"` // Description of the defined entity
 	RootUrl     string `json:"rootUrl,omitempty"`     // The external endpoint which requests will be redirected to. The rootUrl must be a valid URL of https protocol
 }
+
+// ApiFilter is part of the API extensibility framework.
+// They allow external systems (external services and external endpoints) to extend the standard API included with VCD
+// with custom URLs or custom processing of request's responses.
+type ApiFilter struct {
+	ID string `json:"id,omitempty"` // The unique id of the API filter
+}

@@ -450,6 +450,7 @@ const (
 	OpenApiEndpointRdeEntitiesResolve                 = "entities/%s/resolve"
 	OpenApiEndpointRdeEntitiesBehaviorsInvocations    = "entities/%s/behaviors/%s/invocations"
 	OpenApiEndpointExternalEndpoints                  = "externalEndpoints/"
+	OpenApiEndpointApiFilters                         = "apiFilters/"
 	OpenApiEndpointVirtualCenters                     = "virtualCenters"
 	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse"    // '%s' is vCenter ID
 	OpenApiEndpointResourcePoolsBrowseAll             = "virtualCenters/%s/resourcePools/browseAll" // '%s' is vCenter ID
