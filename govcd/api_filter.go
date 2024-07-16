@@ -38,12 +38,12 @@ func (vcdClient *VCDClient) CreateApiFilter(apiFilter *types.ApiFilter) (*ApiFil
 	return createOuterEntity(&vcdClient.Client, outerType, c, apiFilter)
 }
 
-// GetAllApiFilters retrieves all available ApiFilter. Query parameters can be supplied to perform additional filtering.
+// GetAllApiFilters retrieves all available API Filters. Query parameters can be supplied to perform additional filtering.
 func (vcdClient *VCDClient) GetAllApiFilters(queryParameters url.Values) ([]*ApiFilter, error) {
 	return getAllApiFilters(&vcdClient.Client, queryParameters)
 }
 
-// getAllApiFilters retrieves all available ApiFilter. Query parameters can be supplied to perform additional filtering.
+// getAllApiFilters retrieves all available API Filters. Query parameters can be supplied to perform additional filtering.
 func getAllApiFilters(client *Client, queryParameters url.Values) ([]*ApiFilter, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointApiFilters,
@@ -89,7 +89,7 @@ func (vcdClient *VCDClient) GetApiFilterById(id string) (*ApiFilter, error) {
 	return getOuterEntity[ApiFilter, types.ApiFilter](&vcdClient.Client, outerType, c)
 }
 
-// Update updates the receiver ApiFilter with the values given by the input.
+// Update updates the receiver API Filter with the values given by the input.
 func (ApiFilter *ApiFilter) Update(ep types.ApiFilter) error {
 	if ApiFilter.ApiFilter.ID == "" {
 		return fmt.Errorf("ID of the receiver API Filter is empty")
@@ -116,7 +116,7 @@ func (ApiFilter *ApiFilter) Update(ep types.ApiFilter) error {
 	return nil
 }
 
-// Delete deletes the receiver ApiFilter.
+// Delete deletes the receiver API Filter.
 func (ApiFilter *ApiFilter) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointApiFilters,

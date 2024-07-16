@@ -38,12 +38,12 @@ func (vcdClient *VCDClient) CreateExternalEndpoint(externalEndpoint *types.Exter
 	return createOuterEntity(&vcdClient.Client, outerType, c, externalEndpoint)
 }
 
-// GetAllExternalEndpoints retrieves all available ExternalEndpoint. Query parameters can be supplied to perform additional filtering.
+// GetAllExternalEndpoints retrieves all available External Endpoints. Query parameters can be supplied to perform additional filtering.
 func (vcdClient *VCDClient) GetAllExternalEndpoints(queryParameters url.Values) ([]*ExternalEndpoint, error) {
 	return getAllExternalEndpoints(&vcdClient.Client, queryParameters)
 }
 
-// getAllExternalEndpoints retrieves all available ExternalEndpoint. Query parameters can be supplied to perform additional filtering.
+// getAllExternalEndpoints retrieves all available External Endpoints. Query parameters can be supplied to perform additional filtering.
 func getAllExternalEndpoints(client *Client, queryParameters url.Values) ([]*ExternalEndpoint, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalEndpoints,
@@ -89,7 +89,7 @@ func (vcdClient *VCDClient) GetExternalEndpointById(id string) (*ExternalEndpoin
 	return getOuterEntity[ExternalEndpoint, types.ExternalEndpoint](&vcdClient.Client, outerType, c)
 }
 
-// Update updates the receiver ExternalEndpoint with the values given by the input.
+// Update updates the receiver External Endpoint with the values given by the input.
 func (externalEndpoint *ExternalEndpoint) Update(ep types.ExternalEndpoint) error {
 	if externalEndpoint.ExternalEndpoint.ID == "" {
 		return fmt.Errorf("ID of the receiver External Endpoint is empty")
@@ -127,7 +127,7 @@ func (externalEndpoint *ExternalEndpoint) Update(ep types.ExternalEndpoint) erro
 	return nil
 }
 
-// Delete deletes the receiver ExternalEndpoint.
+// Delete deletes the receiver External Endpoint.
 func (externalEndpoint *ExternalEndpoint) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalEndpoints,
