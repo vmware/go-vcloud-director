@@ -69,7 +69,7 @@ func getExternalEndpoint(client *Client, vendor, name, version string) (*Externa
 		return nil, err
 	}
 
-	singleResult, err := oneOrError("vendor,name,version", fmt.Sprintf("%s,%s,%s", vendor, name, version), externalEndpoints)
+	singleResult, err := oneOrError("'vendor:name:version'", fmt.Sprintf("'%s:%s:%s'", vendor, name, version), externalEndpoints)
 	if err != nil {
 		return nil, err
 	}
