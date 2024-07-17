@@ -75,5 +75,5 @@ func (vcd *TestVCD) Test_ExternalEndpoint(check *C) {
 	err = createdEp.Update(ep)
 	check.Assert(err, IsNil)
 	check.Assert(createdEp, NotNil)
-	check.Assert(createdEp, NotNil)
+	check.Assert(createdEp.ExternalEndpoint.RootUrl, Equals, "https://www.broadcom.com/updated")
 }
