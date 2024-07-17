@@ -55,28 +55,6 @@ func getAllApiFilters(client *Client, queryParameters url.Values) ([]*ApiFilter,
 	return getAllOuterEntities[ApiFilter, types.ApiFilter](client, outerType, c)
 }
 
-// GetApiFilter gets an API Filter by its unique combination of vendor, name and version.
-func (vcdClient *VCDClient) GetApiFilter(vendor, name, version string) (*ApiFilter, error) {
-	return getApiFilter(&vcdClient.Client, vendor, name, version)
-}
-
-// getApiFilter gets an API Filter by its unique combination of vendor, name and version.
-func getApiFilter(client *Client, vendor, name, version string) (*ApiFilter, error) {
-	queryParameters := url.Values{}
-	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;name==%s;version==%s", vendor, name, version))
-	ApiFilters, err := getAllApiFilters(client, queryParameters)
-	if err != nil {
-		return nil, err
-	}
-
-	singleResult, err := oneOrError("'vendor:name:version'", fmt.Sprintf("'%s:%s:%s'", vendor, name, version), ApiFilters)
-	if err != nil {
-		return nil, err
-	}
-
-	return singleResult, nil
-}
-
 // GetApiFilterById gets an API Filter by its ID.
 func (vcdClient *VCDClient) GetApiFilterById(id string) (*ApiFilter, error) {
 	c := crudConfig{

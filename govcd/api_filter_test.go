@@ -45,16 +45,18 @@ func (vcd *TestVCD) Test_ApiFilter(check *C) {
 		check.Assert(err, IsNil)
 	}()
 
-	createdAf, err := vcd.client.CreateApiFilter(&types.ApiFilter{
+	af := &types.ApiFilter{
 		ExternalSystem: &types.OpenApiReference{
-			Name: ep.Name,
-			ID:   ep.ID,
+			Name: createdEp.ExternalEndpoint.Name,
+			ID:   createdEp.ExternalEndpoint.ID,
 		},
 		UrlMatcher: &types.UrlMatcher{
-			UrlPattern: "/custom/.",
+			UrlPattern: "/custom/.*",
 			UrlScope:   "EXT_API",
 		},
-	})
+	}
+
+	createdAf, err := vcd.client.CreateApiFilter(af)
 	check.Assert(err, IsNil)
 	check.Assert(createdAf, NotNil)
 
@@ -62,4 +64,35 @@ func (vcd *TestVCD) Test_ApiFilter(check *C) {
 		err = createdAf.Delete()
 		check.Assert(err, IsNil)
 	}()
+
+	retrievedAf, err := vcd.client.GetApiFilterById(createdAf.ApiFilter.ID)
+	check.Assert(err, IsNil)
+	check.Assert(retrievedAf, NotNil)
+	check.Assert(retrievedAf.ApiFilter.ID, Equals, createdAf.ApiFilter.ID)
+	check.Assert(retrievedAf.ApiFilter.UrlMatcher, NotNil)
+	check.Assert(retrievedAf.ApiFilter.UrlMatcher.UrlPattern, Equals, createdAf.ApiFilter.UrlMatcher.UrlPattern)
+	check.Assert(retrievedAf.ApiFilter.UrlMatcher.UrlScope, Equals, createdAf.ApiFilter.UrlMatcher.UrlScope)
+	check.Assert(retrievedAf.ApiFilter.ResponseContentType, Equals, "")
+	check.Assert(retrievedAf.ApiFilter.ExternalSystem, NotNil)
+	check.Assert(retrievedAf.ApiFilter.ExternalSystem.ID, Equals, createdEp.ExternalEndpoint.ID)
+	check.Assert(retrievedAf.ApiFilter.ExternalSystem.Name, Equals, createdEp.ExternalEndpoint.Name)
+
+	allAfs, err := vcd.client.GetAllApiFilters(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allAfs) > 0, Equals, true)
+	pos := -1
+	for i, af := range allAfs {
+		if af.ApiFilter.ID == retrievedAf.ApiFilter.ID {
+			pos = i
+		}
+	}
+	check.Assert(pos > -1, Equals, true)
+	check.Assert(*allAfs[pos].ApiFilter, DeepEquals, *retrievedAf.ApiFilter)
+
+	af.UrlMatcher.UrlPattern = "/custom2/.*"
+	err = createdAf.Update(*af)
+	check.Assert(err, IsNil)
+	check.Assert(createdAf, NotNil)
+	check.Assert(createdAf.ApiFilter.UrlMatcher, NotNil)
+	check.Assert(createdAf.ApiFilter.UrlMatcher.UrlPattern, Equals, af.UrlMatcher.UrlPattern)
 }
