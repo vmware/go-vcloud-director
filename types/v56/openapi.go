@@ -794,5 +794,5 @@ type ApiFilter struct {
 // the pattern will match against "/custom/test".
 type UrlMatcher struct {
 	UrlPattern string `json:"urlPattern,omitempty"`
-	UrlScope   string `json:"urlScope,omitempty"`
+	UrlScope   string `json:"urlScope,omitempty"` // EXT_API, EXT_UI_PROVIDER, EXT_UI_TENANT corresponding to /ext-api, /ext-ui/provider, /ext-ui/tenant/<tenant-name>
 }
