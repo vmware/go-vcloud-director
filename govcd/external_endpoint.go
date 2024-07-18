@@ -57,14 +57,9 @@ func getAllExternalEndpoints(client *Client, queryParameters url.Values) ([]*Ext
 
 // GetExternalEndpoint gets an External Endpoint by its unique combination of vendor, name and version.
 func (vcdClient *VCDClient) GetExternalEndpoint(vendor, name, version string) (*ExternalEndpoint, error) {
-	return getExternalEndpoint(&vcdClient.Client, vendor, name, version)
-}
-
-// getExternalEndpoint gets an External Endpoint by its unique combination of vendor, name and version.
-func getExternalEndpoint(client *Client, vendor, name, version string) (*ExternalEndpoint, error) {
 	queryParameters := url.Values{}
 	queryParameters.Add("filter", fmt.Sprintf("vendor==%s;name==%s;version==%s", vendor, name, version))
-	externalEndpoints, err := getAllExternalEndpoints(client, queryParameters)
+	externalEndpoints, err := getAllExternalEndpoints(&vcdClient.Client, queryParameters)
 	if err != nil {
 		return nil, err
 	}
