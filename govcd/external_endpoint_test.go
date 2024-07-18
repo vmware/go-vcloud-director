@@ -28,7 +28,7 @@ func (vcd *TestVCD) Test_ExternalEndpoint(check *C) {
 		Version:     "1.0.0",
 		Vendor:      "vmware",
 		Enabled:     true,
-		Description: "Description of" + name,
+		Description: "Description of " + name,
 		RootUrl:     "https://www.broadcom.com",
 	}
 
