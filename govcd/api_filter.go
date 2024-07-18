@@ -40,19 +40,14 @@ func (vcdClient *VCDClient) CreateApiFilter(apiFilter *types.ApiFilter) (*ApiFil
 
 // GetAllApiFilters retrieves all available API Filters. Query parameters can be supplied to perform additional filtering.
 func (vcdClient *VCDClient) GetAllApiFilters(queryParameters url.Values) ([]*ApiFilter, error) {
-	return getAllApiFilters(&vcdClient.Client, queryParameters)
-}
-
-// getAllApiFilters retrieves all available API Filters. Query parameters can be supplied to perform additional filtering.
-func getAllApiFilters(client *Client, queryParameters url.Values) ([]*ApiFilter, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointApiFilters,
 		entityLabel:     labelApiFilter,
 		queryParameters: queryParameters,
 	}
 
-	outerType := ApiFilter{client: client}
-	return getAllOuterEntities[ApiFilter, types.ApiFilter](client, outerType, c)
+	outerType := ApiFilter{client: &vcdClient.Client}
+	return getAllOuterEntities[ApiFilter, types.ApiFilter](&vcdClient.Client, outerType, c)
 }
 
 // GetApiFilterById gets an API Filter by its ID.

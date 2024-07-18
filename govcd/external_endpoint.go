@@ -90,6 +90,7 @@ func (vcdClient *VCDClient) GetExternalEndpointById(id string) (*ExternalEndpoin
 }
 
 // Update updates the receiver External Endpoint with the values given by the input.
+// Note: Vendor, name and version can't be changed. Modifying them will have no effect.
 func (externalEndpoint *ExternalEndpoint) Update(ep types.ExternalEndpoint) error {
 	if externalEndpoint.ExternalEndpoint.ID == "" {
 		return fmt.Errorf("ID of the receiver External Endpoint is empty")
@@ -97,17 +98,6 @@ func (externalEndpoint *ExternalEndpoint) Update(ep types.ExternalEndpoint) erro
 
 	if ep.ID != "" && ep.ID != externalEndpoint.ExternalEndpoint.ID {
 		return fmt.Errorf("ID of the receiver External Endpoint and the input ID don't match")
-	}
-
-	// Name, version and vendor can't be changed
-	if ep.Name != externalEndpoint.ExternalEndpoint.Name {
-		return fmt.Errorf("name of the receiver External Endpoint and the input Name don't match")
-	}
-	if ep.Vendor != externalEndpoint.ExternalEndpoint.Vendor {
-		return fmt.Errorf("vendor of the receiver External Endpoint and the input Vendor don't match")
-	}
-	if ep.Version != externalEndpoint.ExternalEndpoint.Version {
-		return fmt.Errorf("version of the receiver External Endpoint and the input Version don't match")
 	}
 
 	c := crudConfig{
@@ -128,6 +118,7 @@ func (externalEndpoint *ExternalEndpoint) Update(ep types.ExternalEndpoint) erro
 }
 
 // Delete deletes the receiver External Endpoint.
+// Note: To delete an External Endpoint, it must be disabled, otherwise the operation will fail.
 func (externalEndpoint *ExternalEndpoint) Delete() error {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalEndpoints,
