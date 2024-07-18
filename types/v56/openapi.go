@@ -783,7 +783,7 @@ type ApiFilter struct {
 
 	// The responseContentType is expressed as a MIME Content-Type string. Responses whose Content-Type attribute has a value
 	// that matches this string are routed to the service. responseContentType is mutually exclusive with urlMatcher.
-	ResponseContentType string `json:"responseContentType,omitempty"`
+	ResponseContentType *string `json:"responseContentType,omitempty"`
 }
 
 // UrlMatcher consists of urlPattern and urlScope which together identify a URL which will be serviced by an external system.

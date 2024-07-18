@@ -19,7 +19,7 @@ func (vcd *TestVCD) Test_ExternalEndpoint(check *C) {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 
-	name := strings.ReplaceAll(check.TestName(), ".", "")
+	name := strings.ReplaceAll(check.TestName(), ".", "") // Special characters like "." are not allowed
 
 	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointExternalEndpoints)
 
