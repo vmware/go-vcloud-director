@@ -75,6 +75,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes:                   "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesResolve:                 "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesBehaviorsInvocations:    "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalEndpoints:                  "37.3", // VCD 10.4.3+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointApiFilters:                         "37.3", // VCD 10.4.3+
 
 	// IP Spaces
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces:                     "37.1", // VCD 10.4.1+

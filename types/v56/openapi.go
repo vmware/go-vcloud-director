@@ -760,3 +760,39 @@ type OpenApiOrg struct {
 	DiskCount      int    `json:"diskCount"`
 	CanPublish     bool   `json:"canPublish"`
 }
+
+// ExternalEndpoint is part of the API extensibility framework.
+// They allow requests to be directly proxied over HTTP to an external endpoint.
+type ExternalEndpoint struct {
+	Name        string `json:"name,omitempty"`        // The name of the external endpoint
+	ID          string `json:"id,omitempty"`          // The unique id of the external endpoint
+	Version     string `json:"version,omitempty"`     // The external endpoint's version. The version should follow semantic versioning rules. Versions with pre-release extension are not allowed. The combination of vendor-namespace-version must be unique
+	Vendor      string `json:"vendor,omitempty"`      // The vendor name. The combination of vendor-namespace-version must be unique
+	Enabled     bool   `json:"enabled"`               // Whether the external endpoint is enabled or not
+	Description string `json:"description,omitempty"` // Description of the defined entity
+	RootUrl     string `json:"rootUrl,omitempty"`     // The external endpoint which requests will be redirected to. The rootUrl must be a valid URL of https protocol
+}
+
+// ApiFilter is part of the API extensibility framework.
+// They allow external systems (external services and external endpoints) to extend the standard API included with VCD
+// with custom URLs or custom processing of request's responses.
+type ApiFilter struct {
+	ID             string            `json:"id,omitempty"`             // The unique id of the API filter
+	ExternalSystem *OpenApiReference `json:"externalSystem,omitempty"` // Entity reference used to describe VCD entities
+	UrlMatcher     *UrlMatcher       `json:"urlMatcher,omitempty"`
+
+	// The responseContentType is expressed as a MIME Content-Type string. Responses whose Content-Type attribute has a value
+	// that matches this string are routed to the service. responseContentType is mutually exclusive with urlMatcher.
+	ResponseContentType *string `json:"responseContentType,omitempty"`
+}
+
+// UrlMatcher consists of urlPattern and urlScope which together identify a URL which will be serviced by an external system.
+// For example, if you want the external system to service all requests matching '/ext-api/custom/.', the URL Matcher object should be:
+// { "urlPattern": "/custom/.", "urlScope": "EXT_API" }.
+// It is important to note that in the case of EXT_UI_TENANT urlScope, the tenant name is not part of the urlPattern.
+// The urlPattern will match the request after the tenant name - if request is "/ext-ui/tenant/testOrg/custom/test",
+// the pattern will match against "/custom/test".
+type UrlMatcher struct {
+	UrlPattern string `json:"urlPattern,omitempty"`
+	UrlScope   string `json:"urlScope,omitempty"` // EXT_API, EXT_UI_PROVIDER, EXT_UI_TENANT corresponding to /ext-api, /ext-ui/provider, /ext-ui/tenant/<tenant-name>
+}
