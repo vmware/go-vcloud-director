@@ -2350,3 +2350,118 @@ func testVmExtraConfig(vcd *TestVCD, label string, vm *VM, check *C, wantPowerOn
 	check.Assert(containsKey(afterDeleteXtraConfig, configWithValidKey.Key), Equals, false)
 	check.Assert(containsKey(afterDeleteXtraConfig, configSimilar.Key), Equals, false)
 }
+
+func (vcd *TestVCD) Test_VmDualStackIPv6(check *C) {
+	config := vcd.config
+	if config.VCD.Nsxt.DualStackNetwork == "" {
+		check.Skip("Skipping test because no dual stack network was given")
+	}
+
+	vapp, err := deployVappWithOrgVdcNetwork(check.TestName(), config.VCD.Nsxt.DualStackNetwork, vcd.nsxtVdc)
+	check.Assert(err, IsNil)
+	check.Assert(vapp, NotNil)
+
+	desiredNetConfig := &types.NetworkConnectionSection{}
+	desiredNetConfig.PrimaryNetworkConnectionIndex = 0
+	desiredNetConfig.NetworkConnection = append(desiredNetConfig.NetworkConnection,
+		&types.NetworkConnection{
+			NetworkConnectionIndex:           0,
+			NetworkAdapterType:               "VMXNET3",
+			IsConnected:                      true,
+			IPAddressAllocationMode:          types.IPAllocationModePool,
+			IpType:                           "IPV4",
+			Network:                          config.VCD.Nsxt.DualStackNetwork,
+			SecondaryIpAddressAllocationMode: types.IPAllocationModePool,
+			SecondaryIpType:                  "IPV6",
+		},
+		&types.NetworkConnection{
+			IsConnected:             true,
+			IPAddressAllocationMode: types.IPAllocationModeNone,
+			Network:                 types.NoneNetwork,
+			NetworkConnectionIndex:  1,
+		})
+
+	newDisk := types.DiskSettings{
+		AdapterType:       "5",
+		SizeMb:            int64(16384),
+		BusNumber:         0,
+		UnitNumber:        0,
+		ThinProvisioned:   addrOf(true),
+		OverrideVmDefault: true}
+
+	requestDetails := &types.RecomposeVAppParamsForEmptyVm{
+		CreateItem: &types.CreateItem{
+			Name:                      check.TestName(),
+			NetworkConnectionSection:  desiredNetConfig,
+			GuestCustomizationSection: nil,
+			VmSpecSection: &types.VmSpecSection{
+				Modified:          addrOf(true),
+				Info:              "Virtual Machine specification",
+				OsType:            "debian10Guest",
+				NumCpus:           addrOf(2),
+				NumCoresPerSocket: addrOf(1),
+				CpuResourceMhz:    &types.CpuResourceMhz{Configured: 1},
+				MemoryResourceMb:  &types.MemoryResourceMb{Configured: 1024},
+				DiskSection:       &types.DiskSection{DiskSettings: []*types.DiskSettings{&newDisk}},
+				HardwareVersion:   &types.HardwareVersion{Value: "vmx-13"},
+				VmToolsVersion:    "",
+				VirtualCpuType:    "VM32",
+				TimeSyncWithHost:  nil,
+			},
+		},
+		AllEULAsAccepted: true,
+	}
+
+	createdVm, err := vapp.AddEmptyVm(requestDetails)
+	check.Assert(err, IsNil)
+	check.Assert(createdVm, NotNil)
+
+	// Ensure network config was valid
+	actualNetConfig, err := createdVm.GetNetworkConnectionSection()
+	check.Assert(err, IsNil)
+
+	check.Assert(len(actualNetConfig.NetworkConnection) > 0, Equals, true)
+	check.Assert(strings.HasPrefix(actualNetConfig.NetworkConnection[0].SecondaryIpAddress, "2002:0:0:1234:abcd:ffff:a0a6"), Equals, true)
+	check.Assert(actualNetConfig.NetworkConnection[0].SecondaryIpAddressAllocationMode, Equals, "POOL")
+
+	// Cleanup
+	err = vapp.RemoveVM(*createdVm)
+	check.Assert(err, IsNil)
+
+	// Ensure network is detached from vApp to avoid conflicts in other tests
+	task, err := vapp.RemoveAllNetworks()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	task, err = vapp.Delete()
+	check.Assert(err, IsNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
+
+func deployVappWithOrgVdcNetwork(vappName, orgNetworkName string, vdc *Vdc) (*VApp, error) {
+	// Populate OrgVDCNetwork
+	net, err := vdc.GetOrgVdcNetworkByName(orgNetworkName, false)
+	if err != nil {
+		return nil, fmt.Errorf("error finding network : %s", err)
+	}
+
+	// Create empty vApp
+	vapp, err := vdc.CreateRawVApp(vappName, "description")
+	if err != nil {
+		return nil, fmt.Errorf("error creating vApp: %s", err)
+	}
+
+	// After a successful creation, the entity is added to the cleanup list.
+	// If something fails after this point, the entity will be removed
+	AddToCleanupList(vappName, "vapp", "", "createTestVapp")
+
+	// Create vApp networking
+	_, err = vapp.AddOrgNetwork(&VappNetworkSettings{}, net.OrgVDCNetwork, false)
+	if err != nil {
+		return nil, fmt.Errorf("error creating vApp network. %s", err)
+	}
+
+	return vapp, nil
+}
