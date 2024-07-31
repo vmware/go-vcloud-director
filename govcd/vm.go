@@ -2178,6 +2178,7 @@ func (vm *VM) updateExtraConfig(update []*types.ExtraConfigMarshal, wantDelete b
 		Ns2:   types.XMLNamespaceVCloud,
 		Ns3:   types.XMLNamespaceVCloud,
 		Ns4:   types.XMLNamespaceVCloud,
+		Ns5:   types.XMLNamespaceVCloud,
 		Vmw:   types.XMLNamespaceVMW,
 		Xmlns: types.XMLNamespaceVCloud,
 

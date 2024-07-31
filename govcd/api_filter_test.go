@@ -72,7 +72,7 @@ func (vcd *TestVCD) Test_ApiFilter(check *C) {
 	check.Assert(retrievedAf.ApiFilter.UrlMatcher, NotNil)
 	check.Assert(retrievedAf.ApiFilter.UrlMatcher.UrlPattern, Equals, createdAf.ApiFilter.UrlMatcher.UrlPattern)
 	check.Assert(retrievedAf.ApiFilter.UrlMatcher.UrlScope, Equals, createdAf.ApiFilter.UrlMatcher.UrlScope)
-	check.Assert(retrievedAf.ApiFilter.ResponseContentType, Equals, "")
+	check.Assert(retrievedAf.ApiFilter.ResponseContentType, IsNil)
 	check.Assert(retrievedAf.ApiFilter.ExternalSystem, NotNil)
 	check.Assert(retrievedAf.ApiFilter.ExternalSystem.ID, Equals, createdEp.ExternalEndpoint.ID)
 	check.Assert(retrievedAf.ApiFilter.ExternalSystem.Name, Equals, createdEp.ExternalEndpoint.Name)

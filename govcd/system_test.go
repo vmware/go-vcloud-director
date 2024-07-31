@@ -303,6 +303,7 @@ func (vcd *TestVCD) Test_CreateDeleteEdgeGatewayAdvanced(check *C) {
 		},
 		UseForDefaultRoute:  true,
 		SubnetParticipation: subnetParticipation,
+		Connected:           true,
 	}
 
 	// Sort by subnet participation gateway so that below injected variables are not being added to

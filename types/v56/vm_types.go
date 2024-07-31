@@ -233,6 +233,7 @@ type RequestVirtualHardwareSection struct {
 	Ns2     string   `xml:"xmlns:ns2,attr"`
 	Ns3     string   `xml:"xmlns:ns3,attr"`
 	Ns4     string   `xml:"xmlns:ns4,attr"`
+	Ns5     string   `xml:"xmlns:ns5,attr"`
 	Vmw     string   `xml:"xmlns:vmw,attr"`
 
 	Info   string     `xml:"ovf:Info"`
