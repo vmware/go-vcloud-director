@@ -956,3 +956,142 @@ func preCreateSegmentProfileTemplate(vcd *TestVCD, check *C, sptNameSuffix strin
 
 	return createdSegmentProfileTemplate
 }
+
+func (vcd *TestVCD) Test_NsxtOrgVdcNetworkRoutedNonDistributed(check *C) {
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgVdcNetworks)
+	skipNoNsxtConfiguration(vcd, check)
+	vcd.skipIfNotSysAdmin(check)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
+	check.Assert(err, IsNil)
+	check.Assert(nsxtExternalNetwork, NotNil)
+
+	vdc := vcd.nsxtVdc
+	egwDefinition := &types.OpenAPIEdgeGateway{
+		Name: "nsx-for-org-network-edge",
+		OwnerRef: &types.OpenApiReference{
+			ID: vdc.Vdc.ID,
+		},
+		NonDistributedRoutingEnabled: addrOf(true),
+		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{{
+			UplinkID: nsxtExternalNetwork.ExternalNetwork.ID,
+			Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
+				Gateway:      "10.10.10.10",
+				PrefixLength: 24,
+				Enabled:      true,
+			}}},
+			Connected: true,
+			Dedicated: false,
+		}},
+	}
+
+	// Create Edge Gateway with non-distributed routing enabled
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(createdEdge.EdgeGateway.OwnerRef.ID, Matches, `^urn:vcloud:vdc:.*`)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
+	PrependToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
+
+	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
+	check.Assert(createdEdge.EdgeGateway.OwnerRef.ID, Equals, egwDefinition.OwnerRef.ID)
+
+	orgVdcNetworkConfig := &types.OpenApiOrgVdcNetwork{
+		Name:        check.TestName(),
+		Description: check.TestName() + "-description",
+		OwnerRef:    &types.OpenApiReference{ID: vcd.nsxtVdc.Vdc.ID},
+		NetworkType: types.OrgVdcNetworkTypeRouted,
+
+		// Connection is used for "routed" network
+		Connection: &types.Connection{
+			RouterRef: types.OpenApiReference{
+				ID: createdEdge.EdgeGateway.ID,
+			},
+			ConnectionTypeValue: "NON_DISTRIBUTED",
+		},
+		Subnets: types.OrgVdcNetworkSubnets{
+			Values: []types.OrgVdcNetworkSubnetValues{
+				{
+					Gateway:      "2.1.1.1",
+					PrefixLength: 24,
+					DNSServer1:   "8.8.8.8",
+					DNSServer2:   "8.8.4.4",
+					DNSSuffix:    "foo.bar",
+					IPRanges: types.OrgVdcNetworkSubnetIPRanges{
+						Values: []types.OrgVdcNetworkSubnetIPRangeValues{
+							{
+								StartAddress: "2.1.1.20",
+								EndAddress:   "2.1.1.30",
+							},
+							{
+								StartAddress: "2.1.1.40",
+								EndAddress:   "2.1.1.50",
+							},
+							{
+								StartAddress: "2.1.1.60",
+								EndAddress:   "2.1.1.62",
+							}, {
+								StartAddress: "2.1.1.72",
+								EndAddress:   "2.1.1.74",
+							}, {
+								StartAddress: "2.1.1.84",
+								EndAddress:   "2.1.1.85",
+							},
+						}},
+				},
+			},
+		},
+	}
+
+	orgVdcNet, err := vdc.CreateOpenApiOrgVdcNetwork(orgVdcNetworkConfig)
+	check.Assert(err, IsNil)
+
+	// Use generic "OpenApiEntity" resource cleanup type
+	openApiEndpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgVdcNetworks + orgVdcNet.OpenApiOrgVdcNetwork.ID
+	AddToCleanupListOpenApi(orgVdcNet.OpenApiOrgVdcNetwork.Name, check.TestName(), openApiEndpoint)
+
+	// Check it can be found
+	orgVdcNetByIdInVdc, err := vdc.GetOpenApiOrgVdcNetworkById(orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetByIdInVdc, NotNil)
+	orgVdcNetByName, err := vdc.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(err, IsNil)
+	check.Assert(orgVdcNetByName, NotNil)
+
+	check.Assert(orgVdcNetByIdInVdc.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(orgVdcNetByName.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+
+	// Retrieve all networks in VDC and expect newly created network to be there
+	var foundNetInVdc bool
+	allOrgVdcNets, err := vdc.GetAllOpenApiOrgVdcNetworks(nil)
+	check.Assert(err, IsNil)
+	for _, net := range allOrgVdcNets {
+		if net.OpenApiOrgVdcNetwork.ID == orgVdcNet.OpenApiOrgVdcNetwork.ID {
+			foundNetInVdc = true
+		}
+	}
+	check.Assert(foundNetInVdc, Equals, true)
+
+	// Update
+	orgVdcNet.OpenApiOrgVdcNetwork.Description = check.TestName() + "updated description"
+	updatedOrgVdcNet, err := orgVdcNet.Update(orgVdcNet.OpenApiOrgVdcNetwork)
+	check.Assert(err, IsNil)
+
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Name, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.ID, Equals, orgVdcNet.OpenApiOrgVdcNetwork.ID)
+	check.Assert(updatedOrgVdcNet.OpenApiOrgVdcNetwork.Description, Equals, orgVdcNet.OpenApiOrgVdcNetwork.Description)
+
+	// Delete
+	err = orgVdcNet.Delete()
+	check.Assert(err, IsNil)
+
+	// Test again if it was deleted and expect it to contain ErrorEntityNotFound
+	_, err = vdc.GetOpenApiOrgVdcNetworkByName(orgVdcNet.OpenApiOrgVdcNetwork.Name)
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	//cleanup
+	err = createdEdge.Delete()
+	check.Assert(err, IsNil)
+}
