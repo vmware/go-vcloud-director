@@ -153,6 +153,10 @@ func getSamlAdfsServer(vcdCli *VCDClient, org string) (string, error) {
 	// "?service=tenant:my-org"
 	req := vcdCli.Client.NewRequestWitNotEncodedParams(
 		nil, map[string]string{"service": "tenant:" + org}, http.MethodGet, *loginURL, nil)
+	if vcdCli.Client.CustomAdfsCookie != "" {
+		cookie := strings.ReplaceAll(vcdCli.Client.CustomAdfsCookie, "{{.Org}}", org)
+		req.Header.Add("Cookie", cookie)
+	}
 	httpResponse, err := checkResp(vcdCli.Client.Http.Do(req))
 	if err != nil {
 		return "", fmt.Errorf("SAML - ADFS server query failed: %s", err)
