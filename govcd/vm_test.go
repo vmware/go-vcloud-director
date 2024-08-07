@@ -434,6 +434,30 @@ func (vcd *TestVCD) Test_VMToggleHardwareVirtualization(check *C) {
 	check.Assert(err, IsNil)
 }
 
+func (vcd *TestVCD) Test_VMUpgradeHardwareVersion(check *C) {
+	if vcd.skipVappTests {
+		check.Skip("Skipping test because vapp was not successfully created at setup")
+	}
+
+	_, vm := createNsxtVAppAndVm(vcd, check)
+	check.Assert(vm.VM.VmSpecSection.HardwareVersion, NotNil)
+	beforeHardwareVersion := vm.VM.VmSpecSection.HardwareVersion
+	check.Assert(beforeHardwareVersion.Value, Not(Equals), "")
+	printVerbose("# VM Hardware version before upgrade: %s\n", beforeHardwareVersion.Value)
+
+	err := vm.UpgradeHardwareVersion()
+	check.Assert(err, IsNil)
+
+	err = vm.Refresh()
+	check.Assert(err, IsNil)
+	afterHardwareVersion := vm.VM.VmSpecSection.HardwareVersion
+	check.Assert(afterHardwareVersion.Value, Not(Equals), "")
+	printVerbose("# VM Hardware version after upgrade: %s\n", afterHardwareVersion.Value)
+
+	err = deleteNsxtVapp(vcd, check.TestName())
+	check.Assert(err, IsNil)
+}
+
 func (vcd *TestVCD) Test_VMPowerOnPowerOff(check *C) {
 	_, vm := createNsxtVAppAndVm(vcd, check)
 
