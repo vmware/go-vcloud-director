@@ -893,7 +893,7 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 // error
 func (vm *VM) UpgradeHardwareVersion() error {
 	if vm == nil || vm.VM.HREF == "" {
-		return fmt.Errorf("vm or href cannot be empty to get  guest customization section")
+		return fmt.Errorf("vm or href cannot be empty to trigger Hardware Upgrade")
 	}
 
 	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/upgradeHardwareVersion", http.MethodPost,
