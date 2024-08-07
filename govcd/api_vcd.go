@@ -335,6 +335,24 @@ func WithSamlAdfs(useSaml bool, customAdfsRptId string) VCDClientOption {
 	}
 }
 
+// WithSamlAdfsAndCookie specifies if SAML auth is used for authenticating to vCD instead of local login.
+// The following conditions must be met so that SAML authentication works:
+// * SAML IdP (Identity Provider) is Active Directory Federation Service (ADFS)
+// * WS-Trust authentication endpoint "/adfs/services/trust/13/usernamemixed" must be enabled on
+// ADFS server
+// By default vCD SAML Entity ID will be used as Relaying Party Trust Identifier unless
+// customAdfsRptId is specified
+// Additionall customAdfsCookie can be specified to impact how the code looks up ADFS SAML provider
+// from VCD
+func WithSamlAdfsAndCookie(useSaml bool, customAdfsRptId, customAdfsCookie string) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		vcdClient.Client.UseSamlAdfs = useSaml
+		vcdClient.Client.CustomAdfsRptId = customAdfsRptId
+		vcdClient.Client.CustomAdfsCookie = customAdfsCookie
+		return nil
+	}
+}
+
 // WithHttpUserAgent allows to specify HTTP user-agent which can be useful for statistics tracking.
 // By default User-Agent is set to "go-vcloud-director". It can be unset by supplying an empty value.
 func WithHttpUserAgent(userAgent string) VCDClientOption {

@@ -40,7 +40,7 @@ func TestSamlAdfsAuthenticate(t *testing.T) {
 	defer adfsServer.Close()
 
 	// Spawn mock vCD instance just enough to cover login details
-	vcdServer := spawnVcdServer(t, adfsServerHost, "my-org")
+	vcdServer := spawnVcdServer(t, adfsServerHost, "my-org", "")
 	vcdServerHost := vcdServer.URL
 	defer vcdServer.Close()
 
@@ -61,12 +61,40 @@ func TestSamlAdfsAuthenticate(t *testing.T) {
 	}
 }
 
+func TestSamlAdfsAuthenticateWithCookie(t *testing.T) {
+	// Spawn mock ADFS server
+	adfsServer := testSpawnAdfsServer(t)
+	adfsServerHost := adfsServer.URL
+	defer adfsServer.Close()
+
+	// Spawn mock vCD instance just enough to cover login details
+	vcdServer := spawnVcdServer(t, adfsServerHost, "my-org", "sso-preferred=yes; sso_redirect_org=my-org")
+	vcdServerHost := vcdServer.URL
+	defer vcdServer.Close()
+
+	// Setup vCD client pointing to mock API
+	vcdUrl, err := url.Parse(vcdServerHost + "/api")
+	if err != nil {
+		t.Errorf("got errors: %s", err)
+	}
+	vcdCli := NewVCDClient(*vcdUrl, true, WithSamlAdfsAndCookie(true, "", "sso-preferred=yes; sso_redirect_org={{.Org}}"))
+	err = vcdCli.Authenticate("fakeUser", "fakePass", "my-org")
+	if err != nil {
+		t.Errorf("got errors: %s", err)
+	}
+
+	// After authentication
+	if vcdCli.Client.VCDToken != testVcdMockAuthToken {
+		t.Errorf("received token does not match specified one")
+	}
+}
+
 // spawnVcdServer establishes a mock vCD server with endpoints required to satisfy authentication
-func spawnVcdServer(t *testing.T, adfsServerHost, org string) *httptest.Server {
+func spawnVcdServer(t *testing.T, adfsServerHost, org, expectCookie string) *httptest.Server {
 	mockServer := samlMockServer{t}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/cloud/org/"+org+"/saml/metadata/alias/vcd", mockServer.vCDSamlMetadataHandler)
-	mux.HandleFunc("/login/"+org+"/saml/login/alias/vcd", mockServer.getVcdAdfsRedirectHandler(adfsServerHost))
+	mux.HandleFunc("/login/"+org+"/saml/login/alias/vcd", mockServer.getVcdAdfsRedirectHandler(adfsServerHost, expectCookie))
 	mux.HandleFunc("/api/sessions", mockServer.vCDLoginHandler)
 	mux.HandleFunc("/api/versions", mockServer.vCDApiVersionHandler)
 	mux.HandleFunc("/api/org", mockServer.vCDApiOrgHandler)
@@ -137,12 +165,20 @@ func (mockServer *samlMockServer) vCDSamlMetadataHandler(w http.ResponseWriter, 
 	re := goldenBytes(mockServer.t, "RESP_cloud_org_my-org_saml_metadata_alias_vcd", []byte{}, false)
 	_, _ = w.Write(re)
 }
-func (mockServer *samlMockServer) getVcdAdfsRedirectHandler(adfsServerHost string) func(w http.ResponseWriter, r *http.Request) {
+func (mockServer *samlMockServer) getVcdAdfsRedirectHandler(adfsServerHost, expectCookie string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			w.WriteHeader(500)
 			return
 		}
+
+		if expectCookie != "" {
+			cookie := r.Header.Get("Cookie")
+			if cookie != expectCookie {
+				w.WriteHeader(500)
+			}
+		}
+
 		headers := w.Header()
 		locationHeaderPayload := goldenString(mockServer.t, "RESP_HEADER_login_my-org_saml_login_alias_vcd", "", false)
 		headers.Add("Location", adfsServerHost+locationHeaderPayload)
