@@ -32,6 +32,11 @@ type OpenAPIEdgeGateway struct {
 	// DistributedRoutingEnabled is a flag indicating whether distributed routing is enabled or not. The default is false.
 	DistributedRoutingEnabled *bool `json:"distributedRoutingEnabled,omitempty"`
 
+	// NonDistributedRoutingEnabled is a flag indicating whether non-distributed routing is enabled
+	// or not. The default is false and updatable only for NSX-T edges. The value is always true for
+	// NSX-V edges.
+	NonDistributedRoutingEnabled *bool `json:"nonDistributedRoutingEnabled,omitempty"`
+
 	// EdgeClusterConfig holds Edge Cluster Configuration for the Edge Gateway. Can be specified if a gateway needs to be
 	// placed on a specific set of Edge Clusters. For NSX-T Edges, user should specify the ID of the NSX-T edge cluster as
 	// the value of primaryEdgeCluster's backingId. The gateway defaults to the Edge Cluster of the connected External
@@ -255,6 +260,13 @@ type OrgVdcNetworkSubnetValues struct {
 type Connection struct {
 	RouterRef      OpenApiReference `json:"routerRef"`
 	ConnectionType string           `json:"connectionType,omitempty"`
+
+	// ConnectionTypeValue defines how the network is connected to the edge gateway. This field is
+	// updatable to allow conversions between different types. If owner is a VDC group that is
+	// backed by a NSX-V network provider, this field does not need to be set. The organization VDC
+	// network will be automatically connected to the distributed router associated with the VDC
+	// group. The supported values are INTERNAL, DISTRIBUTED, SUBINTERFACE and NON_DISTRIBUTED.
+	ConnectionTypeValue string `json:"connectionTypeValue,omitempty"`
 }
 
 // NsxtImportableSwitch is a type alias with better name for holding NSX-T Segments (Logical Switches) which can be used
