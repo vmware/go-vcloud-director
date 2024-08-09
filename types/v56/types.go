@@ -1052,12 +1052,12 @@ type OrgSettings struct {
 	HREF string `xml:"href,attr,omitempty"` // The URI of the entity.
 	Type string `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	//elements
-	Link                    LinkList                   `xml:"Link,omitempty"`               // A reference to an entity or operation associated with this object.
-	OrgGeneralSettings      *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"` // General Settings for the org, not-required
-	OrgVAppLeaseSettings    *VAppLeaseSettings         `xml:"VAppLeaseSettings,omitempty"`
-	OrgVAppTemplateSettings *VAppTemplateLeaseSettings `xml:"VAppTemplateLeaseSettings,omitempty"` // Vapp template lease settings, not required
-	OrgLdapSettings         *OrgLdapSettingsType       `xml:"OrgLdapSettings,omitempty"`           //LDAP settings, not-requried, defaults to none
-
+	Link                      LinkList                   `xml:"Link,omitempty"`               // A reference to an entity or operation associated with this object.
+	OrgGeneralSettings        *OrgGeneralSettings        `xml:"OrgGeneralSettings,omitempty"` // General Settings for the org, not-required
+	OrgVAppLeaseSettings      *VAppLeaseSettings         `xml:"VAppLeaseSettings,omitempty"`
+	OrgVAppTemplateSettings   *VAppTemplateLeaseSettings `xml:"VAppTemplateLeaseSettings,omitempty"` // Vapp template lease settings, not required
+	OrgLdapSettings           *OrgLdapSettingsType       `xml:"OrgLdapSettings,omitempty"`           // LDAP settings, not-requried, defaults to none
+	OrgPasswordPolicySettings *OrgPasswordPolicySettings `xml:"OrgPasswordPolicySettings,omitempty"` // Password policy settings for this organization.
 }
 
 // OrgGeneralSettingsType represents the general settings for a VMware Cloud Director organization.
@@ -1182,6 +1182,18 @@ type OrgLdapUserAttributes struct {
 	Telephone                 string `xml:"Telephone"`
 	GroupMembershipIdentifier string `xml:"GroupMembershipIdentifier"`
 	GroupBackLinkIdentifier   string `xml:"GroupBackLinkIdentifier,omitempty"`
+}
+
+// OrgPasswordPolicySettings represents password policy settings for this organization.
+// Type: OrgPasswordPolicySettingsType
+// Namespace: http://www.vmware.com/vcloud/v1.5
+// Description: Represents password policy settings for this organization.
+// Since: 1.5
+type OrgPasswordPolicySettings struct {
+	Link                          *Link `xml:"Link,omitempty"`                          // A reference to an entity or operation associated with this object
+	AccountLockoutEnabled         bool  `xml:"AccountLockoutEnabled,omitempty"`         // Set to true to enable account lockout for logins to this organization
+	InvalidLoginsBeforeLockout    int   `xml:"InvalidLoginsBeforeLockout,omitempty"`    // Number of invalid login attempts that will trigger account lockout
+	AccountLockoutIntervalMinutes int   `xml:"AccountLockoutIntervalMinutes,omitempty"` // Number of minutes an account that is locked out will remain locked
 }
 
 // VDCList contains a list of references to Org VDCs
