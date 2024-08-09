@@ -215,6 +215,7 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways: {
 		//"35.0", // Introduced support
 		"37.1", // Exposes computed field `UsingIpSpace` in `types.EdgeGatewayUplinks`
+		"39.0", // Adds support for DISTRIBUTED_ONLY `deploymentMode`
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGatewayDns: {
 		"37.0", // Introduced support
