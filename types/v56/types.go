@@ -1190,6 +1190,9 @@ type OrgLdapUserAttributes struct {
 // Description: Represents password policy settings for this organization.
 // Since: 1.5
 type OrgPasswordPolicySettings struct {
+	Xmlns                         string    `xml:"xmlns,attr,omitempty"`
+	HREF                          string    `xml:"href,attr,omitempty"`           // The URI of the entity.
+	Type                          string    `xml:"type,attr,omitempty"`           // The MIME type of the entity.
 	Link                          *LinkList `xml:"Link,omitempty"`                // A reference to an entity or operation associated with this object
 	AccountLockoutEnabled         bool      `xml:"AccountLockoutEnabled"`         // Set to true to enable account lockout for logins to this organization
 	InvalidLoginsBeforeLockout    int       `xml:"InvalidLoginsBeforeLockout"`    // Number of invalid login attempts that will trigger account lockout
