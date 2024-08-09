@@ -1190,10 +1190,10 @@ type OrgLdapUserAttributes struct {
 // Description: Represents password policy settings for this organization.
 // Since: 1.5
 type OrgPasswordPolicySettings struct {
-	Link                          *Link `xml:"Link,omitempty"`                          // A reference to an entity or operation associated with this object
-	AccountLockoutEnabled         bool  `xml:"AccountLockoutEnabled,omitempty"`         // Set to true to enable account lockout for logins to this organization
-	InvalidLoginsBeforeLockout    int   `xml:"InvalidLoginsBeforeLockout,omitempty"`    // Number of invalid login attempts that will trigger account lockout
-	AccountLockoutIntervalMinutes int   `xml:"AccountLockoutIntervalMinutes,omitempty"` // Number of minutes an account that is locked out will remain locked
+	Link                          *LinkList `xml:"Link,omitempty"`                // A reference to an entity or operation associated with this object
+	AccountLockoutEnabled         bool      `xml:"AccountLockoutEnabled"`         // Set to true to enable account lockout for logins to this organization
+	InvalidLoginsBeforeLockout    int       `xml:"InvalidLoginsBeforeLockout"`    // Number of invalid login attempts that will trigger account lockout
+	AccountLockoutIntervalMinutes int       `xml:"AccountLockoutIntervalMinutes"` // Number of minutes an account that is locked out will remain locked
 }
 
 // VDCList contains a list of references to Org VDCs
