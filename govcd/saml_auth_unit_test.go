@@ -21,6 +21,8 @@ import (
 // function passes mock SAML authentication process
 // #nosec G101 -- These credentials are fake for testing purposes
 const testVcdMockAuthToken = "e3b02b30b8ff4e87ac38db785b0172b5"
+
+// #nosec G101 -- These credentials are fake for testing purposes
 const testVcdMockAuthTokenBearer = "eyJhbGciOiJSUzI1NiK1.eyJpc3MiOiJhOTNjOWRiOS03NDcxLTMxOTItOGQwOS1hOGY3ZWVkYTg1ZjlANTU5YmU3OTQtMDE2Yy00NjA3LWE3MmEtNGFiNDdlZTJhYjAwIiwic3ViIjoiYWRtaW5pc3RyYXRvciIsImV4cCI6MTcyNjg5OTcwMiwidmVyc2lvbiI6InZjbG91ZF8xLjAiLCJqdGkiOiI2ZDc2NTNkNTlkMGE0NzVmOTc1Y2M5MTViMTBlY2Q3YyJ9.SEHKnYs-x245KKeyGfaM4PMqUC1lMJie8d_xFn6Qilwr1eEteOsGSj0QB5ee6VPx5wACC1XUf9hqADSV-PQpI_J0u9Z9GZ5bmlN-UJIhuJzmaUEevjCV7z45Z9UewPQZXyMMNOrZiAe6lH_g9ESYJCzoP0YgV4fg5GzkNflZRTpCrLwRNmc54w09TWzmC7Xhoyyh308QjFwdvTAxEUD6yJ7nABEzf65ETXIzYb9fS-H9ZN81x1V1gxr1F-VQXarWoLT85uYcke0KrV19ysE6hwbtnNb15X2oBgt5TWkRF4cCu-MwGqh9T2p3KdxHW9aC-7FSM-vr9SGOx5ojhlZBcw"
 
 // samlMockServer struct allows to attach HTTP handlers to use additional variables (like
