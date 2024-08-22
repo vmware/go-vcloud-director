@@ -889,6 +889,28 @@ func (vm *VM) SetGuestCustomizationSection(guestCustomizationSection *types.Gues
 	return vm.GetGuestCustomizationSection()
 }
 
+// UpgradeHardwareVersion triggers hardware upgrade and tracks the task to completion or returns an
+// error
+func (vm *VM) UpgradeHardwareVersion() error {
+	if vm == nil || vm.VM.HREF == "" {
+		return fmt.Errorf("vm or href cannot be empty to trigger Hardware Upgrade")
+	}
+
+	task, err := vm.client.ExecuteTaskRequest(vm.VM.HREF+"/action/upgradeHardwareVersion", http.MethodPost,
+		types.AnyXMLMime, "error setting product section: %s", nil)
+
+	if err != nil {
+		return fmt.Errorf("unable to trigger VM Hardware Upgrade: %s", err)
+	}
+
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("task for VM Hardware Upgrade failed: %s", err)
+	}
+
+	return nil
+}
+
 // GetParentVApp find parent vApp for VM by checking its "up" "link".
 //
 // Note. The VM has a parent vApp defined even if it was created as a standalone

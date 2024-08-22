@@ -36,6 +36,19 @@ type OpenAPIEdgeGateway struct {
 	// or not. The default is false and updatable only for NSX-T edges. The value is always true for
 	// NSX-V edges.
 	NonDistributedRoutingEnabled *bool `json:"nonDistributedRoutingEnabled,omitempty"`
+	// DeploymentMode for this Edge Gateway. Supported Edge Gateway deployment modes are:
+	// * ACTIVE_STANDBY - a deployment mode where there are two instances of the backing NSX-T
+	// router; one actively handling the traffic, and the other is in standby mode. Most of the Edge
+	// Gateway services are supported, such as NAT, Firewall and VPN. Edge Cluster Configuration is
+	// required. If Edge Cluster is not specified, the gateway will default to the Edge Cluster of
+	// the uplink Provider Gateway's backing Tier-0 router.
+	// * DISTRIBUTED_ONLY - a deployment mode where the backing NSX-T Tier-1 router is distributed
+	// across all ESXi hosts within an NSX-T transport zone. This mode is designed to handle
+	// east-west traffic within the data center efficiently. Edge Gateway services such as NAT,
+	// Firewall and VPN are not supported. Edge Cluster Configuration should not be specified.
+	//
+	// Default mode is ACTIVE_STANDBY. This field applies to NSX-T Edge Gateways only.
+	DeploymentMode string `json:"deploymentMode,omitempty"`
 
 	// EdgeClusterConfig holds Edge Cluster Configuration for the Edge Gateway. Can be specified if a gateway needs to be
 	// placed on a specific set of Edge Clusters. For NSX-T Edges, user should specify the ID of the NSX-T edge cluster as

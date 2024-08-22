@@ -868,3 +868,99 @@ func t0vrfBackedExternalNetworkConfig(vcd *TestVCD, name, ipPrefix string, backi
 
 	return net
 }
+
+func (vcd *TestVCD) Test_NsxtEdgeCreateNonDistributed(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointEdgeGateways)
+	vcd.skipIfNotSysAdmin(check)
+
+	if vcd.client.Client.APIVCDMaxVersionIs("< 39.0") {
+		check.Skip("Distributed Only Edge Gateways are supported in VCD 10.6+")
+	}
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
+
+	org, err := vcd.client.GetOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+	check.Assert(org, NotNil)
+
+	nsxvVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Vdc, false)
+	check.Assert(err, IsNil)
+	check.Assert(nsxvVdc, NotNil)
+	nsxtVdc, err := adminOrg.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	if ContainsNotFound(err) {
+		check.Skip(fmt.Sprintf("No NSX-T VDC (%s) found - skipping test", vcd.config.VCD.Nsxt.Vdc))
+	}
+	check.Assert(err, IsNil)
+	check.Assert(nsxtVdc, NotNil)
+
+	nsxtExternalNetwork, err := GetExternalNetworkV2ByName(vcd.client, vcd.config.VCD.Nsxt.ExternalNetwork)
+	check.Assert(err, IsNil)
+	check.Assert(nsxtExternalNetwork, NotNil)
+
+	egwDefinition := &types.OpenAPIEdgeGateway{
+		Name:        "nsx-t-edge",
+		Description: "nsx-t-edge-description",
+		OrgVdc: &types.OpenApiReference{
+			ID: nsxtVdc.Vdc.ID,
+		},
+		DeploymentMode: "DISTRIBUTED_ONLY",
+		EdgeGatewayUplinks: []types.EdgeGatewayUplinks{{
+			UplinkID: nsxtExternalNetwork.ExternalNetwork.ID,
+			Subnets: types.OpenAPIEdgeGatewaySubnets{Values: []types.OpenAPIEdgeGatewaySubnetValue{{
+				Gateway:      "1.1.1.1",
+				PrefixLength: 24,
+				Enabled:      true,
+			}}},
+			Connected: true,
+			Dedicated: false,
+		}},
+	}
+
+	createdEdge, err := adminOrg.CreateNsxtEdgeGateway(egwDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(createdEdge.EdgeGateway.Name, Equals, egwDefinition.Name)
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeGateways + createdEdge.EdgeGateway.ID
+	AddToCleanupListOpenApi(createdEdge.EdgeGateway.Name, check.TestName(), openApiEndpoint)
+
+	// Lookup using different available methods
+	e1, err := adminOrg.GetNsxtEdgeGatewayByName(createdEdge.EdgeGateway.Name)
+	check.Assert(err, IsNil)
+	check.Assert(e1, NotNil)
+	e2, err := org.GetNsxtEdgeGatewayByName(createdEdge.EdgeGateway.Name)
+	check.Assert(err, IsNil)
+	check.Assert(e2, NotNil)
+	e3, err := nsxtVdc.GetNsxtEdgeGatewayByName(createdEdge.EdgeGateway.Name)
+	check.Assert(err, IsNil)
+	check.Assert(e3, NotNil)
+	e4, err := adminOrg.GetNsxtEdgeGatewayById(createdEdge.EdgeGateway.ID)
+	check.Assert(err, IsNil)
+	check.Assert(e4, NotNil)
+	e5, err := org.GetNsxtEdgeGatewayById(createdEdge.EdgeGateway.ID)
+	check.Assert(err, IsNil)
+	check.Assert(e5, NotNil)
+	e6, err := nsxtVdc.GetNsxtEdgeGatewayById(createdEdge.EdgeGateway.ID)
+	check.Assert(err, IsNil)
+	check.Assert(e6, NotNil)
+
+	// Try to search for NSX-T edge gateway in NSX-V VDC and expect it to be not found
+	expectNil, err := nsxvVdc.GetNsxtEdgeGatewayByName(createdEdge.EdgeGateway.Name)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(expectNil, IsNil)
+	expectNil, err = nsxvVdc.GetNsxtEdgeGatewayById(createdEdge.EdgeGateway.ID)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(expectNil, IsNil)
+
+	// Ensure all methods found the same edge gateway
+	check.Assert(e1.EdgeGateway.ID, Equals, e2.EdgeGateway.ID)
+	check.Assert(e1.EdgeGateway.ID, Equals, e3.EdgeGateway.ID)
+	check.Assert(e1.EdgeGateway.ID, Equals, e4.EdgeGateway.ID)
+	check.Assert(e1.EdgeGateway.ID, Equals, e5.EdgeGateway.ID)
+	check.Assert(e1.EdgeGateway.ID, Equals, e6.EdgeGateway.ID)
+
+	// Cleanup
+	err = createdEdge.Delete()
+	check.Assert(err, IsNil)
+}
