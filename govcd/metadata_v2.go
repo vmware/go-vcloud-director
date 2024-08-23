@@ -6,11 +6,12 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 // NOTE: This "v2" is not v2 in terms of API versioning, it's just a way to separate the functions that handle
@@ -1073,7 +1074,7 @@ func filterMetadataToDelete(client *Client, key, href, objectName string, isSyst
 }
 
 // getMetadataObjectTypeFromHref returns the type of the object referenced by the input HREF.
-// For example, "https://atl1-vcd-static-130-117.eng.vmware.com/api/admin/org/11582a00-16bb-4916-a42f-2d5e453ccf36"
+// For example, "https://HOST/api/admin/org/11582a00-16bb-4916-a42f-2d5e453ccf36"
 // will return "org".
 func getMetadataObjectTypeFromHref(href string) (string, error) {
 	splitHref := strings.Split(href, "/")
