@@ -397,6 +397,7 @@ const (
 	OpenApiEndpointImportableDvpgs                    = "virtualCenters/resources/importableDvpgs"
 	OpenApiEndpointEdgeClusters                       = "nsxTResources/edgeClusters"
 	OpenApiEndpointQosProfiles                        = "nsxTResources/gatewayQoSProfiles"
+	OpenApiEndpointNsxtTier0RouterInterfaces          = "nsxTResources/tier0RouterInterfaces"
 	OpenApiEndpointExternalNetworks                   = "externalNetworks/"
 	OpenApiEndpointVdcComputePolicies                 = "vdcComputePolicies/"
 	OpenApiEndpointVdcAssignedComputePolicies         = "vdcs/%s/computePolicies"

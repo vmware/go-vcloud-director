@@ -11,6 +11,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
+const labelNsxtTier0RouterInterface = "NSX-T Tier0 Router Interface"
+
 // ExternalNetworkV2 is a type for version 2 of external network which uses OpenAPI endpoint to
 // manage external networks of both types (NSX-V and NSX-T)
 type ExternalNetworkV2 struct {
@@ -189,4 +191,30 @@ func (extNet *ExternalNetworkV2) Delete() error {
 	}
 
 	return nil
+}
+
+// GetAllTier0RouterInterfaces returns all Provider Gateway (aka Tier0 Router) associated interfaces
+func (vcdClient *VCDClient) GetAllTier0RouterInterfaces(externalNetworkId string, queryParameters url.Values) ([]*types.NsxtTier0RouterInterface, error) {
+	if externalNetworkId == "" {
+		return nil, fmt.Errorf("mandatory External Network ID is empty")
+	}
+
+	queryparams := queryParameterFilterAnd(fmt.Sprintf("externalNetworkId==%s", externalNetworkId), queryParameters)
+	c := crudConfig{
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtTier0RouterInterfaces,
+		entityLabel:     labelNsxtTier0RouterInterface,
+		queryParameters: queryparams,
+	}
+
+	return getAllInnerEntities[types.NsxtTier0RouterInterface](&vcdClient.Client, c)
+}
+
+// GetTier0RouterInterfaceByName retrieves a Provider Gateway (aka Tier0 Router) associated interface by Name in a given External Network
+func (vcdClient *VCDClient) GetTier0RouterInterfaceByName(externalNetworkId, displayName string) (*types.NsxtTier0RouterInterface, error) {
+	allT0Interfaces, err := vcdClient.GetAllTier0RouterInterfaces(externalNetworkId, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error getting %s by DisplayName '%s':%s", labelNsxtTier0RouterInterface, displayName, err)
+	}
+
+	return localFilterOneOrError(labelNsxtTier0RouterInterface, allT0Interfaces, "DisplayName", displayName)
 }
