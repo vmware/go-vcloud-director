@@ -270,8 +270,8 @@ type IpSpaceUplink struct {
 
 type IpSpaceUplinkInterface struct {
 	ID            string `json:"id"`
-	Name          string `json:"name"`
-	InterfaceType string `json:"interfaceType"`
+	Name          string `json:"name,omitempty"`
+	InterfaceType string `json:"interfaceType,omitempty"`
 }
 
 // IpSpaceIpAllocationRequest is an IP Space IP Allocation request object. An IP Space IP allocation

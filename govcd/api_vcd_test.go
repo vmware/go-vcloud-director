@@ -192,6 +192,7 @@ type TestConfig struct {
 		Nsxt struct {
 			Manager                   string `yaml:"manager"`
 			Tier0router               string `yaml:"tier0router"`
+			Tier0routerInterface      string `yaml:"tier0routerInterface"`
 			Tier0routerVrf            string `yaml:"tier0routerVrf"`
 			NsxtDvpg                  string `yaml:"nsxtDvpg"`
 			GatewayQosProfile         string `yaml:"gatewayQosProfile"`

@@ -11,7 +11,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-const labelNsxtTier0RouterInterface = "NSX-T Tier0 Router Interface"
+const labelNsxtTier0RouterInterface = "NSX-T Tier-0 Router Interface"
 
 // ExternalNetworkV2 is a type for version 2 of external network which uses OpenAPI endpoint to
 // manage external networks of both types (NSX-V and NSX-T)
