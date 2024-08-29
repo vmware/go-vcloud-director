@@ -98,14 +98,14 @@ func (vcdClient *VCDClient) authorizeSamlAdfs(user, pass, org, overrideRptId str
 	util.Logger.Printf("[DEBUG] SAML got SIGN token from IdP '%s' for entity with ID '%s'",
 		adfsAuthEndPoint, samlEntityId)
 
-	// Step 5 - authenticate to vCD with SIGN token and receive vCD regular token in exchange
-	accessToken, err := authorizeSignToken(vcdClient, base64GzippedSignToken, org)
+	// Step 5 - authenticate to vCD with SIGN token and receive VCD bearer token in exchange
+	bearerToken, err := authorizeSignToken(vcdClient, base64GzippedSignToken, org)
 	if err != nil {
 		return fmt.Errorf("SAML - error submitting SIGN token to vCD: %s", err)
 	}
 
 	// Step 6 - set regular vCD auth token X-Vcloud-Authorization
-	err = vcdClient.SetToken(org, AuthorizationHeader, accessToken)
+	err = vcdClient.SetToken(org, BearerTokenHeader, bearerToken)
 	if err != nil {
 		return fmt.Errorf("error during token-based authentication: %s", err)
 	}
@@ -153,6 +153,10 @@ func getSamlAdfsServer(vcdCli *VCDClient, org string) (string, error) {
 	// "?service=tenant:my-org"
 	req := vcdCli.Client.NewRequestWitNotEncodedParams(
 		nil, map[string]string{"service": "tenant:" + org}, http.MethodGet, *loginURL, nil)
+	if vcdCli.Client.CustomAdfsCookie != "" {
+		cookie := strings.ReplaceAll(vcdCli.Client.CustomAdfsCookie, "{{.Org}}", org)
+		req.Header.Add("Cookie", cookie)
+	}
 	httpResponse, err := checkResp(vcdCli.Client.Http.Do(req))
 	if err != nil {
 		return "", fmt.Errorf("SAML - ADFS server query failed: %s", err)
@@ -256,7 +260,7 @@ func authorizeSignToken(vcdCli *VCDClient, base64GzippedSignToken, org string) (
 		return "", fmt.Errorf("SAML - error decoding body SIGN token auth response: %s", err)
 	}
 
-	accessToken := resp.Header.Get("X-Vcloud-Authorization")
+	accessToken := resp.Header.Get(BearerTokenHeader)
 	util.Logger.Printf("[DEBUG] SAML - setting access token for further requests")
 	return accessToken, nil
 }

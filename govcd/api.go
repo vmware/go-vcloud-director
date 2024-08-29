@@ -49,6 +49,11 @@ type Client struct {
 	// ID is used as Relaying Party Trust identifier.
 	CustomAdfsRptId string
 
+	// CustomAdfsCookie
+	// Placeholder {{.Org}} (if specified) will be replaced with real org
+	// E.g "sso-preferred=yes; sso_redirect_org={{.Org}}"
+	CustomAdfsCookie string
+
 	// UserAgent to send for API queries. Standard format is described as:
 	// "User-Agent: <product> / <product-version> <comment>"
 	UserAgent string
