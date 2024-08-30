@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+	<Session xmlns="http://www.vmware.com/vcloud/v1.5" xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1" xmlns:vssd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:common="http://schemas.dmtf.org/wbem/wscim/1/common" xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:vmw="http://www.vmware.com/schema/ovf" xmlns:ovfenv="http://schemas.dmtf.org/ovf/environment/1" xmlns:vmext="http://www.vmware.com/vcloud/extension/v1.5" xmlns:ns9="http://www.vmware.com/vcloud/versions" locationId="c196c6f0-5c31-4929-a626-b29b2c9ff5ab@cb33a646-6652-4628-95b0-24bd981783b6" org="my-org" roles="Organization Administrator" user="test@test-forest.net" userId="urn:vcloud:user:8fd38079-b31c-4dfd-99f2-7073b3f7ec90" href="https://192.168.1.109/api/session" type="application/vnd.vmware.vcloud.session+xml">
+		<Link rel="down" href="https://192.168.1.109/api/org/" type="application/vnd.vmware.vcloud.orgList+xml"/>
+		<Link rel="remove" href="https://192.168.1.109/api/session"/>
+		<Link rel="down" href="https://192.168.1.109/api/admin/" type="application/vnd.vmware.admin.vcloud+xml"/>
+		<Link rel="down" href="https://192.168.1.109/api/org/c196c6f0-5c31-4929-a626-b29b2c9ff5ab" name="my-org" type="application/vnd.vmware.vcloud.org+xml"/>
+		<Link rel="down" href="https://192.168.1.109/api/query" type="application/vnd.vmware.vcloud.query.queryList+xml"/>
+		<Link rel="entityResolver" href="https://192.168.1.109/api/entity/" type="application/vnd.vmware.vcloud.entity+xml"/>
+		<Link rel="down:extensibility" href="https://192.168.1.109/api/extensibility" type="application/vnd.vmware.vcloud.apiextensibility+xml"/>
+		<Link rel="nsx" href="https://192.168.1.109/network" type="application/xml"/>
+		<Link rel="openapi" href="https://192.168.1.109/cloudapi" type="application/json"/>
+		<AuthorizedLocations>
+			<Location>
+				<LocationId>c196c6f0-5c31-4929-a626-b29b2c9ff5ab@cb33a646-6652-4628-95b0-24bd981783b6</LocationId>
+				<SiteName>192.168.1.109</SiteName>
+				<OrgName>my-org</OrgName>
+				<RestApiEndpoint>https://192.168.1.109</RestApiEndpoint>
+				<UIEndpoint>https://192.168.1.109</UIEndpoint>
+				<AuthContext>my-org</AuthContext>
+			</Location>
+		</AuthorizedLocations>
+	</Session>
