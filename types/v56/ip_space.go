@@ -263,6 +263,15 @@ type IpSpaceUplink struct {
 	// SHARED_SERVICES. This property is read-only.
 	IPSpaceType string `json:"ipSpaceType,omitempty"`
 	Status      string `json:"status,omitempty"`
+
+	// Interfaces allows to associate uplink with Tier-0 router interfaces on VCD 10.5.0+
+	Interfaces []IpSpaceUplinkInterface `json:"interfaces,omitempty"`
+}
+
+type IpSpaceUplinkInterface struct {
+	ID            string `json:"id"`
+	Name          string `json:"name,omitempty"`
+	InterfaceType string `json:"interfaceType,omitempty"`
 }
 
 // IpSpaceIpAllocationRequest is an IP Space IP Allocation request object. An IP Space IP allocation
@@ -370,4 +379,18 @@ type IpSpaceFloatingIpSuggestion struct {
 	IPSpaceRef OpenApiReference `json:"ipSpaceRef"`
 	// UnusedValues lists unused IP Addresses or IP Prefixes from the referenced IP Space
 	UnusedValues []string `json:"unusedValues"`
+}
+
+// NsxtTier0RouterInterface reflects single associated interface to Tier0/Provider gateway
+type NsxtTier0RouterInterface struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	DisplayName string `json:"displayName"`
+	// InterfaceType as defined in NSX-T manager
+	// * EXTERNAL - Interface that can be used to connect externally to a physical router with
+	// support for dynamic routing protocols.
+	// * SERVICE - Interface that supports edge services such as DHCP relay.
+	// * LOOPBACK - Interface that isn't connect to any segment and can be used to identify the
+	// Tier-0 Router.
+	InterfaceType string `json:"interfaceType"`
 }

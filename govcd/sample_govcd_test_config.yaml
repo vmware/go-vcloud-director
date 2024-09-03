@@ -83,6 +83,8 @@ vcd:
       manager: nsxManager1
       # NSX-T tier-0 router used for external network tests
       tier0router: tier-0-router
+      # NSX-T tier-0 router interface to test association with IP Space Uplinks
+      tier0routerInterface: interface-one
       # NSX-T tier-0 VRF router used for external network tests
       tier0routerVrf: tier-0-router-vrf
       # Gateway QoS Profile used for NSX-T Edge Gateway Rate Limiting (defined in NSX-T Manager)

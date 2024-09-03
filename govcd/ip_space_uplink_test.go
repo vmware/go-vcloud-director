@@ -31,6 +31,12 @@ func (vcd *TestVCD) Test_IpSpaceUplink(check *C) {
 		IPSpaceRef:         &types.OpenApiReference{ID: ipSpace.IpSpace.ID},
 	}
 
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.0") {
+		t0Interface, err := vcd.client.GetTier0RouterInterfaceByName(extNet.ExternalNetwork.ID, vcd.config.VCD.Nsxt.Tier0routerInterface)
+		check.Assert(err, IsNil)
+		uplinkConfig.Interfaces = []types.IpSpaceUplinkInterface{{ID: t0Interface.ID}}
+	}
+
 	createdIpSpaceUplink, err := vcd.client.CreateIpSpaceUplink(uplinkConfig)
 	check.Assert(err, IsNil)
 	check.Assert(createdIpSpaceUplink, NotNil)
@@ -50,6 +56,9 @@ func (vcd *TestVCD) Test_IpSpaceUplink(check *C) {
 	allIpSpaceUplinks, err := vcd.client.GetAllIpSpaceUplinks(extNet.ExternalNetwork.ID, nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allIpSpaceUplinks) > 0, Equals, true)
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.0") {
+		check.Assert(len(allIpSpaceUplinks[0].IpSpaceUplink.Interfaces) == 1, Equals, true)
+	}
 
 	// Get by ID
 	byId, err := vcd.client.GetIpSpaceUplinkById(createdIpSpaceUplink.IpSpaceUplink.ID)
