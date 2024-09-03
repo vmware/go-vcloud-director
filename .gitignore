@@ -49,3 +49,7 @@ govcd/test_cleanup_list*.json
 
 # File cache directory
 govcd/test-resources/cache/*
+
+# MacOS artefacts
+.DS_Store
+
