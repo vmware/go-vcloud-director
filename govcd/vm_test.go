@@ -2139,12 +2139,14 @@ func (vcd *TestVCD) Test_QueryVMList(check *C) {
 	// Retrieves all VMs with name 'Test_VmA_'+uniqueId
 	vmList1, err := QueryVmList(types.VmQueryFilterOnlyDeployed, &vcd.client.Client, map[string]string{"name": "Test_VmA_" + uniqueId})
 	check.Assert(err, IsNil)
+	check.Assert(vmList1[0].VmNameInVc, Not(Equals), "")
 	listVms(vmList1)
 
 	// Retrieves all VMs with name 'Test_VmB_'+uniqueId
 	check.Assert(len(vmList1) == 3, Equals, true)
 	vmList2, err := QueryVmList(types.VmQueryFilterOnlyDeployed, &vcd.client.Client, map[string]string{"name": "Test_VmB_" + uniqueId})
 	check.Assert(err, IsNil)
+	check.Assert(vmList2[0].VmNameInVc, Not(Equals), "")
 	listVms(vmList2)
 
 	// Retrieves all VMs
