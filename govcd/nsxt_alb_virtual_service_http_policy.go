@@ -24,7 +24,7 @@ func (nsxtAlbVirtualService *NsxtAlbVirtualService) GetAllHttpRequestRules(query
 	return getAllInnerEntities[types.EdgeVirtualServiceHttpRequestRule](&nsxtAlbVirtualService.vcdClient.Client, c)
 }
 
-func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpRequestRules(config *types.EdgeVirtualServiceHttpRequestRule) (*types.EdgeVirtualServiceHttpRequestRule, error) {
+func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpRequestRules(config *types.EdgeVirtualServiceHttpRequestRules) (*types.EdgeVirtualServiceHttpRequestRules, error) {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpRequestRules,
 		entityLabel:    labelNsxtAlbVsHttpRequestRules,
@@ -45,7 +45,7 @@ func (nsxtAlbVirtualService *NsxtAlbVirtualService) GetAllHttpResponseRules(quer
 	return getAllInnerEntities[types.EdgeVirtualServiceHttpResponseRule](&nsxtAlbVirtualService.vcdClient.Client, c)
 }
 
-func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpResponseRules(config *types.EdgeVirtualServiceHttpResponseRule) (*types.EdgeVirtualServiceHttpResponseRule, error) {
+func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpResponseRules(config *types.EdgeVirtualServiceHttpResponseRules) (*types.EdgeVirtualServiceHttpResponseRules, error) {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpResponseRules,
 		entityLabel:    labelNsxtAlbVsHttpResponseRules,

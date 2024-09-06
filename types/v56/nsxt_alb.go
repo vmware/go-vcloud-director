@@ -1,13 +1,28 @@
 package types
 
+type EdgeVirtualServiceHttpRequestRules struct {
+	Values []EdgeVirtualServiceHttpRequestRule `json:"values"`
+}
+
 type EdgeVirtualServiceHttpRequestRule struct {
-	Name             string                                            `json:"name"`
-	Active           bool                                              `json:"active"`
-	Logging          bool                                              `json:"logging"`
-	MatchCriteria    EdgeVirtualServiceHttpRequestRuleMatchCriteria    `json:"matchCriteria"`
-	HeaderActions    []EdgeVirtualServiceHttpRequestRuleHeaderActions  `json:"headerActions"`
-	RedirectAction   EdgeVirtualServiceHttpRequestRuleRedirectAction   `json:"redirectAction"`
-	RewriteURLAction EdgeVirtualServiceHttpRequestRuleRewriteURLAction `json:"rewriteUrlAction"`
+	Name             string                                             `json:"name"`
+	Active           bool                                               `json:"active"`
+	Logging          bool                                               `json:"logging"`
+	MatchCriteria    EdgeVirtualServiceHttpRequestRuleMatchCriteria     `json:"matchCriteria"`
+	HeaderActions    []*EdgeVirtualServiceHttpRequestRuleHeaderActions  `json:"headerActions,omitempty"`
+	RedirectAction   *EdgeVirtualServiceHttpRequestRuleRedirectAction   `json:"redirectAction,omitempty"`
+	RewriteURLAction *EdgeVirtualServiceHttpRequestRuleRewriteURLAction `json:"rewriteUrlAction,omitempty"`
+}
+
+type EdgeVirtualServiceHttpRequestRuleMatchCriteria struct {
+	ClientIPMatch    *EdgeVirtualServiceHttpRequestRuleClientIPMatch    `json:"clientIpMatch,omitempty"`
+	ServicePortMatch *EdgeVirtualServiceHttpRequestRuleServicePortMatch `json:"servicePortMatch,omitempty"`
+	MethodMatch      *EdgeVirtualServiceHttpRequestRuleMethodMatch      `json:"methodMatch,omitempty"`
+	Protocol         string                                             `json:"protocol,omitempty"`
+	PathMatch        *EdgeVirtualServiceHttpRequestRulePathMatch        `json:"pathMatch,omitempty"`
+	QueryMatch       []string                                           `json:"queryMatch,omitempty"`
+	HeaderMatch      []EdgeVirtualServiceHttpRequestRuleHeaderMatch     `json:"headerMatch,omitempty"`
+	CookieMatch      *EdgeVirtualServiceHttpRequestRuleCookieMatch      `json:"cookieMatch,omitempty"`
 }
 
 type EdgeVirtualServiceHttpRequestRuleClientIPMatch struct {
@@ -42,17 +57,6 @@ type EdgeVirtualServiceHttpRequestRuleCookieMatch struct {
 	Value         string `json:"value"`
 }
 
-type EdgeVirtualServiceHttpRequestRuleMatchCriteria struct {
-	ClientIPMatch    EdgeVirtualServiceHttpRequestRuleClientIPMatch    `json:"clientIpMatch"`
-	ServicePortMatch EdgeVirtualServiceHttpRequestRuleServicePortMatch `json:"servicePortMatch"`
-	MethodMatch      EdgeVirtualServiceHttpRequestRuleMethodMatch      `json:"methodMatch"`
-	Protocol         string                                            `json:"protocol"`
-	PathMatch        EdgeVirtualServiceHttpRequestRulePathMatch        `json:"pathMatch"`
-	QueryMatch       []string                                          `json:"queryMatch"`
-	HeaderMatch      []EdgeVirtualServiceHttpRequestRuleHeaderMatch    `json:"headerMatch"`
-	CookieMatch      EdgeVirtualServiceHttpRequestRuleCookieMatch      `json:"cookieMatch"`
-}
-
 type EdgeVirtualServiceHttpRequestRuleHeaderActions struct {
 	Action string `json:"action"`
 	Name   string `json:"name"`
@@ -60,7 +64,12 @@ type EdgeVirtualServiceHttpRequestRuleHeaderActions struct {
 }
 
 type EdgeVirtualServiceHttpRequestRuleRedirectAction struct {
-	StatusCode int `json:"statusCode"`
+	Host       string `json:"host"`
+	KeepQuery  bool   `json:"keepQuery"`
+	Path       string `json:"path"`
+	Port       int    `json:"port"`
+	Protocol   string `json:"protocol"`
+	StatusCode int    `json:"statusCode"`
 }
 
 type EdgeVirtualServiceHttpRequestRuleRewriteURLAction struct {
@@ -71,6 +80,10 @@ type EdgeVirtualServiceHttpRequestRuleRewriteURLAction struct {
 }
 
 //////
+
+type EdgeVirtualServiceHttpResponseRules struct {
+	Values []EdgeVirtualServiceHttpResponseRule `json:"values"`
+}
 
 type EdgeVirtualServiceHttpResponseRule struct {
 	Name                        string                      `json:"name"`
