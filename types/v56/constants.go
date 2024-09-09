@@ -502,6 +502,7 @@ const (
 	OpenApiEndpointAlbVirtualServices                 = "loadBalancer/virtualServices/"
 	OpenApiEndpointAlbVirtualServiceHttpRequestRules  = "loadBalancer/virtualServices/%s/httpPolicy/requestRules"
 	OpenApiEndpointAlbVirtualServiceHttpResponseRules = "loadBalancer/virtualServices/%s/httpPolicy/responseRules"
+	OpenApiEndpointAlbVirtualServiceHttpSecurityRules = "loadBalancer/virtualServices/%s/httpPolicy/securityRules"
 	OpenApiEndpointAlbVirtualServiceSummaries         = "edgeGateways/%s/loadBalancer/virtualServiceSummaries" // %s contains edge gateway
 	OpenApiEndpointAlbServiceEngineGroupAssignments   = "loadBalancer/serviceEngineGroups/assignments/"
 	OpenApiEndpointAlbEdgeGateway                     = "edgeGateways/%s/loadBalancer"
