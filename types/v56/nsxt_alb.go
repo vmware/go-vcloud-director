@@ -1,60 +1,60 @@
 package types
 
-type EdgeVirtualServiceHttpRequestRules struct {
-	Values []EdgeVirtualServiceHttpRequestRule `json:"values"`
+type AlbVsHttpRequestRules struct {
+	Values []AlbVsHttpRequestRule `json:"values"`
 }
 
-type EdgeVirtualServiceHttpRequestRule struct {
+type AlbVsHttpRequestRule struct {
 	// Name of the rule. Must be non-blank and fewer than 1000 characters.
 	Name string `json:"name"`
 	// Whether the rule is active or not.
 	Active bool `json:"active"`
 	// Whether to enable logging with headers on rule match or not.
-	Logging       bool                                           `json:"logging"`
-	MatchCriteria EdgeVirtualServiceHttpRequestRuleMatchCriteria `json:"matchCriteria"`
+	Logging       bool                              `json:"logging"`
+	MatchCriteria AlbVsHttpRequestRuleMatchCriteria `json:"matchCriteria"`
 	// HTTP header rewrite action. It can be configured in combination with rewrite URL action.
-	HeaderActions []*EdgeVirtualServiceHttpRequestRuleHeaderActions `json:"headerActions,omitempty"`
+	HeaderActions []*AlbVsHttpRequestRuleHeaderActions `json:"headerActions,omitempty"`
 	// HTTP redirect action. It cannot be configured in combination with other actions.
-	RedirectAction *EdgeVirtualServiceHttpRequestRuleRedirectAction `json:"redirectAction,omitempty"`
+	RedirectAction *AlbVsHttpRequestRuleRedirectAction `json:"redirectAction,omitempty"`
 	// HTTP request URL rewrite action. It can be configured in combination with multiple header actions.
-	RewriteURLAction *EdgeVirtualServiceHttpRequestRuleRewriteURLAction `json:"rewriteUrlAction,omitempty"`
+	RewriteURLAction *AlbVsHttpRequestRuleRewriteURLAction `json:"rewriteUrlAction,omitempty"`
 }
 
-type EdgeVirtualServiceHttpRequestRuleMatchCriteria struct {
+type AlbVsHttpRequestRuleMatchCriteria struct {
 	// Client IP addresses.
-	ClientIPMatch *EdgeVirtualServiceHttpRequestRuleClientIPMatch `json:"clientIpMatch,omitempty"`
+	ClientIPMatch *AlbVsHttpRequestRuleClientIPMatch `json:"clientIpMatch,omitempty"`
 	// Virtual service ports.
-	ServicePortMatch *EdgeVirtualServiceHttpRequestRuleServicePortMatch `json:"servicePortMatch,omitempty"`
+	ServicePortMatch *AlbVsHttpRequestRuleServicePortMatch `json:"servicePortMatch,omitempty"`
 	// HTTP methods such as GET, PUT, DELETE, POST etc.
-	MethodMatch *EdgeVirtualServiceHttpRequestRuleMethodMatch `json:"methodMatch,omitempty"`
+	MethodMatch *AlbVsHttpRequestRuleMethodMatch `json:"methodMatch,omitempty"`
 	// Configure request paths.
 	Protocol string `json:"protocol,omitempty"`
 	// Configure request paths.
-	PathMatch *EdgeVirtualServiceHttpRequestRulePathMatch `json:"pathMatch,omitempty"`
+	PathMatch *AlbVsHttpRequestRulePathMatch `json:"pathMatch,omitempty"`
 	// HTTP request query strings in key=value format.
 	QueryMatch []string `json:"queryMatch,omitempty"`
 	// HTTP request headers.
-	HeaderMatch []EdgeVirtualServiceHttpRequestRuleHeaderMatch `json:"headerMatch,omitempty"`
+	HeaderMatch []AlbVsHttpRequestRuleHeaderMatch `json:"headerMatch,omitempty"`
 	// HTTP cookies.
-	CookieMatch *EdgeVirtualServiceHttpRequestRuleCookieMatch `json:"cookieMatch,omitempty"`
+	CookieMatch *AlbVsHttpRequestRuleCookieMatch `json:"cookieMatch,omitempty"`
 }
 
 // Client IP addresses.
-type EdgeVirtualServiceHttpRequestRuleClientIPMatch struct {
+type AlbVsHttpRequestRuleClientIPMatch struct {
 	// Criterion to use for IP address matching the HTTP request. Options - IS_IN, IS_NOT_IN.
 	MatchCriteria string `json:"matchCriteria"`
 	// Either a single IP address, a range of IP addresses or a network CIDR. Must contain at least one item.
 	Addresses []string `json:"addresses"`
 }
 
-type EdgeVirtualServiceHttpRequestRuleServicePortMatch struct {
+type AlbVsHttpRequestRuleServicePortMatch struct {
 	// Criterion to use for port matching the HTTP request. Options - IS_IN, IS_NOT_IN.
 	MatchCriteria string `json:"matchCriteria"`
 	// Listening TCP ports. Allowed values are 1-65535.
 	Ports []int `json:"ports"`
 }
 
-type EdgeVirtualServiceHttpRequestRuleMethodMatch struct {
+type AlbVsHttpRequestRuleMethodMatch struct {
 	// Criterion to use for matching the method in the HTTP request. Options - IS_IN, IS_NOT_IN.
 	MatchCriteria string `json:"matchCriteria"`
 	// HTTP methods to match. Options - GET, PUT, POST, DELETE, HEAD, OPTIONS, TRACE, CONNECT,
@@ -63,7 +63,7 @@ type EdgeVirtualServiceHttpRequestRuleMethodMatch struct {
 }
 
 // Configure request paths.
-type EdgeVirtualServiceHttpRequestRulePathMatch struct {
+type AlbVsHttpRequestRulePathMatch struct {
 	// Criterion to use for matching the path in the HTTP request URI. Options - BEGINS_WITH,
 	// DOES_NOT_BEGIN_WITH, CONTAINS, DOES_NOT_CONTAIN, ENDS_WITH, DOES_NOT_END_WITH, EQUALS,
 	// DOES_NOT_EQUAL, REGEX_MATCH, REGEX_DOES_NOT_MATCH.
@@ -73,7 +73,7 @@ type EdgeVirtualServiceHttpRequestRulePathMatch struct {
 }
 
 // HTTP request headers.
-type EdgeVirtualServiceHttpRequestRuleHeaderMatch struct {
+type AlbVsHttpRequestRuleHeaderMatch struct {
 	// Criterion to use for matching headers and cookies in the HTTP request amd response. Options - EXISTS, DOES_NOT_EXIST, BEGINS_WITH, DOES_NOT_BEGIN_WITH, CONTAINS, DOES_NOT_CONTAIN, ENDS_WITH, DOES_NOT_END_WITH, EQUALS, DOES_NOT_EQUAL.
 	MatchCriteria string `json:"matchCriteria"`
 	// String values to match for an HTTP header.
@@ -82,7 +82,7 @@ type EdgeVirtualServiceHttpRequestRuleHeaderMatch struct {
 	Key string `json:"key"`
 }
 
-type EdgeVirtualServiceHttpRequestRuleCookieMatch struct {
+type AlbVsHttpRequestRuleCookieMatch struct {
 	// Criterion to use for matching cookies in the HTTP request. Options - EXISTS, DOES_NOT_EXIST,
 	// BEGINS_WITH, DOES_NOT_BEGIN_WITH, CONTAINS, DOES_NOT_CONTAIN, ENDS_WITH, DOES_NOT_END_WITH,
 	// EQUALS, DOES_NOT_EQUAL.
@@ -94,7 +94,7 @@ type EdgeVirtualServiceHttpRequestRuleCookieMatch struct {
 	Value string `json:"value"`
 }
 
-type EdgeVirtualServiceHttpRequestRuleHeaderActions struct {
+type AlbVsHttpRequestRuleHeaderActions struct {
 	// One of the following HTTP header actions. Options - ADD, REMOVE, REPLACE.
 	Action string `json:"action"`
 	// HTTP header name. Must be non-blank and fewer than 10240 characters.
@@ -103,7 +103,7 @@ type EdgeVirtualServiceHttpRequestRuleHeaderActions struct {
 	Value string `json:"value"`
 }
 
-type EdgeVirtualServiceHttpRequestRuleRedirectAction struct {
+type AlbVsHttpRequestRuleRedirectAction struct {
 	// Host to which redirect the request. Default is the original host.
 	Host string `json:"host"`
 	// Keep or drop the query of the incoming request URI in the redirected URI.
@@ -118,7 +118,7 @@ type EdgeVirtualServiceHttpRequestRuleRedirectAction struct {
 	StatusCode int `json:"statusCode"`
 }
 
-type EdgeVirtualServiceHttpRequestRuleRewriteURLAction struct {
+type AlbVsHttpRequestRuleRewriteURLAction struct {
 	// Host to use for the rewritten URL. If omitted, the existing host will be used.
 	Host string `json:"host"`
 	// Path to use for the rewritten URL. If omitted, the existing path will be used.
@@ -131,54 +131,52 @@ type EdgeVirtualServiceHttpRequestRuleRewriteURLAction struct {
 
 //////
 
-type EdgeVirtualServiceHttpResponseRules struct {
-	Values []EdgeVirtualServiceHttpResponseRule `json:"values"`
+type AlbVsHttpResponseRules struct {
+	Values []AlbVsHttpResponseRule `json:"values"`
 }
 
-type EdgeVirtualServiceHttpResponseRule struct {
-	Name                        string                                                     `json:"name"`
-	Active                      bool                                                       `json:"active"`
-	Logging                     bool                                                       `json:"logging"`
-	MatchCriteria               EdgeVirtualServiceHttpResponseRuleMatchCriteria            `json:"matchCriteria"`
-	HeaderActions               []*EdgeVirtualServiceHttpRequestRuleHeaderActions          `json:"headerActions"`
-	RewriteLocationHeaderAction *EdgeVirtualServiceHttpRespRuleRewriteLocationHeaderAction `json:"rewriteLocationHeaderAction"`
+type AlbVsHttpResponseRule struct {
+	Name                        string                                        `json:"name"`
+	Active                      bool                                          `json:"active"`
+	Logging                     bool                                          `json:"logging"`
+	MatchCriteria               AlbVsHttpResponseRuleMatchCriteria            `json:"matchCriteria"`
+	HeaderActions               []*AlbVsHttpRequestRuleHeaderActions          `json:"headerActions"`
+	RewriteLocationHeaderAction *AlbVsHttpRespRuleRewriteLocationHeaderAction `json:"rewriteLocationHeaderAction"`
 }
 
-type EdgeVirtualServiceHttpResponseRuleMatchCriteria struct {
+type AlbVsHttpResponseRuleMatchCriteria struct {
 	// Client IP addresses.
-	ClientIPMatch *EdgeVirtualServiceHttpRequestRuleClientIPMatch `json:"clientIpMatch,omitempty"`
+	ClientIPMatch *AlbVsHttpRequestRuleClientIPMatch `json:"clientIpMatch,omitempty"`
 	// Virtual service ports.
-	ServicePortMatch *EdgeVirtualServiceHttpRequestRuleServicePortMatch `json:"servicePortMatch,omitempty"`
+	ServicePortMatch *AlbVsHttpRequestRuleServicePortMatch `json:"servicePortMatch,omitempty"`
 	// HTTP methods such as GET, PUT, DELETE, POST etc.
-	MethodMatch *EdgeVirtualServiceHttpRequestRuleMethodMatch `json:"methodMatch,omitempty"`
+	MethodMatch *AlbVsHttpRequestRuleMethodMatch `json:"methodMatch,omitempty"`
 	// Configure request paths.
 	Protocol string `json:"protocol,omitempty"`
 	// Configure request paths.
-	PathMatch *EdgeVirtualServiceHttpRequestRulePathMatch `json:"pathMatch,omitempty"`
+	PathMatch *AlbVsHttpRequestRulePathMatch `json:"pathMatch,omitempty"`
 	// HTTP request query strings in key=value format.
 	QueryMatch []string `json:"queryMatch,omitempty"`
-	// HTTP request headers.
-	HeaderMatch []EdgeVirtualServiceHttpRequestRuleHeaderMatch `json:"headerMatch,omitempty"`
 	// HTTP cookies.
-	CookieMatch *EdgeVirtualServiceHttpRequestRuleCookieMatch `json:"cookieMatch,omitempty"`
+	CookieMatch *AlbVsHttpRequestRuleCookieMatch `json:"cookieMatch,omitempty"`
 
-	LocationHeaderMatch *EdgeVirtualServiceHttpResponseLocationHeaderMatch `json:"locationHeaderMatch,omitempty"`
-	RequestHeaderMatch  []EdgeVirtualServiceHttpRequestRuleHeaderMatch     `json:"requestHeaderMatch,omitempty"`
-	ResponseHeaderMatch []EdgeVirtualServiceHttpRequestRuleHeaderMatch     `json:"responseHeaderMatch,omitempty"`
-	StatusCodeMatch     *EdgeVirtualServiceHttpRuleStatusCodeMatch         `json:"statusCodeMatch,omitempty"`
+	LocationHeaderMatch *AlbVsHttpResponseLocationHeaderMatch `json:"locationHeaderMatch,omitempty"`
+	RequestHeaderMatch  []AlbVsHttpRequestRuleHeaderMatch     `json:"requestHeaderMatch,omitempty"`
+	ResponseHeaderMatch []AlbVsHttpRequestRuleHeaderMatch     `json:"responseHeaderMatch,omitempty"`
+	StatusCodeMatch     *AlbVsHttpRuleStatusCodeMatch         `json:"statusCodeMatch,omitempty"`
 }
 
-type EdgeVirtualServiceHttpResponseLocationHeaderMatch struct {
+type AlbVsHttpResponseLocationHeaderMatch struct {
 	MatchCriteria string   `json:"matchCriteria"`
 	Value         []string `json:"value"`
 }
 
-type EdgeVirtualServiceHttpRuleStatusCodeMatch struct {
+type AlbVsHttpRuleStatusCodeMatch struct {
 	MatchCriteria string   `json:"matchCriteria"`
 	StatusCodes   []string `json:"statusCodes"`
 }
 
-type EdgeVirtualServiceHttpRespRuleRewriteLocationHeaderAction struct {
+type AlbVsHttpRespRuleRewriteLocationHeaderAction struct {
 	Protocol  string `json:"protocol"`
 	Host      string `json:"host"`
 	Port      int    `json:"port"`
@@ -186,35 +184,29 @@ type EdgeVirtualServiceHttpRespRuleRewriteLocationHeaderAction struct {
 	KeepQuery bool   `json:"keepQuery"`
 }
 
-type EdgeVirtualServiceHttpSecurityRules struct {
-	Values []EdgeVirtualServiceHttpSecurityRule `json:"values"`
+type AlbVsHttpSecurityRules struct {
+	Values []AlbVsHttpSecurityRule `json:"values"`
 }
 
-type EdgeVirtualServiceHttpSecurityRule struct {
+type AlbVsHttpSecurityRule struct {
 	// Name of the rule. Must be non-blank and fewer than 1000 characters.
 	Name string `json:"name"`
 	// Whether the rule is active or not.
 	Active bool `json:"active"`
 	// Whether to enable logging with headers on rule match or not.
-	Logging       bool                                           `json:"logging"`
-	MatchCriteria EdgeVirtualServiceHttpRequestRuleMatchCriteria `json:"matchCriteria"`
-	// // HTTP header rewrite action. It can be configured in combination with rewrite URL action.
-	// HeaderActions []*EdgeVirtualServiceHttpRequestRuleHeaderActions `json:"headerActions,omitempty"`
-	// // HTTP redirect action. It cannot be configured in combination with other actions.
-	// RedirectAction *EdgeVirtualServiceHttpRequestRuleRedirectAction `json:"redirectAction,omitempty"`
-	// // HTTP request URL rewrite action. It can be configured in combination with multiple header actions.
-	// RewriteURLAction *EdgeVirtualServiceHttpRequestRuleRewriteURLAction `json:"rewriteUrlAction,omitempty"`
+	Logging       bool                              `json:"logging"`
+	MatchCriteria AlbVsHttpRequestRuleMatchCriteria `json:"matchCriteria"`
 
 	//Defines the action to apply rate limit on incoming requests. It consists of rate limiting
 	//properties and one of the actions to execute upon reaching rate limit. If not actions are
 	//provided, rate limiting will only be reported.
-	RateLimitAction *EdgeVirtualServiceHttpSecurityRuleRateLimitAction `json:"rateLimitAction,omitempty"`
+	RateLimitAction *AlbVsHttpSecurityRuleRateLimitAction `json:"rateLimitAction,omitempty"`
 
 	// Action to redirect the incoming request to HTTPS. It cannot be configured in combination with other actions.
-	RedirectToHTTPSAction *EdgeVirtualServiceHttpSecurityRuleRedirectToHTTPSAction `json:"redirectToHttpsAction,omitempty"`
+	RedirectToHTTPSAction *AlbVsHttpSecurityRuleRedirectToHTTPSAction `json:"redirectToHttpsAction,omitempty"`
 
 	// Action to send a local HTTP response. It cannot be configured in combination with other actions.
-	LocalResponseAction *EdgeVirtualServiceHttpSecurityRuleRateLimitLocalResponseAction `json:"localResponseAction,omitempty"`
+	LocalResponseAction *AlbVsHttpSecurityRuleRateLimitLocalResponseAction `json:"localResponseAction,omitempty"`
 
 	// AllowOrCloseConnectionAction is an action to allow the incoming request or close the
 	// connection. It cannot be configured in combination with other actions. Allowed values are:
@@ -223,19 +215,19 @@ type EdgeVirtualServiceHttpSecurityRule struct {
 	AllowOrCloseConnectionAction string `json:"allowOrCloseConnectionAction,omitempty"`
 }
 
-type EdgeVirtualServiceHttpSecurityRuleRateLimitAction struct {
+type AlbVsHttpSecurityRuleRateLimitAction struct {
 	// Action to close the incoming connection. Only allowed value is CLOSE. It cannot be configured in combination with other actions.
 	CloseConnectionAction string `json:"closeConnectionAction,omitempty"`
 	// Maximum number of connections, requests or packets permitted each period. Allowed values are 1-1000000000.
 	Count int `json:"count,omitempty"`
 	// Action to send a local HTTP response. It cannot be configured in combination with other actions.
-	LocalResponseAction *EdgeVirtualServiceHttpSecurityRuleRateLimitLocalResponseAction `json:"localResponseAction,omitempty"`
+	LocalResponseAction *AlbVsHttpSecurityRuleRateLimitLocalResponseAction `json:"localResponseAction,omitempty"`
 	// Time value in seconds to enforce rate count. Allowed values are 1-1000000000. Unit is Second.
 	Period int `json:"period,omitempty"`
 	// Action to redirect the HTTP request. It cannot be configured in combination with other actions.
-	RedirectAction *EdgeVirtualServiceHttpRequestRuleRedirectAction `json:"redirectAction,omitempty"`
+	RedirectAction *AlbVsHttpRequestRuleRedirectAction `json:"redirectAction,omitempty"`
 }
-type EdgeVirtualServiceHttpSecurityRuleRateLimitLocalResponseAction struct {
+type AlbVsHttpSecurityRuleRateLimitLocalResponseAction struct {
 	// Content to be used in the local HTTP response body.
 	Content string `json:"content"`
 	// Mime-type of the response content.
@@ -244,6 +236,6 @@ type EdgeVirtualServiceHttpSecurityRuleRateLimitLocalResponseAction struct {
 	StatusCode int `json:"statusCode"`
 }
 
-type EdgeVirtualServiceHttpSecurityRuleRedirectToHTTPSAction struct {
+type AlbVsHttpSecurityRuleRedirectToHTTPSAction struct {
 	Port int `json:"port"`
 }
