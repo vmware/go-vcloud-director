@@ -604,9 +604,6 @@ func testAlbVirtualServicePolicies(check *C, edge *NsxtEdgeGateway, pool *NsxtAl
 		VirtualIpAddress: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
 	}
 
-	edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
-	check.Assert(err, IsNil)
-
 	createdVirtualService, err := client.CreateNsxtAlbVirtualService(virtualServiceConfig)
 	check.Assert(err, IsNil)
 
