@@ -80,9 +80,9 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	// * HTTP Response rules
 	// * HTTP Security rules
 	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.0") {
-		printVerbose("# Running 10.5.0+ ALB Virtual Service Policy tests as Sysadmin user\n")
+		printVerbose("# Running 10.5.0+ ALB Virtual Service Policy tests as Sysadmin user ")
 		testAlbVirtualServicePolicies(check, edge, albPool, seGroup, vcd, vcd.client)
-		printVerbose("# Running 10.5.0+ ALB Virtual Service Policy tests as Org user\n")
+		printVerbose("# Running 10.5.0+ ALB Virtual Service Policy tests as Org user ")
 		testAlbVirtualServicePolicies(check, edge, albPool, seGroup, vcd, orgUserVcdClient)
 	}
 
