@@ -11,6 +11,8 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// Test_AlbVirtualService also tests:
+// * HTTP Request, Response and Security policies
 func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
@@ -71,6 +73,17 @@ func (vcd *TestVCD) Test_AlbVirtualService(check *C) {
 
 		err = retryOnError(ipSet.Delete, 5, 1*time.Second)
 		check.Assert(err, IsNil)
+	}
+
+	// On VCD 10.5.0+ test LB Virtual Service Policies:
+	// * HTTP Request rules
+	// * HTTP Response rules
+	// * HTTP Security rules
+	if vcd.client.Client.APIVCDMaxVersionIs(">= 38.0") {
+		printVerbose("# Running 10.5.0+ ALB VS Policy tests as Sysadmin user\n")
+		testAlbVirtualServicePolicies(check, edge, albPool, seGroup, vcd, vcd.client)
+		printVerbose("# Running 10.5.0+  ALB VS Policy tests as Org user\n")
+		testAlbVirtualServicePolicies(check, edge, albPool, seGroup, vcd, orgUserVcdClient)
 	}
 
 	// teardown prerequisites
@@ -569,5 +582,122 @@ func tearDownAlbVirtualServicePrerequisites(check *C, albPool *NsxtAlbPool, assi
 	err = cloud.Delete()
 	check.Assert(err, IsNil)
 	err = controller.Delete()
+	check.Assert(err, IsNil)
+}
+
+func testAlbVirtualServicePolicies(check *C, edge *NsxtEdgeGateway, pool *NsxtAlbPool, seGroup *NsxtAlbServiceEngineGroup, vcd *TestVCD, client *VCDClient) {
+	virtualServiceConfig := &types.NsxtAlbVirtualService{
+		Name:    check.TestName(),
+		Enabled: addrOf(true),
+		ApplicationProfile: types.NsxtAlbVirtualServiceApplicationProfile{
+			SystemDefined: true,
+			Type:          "HTTP",
+		},
+		GatewayRef:            types.OpenApiReference{ID: edge.EdgeGateway.ID},
+		LoadBalancerPoolRef:   types.OpenApiReference{ID: pool.NsxtAlbPool.ID},
+		ServiceEngineGroupRef: types.OpenApiReference{ID: seGroup.NsxtAlbServiceEngineGroup.ID},
+		ServicePorts: []types.NsxtAlbVirtualServicePort{
+			{
+				PortStart: addrOf(80),
+			},
+		},
+		VirtualIpAddress: edge.EdgeGateway.EdgeGatewayUplinks[0].Subnets.Values[0].PrimaryIP,
+	}
+
+	edge, err := vcd.nsxtVdc.GetNsxtEdgeGatewayByName(vcd.config.VCD.Nsxt.EdgeGateway)
+	check.Assert(err, IsNil)
+
+	createdVirtualService, err := client.CreateNsxtAlbVirtualService(virtualServiceConfig)
+	check.Assert(err, IsNil)
+
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices + createdVirtualService.NsxtAlbVirtualService.ID
+	PrependToCleanupListOpenApi(createdVirtualService.NsxtAlbVirtualService.Name, check.TestName(), openApiEndpoint)
+
+	// Check that no rules are present
+	reqRules, err := createdVirtualService.GetAllHttpRequestRules(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(reqRules), Equals, 0)
+
+	respRules, err := createdVirtualService.GetAllHttpResponseRules(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(respRules), Equals, 0)
+
+	secRules, err := createdVirtualService.GetAllHttpSecurityRules(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(secRules), Equals, 0)
+
+	// Create request rule
+	reqType := types.AlbVsHttpRequestRule{
+		Name:    check.TestName() + "req-1",
+		Active:  true,
+		Logging: false,
+		MatchCriteria: types.AlbVsHttpRequestRuleMatchCriteria{
+			ClientIPMatch: &types.AlbVsHttpRequestRuleClientIPMatch{MatchCriteria: "IS_IN", Addresses: []string{"1.1.1.1", "2.2.2.2"}},
+			MethodMatch:   &types.AlbVsHttpRequestRuleMethodMatch{MatchCriteria: "IS_NOT_IN", Methods: []string{"POST", "PATCH"}},
+		},
+		HeaderActions: []*types.AlbVsHttpRequestRuleHeaderActions{
+			&types.AlbVsHttpRequestRuleHeaderActions{
+				Action: "ADD",
+				Name:   "X-NEW-H",
+				Value:  "new",
+			},
+		},
+	}
+
+	respType := types.AlbVsHttpResponseRule{
+		Name:    check.TestName() + "resp-1",
+		Active:  true,
+		Logging: false,
+		MatchCriteria: types.AlbVsHttpResponseRuleMatchCriteria{CookieMatch: &types.AlbVsHttpRequestRuleCookieMatch{
+			MatchCriteria: "BEGINS_WITH",
+			Key:           "cookie-key",
+			Value:         "cookie-value",
+		}},
+		RewriteLocationHeaderAction: &types.AlbVsHttpRespRuleRewriteLocationHeaderAction{
+			Protocol:  "HTTP",
+			Host:      "other",
+			Port:      81,
+			Path:      "/new",
+			KeepQuery: false,
+		},
+	}
+
+	securityType := types.AlbVsHttpSecurityRule{
+		Name:    check.TestName() + "sec-1",
+		Active:  true,
+		Logging: true,
+		MatchCriteria: types.AlbVsHttpRequestRuleMatchCriteria{
+			QueryMatch: []string{"q1", "q2"},
+		},
+		AllowOrCloseConnectionAction: "CLOSE",
+	}
+
+	newReqRules, err := createdVirtualService.UpdateHttpRequestRules(&types.AlbVsHttpRequestRules{Values: []types.AlbVsHttpRequestRule{reqType}})
+	check.Assert(err, IsNil)
+	check.Assert(len(newReqRules.Values), Equals, 1)
+
+	newRespRules, err := createdVirtualService.UpdateHttpResponseRules(&types.AlbVsHttpResponseRules{Values: []types.AlbVsHttpResponseRule{respType}})
+	check.Assert(err, IsNil)
+	check.Assert(len(newRespRules.Values), Equals, 1)
+
+	newSecRules, err := createdVirtualService.UpdateHttpSecurityRules(&types.AlbVsHttpSecurityRules{Values: []types.AlbVsHttpSecurityRule{securityType}})
+	check.Assert(err, IsNil)
+	check.Assert(len(newSecRules.Values), Equals, 1)
+
+	// Cleanup and check
+	valueCountReq, err := createdVirtualService.UpdateHttpRequestRules(&types.AlbVsHttpRequestRules{})
+	check.Assert(err, IsNil)
+	check.Assert(len(valueCountReq.Values), Equals, 0)
+
+	valueCountResp, err := createdVirtualService.UpdateHttpResponseRules(&types.AlbVsHttpResponseRules{})
+	check.Assert(err, IsNil)
+	check.Assert(len(valueCountResp.Values), Equals, 0)
+
+	valueCountSec, err := createdVirtualService.UpdateHttpSecurityRules(&types.AlbVsHttpSecurityRules{})
+	check.Assert(err, IsNil)
+	check.Assert(len(valueCountSec.Values), Equals, 0)
+
+	// remove ALB VS
+	err = createdVirtualService.Delete()
 	check.Assert(err, IsNil)
 }
