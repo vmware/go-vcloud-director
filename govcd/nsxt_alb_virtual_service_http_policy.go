@@ -10,10 +10,11 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
 
-const labelNsxtAlbVsHttpRequestRules = "NSX-T ALB Virtual Service HTTP Request Rules"
-const labelNsxtAlbVsHttpResponseRules = "NSX-T ALB Virtual Service HTTP Response Rules"
-const labelNsxtAlbVsHttpSecurityRules = "NSX-T ALB Virtual Service HTTP Security Rules"
+const labelNsxtAlbVsHttpRequestRules = "ALB Virtual Service HTTP Request Rules"
+const labelNsxtAlbVsHttpResponseRules = "ALB Virtual Service HTTP Response Rules"
+const labelNsxtAlbVsHttpSecurityRules = "ALB Virtual Service HTTP Security Rules"
 
+// GetAllHttpRequestRules returns all ALB Virtual Service HTTP Request Rules
 func (nsxtAlbVirtualService *NsxtAlbVirtualService) GetAllHttpRequestRules(queryParameters url.Values) ([]*types.AlbVsHttpRequestRule, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpRequestRules,
@@ -25,6 +26,7 @@ func (nsxtAlbVirtualService *NsxtAlbVirtualService) GetAllHttpRequestRules(query
 	return getAllInnerEntities[types.AlbVsHttpRequestRule](&nsxtAlbVirtualService.vcdClient.Client, c)
 }
 
+// UpdateHttpRequestRules sets ALB Virtual Service HTTP Request Rules
 func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpRequestRules(config *types.AlbVsHttpRequestRules) (*types.AlbVsHttpRequestRules, error) {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpRequestRules,
@@ -35,6 +37,7 @@ func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpRequestRules(confi
 	return updateInnerEntity(&nsxtAlbVirtualService.vcdClient.Client, c, config)
 }
 
+// GetAllHttpRequestRules returns all ALB Virtual Service HTTP Response Rules
 func (nsxtAlbVirtualService *NsxtAlbVirtualService) GetAllHttpResponseRules(queryParameters url.Values) ([]*types.AlbVsHttpResponseRule, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpResponseRules,
@@ -46,6 +49,7 @@ func (nsxtAlbVirtualService *NsxtAlbVirtualService) GetAllHttpResponseRules(quer
 	return getAllInnerEntities[types.AlbVsHttpResponseRule](&nsxtAlbVirtualService.vcdClient.Client, c)
 }
 
+// UpdateHttpRequestRules sets ALB Virtual Service HTTP Response Rules
 func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpResponseRules(config *types.AlbVsHttpResponseRules) (*types.AlbVsHttpResponseRules, error) {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpResponseRules,
@@ -56,6 +60,7 @@ func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpResponseRules(conf
 	return updateInnerEntity(&nsxtAlbVirtualService.vcdClient.Client, c, config)
 }
 
+// GetAllHttpRequestRules returns all ALB Virtual Service HTTP Security Rules
 func (nsxtAlbVirtualService *NsxtAlbVirtualService) GetAllHttpSecurityRules(queryParameters url.Values) ([]*types.AlbVsHttpSecurityRule, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpSecurityRules,
@@ -67,6 +72,7 @@ func (nsxtAlbVirtualService *NsxtAlbVirtualService) GetAllHttpSecurityRules(quer
 	return getAllInnerEntities[types.AlbVsHttpSecurityRule](&nsxtAlbVirtualService.vcdClient.Client, c)
 }
 
+// UpdateHttpRequestRules sets ALB Virtual Service HTTP Security Rules
 func (nsxtAlbVirtualService *NsxtAlbVirtualService) UpdateHttpSecurityRules(config *types.AlbVsHttpSecurityRules) (*types.AlbVsHttpSecurityRules, error) {
 	c := crudConfig{
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpSecurityRules,

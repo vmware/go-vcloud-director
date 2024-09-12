@@ -628,7 +628,7 @@ func testAlbVirtualServicePolicies(check *C, edge *NsxtEdgeGateway, pool *NsxtAl
 		Name:    check.TestName() + "req-1",
 		Active:  true,
 		Logging: false,
-		MatchCriteria: types.AlbVsHttpRequestRuleMatchCriteria{
+		MatchCriteria: types.AlbVsHttpRequestAndSecurityRuleMatchCriteria{
 			ClientIPMatch: &types.AlbVsHttpRequestRuleClientIPMatch{MatchCriteria: "IS_IN", Addresses: []string{"1.1.1.1", "2.2.2.2"}},
 			MethodMatch:   &types.AlbVsHttpRequestRuleMethodMatch{MatchCriteria: "IS_NOT_IN", Methods: []string{"POST", "PATCH"}},
 		},
@@ -663,7 +663,7 @@ func testAlbVirtualServicePolicies(check *C, edge *NsxtEdgeGateway, pool *NsxtAl
 		Name:    check.TestName() + "sec-1",
 		Active:  true,
 		Logging: true,
-		MatchCriteria: types.AlbVsHttpRequestRuleMatchCriteria{
+		MatchCriteria: types.AlbVsHttpRequestAndSecurityRuleMatchCriteria{
 			QueryMatch: []string{"q1", "q2"},
 		},
 		AllowOrCloseConnectionAction: "CLOSE",
