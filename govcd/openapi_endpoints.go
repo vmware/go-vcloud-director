@@ -75,8 +75,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesTypes:                   "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesResolve:                 "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRdeEntitiesBehaviorsInvocations:    "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalEndpoints:                  "37.3", // VCD 10.4.3+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointApiFilters:                         "37.3", // VCD 10.4.3+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointExternalEndpoints:                  "38.1", // VCD 10.5.1+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointApiFilters:                         "38.1", // VCD 10.5.1+
 
 	// IP Spaces
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces:                     "37.1", // VCD 10.4.1+
@@ -88,21 +88,24 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceFloatingIpSuggestions: "37.1", // VCD 10.4.1+
 
 	// NSX-T ALB (Advanced/AVI Load Balancer) support was introduced in 10.2
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                    "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbImportableClouds:              "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbImportableServiceEngineGroups: "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbCloud:                         "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups:           "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway:                   "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroupAssignments: "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPools:                         "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPoolSummaries:                 "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices:               "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceSummaries:       "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary:            "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibraryOld:         "35.0", // VCD 10.2+ and deprecated from 10.3
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules:                "35.0", // VCD 10.2+
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles:           "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbController:                      "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbImportableClouds:                "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbImportableServiceEngineGroups:   "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbCloud:                           "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroups:             "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbEdgeGateway:                     "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbServiceEngineGroupAssignments:   "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPools:                           "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbPoolSummaries:                   "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServices:                 "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceSummaries:         "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpRequestRules:  "38.0", // VCD 10.5+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpResponseRules: "38.0", // VCD 10.5+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpSecurityRules: "38.0", // VCD 10.5+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary:              "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibraryOld:           "35.0", // VCD 10.2+ and deprecated from 10.3
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules:                  "35.0", // VCD 10.2+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles:             "35.0", // VCD 10.2+
 
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpNeighbor:          "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointEdgeBgpConfigPrefixLists: "35.0", // VCD 10.2+

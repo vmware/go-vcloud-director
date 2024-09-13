@@ -215,6 +215,9 @@ func (vcdClient *VCDClient) GetTier0RouterInterfaceByName(externalNetworkId, dis
 	if err != nil {
 		return nil, fmt.Errorf("error getting %s by DisplayName '%s':%s", labelNsxtTier0RouterInterface, displayName, err)
 	}
+	if len(allT0Interfaces) == 0 {
+		return nil, fmt.Errorf("%s: error getting %s by DisplayName '%s'", ErrorEntityNotFound, labelNsxtTier0RouterInterface, displayName)
+	}
 
 	return localFilterOneOrError(labelNsxtTier0RouterInterface, allT0Interfaces, "DisplayName", displayName)
 }
