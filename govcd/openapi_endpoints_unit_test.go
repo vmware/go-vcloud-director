@@ -97,7 +97,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 			name: fmt.Sprintf("%s_minimum_version_%s", minimumRequiredVersion, endpointName),
 			// Put a list of versions which always satisfied minimum requirement
 			supportedVersions: renderSupportedVersions([]string{
-				"27.0", "28.0", "29.0", "30.0", "31.0", "32.0", "33.0", "34.0", "35.0", "35.1", "35.2", "36.0", "37.0", "38.0",
+				"27.0", "28.0", "29.0", "30.0", "31.0", "32.0", "33.0", "34.0", "35.0", "35.1", "35.2", "36.0", "37.0", "38.0", "39.0", "40.0", "41.0",
 			}),
 			endpoint:    endpointName,
 			wantVersion: wantVersion,
