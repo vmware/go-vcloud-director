@@ -128,7 +128,7 @@ type AlbVsHttpRequestRuleRedirectAction struct {
 	// Path to which redirect the request. Default is the original path
 	Path string `json:"path"`
 	// Port to which redirect the request. Default is 80 for HTTP and 443 for HTTPS protocol
-	Port int `json:"port"`
+	Port *int `json:"port,omitempty"`
 	// HTTP or HTTPS protocol
 	Protocol string `json:"protocol"`
 	// One of the redirect status codes - 301, 302, 307
@@ -142,7 +142,7 @@ type AlbVsHttpRequestRuleRewriteURLAction struct {
 	// Path to use for the rewritten URL. If omitted, the existing path will be used.
 	Path string `json:"path"`
 	// Query string to use or append to the existing query string in the rewritten URL.
-	Query string `json:"query"`
+	Query string `json:"query,omitempty"`
 	// Whether or not to keep the existing query string when rewriting the URL. Defaults to true.
 	KeepQuery bool `json:"keepQuery"`
 }
@@ -223,7 +223,7 @@ type AlbVsHttpRespRuleRewriteLocationHeaderAction struct {
 	// Host to which redirect the request. Default is the original host
 	Host string `json:"host"`
 	// Port to which redirect the request. Default is 80 for HTTP and 443 for HTTPS protocol
-	Port int `json:"port"`
+	Port *int `json:"port,omitempty"`
 	// Path to which redirect the request. Default is the original path
 	Path string `json:"path"`
 	// Keep or drop the query of the incoming request URI in the redirected URI

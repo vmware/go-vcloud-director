@@ -653,7 +653,7 @@ func testAlbVirtualServicePolicies(check *C, edge *NsxtEdgeGateway, pool *NsxtAl
 		RewriteLocationHeaderAction: &types.AlbVsHttpRespRuleRewriteLocationHeaderAction{
 			Protocol:  "HTTP",
 			Host:      "other",
-			Port:      81,
+			Port:      addrOf(81),
 			Path:      "/new",
 			KeepQuery: false,
 		},
