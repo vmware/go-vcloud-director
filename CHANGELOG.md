@@ -2,42 +2,42 @@
 
 ### FEATURES
 * Added CRUD operations for External Endpoints: `VCDClient.CreateExternalEndpoint`, `VCDClient.GetAllExternalEndpoints`,
-  `VCDClient.GetExternalEndpoint`, `VCDClient.GetExternalEndpointById`, `ExternalEndpoint.Update` and `ExternalEndpoint.Delete` [GH-696]
+  `VCDClient.GetExternalEndpoint`, `VCDClient.GetExternalEndpointById`, `ExternalEndpoint.Update` and `ExternalEndpoint.Delete` ([#696](https://github.com/vmware/go-vcloud-director/pull/696))
 * Added CRUD operations for API Filters: `VCDClient.CreateApiFilter`, `VCDClient.GetAllApiFilters`, `VCDClient.GetApiFilterById`,
-  `ApiFilter.Update` and `ApiFilter.Delete` [GH-696, GH-697]
+  `ApiFilter.Update` and `ApiFilter.Delete` ([#696](https://github.com/vmware/go-vcloud-director/pull/696), [#697](https://github.com/vmware/go-vcloud-director/pull/697))
 * Added Read and Update operations for ALB Virtual Service HTTP Request Rules via
   `NsxtAlbVirtualService.GetAllHttpRequestRules` and `NsxtAlbVirtualService.UpdateHttpRequestRules`
-  [GH-706]
+  ([#706](https://github.com/vmware/go-vcloud-director/pull/706))
 * Added Read and Update operations for ALB Virtual Service HTTP Response Rules via
   `NsxtAlbVirtualService.GetAllHttpResponseRules` and
-  `NsxtAlbVirtualService.UpdateHttpResponseRules` [GH-706]
+  `NsxtAlbVirtualService.UpdateHttpResponseRules` ([#706](https://github.com/vmware/go-vcloud-director/pull/706))
 * Added Read and Update operations for ALB Virtual Service HTTP Security Rules via
   `NsxtAlbVirtualService.GetAllHttpSecurityRules` and
-  `NsxtAlbVirtualService.UpdateHttpSecurityRules` [GH-706]
+  `NsxtAlbVirtualService.UpdateHttpSecurityRules` ([#706](https://github.com/vmware/go-vcloud-director/pull/706))
 
 ### IMPROVEMENTS
 * Added `OpenAPIEdgeGateway.NonDistributedRoutingEnabled` and `Connection.ConnectionTypeValue` for
   `OpenApiOrgVdcNetwork` child to support configuring non distributed Org VDC networks in NSX-T Edge
-  Gateways [GH-698]
-* Improved `types.NetworkConnection` structure to support VM Secondary IP allocations (IPv6) [GH-694]
+  Gateways ([#698](https://github.com/vmware/go-vcloud-director/pull/698))
+* Improved `types.NetworkConnection` structure to support VM Secondary IP allocations (IPv6) ([#694](https://github.com/vmware/go-vcloud-director/pull/694))
 * Added `Client.CustomAdfsCookie` and configuration function `WithSamlAdfsAndCookie` that might be
-  beneficial for ADFS server lookup query when using SAML auth [GH-699]
-* SAML ADFS auth flow will use Bearer token instead the old one [GH-699]
-* Added VM Hardware Upgrade method `vm.UpgradeHardwareVersion` [GH-701]
-* Added `OrgPasswordPolicySettings` type to be able to set account lockout properties for an Organization [GH-702]
+  beneficial for ADFS server lookup query when using SAML auth ([#699](https://github.com/vmware/go-vcloud-director/pull/699))
+* SAML ADFS auth flow will use Bearer token instead the old one ([#699](https://github.com/vmware/go-vcloud-director/pull/699))
+* Added VM Hardware Upgrade method `vm.UpgradeHardwareVersion` ([#701](https://github.com/vmware/go-vcloud-director/pull/701))
+* Added `OrgPasswordPolicySettings` type to be able to set account lockout properties for an Organization ([#702](https://github.com/vmware/go-vcloud-director/pull/702))
 * Added methods `VCDClient.GetAllTier0RouterInterfaces` and `VCDClient.GetTier0RouterInterfaceByName`
-  that help to lookup NSX-T Tier-0 Router Interfaces [GH-704]
+  that help to lookup NSX-T Tier-0 Router Interfaces ([#704](https://github.com/vmware/go-vcloud-director/pull/704))
 * Added `IpSpaceUplink.Interfaces` field that can associate Tier-0 Router Interfaces to IP Space
-  Uplinks on VCD 10.5+ [GH-704]
-* Added field `QueryResultVMRecordType.VmNameInVc` [GH-705]
+  Uplinks on VCD 10.5+ ([#704](https://github.com/vmware/go-vcloud-director/pull/704))
+* Added field `QueryResultVMRecordType.VmNameInVc` ([#705](https://github.com/vmware/go-vcloud-director/pull/705))
 
 ### BUG FIXES
-* Fixed [Issue 1287](https://github.com/vmware/terraform-provider-vcd/issues/1287) Read-only org sharing prevents sharing to users [GH-693]
-* Fixed an XML error when updating a VM spec section: `Undeclared namespace prefix "ns5"` [GH-697]
+* Fixed [Issue 1287](https://github.com/vmware/terraform-provider-vcd/issues/1287) Read-only org sharing prevents sharing to users ([#693](https://github.com/vmware/go-vcloud-director/pull/693))
+* Fixed an XML error when updating a VM spec section: `Undeclared namespace prefix "ns5"` ([#697](https://github.com/vmware/go-vcloud-director/pull/697))
 
 ### NOTES
 * Modifies `Test_CreateDeleteEdgeGatewayAdvanced` to avoid its failure as VCD returns `Connected: true` when retrieving
-  the Edge Gateway data [GH-697]
+  the Edge Gateway data ([#697](https://github.com/vmware/go-vcloud-director/pull/697))
 
 ## 2.25.0 (July 2, 2024)
 
