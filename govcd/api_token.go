@@ -151,7 +151,7 @@ func (vcdClient *VCDClient) RegisterToken(org string, tokenParams *types.ApiToke
 	}
 
 	// Create the URL for the register endpoint
-	urlRef, err := url.ParseRequestURI(fmt.Sprintf("%s://%s/oauth/%s/%s", client.VCDHREF.Scheme, client.VCDHREF.Host, userDef, "register"))
+	urlRef, err := url.ParseRequestURI(fmt.Sprintf("%s/oauth/%s/%s", client.rootVcdHref(), userDef, "register"))
 	if err != nil {
 		return nil, fmt.Errorf("error getting request URL from %s : %s", urlRef.String(), err)
 	}
@@ -175,7 +175,7 @@ func (client *Client) getAccessToken(org, funcName string, payloadMap map[string
 		userDef = "provider"
 	}
 
-	endpoint := fmt.Sprintf("%s://%s/oauth/%s/token", client.VCDHREF.Scheme, client.VCDHREF.Host, userDef)
+	endpoint := fmt.Sprintf("%s/oauth/%s/token", client.rootVcdHref(), userDef)
 	urlRef, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting request url from %s: %s", urlRef.String(), err)
@@ -184,7 +184,7 @@ func (client *Client) getAccessToken(org, funcName string, payloadMap map[string
 	newToken := &types.ApiTokenRefresh{}
 
 	// Not an OpenAPI endpoint so hardcoding the API token minimal version
-	err = client.OpenApiPostUrlEncoded("36.1", urlRef, nil, payloadMap, &newToken, nil)
+	err = client.OpenApiPostUrlEncoded(client.APIVersion, urlRef, nil, payloadMap, &newToken, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error authorizing service account: %s", err)
 	}

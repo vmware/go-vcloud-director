@@ -58,7 +58,7 @@ func (client *Client) OpenApiIsSupported() bool {
 // '/' is added automatically.
 // Sample URL construct: https://HOST/cloudapi/endpoint
 func (client *Client) OpenApiBuildEndpoint(endpoint ...string) (*url.URL, error) {
-	endpointString := client.VCDHREF.Scheme + "://" + client.VCDHREF.Host + "/cloudapi/" + strings.Join(endpoint, "")
+	endpointString := client.rootVcdHref() + "/cloudapi/" + strings.Join(endpoint, "")
 	urlRef, err := url.ParseRequestURI(endpointString)
 	if err != nil {
 		return nil, fmt.Errorf("error formatting OpenAPI endpoint: %s", err)

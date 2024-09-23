@@ -70,6 +70,12 @@ type Client struct {
 	customHeader      http.Header
 }
 
+func (client *Client) rootVcdHref() string {
+	pathString := client.VCDHREF.String()
+	pathString = strings.TrimSuffix(pathString, "/api")
+	return pathString
+}
+
 // AuthorizationHeader header key used by default to set the authorization token.
 const AuthorizationHeader = "X-Vcloud-Authorization"
 
