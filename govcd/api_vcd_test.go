@@ -1,4 +1,4 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || cse || slz || ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || cse || slz || tm || ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -97,6 +97,7 @@ const (
 
 const (
 	TestRequiresSysAdminPrivileges = "Test %s requires system administrator privileges"
+	TestRequiresTm                 = "Test %s requires TM"
 )
 
 type Tenant struct {
@@ -648,7 +649,13 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	if err == nil {
 		versionInfo = fmt.Sprintf("version %s built at %s", version, versionTime)
 	}
-	fmt.Printf("Running on VCD %s (%s)\nas user %s@%s (using %s)\n", vcd.config.Provider.Url, versionInfo,
+	env := "VCD"
+	isTm := vcd.client.Client.IsTm()
+	if isTm {
+		env = "TM"
+	}
+
+	fmt.Printf("Running on %s %s (%s)\nas user %s@%s (using %s)\n", env, vcd.config.Provider.Url, versionInfo,
 		vcd.config.Provider.User, vcd.config.Provider.SysOrg, authenticationMode)
 	if !vcd.client.Client.IsSysAdmin {
 		vcd.skipAdminTests = true
@@ -661,29 +668,33 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	persistentCleanupIp = vcd.config.Provider.Url
 	persistentCleanupIp = reHttp.ReplaceAllString(persistentCleanupIp, "")
 	persistentCleanupIp = reApi.ReplaceAllString(persistentCleanupIp, "")
-	// set org
-	vcd.org, err = vcd.client.GetOrgByName(config.VCD.Org)
-	if err != nil {
-		fmt.Printf("error retrieving org %s: %s\n", config.VCD.Org, err)
-		os.Exit(1)
-	}
-	// set vdc
-	vcd.vdc, err = vcd.org.GetVDCByName(config.VCD.Vdc, false)
-	if err != nil || vcd.vdc == nil {
-		panic(err)
-	}
 
-	// configure NSX-T VDC for convenience if it is specified in configuration
-	if config.VCD.Nsxt.Vdc != "" {
-		vcd.nsxtVdc, err = vcd.org.GetVDCByName(config.VCD.Nsxt.Vdc, false)
+	if !isTm {
+		// set org
+		vcd.org, err = vcd.client.GetOrgByName(config.VCD.Org)
 		if err != nil {
-			panic(fmt.Errorf("error geting NSX-T VDC '%s': %s", config.VCD.Nsxt.Vdc, err))
+			fmt.Printf("error retrieving org %s: %s\n", config.VCD.Org, err)
+			os.Exit(1)
+		}
+		// set vdc
+		vcd.vdc, err = vcd.org.GetVDCByName(config.VCD.Vdc, false)
+		if err != nil || vcd.vdc == nil {
+			panic(err)
+		}
+
+		// configure NSX-T VDC for convenience if it is specified in configuration
+		if config.VCD.Nsxt.Vdc != "" {
+			vcd.nsxtVdc, err = vcd.org.GetVDCByName(config.VCD.Nsxt.Vdc, false)
+			if err != nil {
+				panic(fmt.Errorf("error geting NSX-T VDC '%s': %s", config.VCD.Nsxt.Vdc, err))
+			}
 		}
 	}
 
-	// If neither the vApp or VM tags are set, we also skip the
-	// creation of the default vApp
-	if !isTagSet("vapp") && !isTagSet("vm") {
+	// vApp creation is skipped for one out of two reasons:
+	// * neither the vApp or VM tags are set
+	// * env is TM
+	if (!isTagSet("vapp") && !isTagSet("vm")) || isTm {
 		// vcd.skipVappTests = true
 		skipVappCreation = true
 	}
@@ -1810,7 +1821,7 @@ func (vcd *TestVCD) TestClient_getloginurl(check *C) {
 		check.Fatalf("err: %s", err)
 	}
 
-	if client.sessionHREF.Path != "/cloudapi/1.0.0/sessions" {
+	if !strings.HasSuffix(client.sessionHREF.Path, "/cloudapi/1.0.0/sessions") {
 		check.Fatalf("Getting LoginUrl failed, url: %s", client.sessionHREF.Path)
 	}
 }
@@ -2060,6 +2071,18 @@ func skipNoNsxtAlbConfiguration(vcd *TestVCD, check *C) {
 	}
 	if vcd.config.VCD.Nsxt.NsxtAlbServiceEngineGroup == "" {
 		check.Skip(generalMessage + "No NSX-T ALB Service Engine Group name specified in configuration")
+	}
+}
+
+func skipNonTm(vcd *TestVCD, check *C) {
+	if !vcd.client.Client.IsTm() {
+		check.Skip(fmt.Sprintf(TestRequiresTm, check.TestName()))
+	}
+}
+
+func sysadminOnly(vcd *TestVCD, check *C) {
+	if vcd.skipAdminTests {
+		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
 	}
 }
 
