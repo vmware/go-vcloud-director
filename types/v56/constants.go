@@ -384,6 +384,7 @@ const (
 // These constants allow constructing OpenAPI endpoint paths and avoid strings in code for easy replacement in the
 // future.
 const (
+	OpenApiPathVcf                                    = "vcf/"
 	OpenApiPathVersion1_0_0                           = "1.0.0/"
 	OpenApiPathVersion2_0_0                           = "2.0.0/"
 	OpenApiEndpointRoles                              = "roles/"
@@ -517,6 +518,12 @@ const (
 
 	// OpenAPI Org
 	OpenApiEndpointOrgs = "orgs/"
+
+	OpenApiEndpointRegions         = "regions/"
+	OpenApiEndpointSupervisors     = "supervisors/"
+	OpenApiEndpointSupervisorZones = "zones/"
+	OpenApiEndpointNsxManagers     = "nsxManagers/"
+	OpenApiEndpointTmVdcs          = "virtualDatacenters/"
 )
 
 // Header keys to run operations in tenant context
