@@ -141,7 +141,12 @@ type TestConfig struct {
 		HttpTimeout     int64  `yaml:"httpTimeout,omitempty"`
 	}
 	Tenants []Tenant `yaml:"tenants,omitempty"`
-	VCD     struct {
+	Tm      struct {
+		Org    string `yaml:"org"`
+		Region string `yaml:"region"`
+		Vdc    string `yaml:"vdc"`
+	} `yaml:"tm"`
+	VCD struct {
 		Org         string `yaml:"org"`
 		Vdc         string `yaml:"vdc"`
 		ProviderVdc struct {

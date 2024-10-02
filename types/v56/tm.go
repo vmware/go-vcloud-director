@@ -52,6 +52,7 @@ type Region struct {
 	StoragePolicies []string `json:"storagePolicies,omitempty"`
 }
 
+// TmOrg defines structure for creating
 type TmOrg struct {
 	ID string `json:"id,omitempty"`
 	// Name of organization that will be used in the URL slug
