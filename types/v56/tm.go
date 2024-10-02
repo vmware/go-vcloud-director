@@ -103,6 +103,7 @@ type TmOrg struct {
 	VappCount int `json:"vappCount,omitempty"`
 }
 
+// TmVdc defines a structure for creating VDCs using OpenAPI endpoint
 type TmVdc struct {
 	ID string `json:"id,omitempty"`
 	// Name of the VDC
