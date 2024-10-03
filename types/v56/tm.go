@@ -52,6 +52,23 @@ type Region struct {
 	StoragePolicies []string `json:"storagePolicies,omitempty"`
 }
 
+// RegionStoragePolicy defines a Region storage policy
+type RegionStoragePolicy struct {
+	ID string `json:"id,omitempty"`
+	// Name for the policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
+	Name string `json:"name"`
+	// The Region that this policy belongs to
+	Region *OpenApiReference `json:"region"`
+	// Description of the policy
+	Description string `json:"description,omitempty"`
+	// The creation status of the region storage policy. Can be [NOT_READY, READY]
+	Status string `json:"status,omitempty"`
+	// Storage capacity in megabytes for this policy
+	StorageCapacityMB int64 `json:"storageCapacityMB,omitempty"`
+	// Consumed storage in megabytes for this policy
+	StorageConsumedMB int64 `json:"storageConsumedMB,omitempty"`
+}
+
 // TmOrg defines structure for creating
 type TmOrg struct {
 	ID string `json:"id,omitempty"`
