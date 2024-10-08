@@ -156,10 +156,11 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtTier0RouterInterfaces: "38.0",
 
 	// VCF
-	types.OpenApiPathVcf + types.OpenApiEndpointRegions:         "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointSupervisors:     "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointSupervisorZones: "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs:          "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointRegions:          "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointSupervisors:      "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointSupervisorZones:  "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs:           "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries: "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
