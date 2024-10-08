@@ -38,7 +38,7 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
-func (vcdClient *VCDClient) GetAllContentLibrarys(queryParameters url.Values) ([]*ContentLibrary, error) {
+func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values) ([]*ContentLibrary, error) {
 	c := crudConfig{
 		entityLabel:     labelContentLibrary,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
@@ -57,7 +57,7 @@ func (vcdClient *VCDClient) GetContentLibraryByName(name string) (*ContentLibrar
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name=="+name)
 
-	filteredEntities, err := vcdClient.GetAllContentLibrarys(queryParams)
+	filteredEntities, err := vcdClient.GetAllContentLibraries(queryParams)
 	if err != nil {
 		return nil, err
 	}

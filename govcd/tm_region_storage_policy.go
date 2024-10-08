@@ -62,10 +62,15 @@ func (vcdClient *VCDClient) GetRegionStoragePolicyByName(name string) (*RegionSt
 		return nil, err
 	}
 
-	singleEntity, err := oneOrError("name", name, filteredEntities)
-	if err != nil {
-		return nil, err
+	// TODO: API returns same result twice for some reason
+	if len(filteredEntities) == 0 {
+		return nil, fmt.Errorf("TODO: found 0 storage policies")
 	}
+	singleEntity := filteredEntities[0]
+	//singleEntity, err := oneOrError("name", name, filteredEntities)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return vcdClient.GetRegionStoragePolicyById(singleEntity.RegionStoragePolicy.ID)
 }

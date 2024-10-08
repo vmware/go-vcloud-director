@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
 
@@ -14,18 +15,32 @@ func (vcd *TestVCD) Test_ContentLibrary(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	region, err := vcd.client.GetRegionByName(vcd.config.Tm.Region)
+	rsp, err := vcd.client.GetRegionStoragePolicyByName("vSAN Default Storage Policy")
 	check.Assert(err, IsNil)
-	check.Assert(region, NotNil)
+	check.Assert(rsp, NotNil)
 
-	// Get by ID
-	regionById, err := vcd.client.GetRegionById(region.Region.ID)
+	cls, err := vcd.client.GetAllContentLibraries(nil)
 	check.Assert(err, IsNil)
-	check.Assert(regionById, NotNil)
 
-	check.Assert(region.Region, DeepEquals, regionById.Region)
+	currentContentLibraries := len(cls)
 
-	allTmVdc, err := vcd.client.GetAllRegions(nil)
+	cl, err := vcd.client.CreateContentLibrary(&types.ContentLibrary{
+		Name:            "abarreiro",
+		StoragePolicies: []*types.OpenApiReference{{ID: rsp.RegionStoragePolicy.ID}},
+		AutoAttach:      false,
+		Description:     "Terraform test",
+		IsShared:        false,
+		IsSubscribed:    false,
+		Org:             nil,
+	})
 	check.Assert(err, IsNil)
-	check.Assert(len(allTmVdc) > 0, Equals, true)
+	check.Assert(cl, NotNil)
+
+	cls, err = vcd.client.GetAllContentLibraries(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(cls), Equals, currentContentLibraries+1)
+
+	err = cl.Delete()
+	check.Assert(err, IsNil)
+
 }
