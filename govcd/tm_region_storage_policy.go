@@ -32,7 +32,7 @@ func (vcdClient *VCDClient) CreateRegionStoragePolicy(config *types.RegionStorag
 	}
 	c := crudConfig{
 		entityLabel: labelRegionStoragePolicy,
-		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRegionStoragePolicies,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies,
 	}
 	outerType := RegionStoragePolicy{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
@@ -41,7 +41,7 @@ func (vcdClient *VCDClient) CreateRegionStoragePolicy(config *types.RegionStorag
 func (vcdClient *VCDClient) GetAllRegionStoragePolicies(queryParameters url.Values) ([]*RegionStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:     labelRegionStoragePolicy,
-		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRegionStoragePolicies,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies,
 		queryParameters: queryParameters,
 	}
 
@@ -73,7 +73,7 @@ func (vcdClient *VCDClient) GetRegionStoragePolicyByName(name string) (*RegionSt
 func (vcdClient *VCDClient) GetRegionStoragePolicyById(id string) (*RegionStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:    labelRegionStoragePolicy,
-		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRegionStoragePolicies,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies,
 		endpointParams: []string{id},
 	}
 
@@ -84,7 +84,7 @@ func (vcdClient *VCDClient) GetRegionStoragePolicyById(id string) (*RegionStorag
 func (o *RegionStoragePolicy) Update(RegionStoragePolicyConfig *types.RegionStoragePolicy) (*RegionStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:    labelRegionStoragePolicy,
-		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRegionStoragePolicies,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies,
 		endpointParams: []string{o.RegionStoragePolicy.ID},
 	}
 	outerType := RegionStoragePolicy{vcdClient: o.vcdClient}
@@ -94,7 +94,7 @@ func (o *RegionStoragePolicy) Update(RegionStoragePolicyConfig *types.RegionStor
 func (o *RegionStoragePolicy) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelRegionStoragePolicy,
-		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRegionStoragePolicies,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies,
 		endpointParams: []string{o.RegionStoragePolicy.ID},
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
