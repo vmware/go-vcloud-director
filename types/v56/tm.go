@@ -139,10 +139,11 @@ type TmVdcResourceAllocation struct {
 	MemoryReservationMiB int `json:"memoryReservationMiB"`
 }
 
+// TmNsxtManager defines a structure used for NSX-T Manager configuration
 type TmNsxtManager struct {
 	ID                   string `json:"id,omitempty"`
-	Name                 string `json:"name"`
 	Description          string `json:"description,omitempty"`
+	Name                 string `json:"name"`
 	Username             string `json:"username"`
 	Password             string `json:"password"`
 	URL                  string `json:"url"`
