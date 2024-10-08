@@ -6,47 +6,49 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	"net/url"
+
+	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
+
+const labelvCenter = "vCenter"
 
 type VCenter struct {
 	VSphereVCenter *types.VSphereVirtualCenter
 	client         *VCDClient
 }
 
-func (vcdClient *VCDClient) GetAllVCenters(queryParams url.Values) ([]*VCenter, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (v VCenter) wrap(inner *types.VSphereVirtualCenter) *VCenter {
+	v.VSphereVCenter = inner
+	return &v
+}
+
+func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*VCenter, error) {
+	if !vcdClient.Client.IsTm() {
+		return nil, fmt.Errorf("requires TM")
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		entityLabel: labelvCenter,
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
 	}
 
-	var retrieved []*types.VSphereVirtualCenter
+	outerType := VCenter{client: vcdClient}
+	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+}
 
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParams, &retrieved, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vCenters list: %s", err)
+func (vcdClient *VCDClient) GetAllVCenters(queryParameters url.Values) ([]*VCenter, error) {
+	c := crudConfig{
+		entityLabel:     labelvCenter,
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+		queryParameters: queryParameters,
 	}
 
-	if len(retrieved) == 0 {
-		return nil, nil
-	}
-	var returnList []*VCenter
-
-	for _, r := range retrieved {
-		returnList = append(returnList, &VCenter{
-			VSphereVCenter: r,
-			client:         vcdClient,
-		})
-	}
-	return returnList, nil
+	outerType := VCenter{client: vcdClient}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
 func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
@@ -63,29 +65,35 @@ func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
 }
 
 func (vcdClient *VCDClient) GetVCenterById(id string) (*VCenter, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
+
+	c := crudConfig{
+		entityLabel:    labelvCenter,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+		endpointParams: []string{id},
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint + "/" + id)
-	if err != nil {
-		return nil, err
+	outerType := VCenter{client: vcdClient}
+	return getOuterEntity(&vcdClient.Client, outerType, c)
+}
+
+func (o *VCenter) Update(TmOrgConfig *types.VSphereVirtualCenter) (*VCenter, error) {
+	c := crudConfig{
+		entityLabel:    labelvCenter,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+		endpointParams: []string{o.VSphereVCenter.VcId},
 	}
 
-	returnObject := &VCenter{
-		VSphereVCenter: &types.VSphereVirtualCenter{},
-		client:         vcdClient,
-	}
+	outerType := VCenter{client: o.client}
+	return updateOuterEntity(&o.client.Client, outerType, c, TmOrgConfig)
+}
 
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, returnObject.VSphereVCenter, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vCenter: %s", err)
+func (o *VCenter) Delete() error {
+	c := crudConfig{
+		entityLabel:    labelvCenter,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+		endpointParams: []string{o.VSphereVCenter.VcId},
 	}
-
-	return returnObject, nil
+	return deleteEntityById(&o.client.Client, c)
 }
 
 func (vcenter VCenter) GetVimServerUrl() (string, error) {

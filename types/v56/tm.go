@@ -138,3 +138,14 @@ type TmVdcResourceAllocation struct {
 	MemoryLimitMiB       int `json:"memoryLimitMiB"`
 	MemoryReservationMiB int `json:"memoryReservationMiB"`
 }
+
+type TmNsxtManager struct {
+	ID                   string `json:"id,omitempty"`
+	Name                 string `json:"name"`
+	Description          string `json:"description,omitempty"`
+	Username             string `json:"username"`
+	Password             string `json:"password"`
+	URL                  string `json:"url"`
+	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	Status               string `json:"status,omitempty"`
+}
