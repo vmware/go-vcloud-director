@@ -43,10 +43,15 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 	//        - Solution: Retry fetching the entity again on error with the information inside of it
 	result, err := createOuterEntity(&vcdClient.Client, outerType, c, config)
 	if err != nil {
+		// The error we want is like:
+		// error creating entity of type 'Content Library': error retrieving item after creation: error in HTTP GET request:
+		// BAD_REQUEST - [ uuid ] validation error on supplied value 'urn:vcloud:catalog:c25ecd89-444c-4ce7-b230-243f906c9896':
+		// Invalid urn string. Value does not match the appropriate urn pattern "urn:vcloud:<type>:<uuid>" or contains an incorrect
+		// object type for the endpoint."
 		if !strings.Contains(err.Error(), "urn:vcloud:catalog:") {
 			return nil, err
 		}
-		// The created Content Library has the same UUID as the Catalog, which is present in the thrown error
+		// The created Content Library has the same UUID as the Catalog, which is present in the thrown error above
 		result, err = vcdClient.GetContentLibraryById(fmt.Sprintf("urn:vcloud:contentLibrary:%s", extractUuid(err.Error())))
 		if err != nil {
 			return nil, err
