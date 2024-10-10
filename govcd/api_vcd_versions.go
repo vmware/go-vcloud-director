@@ -371,3 +371,7 @@ func (client *Client) VersionEqualOrGreater(compareTo string, howManyDigits int)
 
 	return fullVersion.Version.GreaterThanOrEqual(compareToVersion), nil
 }
+
+func (client *Client) IsTm() bool {
+	return client.APIVCDMaxVersionIs(">= 40") // TODO - make it more precise
+}
