@@ -27,6 +27,7 @@ func (g ContentLibrary) wrap(inner *types.ContentLibrary) *ContentLibrary {
 	return &g
 }
 
+// TODO: This one probably needs TenantContext, as can be created as Tenants
 func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (*ContentLibrary, error) {
 	if !vcdClient.Client.IsTm() {
 		return nil, fmt.Errorf("err")
@@ -83,7 +84,7 @@ func (vcdClient *VCDClient) GetContentLibraryByName(name string) (*ContentLibrar
 		return nil, err
 	}
 
-	return vcdClient.GetContentLibraryById(singleEntity.ContentLibrary.ID)
+	return vcdClient.GetContentLibraryById(singleEntity.ContentLibrary.Id)
 }
 
 func (vcdClient *VCDClient) GetContentLibraryById(id string) (*ContentLibrary, error) {
@@ -97,21 +98,15 @@ func (vcdClient *VCDClient) GetContentLibraryById(id string) (*ContentLibrary, e
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
-func (o *ContentLibrary) Update(ContentLibraryConfig *types.ContentLibrary) (*ContentLibrary, error) {
-	c := crudConfig{
-		entityLabel:    labelContentLibrary,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
-		endpointParams: []string{o.ContentLibrary.ID},
-	}
-	outerType := ContentLibrary{vcdClient: o.vcdClient}
-	return updateOuterEntity(&o.vcdClient.Client, outerType, c, ContentLibraryConfig)
+func (o *ContentLibrary) Update(contentLibraryConfig *types.ContentLibrary) (*ContentLibrary, error) {
+	return nil, fmt.Errorf("not supported")
 }
 
 func (o *ContentLibrary) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelContentLibrary,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
-		endpointParams: []string{o.ContentLibrary.ID},
+		endpointParams: []string{o.ContentLibrary.Id},
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
