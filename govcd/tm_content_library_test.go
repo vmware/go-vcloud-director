@@ -22,7 +22,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(err, IsNil)
 	existingContentLibraryCount := len(cls)
 
-	rsp, err := vcd.client.GetRegionStoragePolicyByName("vSAN Default Storage Policy")
+	rsp, err := vcd.client.GetRegionStoragePolicyByName(vcd.config.Tm.RegionStoragePolicy)
 	check.Assert(err, IsNil)
 	check.Assert(rsp, NotNil)
 

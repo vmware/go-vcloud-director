@@ -142,10 +142,11 @@ type TestConfig struct {
 	}
 	Tenants []Tenant `yaml:"tenants,omitempty"`
 	Tm      struct {
-		Org    string `yaml:"org"`
-		Region string `yaml:"region"`
-		Vdc    string `yaml:"vdc"`
-	} `yaml:"tm"`
+		Org                 string `yaml:"org"`
+		Region              string `yaml:"region"`
+		RegionStoragePolicy string `yaml:"regionStoragePolicy"`
+		Vdc                 string `yaml:"vdc"`
+	} `yaml:"tm,omitempty"`
 	VCD struct {
 		Org         string `yaml:"org"`
 		Vdc         string `yaml:"vdc"`
