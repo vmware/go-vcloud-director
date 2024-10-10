@@ -7,6 +7,7 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -35,7 +36,22 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 	}
 	outerType := ContentLibrary{vcdClient: vcdClient}
-	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+	// FIXME: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
+	//        - Problem: The returned Task references a Catalog instead of a ContentLibrary, hence retrieving the resulting object
+	//                from finished Task fails.
+	//        - Solution: Retry fetching the entity again on error with the information inside of it
+	result, err := createOuterEntity(&vcdClient.Client, outerType, c, config)
+	if err != nil {
+		if !strings.Contains(err.Error(), "urn:vcloud:catalog:") {
+			return nil, err
+		}
+		// The created Content Library has the same UUID as the Catalog, which is present in the thrown error
+		result, err = vcdClient.GetContentLibraryById(fmt.Sprintf("urn:vcloud:contentLibrary:%s", extractUuid(err.Error())))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
 }
 
 func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values) ([]*ContentLibrary, error) {

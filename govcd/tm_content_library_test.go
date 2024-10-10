@@ -42,5 +42,4 @@ func (vcd *TestVCD) Test_ContentLibrary(check *C) {
 
 	err = cl.Delete()
 	check.Assert(err, IsNil)
-
 }
