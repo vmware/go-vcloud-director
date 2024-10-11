@@ -244,12 +244,6 @@ var endpointElevatedApiVersions = map[string][]string{
 		//"37.1", // Introduced support
 		"38.0", // Adds 'Interfaces' structure for associating particular Tier-0 router interfaces
 	},
-	types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies: {
-		"40.0", // TM Region Storage Policies
-	},
-	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries: {
-		"40.0", // TM Content Libraries
-	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
