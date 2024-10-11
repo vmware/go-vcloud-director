@@ -154,6 +154,10 @@ var endpointMinApiVersions = map[string]string{
 
 	// NSX-T Tier 0 router interfaces that can be used for IP Space uplink assignment
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtTier0RouterInterfaces: "38.0",
+
+	// VCF
+	types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies: "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries:      "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
@@ -239,6 +243,12 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaceUplinks: {
 		//"37.1", // Introduced support
 		"38.0", // Adds 'Interfaces' structure for associating particular Tier-0 router interfaces
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies: {
+		"40.0", // TM Region Storage Policies
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries: {
+		"40.0", // TM Content Libraries
 	},
 }
 
