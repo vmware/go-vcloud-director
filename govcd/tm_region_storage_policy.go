@@ -64,7 +64,7 @@ func (vcdClient *VCDClient) GetRegionStoragePolicyByName(name string) (*RegionSt
 	//	return nil, err
 	//}
 
-	return vcdClient.GetRegionStoragePolicyById(singleEntity.RegionStoragePolicy.ID)
+	return vcdClient.GetRegionStoragePolicyById(singleEntity.RegionStoragePolicy.Id)
 }
 
 // GetRegionStoragePolicyById retrieves a Region Storage Policy by ID

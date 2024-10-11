@@ -2,7 +2,7 @@ package types
 
 // RegionStoragePolicy defines a Region storage policy
 type RegionStoragePolicy struct {
-	ID string `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	// Name for the policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
 	Name string `json:"name"`
 	// The Region that this policy belongs to

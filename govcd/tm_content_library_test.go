@@ -28,7 +28,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 
 	clDefinition := &types.ContentLibrary{
 		Name:            check.TestName(),
-		StoragePolicies: []types.OpenApiReference{{ID: rsp.RegionStoragePolicy.ID}},
+		StoragePolicies: []types.OpenApiReference{{ID: rsp.RegionStoragePolicy.Id}},
 		AutoAttach:      true, // TODO: TM: Test with false, still does not work
 		Description:     check.TestName(),
 	}
@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(createdCl.ContentLibrary.Name, Equals, clDefinition.Name)
 	check.Assert(createdCl.ContentLibrary.Description, Equals, clDefinition.Description)
 	check.Assert(len(createdCl.ContentLibrary.StoragePolicies), Equals, 1)
-	check.Assert(createdCl.ContentLibrary.StoragePolicies[0].ID, Equals, rsp.RegionStoragePolicy.ID)
+	check.Assert(createdCl.ContentLibrary.StoragePolicies[0].ID, Equals, rsp.RegionStoragePolicy.Id)
 	check.Assert(createdCl.ContentLibrary.AutoAttach, Equals, clDefinition.AutoAttach)
 	// "Computed" values
 	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // TODO: TM: Still not used in UI
