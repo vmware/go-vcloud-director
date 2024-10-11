@@ -46,7 +46,7 @@ type ContentLibrary struct {
 	// The reference to the organization that the Content Library belongs to
 	Org *OpenApiReference `json:"org,omitempty"`
 	// An object representing subscription settings of a Content Library
-	SubscriptionConfig *ContentLibrarySubscriptionConfig `json:"subscriptionConfig"`
+	SubscriptionConfig *ContentLibrarySubscriptionConfig `json:"subscriptionConfig,omitempty"`
 	// Version number of this Content library
 	VersionNumber int64 `json:"versionNumber,omitempty"`
 }
