@@ -60,3 +60,14 @@ type ContentLibrarySubscriptionConfig struct {
 	// Password to use to authenticate with the publisher
 	Password string `json:"password,omitempty"`
 }
+
+type TmNsxtManager struct {
+	ID                   string `json:"id,omitempty"`
+	Description          string `json:"description,omitempty"`
+	Name                 string `json:"name"`
+	Username             string `json:"username"`
+	Password             string `json:"password"`
+	URL                  string `json:"url"`
+	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	Status               string `json:"status,omitempty"`
+}

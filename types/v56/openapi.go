@@ -796,3 +796,13 @@ type UrlMatcher struct {
 	UrlPattern string `json:"urlPattern,omitempty"`
 	UrlScope   string `json:"urlScope,omitempty"` // EXT_API, EXT_UI_PROVIDER, EXT_UI_TENANT corresponding to /ext-api, /ext-ui/provider, /ext-ui/tenant/<tenant-name>
 }
+
+// TrustedCertificate manages certificate trust
+type TrustedCertificate struct {
+	ID string `json:"id,omitempty"`
+	// Alias contains case insensitive name
+	Alias string `json:"alias"`
+	// Certificate contains PEM encoded certificate. All extraneous whitespace and other information
+	// is removed
+	Certificate string `json:"certificate"`
+}

@@ -102,6 +102,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpRequestRules:  "38.0", // VCD 10.5+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpResponseRules: "38.0", // VCD 10.5+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAlbVirtualServiceHttpSecurityRules: "38.0", // VCD 10.5+
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTrustedCertificates:                "34.0", // VCD 10.1+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary:              "35.0", // VCD 10.2+
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibraryOld:           "35.0", // VCD 10.2+ and deprecated from 10.3
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVdcGroupsDfwRules:                  "35.0", // VCD 10.2+
@@ -158,6 +159,7 @@ var endpointMinApiVersions = map[string]string{
 	// VCF
 	types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies: "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries:      "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmNsxManagers:         "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
