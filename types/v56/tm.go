@@ -35,7 +35,7 @@ type ContentLibrary struct {
 	Description string `json:"description,omitempty"`
 	// A unique identifier for the Content library
 	Id string `json:"id,omitempty"`
-	// Whether this Content Library is shared with other organziations
+	// Whether this Content Library is shared with other organizations
 	IsShared bool `json:"isShared,omitempty"`
 	// Whether this Content Library is subscribed from an external published library
 	IsSubscribed bool `json:"isSubscribed,omitempty"`
@@ -61,13 +61,20 @@ type ContentLibrarySubscriptionConfig struct {
 	Password string `json:"password,omitempty"`
 }
 
+// TmNsxtManager reflects NSX-T manager configuration for OpenAPI endpoint
 type TmNsxtManager struct {
-	ID                   string `json:"id,omitempty"`
-	Description          string `json:"description,omitempty"`
-	Name                 string `json:"name"`
-	Username             string `json:"username"`
-	Password             string `json:"password"`
-	URL                  string `json:"url"`
+	ID string `json:"id,omitempty"`
+	// Name of NSX-T Manager
+	Name string `json:"name"`
+	// Description of NSX-T Manager
+	Description string `json:"description,omitempty"`
+	// Username for authenticating to NSX-T Manager
+	Username string `json:"username"`
+	// Password for authenticating to NSX-T Manager
+	Password string `json:"password"`
+	// Url for authenticating to NSX-T Manager
+	Url                  string `json:"url"`
 	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
-	Status               string `json:"status,omitempty"`
+	// Status of NSX-T Manager
+	Status string `json:"status,omitempty"`
 }

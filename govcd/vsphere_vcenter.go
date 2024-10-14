@@ -26,7 +26,7 @@ func (v VCenter) wrap(inner *types.VSphereVirtualCenter) *VCenter {
 	return &v
 }
 
-// CreateVcenter
+// CreateVcenter adds new vCenter connection
 func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*VCenter, error) {
 	c := crudConfig{
 		entityLabel: labelVirtualCenter,
@@ -70,7 +70,7 @@ func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
 	return singleEntity, nil
 }
 
-// GetVCenterById retrieves vCenter server by id
+// GetVCenterById retrieves vCenter server by ID
 func (vcdClient *VCDClient) GetVCenterById(id string) (*VCenter, error) {
 	c := crudConfig{
 		entityLabel:    labelVirtualCenter,
@@ -82,6 +82,7 @@ func (vcdClient *VCDClient) GetVCenterById(id string) (*VCenter, error) {
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// Update given vCenter configuration
 func (v *VCenter) Update(TmNsxtManagerConfig *types.VSphereVirtualCenter) (*VCenter, error) {
 	c := crudConfig{
 		entityLabel:    labelVirtualCenter,
@@ -92,6 +93,7 @@ func (v *VCenter) Update(TmNsxtManagerConfig *types.VSphereVirtualCenter) (*VCen
 	return updateOuterEntity(&v.client.Client, outerType, c, TmNsxtManagerConfig)
 }
 
+// Delete vCenter configuration
 func (v *VCenter) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelVirtualCenter,
@@ -101,6 +103,7 @@ func (v *VCenter) Delete() error {
 	return deleteEntityById(&v.client.Client, c)
 }
 
+// Disable is an update shortcut for disableing vCenter
 func (v *VCenter) Disable() error {
 	v.VSphereVCenter.IsEnabled = false
 	_, err := v.Update(v.VSphereVCenter)

@@ -9,7 +9,7 @@ import (
 
 const labelTrustedCertificate = "Trusted Certificate"
 
-// TrustedCertificate manages certificate trust
+// TrustedCertificate manages certificate trust. Certificate
 type TrustedCertificate struct {
 	TrustedCertificate *types.TrustedCertificate
 	vcdClient          *VCDClient
@@ -23,6 +23,7 @@ func (g TrustedCertificate) wrap(inner *types.TrustedCertificate) *TrustedCertif
 	return &g
 }
 
+// CreateTrustedCertificate creates an entry in the trusted certificate records
 func (vcdClient *VCDClient) CreateTrustedCertificate(config *types.TrustedCertificate) (*TrustedCertificate, error) {
 	c := crudConfig{
 		entityLabel: labelTrustedCertificate,
@@ -32,6 +33,7 @@ func (vcdClient *VCDClient) CreateTrustedCertificate(config *types.TrustedCertif
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// GetAllTrustedCertificates retrieves all trusted certificates with optional query filter
 func (vcdClient *VCDClient) GetAllTrustedCertificates(queryParameters url.Values) ([]*TrustedCertificate, error) {
 	c := crudConfig{
 		entityLabel:     labelTrustedCertificate,
@@ -43,20 +45,21 @@ func (vcdClient *VCDClient) GetAllTrustedCertificates(queryParameters url.Values
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
-func (vcdClient *VCDClient) GetTrustedCertificateByName(name string) (*TrustedCertificate, error) {
-	if name == "" {
+// GetTrustedCertificateByAlias retrieves trusted certificate by alias
+func (vcdClient *VCDClient) GetTrustedCertificateByAlias(alias string) (*TrustedCertificate, error) {
+	if alias == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelTrustedCertificate)
 	}
 
 	queryParams := url.Values{}
-	queryParams.Add("filter", "name=="+name)
+	queryParams.Add("filter", "alias=="+alias)
 
 	filteredEntities, err := vcdClient.GetAllTrustedCertificates(queryParams)
 	if err != nil {
 		return nil, err
 	}
 
-	singleEntity, err := oneOrError("name", name, filteredEntities)
+	singleEntity, err := oneOrError("alias", alias, filteredEntities)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +67,7 @@ func (vcdClient *VCDClient) GetTrustedCertificateByName(name string) (*TrustedCe
 	return vcdClient.GetTrustedCertificateById(singleEntity.TrustedCertificate.ID)
 }
 
+// GetTrustedCertificateById retrieves trusted certificate by ID
 func (vcdClient *VCDClient) GetTrustedCertificateById(id string) (*TrustedCertificate, error) {
 	c := crudConfig{
 		entityLabel:    labelTrustedCertificate,
@@ -75,6 +79,7 @@ func (vcdClient *VCDClient) GetTrustedCertificateById(id string) (*TrustedCertif
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// Update trusted certificate entry
 func (t *TrustedCertificate) Update(TrustedCertificateConfig *types.TrustedCertificate) (*TrustedCertificate, error) {
 	c := crudConfig{
 		entityLabel:    labelTrustedCertificate,
@@ -85,6 +90,7 @@ func (t *TrustedCertificate) Update(TrustedCertificateConfig *types.TrustedCerti
 	return updateOuterEntity(&t.vcdClient.Client, outerType, c, TrustedCertificateConfig)
 }
 
+// Delete trusted certificate entry
 func (t *TrustedCertificate) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelTrustedCertificate,

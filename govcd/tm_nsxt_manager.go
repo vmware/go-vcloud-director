@@ -26,6 +26,7 @@ func (t TmNsxtManager) wrap(inner *types.TmNsxtManager) *TmNsxtManager {
 	return &t
 }
 
+// CreateTmNsxtManager creates NSX-T manager configuration
 func (vcdClient *VCDClient) CreateTmNsxtManager(config *types.TmNsxtManager) (*TmNsxtManager, error) {
 	c := crudConfig{
 		entityLabel: labelTmNsxtManager,
@@ -35,6 +36,7 @@ func (vcdClient *VCDClient) CreateTmNsxtManager(config *types.TmNsxtManager) (*T
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// GetAllTmNsxtManagers retrieves all NSX-T Managers with an optional filter
 func (vcdClient *VCDClient) GetAllTmNsxtManagers(queryParameters url.Values) ([]*TmNsxtManager, error) {
 	c := crudConfig{
 		entityLabel:     labelTmNsxtManager,
@@ -46,6 +48,7 @@ func (vcdClient *VCDClient) GetAllTmNsxtManagers(queryParameters url.Values) ([]
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetTmNsxtManagerById retrieves NSX-T Manager by ID
 func (vcdClient *VCDClient) GetTmNsxtManagerById(id string) (*TmNsxtManager, error) {
 	c := crudConfig{
 		entityLabel:    labelTmNsxtManager,
@@ -57,6 +60,7 @@ func (vcdClient *VCDClient) GetTmNsxtManagerById(id string) (*TmNsxtManager, err
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// GetTmNsxtManagerByName retrieves NSX-T Manager by name
 func (vcdClient *VCDClient) GetTmNsxtManagerByName(name string) (*TmNsxtManager, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelTmNsxtManager)
@@ -78,6 +82,7 @@ func (vcdClient *VCDClient) GetTmNsxtManagerByName(name string) (*TmNsxtManager,
 	return singleEntity, nil
 }
 
+// Update NSX-T Manager configuration
 func (t *TmNsxtManager) Update(TmNsxtManagerConfig *types.TmNsxtManager) (*TmNsxtManager, error) {
 	c := crudConfig{
 		entityLabel:    labelTmNsxtManager,
@@ -88,6 +93,7 @@ func (t *TmNsxtManager) Update(TmNsxtManagerConfig *types.TmNsxtManager) (*TmNsx
 	return updateOuterEntity(&t.vcdClient.Client, outerType, c, TmNsxtManagerConfig)
 }
 
+// Delete NSX-T Manager configuration
 func (t *TmNsxtManager) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelTmNsxtManager,
