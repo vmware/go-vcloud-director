@@ -15,39 +15,39 @@ func (vcd *TestVCD) Test_TmNsxtManager(check *C) {
 		check.Skip("Skipping NSX-T Manager creation")
 	}
 
-	cfg := &types.TmNsxtManager{
+	cfg := &types.NsxtManagerOpenApi{
 		Name:     check.TestName(),
 		Username: vcd.config.Tm.NsxtManagerUsername,
 		Password: vcd.config.Tm.NsxtManagerPassword,
 		Url:      vcd.config.Tm.NsxtManagerUrl,
 	}
 
-	v, err := vcd.client.CreateTmNsxtManager(cfg)
+	v, err := vcd.client.CreateNsxtManagerOpenApi(cfg)
 	check.Assert(err, IsNil)
 	check.Assert(v, NotNil)
 
 	// Add to cleanup list
-	PrependToCleanupListOpenApi(v.TmNsxtManager.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTmNsxManagers+v.TmNsxtManager.ID)
+	PrependToCleanupListOpenApi(v.NsxtManagerOpenApi.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTmNsxManagers+v.NsxtManagerOpenApi.ID)
 
 	// Get By Name
-	byName, err := vcd.client.GetTmNsxtManagerByName(cfg.Name)
+	byName, err := vcd.client.GetNsxtManagerOpenApiByName(cfg.Name)
 	check.Assert(err, IsNil)
 	check.Assert(byName, NotNil)
 
 	// Get By ID
-	byId, err := vcd.client.GetTmNsxtManagerById(v.TmNsxtManager.ID)
+	byId, err := vcd.client.GetNsxtManagerOpenApiById(v.NsxtManagerOpenApi.ID)
 	check.Assert(err, IsNil)
 	check.Assert(byId, NotNil)
 
 	// Get All
-	allTmOrgs, err := vcd.client.GetAllTmNsxtManagers(nil)
+	allTmOrgs, err := vcd.client.GetAllNsxtManagersOpenApi(nil)
 	check.Assert(err, IsNil)
 	check.Assert(allTmOrgs, NotNil)
 	check.Assert(len(allTmOrgs) > 0, Equals, true)
 
 	// Update
-	v.TmNsxtManager.Name = check.TestName() + "-updated"
-	updated, err := v.Update(v.TmNsxtManager)
+	v.NsxtManagerOpenApi.Name = check.TestName() + "-updated"
+	updated, err := v.Update(v.NsxtManagerOpenApi)
 	check.Assert(err, IsNil)
 	check.Assert(updated, NotNil)
 
@@ -55,7 +55,7 @@ func (vcd *TestVCD) Test_TmNsxtManager(check *C) {
 	err = v.Delete()
 	check.Assert(err, IsNil)
 
-	notFoundByName, err := vcd.client.GetTmNsxtManagerByName(cfg.Name)
+	notFoundByName, err := vcd.client.GetNsxtManagerOpenApiByName(cfg.Name)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
 }

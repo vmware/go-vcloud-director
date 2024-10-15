@@ -60,21 +60,3 @@ type ContentLibrarySubscriptionConfig struct {
 	// Password to use to authenticate with the publisher
 	Password string `json:"password,omitempty"`
 }
-
-// TmNsxtManager reflects NSX-T manager configuration for OpenAPI endpoint
-type TmNsxtManager struct {
-	ID string `json:"id,omitempty"`
-	// Name of NSX-T Manager
-	Name string `json:"name"`
-	// Description of NSX-T Manager
-	Description string `json:"description,omitempty"`
-	// Username for authenticating to NSX-T Manager
-	Username string `json:"username"`
-	// Password for authenticating to NSX-T Manager
-	Password string `json:"password"`
-	// Url for authenticating to NSX-T Manager
-	Url                  string `json:"url"`
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
-	// Status of NSX-T Manager
-	Status string `json:"status,omitempty"`
-}
