@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // VdcGroup is a structure defining a VdcGroup in Organization

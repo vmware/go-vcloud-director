@@ -8,7 +8,7 @@ import (
 
 	semver "github.com/hashicorp/go-version"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // TestClient_getOpenApiHighestElevatedVersion aims to test out capabilities of getOpenApiHighestElevatedVersion

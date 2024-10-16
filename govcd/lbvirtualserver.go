@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // CreateLbVirtualServer creates a load balancer virtual server based on mandatory fields. It is a

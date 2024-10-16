@@ -13,7 +13,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 func (vcd *TestVCD) Test_FindVDCNetwork(check *C) {

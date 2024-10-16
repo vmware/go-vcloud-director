@@ -11,7 +11,7 @@ import (
 
 	"github.com/kr/pretty"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 func Test_compareDate(t *testing.T) {

@@ -12,8 +12,8 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 // Tests Org retrieval by name, by ID, and by a combination of name and ID

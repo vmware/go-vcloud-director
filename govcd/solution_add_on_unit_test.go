@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/kr/pretty"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 func TestSolutionAddOn_ValidateInputs(t *testing.T) {

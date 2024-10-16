@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // orgInfoCache is a cache to save org information, avoid repeated calls to compute the same result.

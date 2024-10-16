@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 // NsxtNatRule describes a single NAT rule of 5 different Rule Types - DNAT`, `NO_DNAT`, `SNAT`, `NO_SNAT`, 'REFLEXIVE'

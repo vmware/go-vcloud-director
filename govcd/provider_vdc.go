@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 // ProviderVdc is the basic Provider VDC structure, contains the minimum set of attributes.

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // OpenApiOrgVdcNetworkDhcpBinding handles IPv4 and IPv6 DHCP bindings for NSX-T Org VDC networks.

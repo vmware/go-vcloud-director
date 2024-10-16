@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // Test filter engine using dependency injection

@@ -48,7 +48,7 @@ import (
 	"path/filepath"
 	"sigs.k8s.io/yaml"
 
-	"github.com/vmware/go-vcloud-director/v2/govcd"
+	"github.com/vmware/go-vcloud-director/v3/govcd"
 )
 
 type Config struct {

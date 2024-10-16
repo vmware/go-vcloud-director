@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // NsxtAlbPool defines configuration of a single NSX-T ALB Pool. Pools maintain the list of servers assigned to them and
