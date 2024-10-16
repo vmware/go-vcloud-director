@@ -15,8 +15,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/vmware/go-vcloud-director/v2/govcd/internal/udf"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/govcd/internal/udf"
 	"sigs.k8s.io/yaml"
 )
 
