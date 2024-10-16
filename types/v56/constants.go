@@ -522,7 +522,7 @@ const (
 
 	OpenApiEndpointRegionStoragePolicies = "regionStoragePolicies/"
 	OpenApiEndpointContentLibraries      = "contentLibraries/"
-	OpenApiEndpointTmNsxManagers         = "nsxManagers/"
+	OpenApiEndpointNsxManagers           = "nsxManagers/"
 )
 
 // Header keys to run operations in tenant context

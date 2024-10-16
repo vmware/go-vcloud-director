@@ -3,6 +3,8 @@
 package govcd
 
 import (
+	"net/url"
+
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -16,11 +18,20 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	}
 
 	cfg := &types.VSphereVirtualCenter{
-		Name:      check.TestName(),
+		Name:      check.TestName() + "-vc",
 		Username:  vcd.config.Tm.VcenterUsername,
 		Password:  vcd.config.Tm.VcenterPassword,
 		Url:       vcd.config.Tm.VcenterUrl,
 		IsEnabled: true,
+	}
+
+	// Certificate must be trusted before adding vCenter
+	url, err := url.Parse(cfg.Url)
+	check.Assert(err, IsNil)
+	trustedCert, err := vcd.client.AutoTrustCertificate(url)
+	check.Assert(err, IsNil)
+	if trustedCert != nil {
+		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
 	}
 
 	v, err := vcd.client.CreateVcenter(cfg)
@@ -29,6 +40,9 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 
 	// Add to cleanup list
 	PrependToCleanupListOpenApi(v.VSphereVCenter.VcId, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+v.VSphereVCenter.VcId)
+
+	err = v.Refresh()
+	check.Assert(err, IsNil)
 
 	// Get By Name
 	byName, err := vcd.client.GetVCenterByName(cfg.Name)
@@ -59,4 +73,10 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	notFoundByName, err := vcd.client.GetVCenterByName(cfg.Name)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
+
+	// Remove trusted cert if it was created
+	if trustedCert != nil {
+		err = trustedCert.Delete()
+		check.Assert(err, IsNil)
+	}
 }

@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
@@ -103,13 +104,40 @@ func (v *VCenter) Delete() error {
 	return deleteEntityById(&v.client.Client, c)
 }
 
-// Disable is an update shortcut for disableing vCenter
+// Disable is an update shortcut for disabling vCenter
 func (v *VCenter) Disable() error {
 	v.VSphereVCenter.IsEnabled = false
 	_, err := v.Update(v.VSphereVCenter)
 	return err
 }
 
-func (vcenter VCenter) GetVimServerUrl() (string, error) {
-	return url.JoinPath(vcenter.client.Client.VCDHREF.String(), "admin", "extension", "vimServer", extractUuid(vcenter.VSphereVCenter.VcId))
+func (v VCenter) GetVimServerUrl() (string, error) {
+	return url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId))
+}
+
+// Refresh triggers a refresh operation on vCenter that syncs up vCenter components such as
+// supervisors
+// It uses legacy endpoint as there is no OpenAPI endpoint for this operation
+func (v VCenter) Refresh() error {
+	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refresh")
+	if err != nil {
+		return fmt.Errorf("error building refresh path: %s", err)
+	}
+
+	resp, err := v.client.Client.executeJsonRequest(refreshUrl, http.MethodPost, nil, "error triggering vCenter refresh: %s")
+	if err != nil {
+		return err
+	}
+	defer closeBody(resp)
+	task := NewTask(&v.client.Client)
+	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
+	if err != nil {
+		return fmt.Errorf("error triggering retrieving task: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting task completion: %s", err)
+	}
+
+	return nil
 }

@@ -577,32 +577,34 @@ type DefinedEntityAccess struct {
 }
 
 type VSphereVirtualCenter struct {
-	VcId                      string `json:"vcId"`
-	Name                      string `json:"name"`
-	Description               string `json:"description"`
-	Username                  string `json:"username"`
-	Password                  string `json:"password"`
-	Url                       string `json:"url"`
-	IsEnabled                 bool   `json:"isEnabled"`
-	VsphereWebClientServerUrl string `json:"vsphereWebClientServerUrl"`
-	HasProxy                  bool   `json:"hasProxy"`
-	RootFolder                string `json:"rootFolder"`
-	VcNoneNetwork             string `json:"vcNoneNetwork"`
-	TenantVisibleName         string `json:"tenantVisibleName"`
-	IsConnected               bool   `json:"isConnected"`
-	Mode                      string `json:"mode"`
-	ListenerState             string `json:"listenerState"`
-	ClusterHealthStatus       string `json:"clusterHealthStatus"`
-	VcVersion                 string `json:"vcVersion"`
-	BuildNumber               string `json:"buildNumber"`
-	Uuid                      string `json:"uuid"`
-	NsxVManager               struct {
-		Username        string `json:"username"`
-		Password        string `json:"password"`
-		Url             string `json:"url"`
-		SoftwareVersion string `json:"softwareVersion"`
-	} `json:"nsxVManager"`
-	ProxyConfigurationUrn string `json:"proxyConfigurationUrn"`
+	VcId                      string                           `json:"vcId,omitempty"`
+	Name                      string                           `json:"name"`
+	Description               string                           `json:"description,omitempty"`
+	Username                  string                           `json:"username"`
+	Password                  string                           `json:"password,omitempty"`
+	Url                       string                           `json:"url"`
+	IsEnabled                 bool                             `json:"isEnabled"`
+	VsphereWebClientServerUrl string                           `json:"vsphereWebClientServerUrl,omitempty"`
+	HasProxy                  bool                             `json:"hasProxy,omitempty"`
+	RootFolder                string                           `json:"rootFolder,omitempty"`
+	VcNoneNetwork             string                           `json:"vcNoneNetwork,omitempty"`
+	TenantVisibleName         string                           `json:"tenantVisibleName,omitempty"`
+	IsConnected               bool                             `json:"isConnected,omitempty"`
+	Mode                      string                           `json:"mode,omitempty"`
+	ListenerState             string                           `json:"listenerState,omitempty"`
+	ClusterHealthStatus       string                           `json:"clusterHealthStatus,omitempty"`
+	VcVersion                 string                           `json:"vcVersion,omitempty"`
+	BuildNumber               string                           `json:"buildNumber,omitempty"`
+	Uuid                      string                           `json:"uuid,omitempty"`
+	NsxVManager               *VSphereVirtualCenterNsxvManager `json:"nsxVManager,omitempty"`
+	ProxyConfigurationUrn     string                           `json:"proxyConfigurationUrn,omitempty"`
+}
+
+type VSphereVirtualCenterNsxvManager struct {
+	Username        string `json:"username,omitempty"`
+	Password        string `json:"password,omitempty"`
+	Url             string `json:"url,omitempty"`
+	SoftwareVersion string `json:"softwareVersion,omitempty"`
 }
 
 type ResourcePoolSummary struct {
@@ -813,14 +815,15 @@ type NsxtManagerOpenApi struct {
 	// Name of NSX-T Manager
 	Name string `json:"name"`
 	// Description of NSX-T Manager
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 	// Username for authenticating to NSX-T Manager
 	Username string `json:"username"`
 	// Password for authenticating to NSX-T Manager
 	Password string `json:"password"`
 	// Url for authenticating to NSX-T Manager
-	Url                  string `json:"url"`
-	NetworkProviderScope string `json:"networkProviderScope,omitempty"`
+	Url string `json:"url"`
+	// NetworkProviderScope
+	NetworkProviderScope string `json:"networkProviderScope"`
 	// Status of NSX-T Manager
 	Status string `json:"status,omitempty"`
 }

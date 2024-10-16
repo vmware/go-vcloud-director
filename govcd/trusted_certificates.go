@@ -3,8 +3,12 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v2/util"
 )
 
 const labelTrustedCertificate = "Trusted Certificate"
@@ -21,6 +25,75 @@ type TrustedCertificate struct {
 func (g TrustedCertificate) wrap(inner *types.TrustedCertificate) *TrustedCertificate {
 	g.TrustedCertificate = inner
 	return &g
+}
+
+// AutoTrustCertificate will automatically trust certificate for a given endpoint
+// Note. The url must be accessible
+func (vcdClient *VCDClient) AutoTrustCertificate(endpoint *url.URL) (*TrustedCertificate, error) {
+	// Step 1 - execute TestConnection to see if certificate is already trusted
+	port, err := getEndpointPort(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error getting port number for host '%s': %s", endpoint.Hostname(), err)
+	}
+
+	con := types.TestConnection{
+		Host:                          endpoint.Hostname(),
+		Port:                          port,
+		Secure:                        addrOf(true),
+		Timeout:                       10, // UI timeout value
+		HostnameVerificationAlgorithm: "HTTPS",
+	}
+
+	res, err := vcdClient.Client.TestConnection(con)
+	if err != nil {
+		return nil, fmt.Errorf("error testing connection for %s: %s", endpoint.Hostname(), err)
+	}
+
+	var trustedCert *TrustedCertificate
+	if res != nil && res.TargetProbe != nil && res.TargetProbe.SSLResult != "SUCCESS" {
+		if res.TargetProbe.SSLResult == "ERROR_UNTRUSTED_CERTIFICATE" {
+			// Need to trust certificate
+			cert := res.TargetProbe.CertificateChain
+			if cert == "" {
+				return nil, fmt.Errorf("error - certificate chain is empty. Connection result: '%s', SSL result: '%s'",
+					res.TargetProbe.ConnectionResult, res.TargetProbe.SSLResult)
+			}
+			trust := &types.TrustedCertificate{
+				Alias:       fmt.Sprintf("%s_%s", endpoint.Hostname(), time.Now().UTC().Format(time.RFC3339)),
+				Certificate: cert,
+			}
+			trustedCert, err = vcdClient.CreateTrustedCertificate(trust)
+			if err != nil {
+				return nil, fmt.Errorf("error trusting Certificate %s: %s", trust.Alias, err)
+			}
+
+			util.Logger.Printf("[DEBUG] Certificate trust established ID - %s, Alias - %s",
+				trustedCert.TrustedCertificate.ID, trustedCert.TrustedCertificate.Alias)
+
+		} else {
+			return nil, fmt.Errorf("SSL verification result - %s", res.TargetProbe.SSLResult)
+		}
+
+	}
+	return trustedCert, nil
+}
+
+func getEndpointPort(u *url.URL) (int, error) {
+	portStr := u.Port()
+	if portStr == "" && strings.EqualFold(u.Scheme, "https") {
+		portStr = "443"
+	}
+
+	if portStr == "" && strings.EqualFold(u.Scheme, "http") {
+		portStr = "80"
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return 0, fmt.Errorf("error converting port '%s' to int: %s", u.Port(), err)
+	}
+
+	return port, nil
 }
 
 // CreateTrustedCertificate creates an entry in the trusted certificate records

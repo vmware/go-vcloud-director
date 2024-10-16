@@ -30,7 +30,7 @@ func (t NsxtManagerOpenApi) wrap(inner *types.NsxtManagerOpenApi) *NsxtManagerOp
 func (vcdClient *VCDClient) CreateNsxtManagerOpenApi(config *types.NsxtManagerOpenApi) (*NsxtManagerOpenApi, error) {
 	c := crudConfig{
 		entityLabel: labelNsxtManagerOpenApi,
-		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmNsxManagers,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 	}
 	outerType := NsxtManagerOpenApi{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
@@ -40,7 +40,7 @@ func (vcdClient *VCDClient) CreateNsxtManagerOpenApi(config *types.NsxtManagerOp
 func (vcdClient *VCDClient) GetAllNsxtManagersOpenApi(queryParameters url.Values) ([]*NsxtManagerOpenApi, error) {
 	c := crudConfig{
 		entityLabel:     labelNsxtManagerOpenApi,
-		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmNsxManagers,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 		queryParameters: queryParameters,
 	}
 
@@ -52,7 +52,7 @@ func (vcdClient *VCDClient) GetAllNsxtManagersOpenApi(queryParameters url.Values
 func (vcdClient *VCDClient) GetNsxtManagerOpenApiById(id string) (*NsxtManagerOpenApi, error) {
 	c := crudConfig{
 		entityLabel:    labelNsxtManagerOpenApi,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmNsxManagers,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 		endpointParams: []string{id},
 	}
 
@@ -86,7 +86,7 @@ func (vcdClient *VCDClient) GetNsxtManagerOpenApiByName(name string) (*NsxtManag
 func (t *NsxtManagerOpenApi) Update(TmNsxtManagerConfig *types.NsxtManagerOpenApi) (*NsxtManagerOpenApi, error) {
 	c := crudConfig{
 		entityLabel:    labelNsxtManagerOpenApi,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmNsxManagers,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 		endpointParams: []string{t.NsxtManagerOpenApi.ID},
 	}
 	outerType := NsxtManagerOpenApi{vcdClient: t.vcdClient}
@@ -97,8 +97,15 @@ func (t *NsxtManagerOpenApi) Update(TmNsxtManagerConfig *types.NsxtManagerOpenAp
 func (t *NsxtManagerOpenApi) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelNsxtManagerOpenApi,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmNsxManagers,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 		endpointParams: []string{t.NsxtManagerOpenApi.ID},
 	}
 	return deleteEntityById(&t.vcdClient.Client, c)
+}
+
+// BuildHref returns an HREF for an NSX-T Manager
+// Sample path https://{PATH}/api/admin/extension/nsxtManagers/48a6dbe1-9b4e-4a75-9947-9d87a3006496
+func (t *NsxtManagerOpenApi) BuildHref() string {
+	uuid := extractUuid(t.NsxtManagerOpenApi.ID)
+	return fmt.Sprintf("%s/api/admin/extension/nsxtManagers/%s", t.vcdClient.Client.rootVcdHref(), uuid)
 }
