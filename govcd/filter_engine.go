@@ -13,8 +13,8 @@ import (
 
 	"github.com/kr/pretty"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 type queryWithMetadataFunc func(queryType string, params, notEncodedParams map[string]string,

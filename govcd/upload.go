@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 // mutexedProgress is a thread-safe structure to update and report progress during an UploadTask.
