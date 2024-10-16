@@ -20,23 +20,23 @@ import (
 )
 
 /*
- This file implements SAML authentication flow using Microsoft Active Directory Federation Services
- (ADFS). It adds support to authenticate to Cloud Director using SAML authentication (by applying
- WithSamlAdfs() configuration option to NewVCDClient function). The identity provider (IdP) must be
- Active Directory Federation Services (ADFS) and "/adfs/services/trust/13/usernamemixed" endpoint
- must be enabled to make it work. Furthermore username must be supplied in ADFS friendly format -
- test@contoso.com' or 'contoso.com\test'.
+This file implements SAML authentication flow using Microsoft Active Directory Federation Services
+(ADFS). It adds support to authenticate to Cloud Director using SAML authentication (by applying
+WithSamlAdfs() configuration option to NewVCDClient function). The identity provider (IdP) must be
+Active Directory Federation Services (ADFS) and "/adfs/services/trust/13/usernamemixed" endpoint
+must be enabled to make it work. Furthermore username must be supplied in ADFS friendly format -
+test@contoso.com' or 'contoso.com\test'.
 
- It works by finding ADFS login endpoint for vCD by querying vCD SAML redirect endpoint
- for specific Org and then submits authentication request to "/adfs/services/trust/13/usernamemixed"
- endpoint of ADFS server. Using ADFS response it constructs a SIGN token which vCD accepts for the
- "/api/sessions". After first initial "login" it grabs the regular X-Vcloud-Authorization token and
- uses it for further requests.
- More information in vCD documentation:
- https://code.vmware.com/docs/10000/vcloud-api-programming-guide-for-service-providers/GUID-335CFC35-7AD8-40E5-91BE-53971937A2BB.html
+It works by finding ADFS login endpoint for vCD by querying vCD SAML redirect endpoint
+for specific Org and then submits authentication request to "/adfs/services/trust/13/usernamemixed"
+endpoint of ADFS server. Using ADFS response it constructs a SIGN token which vCD accepts for the
+"/api/sessions". After first initial "login" it grabs the regular X-Vcloud-Authorization token and
+uses it for further requests.
+More information in vCD documentation:
+https://code.vmware.com/docs/10000/vcloud-api-programming-guide-for-service-providers/GUID-335CFC35-7AD8-40E5-91BE-53971937A2BB.html
 
- There is a working code example in /samples/saml_auth_adfs directory how to setup client using SAML
- auth.
+There is a working code example in /samples/saml_auth_adfs directory how to setup client using SAML
+auth.
 */
 
 // authorizeSamlAdfs is the main entry point for SAML authentication on ADFS endpoint
@@ -271,42 +271,42 @@ func authorizeSignToken(vcdCli *VCDClient, base64GzippedSignToken, org string) (
 // structure so that ADFS does not accept the payload
 func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndpoint string) string {
 	return `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" 
-	 xmlns:a="http://www.w3.org/2005/08/addressing" 
-	 xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
-	 <s:Header>
-		 <a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action>
-		 <a:ReplyTo>
-			 <a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address>
-		 </a:ReplyTo>
-		 <a:To s:mustUnderstand="1">` + adfsAuthEndpoint + `</a:To>
-		 <o:Security s:mustUnderstand="1" 
-			 xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
-			 <u:Timestamp u:Id="_0">
-				 <u:Created>` + time.Now().Format(time.RFC3339) + `</u:Created>
-				 <u:Expires>` + time.Now().Add(1*time.Minute).Format(time.RFC3339) + `</u:Expires>
-			 </u:Timestamp>
-			 <o:UsernameToken>
-				 <o:Username>` + user + `</o:Username>
-				 <o:Password o:Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">` + password + `</o:Password>
-			 </o:UsernameToken>
-		 </o:Security>
-	 </s:Header>
-	 <s:Body>
-		 <trust:RequestSecurityToken xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512">
-			 <wsp:AppliesTo xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
-				 <a:EndpointReference>
-					 <a:Address>` + samlEntityIdReference + `</a:Address>
-				 </a:EndpointReference>
-			 </wsp:AppliesTo>
-			 <trust:KeySize>0</trust:KeySize>
-			 <trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>
-			 <i:RequestDisplayToken xml:lang="en" 
-				 xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity" />
-			 <trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>
-			 <trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType>
-		 </trust:RequestSecurityToken>
-	 </s:Body>
- </s:Envelope>`
+	xmlns:a="http://www.w3.org/2005/08/addressing" 
+	xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+	<s:Header>
+		<a:Action s:mustUnderstand="1">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action>
+		<a:ReplyTo>
+			<a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address>
+		</a:ReplyTo>
+		<a:To s:mustUnderstand="1">` + adfsAuthEndpoint + `</a:To>
+		<o:Security s:mustUnderstand="1" 
+			xmlns:o="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+			<u:Timestamp u:Id="_0">
+				<u:Created>` + time.Now().Format(time.RFC3339) + `</u:Created>
+				<u:Expires>` + time.Now().Add(1*time.Minute).Format(time.RFC3339) + `</u:Expires>
+			</u:Timestamp>
+			<o:UsernameToken>
+				<o:Username>` + user + `</o:Username>
+				<o:Password o:Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">` + password + `</o:Password>
+			</o:UsernameToken>
+		</o:Security>
+	</s:Header>
+	<s:Body>
+		<trust:RequestSecurityToken xmlns:trust="http://docs.oasis-open.org/ws-sx/ws-trust/200512">
+			<wsp:AppliesTo xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+				<a:EndpointReference>
+					<a:Address>` + samlEntityIdReference + `</a:Address>
+				</a:EndpointReference>
+			</wsp:AppliesTo>
+			<trust:KeySize>0</trust:KeySize>
+			<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>
+			<i:RequestDisplayToken xml:lang="en" 
+				xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity" />
+			<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>
+			<trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType>
+		</trust:RequestSecurityToken>
+	</s:Body>
+</s:Envelope>`
 }
 
 // gzipAndBase64Encode accepts a string, gzips it and encodes in base64
