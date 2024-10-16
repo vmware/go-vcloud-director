@@ -300,7 +300,7 @@ func getSamlTokenRequestBody(user, password, samlEntityIdReference, adfsAuthEndp
 			</wsp:AppliesTo>
 			<trust:KeySize>0</trust:KeySize>
 			<trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>
-			<i:RequestDisplayToken xml:lang="en"
+			<i:RequestDisplayToken xml:lang="en" 
 				xmlns:i="http://schemas.xmlsoap.org/ws/2005/05/identity" />
 			<trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>
 			<trust:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0</trust:TokenType>
