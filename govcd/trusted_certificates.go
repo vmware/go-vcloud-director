@@ -13,7 +13,7 @@ import (
 
 const labelTrustedCertificate = "Trusted Certificate"
 
-// TrustedCertificate manages certificate trust. Certificate
+// TrustedCertificate manages certificate trust
 type TrustedCertificate struct {
 	TrustedCertificate *types.TrustedCertificate
 	vcdClient          *VCDClient
@@ -28,9 +28,8 @@ func (g TrustedCertificate) wrap(inner *types.TrustedCertificate) *TrustedCertif
 }
 
 // AutoTrustCertificate will automatically trust certificate for a given endpoint
-// Note. The url must be accessible
+// Note. The URL must be accessible
 func (vcdClient *VCDClient) AutoTrustCertificate(endpoint *url.URL) (*TrustedCertificate, error) {
-	// Step 1 - execute TestConnection to see if certificate is already trusted
 	port, err := getEndpointPort(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting port number for host '%s': %s", endpoint.Hostname(), err)
