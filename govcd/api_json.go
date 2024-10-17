@@ -7,8 +7,8 @@ package govcd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
-	"github.com/vmware/go-vcloud-director/v2/util"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 	"io"
 	"net/http"
 	"net/url"

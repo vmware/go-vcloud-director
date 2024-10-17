@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // NsxvDistributedFirewall defines a distributed firewall for a NSX-V VDC

@@ -37,7 +37,7 @@ To show the SDK in action run the example:
 ```
 mkdir ~/govcd_example
 go mod init govcd_example
-go get github.com/vmware/go-vcloud-director/v2@main
+go get github.com/vmware/go-vcloud-director/v3@main
 go build -o example
 ./example user_name "password" org_name vcd_IP vdc_name 
 ```
@@ -51,7 +51,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/vmware/go-vcloud-director/v2/govcd"
+	"github.com/vmware/go-vcloud-director/v3/govcd"
 )
 
 type Config struct {

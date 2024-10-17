@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vmware/go-vcloud-director/v2/util"
+	"github.com/vmware/go-vcloud-director/v3/util"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // AdminOrg gives an admin representation of an org.

@@ -9,7 +9,7 @@ package govcd
 import (
 	. "gopkg.in/check.v1"
 
-	"github.com/vmware/go-vcloud-director/v2/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // Test_LBAppProfile tests CRUD methods for load balancer application profile.

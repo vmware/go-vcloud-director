@@ -91,7 +91,7 @@ $ go test -v .
         go test -tags catalog -check.vv -timeout=45m .
         go test -tags "query extnetwork" -check.vv -timeout=45m .
 FAIL
-FAIL	github.com/vmware/go-vcloud-director/v2/govcd	0.011s
+FAIL	github.com/vmware/go-vcloud-director/v3/govcd	0.011s
 ```
 
 To run tests with `concurency` build tag (omitted by default) and Go race detector:
