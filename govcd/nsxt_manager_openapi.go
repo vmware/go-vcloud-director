@@ -26,7 +26,7 @@ func (t NsxtManagerOpenApi) wrap(inner *types.NsxtManagerOpenApi) *NsxtManagerOp
 	return &t
 }
 
-// CreateNsxtManagerOpenApi creates NSX-T
+// CreateNsxtManagerOpenApi attaches NSX-T Manager
 func (vcdClient *VCDClient) CreateNsxtManagerOpenApi(config *types.NsxtManagerOpenApi) (*NsxtManagerOpenApi, error) {
 	c := crudConfig{
 		entityLabel: labelNsxtManagerOpenApi,

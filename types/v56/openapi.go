@@ -576,28 +576,72 @@ type DefinedEntityAccess struct {
 	MemberID      string           `json:"memberId"`
 }
 
+// VSphereVirtualCenter represents a vCenter server
 type VSphereVirtualCenter struct {
-	VcId                      string                           `json:"vcId,omitempty"`
-	Name                      string                           `json:"name"`
-	Description               string                           `json:"description,omitempty"`
-	Username                  string                           `json:"username"`
-	Password                  string                           `json:"password,omitempty"`
-	Url                       string                           `json:"url"`
-	IsEnabled                 bool                             `json:"isEnabled"`
-	VsphereWebClientServerUrl string                           `json:"vsphereWebClientServerUrl,omitempty"`
-	HasProxy                  bool                             `json:"hasProxy,omitempty"`
-	RootFolder                string                           `json:"rootFolder,omitempty"`
-	VcNoneNetwork             string                           `json:"vcNoneNetwork,omitempty"`
-	TenantVisibleName         string                           `json:"tenantVisibleName,omitempty"`
-	IsConnected               bool                             `json:"isConnected,omitempty"`
-	Mode                      string                           `json:"mode,omitempty"`
-	ListenerState             string                           `json:"listenerState,omitempty"`
-	ClusterHealthStatus       string                           `json:"clusterHealthStatus,omitempty"`
-	VcVersion                 string                           `json:"vcVersion,omitempty"`
-	BuildNumber               string                           `json:"buildNumber,omitempty"`
-	Uuid                      string                           `json:"uuid,omitempty"`
-	NsxVManager               *VSphereVirtualCenterNsxvManager `json:"nsxVManager,omitempty"`
-	ProxyConfigurationUrn     string                           `json:"proxyConfigurationUrn,omitempty"`
+	// VcId contains the URN of vCenter server
+	VcId string `json:"vcId,omitempty"`
+	// Name of the vCenter server
+	Name string `json:"name"`
+	// Optional description
+	Description string `json:"description,omitempty"`
+	// Username to connect to the server
+	Username string `json:"username"`
+	// Password in cleartext format to connect to the server
+	Password string `json:"password,omitempty"`
+	// Url of the server
+	Url string `json:"url"`
+	// True if the vCenter server is enabled for use
+	IsEnabled bool `json:"isEnabled"`
+	// VsphereWebClientServerUrl contains the URL of vCenter web client server.
+	VsphereWebClientServerUrl string `json:"vsphereWebClientServerUrl,omitempty"`
+	// HasProxy indicates that a proxy exists that proxies this vCenter server for access by
+	// authorized end-users. Setting this field to true when registering a vCenter server will
+	// result in a proxy being created for the vCenter server, and another for the corresponding SSO
+	// endpoint (if different from the vCenter server's endpoint). This field is immutable after the
+	// vCenter Server is registered, and will be updated by the system when/if the proxy is removed.
+	HasProxy bool `json:"hasProxy,omitempty"`
+	// vCenter root folder in which the vCloud Director system folder will be created. This parameter only takes the folder name and not directory structure.
+	RootFolder string `json:"rootFolder,omitempty"`
+	// Network in Vcenter to be used as 'NONE' network by vCD.
+	VcNoneNetwork string `json:"vcNoneNetwork,omitempty"`
+	// TenantVisibleName contains public label of this vCenter server visible to all tenants
+	TenantVisibleName string `json:"tenantVisibleName,omitempty"`
+	// IsConnected True if the vCenter server is connected.
+	IsConnected bool `json:"isConnected,omitempty"`
+	// 	The vCenter mode. One of
+	// * NONE - undetermined
+	// * IAAS - provider scoped
+	// * SDDC - tenant scoped
+	// * MIXED
+	// IAAS indicates this vCenter server is scoped to the provider. SDDC indicates that this
+	// vCenter server is scoped to tenants, while MIXED indicates mixed mode, where both uses are
+	// allowed in this vCenter server. Possible values are: NONE , IAAS , SDDC , MIXED
+	Mode string `json:"mode,omitempty"`
+	// The vCenter listener state. One of:
+	// * INITIAL
+	// * INVALID_SETTINGS
+	// * UNSUPPORTED
+	// * DISCONNECTED
+	// * CONNECTING
+	// * CONNECTED_SYNCING
+	// * CONNECTED
+	// * STOP_REQ
+	// * STOP_AND_PURGE_REQ
+	// * STOP_ACK
+	ListenerState string `json:"listenerState,omitempty"`
+	// ClusterHealthStatus shows the overall health status of clusters in this vCenter server. One
+	// of GRAY, RED, YELLOW, GREEN
+	ClusterHealthStatus string `json:"clusterHealthStatus,omitempty"`
+	// The version of the VIM server.
+	VcVersion string `json:"vcVersion,omitempty"`
+	// The build number of the VIM server.
+	BuildNumber string `json:"buildNumber,omitempty"`
+	// The instance UUID property of the vCenter server.
+	Uuid string `json:"uuid,omitempty"`
+	// NsxVManager stores the NSX-V attached to this Virtual Center server, when present.
+	NsxVManager *VSphereVirtualCenterNsxvManager `json:"nsxVManager,omitempty"`
+	// ProxyConfigurationUrn is Deprecated
+	ProxyConfigurationUrn string `json:"proxyConfigurationUrn,omitempty"`
 }
 
 type VSphereVirtualCenterNsxvManager struct {
