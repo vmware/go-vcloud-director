@@ -6,88 +6,138 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"net/http"
 	"net/url"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
+
+const labelVirtualCenter = "vCenter Server"
 
 type VCenter struct {
 	VSphereVCenter *types.VSphereVirtualCenter
 	client         *VCDClient
 }
 
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (v VCenter) wrap(inner *types.VSphereVirtualCenter) *VCenter {
+	v.VSphereVCenter = inner
+	return &v
+}
+
+// CreateVcenter adds new vCenter connection
+func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*VCenter, error) {
+	c := crudConfig{
+		entityLabel: labelVirtualCenter,
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+	}
+	outerType := VCenter{client: vcdClient}
+	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+}
+
+// GetAllVCenters retrieves all vCenter servers based on optional query filtering
 func (vcdClient *VCDClient) GetAllVCenters(queryParams url.Values) ([]*VCenter, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		entityLabel:     labelVirtualCenter,
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+		queryParameters: queryParams,
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	var retrieved []*types.VSphereVirtualCenter
-
-	err = client.OpenApiGetAllItems(minimumApiVersion, urlRef, queryParams, &retrieved, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vCenters list: %s", err)
-	}
-
-	if len(retrieved) == 0 {
-		return nil, nil
-	}
-	var returnList []*VCenter
-
-	for _, r := range retrieved {
-		returnList = append(returnList, &VCenter{
-			VSphereVCenter: r,
-			client:         vcdClient,
-		})
-	}
-	return returnList, nil
+	outerType := VCenter{client: vcdClient}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetVCenterByName retrieves vCenter server by name
 func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
-	vcenters, err := vcdClient.GetAllVCenters(nil)
+	if name == "" {
+		return nil, fmt.Errorf("%s lookup requires name", labelVirtualCenter)
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", "name=="+name)
+
+	vCenters, err := vcdClient.GetAllVCenters(queryParams)
 	if err != nil {
 		return nil, err
 	}
-	for _, vc := range vcenters {
-		if vc.VSphereVCenter.Name == name {
-			return vc, nil
-		}
+
+	singleEntity, err := oneOrError("name", name, vCenters)
+	if err != nil {
+		return nil, err
 	}
-	return nil, fmt.Errorf("vcenter %s not found: %s", name, ErrorEntityNotFound)
+
+	return singleEntity, nil
 }
 
+// GetVCenterById retrieves vCenter server by ID
 func (vcdClient *VCDClient) GetVCenterById(id string) (*VCenter, error) {
-	client := vcdClient.Client
-	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters
-	minimumApiVersion, err := client.checkOpenApiEndpointCompatibility(endpoint)
-	if err != nil {
-		return nil, err
+	c := crudConfig{
+		entityLabel:    labelVirtualCenter,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+		endpointParams: []string{id},
 	}
 
-	urlRef, err := client.OpenApiBuildEndpoint(endpoint + "/" + id)
-	if err != nil {
-		return nil, err
-	}
-
-	returnObject := &VCenter{
-		VSphereVCenter: &types.VSphereVirtualCenter{},
-		client:         vcdClient,
-	}
-
-	err = client.OpenApiGetItem(minimumApiVersion, urlRef, nil, returnObject.VSphereVCenter, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error getting vCenter: %s", err)
-	}
-
-	return returnObject, nil
+	outerType := VCenter{client: vcdClient}
+	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
-func (vcenter VCenter) GetVimServerUrl() (string, error) {
-	return url.JoinPath(vcenter.client.Client.VCDHREF.String(), "admin", "extension", "vimServer", extractUuid(vcenter.VSphereVCenter.VcId))
+// Update given vCenter configuration
+func (v *VCenter) Update(TmNsxtManagerConfig *types.VSphereVirtualCenter) (*VCenter, error) {
+	c := crudConfig{
+		entityLabel:    labelVirtualCenter,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+		endpointParams: []string{v.VSphereVCenter.VcId},
+	}
+	outerType := VCenter{client: v.client}
+	return updateOuterEntity(&v.client.Client, outerType, c, TmNsxtManagerConfig)
+}
+
+// Delete vCenter configuration
+func (v *VCenter) Delete() error {
+	c := crudConfig{
+		entityLabel:    labelVirtualCenter,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+		endpointParams: []string{v.VSphereVCenter.VcId},
+	}
+	return deleteEntityById(&v.client.Client, c)
+}
+
+// Disable is an update shortcut for disabling vCenter
+func (v *VCenter) Disable() error {
+	v.VSphereVCenter.IsEnabled = false
+	_, err := v.Update(v.VSphereVCenter)
+	return err
+}
+
+func (v VCenter) GetVimServerUrl() (string, error) {
+	return url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId))
+}
+
+// Refresh triggers a refresh operation on vCenter that syncs up vCenter components such as
+// supervisors
+// It uses legacy endpoint as there is no OpenAPI endpoint for this operation
+func (v VCenter) Refresh() error {
+	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refresh")
+	if err != nil {
+		return fmt.Errorf("error building refresh path: %s", err)
+	}
+
+	resp, err := v.client.Client.executeJsonRequest(refreshUrl, http.MethodPost, nil, "error triggering vCenter refresh: %s")
+	if err != nil {
+		return err
+	}
+	defer closeBody(resp)
+	task := NewTask(&v.client.Client)
+	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
+	if err != nil {
+		return fmt.Errorf("error triggering retrieving task: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting task completion: %s", err)
+	}
+
+	return nil
 }

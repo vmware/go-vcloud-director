@@ -35,7 +35,7 @@ type ContentLibrary struct {
 	Description string `json:"description,omitempty"`
 	// A unique identifier for the Content library
 	Id string `json:"id,omitempty"`
-	// Whether this Content Library is shared with other organziations
+	// Whether this Content Library is shared with other organizations
 	IsShared bool `json:"isShared,omitempty"`
 	// Whether this Content Library is subscribed from an external published library
 	IsSubscribed bool `json:"isSubscribed,omitempty"`
