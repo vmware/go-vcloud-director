@@ -57,10 +57,27 @@ func (vcdClient *VCDClient) AutoTrustCertificate(endpoint *url.URL) (*TrustedCer
 				return nil, fmt.Errorf("error - certificate chain is empty. Connection result: '%s', SSL result: '%s'",
 					res.TargetProbe.ConnectionResult, res.TargetProbe.SSLResult)
 			}
-			trust := &types.TrustedCertificate{
-				Alias:       fmt.Sprintf("%s_%s", endpoint.Hostname(), time.Now().UTC().Format(time.RFC3339)),
-				Certificate: cert,
+
+			// The CertificateChain may contain a single certificate or a chain of certificates.
+			// In case of a single certificate - only it should be submitted.
+			// In case of a chain - the last certificate is submitted to trust.
+			certCount := strings.Count(cert, "-----END CERTIFICATE-----")
+			var trust *types.TrustedCertificate
+
+			if certCount == 1 {
+				// Certificate
+				trust = &types.TrustedCertificate{
+					Alias:       fmt.Sprintf("%s_%s", endpoint.Hostname(), time.Now().UTC().Format(time.RFC3339)),
+					Certificate: cert,
+				}
+			} else {
+				splitCerts := strings.SplitAfter(cert, "-----END CERTIFICATE-----")
+				trust = &types.TrustedCertificate{
+					Alias:       fmt.Sprintf("ca_%s", time.Now().UTC().Format(time.RFC3339)),
+					Certificate: splitCerts[len(splitCerts)-2],
+				}
 			}
+
 			trustedCert, err = vcdClient.CreateTrustedCertificate(trust)
 			if err != nil {
 				return nil, fmt.Errorf("error trusting Certificate %s: %s", trust.Alias, err)
