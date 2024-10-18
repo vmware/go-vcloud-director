@@ -54,6 +54,9 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(byId, NotNil)
 
+	// TODO: TM: URLs should be the same from
+	// check.Assert(byName.VSphereVCenter.Url, Equals, byId.VSphereVCenter.Url)
+
 	// Get All
 	allTmOrgs, err := vcd.client.GetAllVCenters(nil)
 	check.Assert(err, IsNil)
