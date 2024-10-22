@@ -61,7 +61,7 @@ type ContentLibrarySubscriptionConfig struct {
 	Password string `json:"password,omitempty"`
 }
 
-// TmOrg defines structure for creating
+// TmOrg defines structure for creating TM Organization
 type TmOrg struct {
 	ID string `json:"id,omitempty"`
 	// Name of organization that will be used in the URL slug
