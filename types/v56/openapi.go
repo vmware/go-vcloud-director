@@ -576,33 +576,79 @@ type DefinedEntityAccess struct {
 	MemberID      string           `json:"memberId"`
 }
 
+// VSphereVirtualCenter represents a vCenter server
 type VSphereVirtualCenter struct {
-	VcId                      string `json:"vcId"`
-	Name                      string `json:"name"`
-	Description               string `json:"description"`
-	Username                  string `json:"username"`
-	Password                  string `json:"password"`
-	Url                       string `json:"url"`
-	IsEnabled                 bool   `json:"isEnabled"`
-	VsphereWebClientServerUrl string `json:"vsphereWebClientServerUrl"`
-	HasProxy                  bool   `json:"hasProxy"`
-	RootFolder                string `json:"rootFolder"`
-	VcNoneNetwork             string `json:"vcNoneNetwork"`
-	TenantVisibleName         string `json:"tenantVisibleName"`
-	IsConnected               bool   `json:"isConnected"`
-	Mode                      string `json:"mode"`
-	ListenerState             string `json:"listenerState"`
-	ClusterHealthStatus       string `json:"clusterHealthStatus"`
-	VcVersion                 string `json:"vcVersion"`
-	BuildNumber               string `json:"buildNumber"`
-	Uuid                      string `json:"uuid"`
-	NsxVManager               struct {
-		Username        string `json:"username"`
-		Password        string `json:"password"`
-		Url             string `json:"url"`
-		SoftwareVersion string `json:"softwareVersion"`
-	} `json:"nsxVManager"`
-	ProxyConfigurationUrn string `json:"proxyConfigurationUrn"`
+	// VcId contains the URN of vCenter server
+	VcId string `json:"vcId,omitempty"`
+	// Name of the vCenter server
+	Name string `json:"name"`
+	// Optional description
+	Description string `json:"description,omitempty"`
+	// Username to connect to the server
+	Username string `json:"username"`
+	// Password in cleartext format to connect to the server
+	Password string `json:"password,omitempty"`
+	// Url of the server
+	Url string `json:"url"`
+	// True if the vCenter server is enabled for use
+	IsEnabled bool `json:"isEnabled"`
+	// VsphereWebClientServerUrl contains the URL of vCenter web client server.
+	VsphereWebClientServerUrl string `json:"vsphereWebClientServerUrl,omitempty"`
+	// HasProxy indicates that a proxy exists that proxies this vCenter server for access by
+	// authorized end-users. Setting this field to true when registering a vCenter server will
+	// result in a proxy being created for the vCenter server, and another for the corresponding SSO
+	// endpoint (if different from the vCenter server's endpoint). This field is immutable after the
+	// vCenter Server is registered, and will be updated by the system when/if the proxy is removed.
+	HasProxy bool `json:"hasProxy,omitempty"`
+	// vCenter root folder in which the vCloud Director system folder will be created. This parameter only takes the folder name and not directory structure.
+	RootFolder string `json:"rootFolder,omitempty"`
+	// Network in Vcenter to be used as 'NONE' network by vCD.
+	VcNoneNetwork string `json:"vcNoneNetwork,omitempty"`
+	// TenantVisibleName contains public label of this vCenter server visible to all tenants
+	TenantVisibleName string `json:"tenantVisibleName,omitempty"`
+	// IsConnected True if the vCenter server is connected.
+	IsConnected bool `json:"isConnected,omitempty"`
+	// 	The vCenter mode. One of
+	// * NONE - undetermined
+	// * IAAS - provider scoped
+	// * SDDC - tenant scoped
+	// * MIXED
+	// IAAS indicates this vCenter server is scoped to the provider. SDDC indicates that this
+	// vCenter server is scoped to tenants, while MIXED indicates mixed mode, where both uses are
+	// allowed in this vCenter server. Possible values are: NONE , IAAS , SDDC , MIXED
+	Mode string `json:"mode,omitempty"`
+	// The vCenter listener state. One of:
+	// * INITIAL
+	// * INVALID_SETTINGS
+	// * UNSUPPORTED
+	// * DISCONNECTED
+	// * CONNECTING
+	// * CONNECTED_SYNCING
+	// * CONNECTED
+	// * STOP_REQ
+	// * STOP_AND_PURGE_REQ
+	// * STOP_ACK
+	ListenerState string `json:"listenerState,omitempty"`
+	// ClusterHealthStatus shows the overall health status of clusters in this vCenter server. One
+	// of GRAY, RED, YELLOW, GREEN
+	ClusterHealthStatus string `json:"clusterHealthStatus,omitempty"`
+	// The version of the VIM server.
+	VcVersion string `json:"vcVersion,omitempty"`
+	// The build number of the VIM server.
+	BuildNumber string `json:"buildNumber,omitempty"`
+	// The instance UUID property of the vCenter server.
+	Uuid string `json:"uuid,omitempty"`
+	// NsxVManager stores the NSX-V attached to this Virtual Center server, when present.
+	NsxVManager *VSphereVirtualCenterNsxvManager `json:"nsxVManager,omitempty"`
+	// ProxyConfigurationUrn is Deprecated
+	ProxyConfigurationUrn string `json:"proxyConfigurationUrn,omitempty"`
+}
+
+type VSphereVirtualCenterNsxvManager struct {
+	Username        string `json:"username,omitempty"`
+	Password        string `json:"password,omitempty"`
+	Url             string `json:"url,omitempty"`
+	SoftwareVersion string `json:"softwareVersion,omitempty"`
 }
 
 type ResourcePoolSummary struct {
@@ -795,4 +841,33 @@ type ApiFilter struct {
 type UrlMatcher struct {
 	UrlPattern string `json:"urlPattern,omitempty"`
 	UrlScope   string `json:"urlScope,omitempty"` // EXT_API, EXT_UI_PROVIDER, EXT_UI_TENANT corresponding to /ext-api, /ext-ui/provider, /ext-ui/tenant/<tenant-name>
+}
+
+// TrustedCertificate manages certificate trust
+type TrustedCertificate struct {
+	ID string `json:"id,omitempty"`
+	// Alias contains case insensitive name
+	Alias string `json:"alias"`
+	// Certificate contains PEM encoded certificate. All extraneous whitespace and other information
+	// is removed
+	Certificate string `json:"certificate"`
+}
+
+// NsxtManagerOpenApi reflects NSX-T manager configuration for OpenAPI endpoint
+type NsxtManagerOpenApi struct {
+	ID string `json:"id,omitempty"`
+	// Name of NSX-T Manager
+	Name string `json:"name"`
+	// Description of NSX-T Manager
+	Description string `json:"description"`
+	// Username for authenticating to NSX-T Manager
+	Username string `json:"username"`
+	// Password for authenticating to NSX-T Manager
+	Password string `json:"password"`
+	// Url for authenticating to NSX-T Manager
+	Url string `json:"url"`
+	// NetworkProviderScope
+	NetworkProviderScope string `json:"networkProviderScope"`
+	// Status of NSX-T Manager
+	Status string `json:"status,omitempty"`
 }
