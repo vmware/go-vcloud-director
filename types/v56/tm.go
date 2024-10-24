@@ -60,3 +60,32 @@ type ContentLibrarySubscriptionConfig struct {
 	// Password to use to authenticate with the publisher
 	Password string `json:"password,omitempty"`
 }
+
+// ContentLibraryItem is an object representing a VCF Content Library Item
+type ContentLibraryItem struct {
+	// The reference to the content library that this item belongs to
+	ContentLibrary OpenApiReference `json:"contentLibrary"`
+	// The name of the content library item
+	Name string `json:"name"`
+
+	// The ISO-8601 timestamp representing when this item was created
+	CreationDate string `json:"creationDate,omitempty"`
+	// The description of the content library item
+	Description string `json:"description,omitempty"`
+	// A unique identifier for the library item
+	Id string `json:"id,omitempty"`
+	// Virtual Machine Identifier (VMI) of the item. This is a ReadOnly field
+	ImageIdentifier string `json:"imageIdentifier,omitempty"`
+	// Whether this item is published
+	IsPublished bool `json:"isPublished,omitempty"`
+	// Whether this item is subscribed
+	IsSubscribed bool `json:"isSubscribed,omitempty"`
+	// The ISO-8601 timestamp representing when this item was last synced if subscribed
+	LastSuccessfulSync string `json:"lastSuccessfulSync,omitempty"`
+	// The reference to the organization that the item belongs to
+	Org *OpenApiReference `json:"org,omitempty"`
+	// Status of this content library item
+	Status string `json:"status,omitempty"`
+	// The version of this item. For a subscribed library, this version is same as in publisher library
+	Version int `json:"version,omitempty"`
+}
