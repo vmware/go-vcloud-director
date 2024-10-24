@@ -158,6 +158,7 @@ var endpointMinApiVersions = map[string]string{
 	// VCF
 	types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies: "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries:      "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems:   "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
