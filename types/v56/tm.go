@@ -60,3 +60,55 @@ type ContentLibrarySubscriptionConfig struct {
 	// Password to use to authenticate with the publisher
 	Password string `json:"password,omitempty"`
 }
+
+// TmOrg defines structure for creating TM Organization
+type TmOrg struct {
+	ID string `json:"id,omitempty"`
+	// Name of organization that will be used in the URL slug
+	Name string `json:"name"`
+	// DisplayName contains a full display name of the organization
+	DisplayName string `json:"displayName"`
+	// Description of the Org
+	Description string `json:"description,omitempty"`
+
+	// CanManageOrgs sets whether or not this org can manage other tenant orgs.
+	// This can be toggled to true to automatically perform the following steps:
+	// * Publishes the Default Sub-Provider Entitlement Rights Bundle to the org
+	// * Publishes the Sub-Provider Administrator global role (if it exists) to the org
+	// * Creates a Default Rights Bundle in the org containing all publishable rights that are
+	// currently published to the org. Marks that Rights Bundle as publish all.
+	// * Clones all default roles currently published to the org into Global Roles in the org. Marks
+	// them all publish all
+	// Cannot be set to false as there may be any number of Rights Bundles granting sub-provider
+	// rights to this org. Instead, unpublish any rights bundles that have the Org Traverse right
+	// from this org
+	CanManageOrgs bool `json:"canManageOrgs,omitempty"`
+	// CanPublish defines whether the organization can publish catalogs externally
+	CanPublish bool `json:"canPublish,omitempty"`
+	// CatalogCount withing the Org
+	CatalogCount int `json:"catalogCount,omitempty"`
+	// DirectlyManagedOrgCount contains the count of the orgs this org directly manages
+	DirectlyManagedOrgCount int `json:"directlyManagedOrgCount,omitempty"`
+	// DiskCount defines the number of disks in the Org
+	DiskCount int `json:"diskCount,omitempty"`
+
+	// IsClassicTenant defines whether the organization is a classic VRA-style tenant. This field
+	// cannot be updated. Note this style is deprecated and this field exists for the purpose of VRA
+	// backwards compatibility.
+	IsClassicTenant bool `json:"isClassicTenant,omitempty"`
+	// IsEnabled defines if the Org is enabled
+	IsEnabled bool `json:"isEnabled,omitempty"`
+	// ManagedBy defines the provider Org that manages this Organization
+	ManagedBy *OpenApiReference `json:"managedBy,omitempty"`
+	// MaskedEventTaskUsername sets username as it appears in the tenant events/tasks. Requires
+	// 'Organization Edit Username Mask'
+	MaskedEventTaskUsername string `json:"maskedEventTaskUsername,omitempty"`
+	// OrgVdcCount contains count of VDCs assigned to the Org
+	OrgVdcCount int `json:"orgVdcCount,omitempty"`
+	// RunningVMCount contains count of VM running in the Org
+	RunningVMCount int `json:"runningVMCount,omitempty"`
+	// UserCount contains user count in the Org
+	UserCount int `json:"userCount,omitempty"`
+	// VappCount contains vApp count in the Org
+	VappCount int `json:"vappCount,omitempty"`
+}
