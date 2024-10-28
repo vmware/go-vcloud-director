@@ -22,6 +22,7 @@ func (r Region) wrap(inner *types.Region) *Region {
 	return &r
 }
 
+// CreateRegion creates a new region
 func (vcdClient *VCDClient) CreateRegion(config *types.Region) (*Region, error) {
 	c := crudConfig{
 		entityLabel: labelRegion,
@@ -31,6 +32,7 @@ func (vcdClient *VCDClient) CreateRegion(config *types.Region) (*Region, error) 
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// GetAllRegions
 func (vcdClient *VCDClient) GetAllRegions(queryParameters url.Values) ([]*Region, error) {
 	c := crudConfig{
 		entityLabel:     labelRegion,
@@ -42,6 +44,7 @@ func (vcdClient *VCDClient) GetAllRegions(queryParameters url.Values) ([]*Region
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetRegionByName retrieves a region by name
 func (vcdClient *VCDClient) GetRegionByName(name string) (*Region, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelRegion)
@@ -63,6 +66,7 @@ func (vcdClient *VCDClient) GetRegionByName(name string) (*Region, error) {
 	return vcdClient.GetRegionById(singleEntity.Region.ID)
 }
 
+// GetRegionById retrieves a region by ID
 func (vcdClient *VCDClient) GetRegionById(id string) (*Region, error) {
 	c := crudConfig{
 		entityLabel:    labelRegion,

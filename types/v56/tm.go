@@ -113,6 +113,7 @@ type TmOrg struct {
 	VappCount int `json:"vappCount,omitempty"`
 }
 
+// Region represents a collection of supervisor clusters across different VCs
 type Region struct {
 	ID string `json:"id,omitempty"`
 	// The name of the region. It must follow RFC 1123 Label Names to conform with Kubernetes standards.
@@ -144,6 +145,7 @@ type Region struct {
 	StoragePolicies []string `json:"storagePolicies,omitempty"`
 }
 
+// Supervisor represents a structure
 type Supervisor struct {
 	// The immutable identifier of this supervisor.
 	SupervisorID string `json:"supervisorId"`
@@ -155,6 +157,7 @@ type Supervisor struct {
 	VirtualCenter *OpenApiReference `json:"virtualCenter"`
 }
 
+// SupervisorZone represents a single zone within Supervisor
 type SupervisorZone struct {
 	ID string `json:"id"`
 	// The name of this zone.
@@ -175,5 +178,6 @@ type SupervisorZone struct {
 	// CpuUsedMHz - total CPU used (in MHz) in this zone
 	CpuUsedMHz int64 `json:"cpuUsedMHz"`
 
-	// region
+	// Region contains a reference to parent region
+	Region *OpenApiReference `json:"region"`
 }

@@ -9,7 +9,7 @@ import (
 
 const labelSupervisorZone = "Supervisor Zone"
 
-// Supervisor is a type for handling VCF Supervisor Zones
+// Supervisor is a type for reading Supervisor Zones
 type SupervisorZone struct {
 	SupervisorZone *types.SupervisorZone
 	vcdClient      *VCDClient
@@ -23,6 +23,7 @@ func (s SupervisorZone) wrap(inner *types.SupervisorZone) *SupervisorZone {
 	return &s
 }
 
+// GetAllSupervisorZones retrieves all Supervisor Zones in a given Supervisor
 func (s *Supervisor) GetAllSupervisorZones(queryParameters url.Values) ([]*SupervisorZone, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointSupervisorZones,
@@ -34,6 +35,7 @@ func (s *Supervisor) GetAllSupervisorZones(queryParameters url.Values) ([]*Super
 	return getAllOuterEntities(&s.vcdClient.Client, outerType, c)
 }
 
+// GetSupervisorZoneById retrieves Supervisor by id
 func (s *Supervisor) GetSupervisorZoneById(id string) (*SupervisorZone, error) {
 	if id == "" {
 		return nil, fmt.Errorf("'id' must be set")
@@ -53,6 +55,7 @@ func (s *Supervisor) GetSupervisorZoneById(id string) (*SupervisorZone, error) {
 	return getOuterEntity(&s.vcdClient.Client, outerType, c)
 }
 
+// GetSupervisorZoneByName retrieves Supervisor Zone by a given name
 func (s *Supervisor) GetSupervisorZoneByName(name string) (*SupervisorZone, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelSupervisor)

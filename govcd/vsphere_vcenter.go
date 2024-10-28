@@ -170,8 +170,8 @@ func (v VCenter) Refresh() error {
 	return nil
 }
 
-// Refresh triggers a refresh operation on vCenter that syncs up vCenter components such as
-// supervisors
+// RefreshStorageProfiles triggers a refresh operation on vCenter that syncs up vCenter components
+// such as supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
 func (v VCenter) RefreshStorageProfiles() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refreshStorageProfiles")

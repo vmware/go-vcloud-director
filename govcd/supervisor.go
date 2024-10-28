@@ -9,7 +9,7 @@ import (
 
 const labelSupervisor = "Supervisor"
 
-// Supervisor is a type for handling reading available Supervisors
+// Supervisor is a type for reading available Supervisors
 type Supervisor struct {
 	Supervisor *types.Supervisor
 	vcdClient  *VCDClient
@@ -23,6 +23,7 @@ func (s Supervisor) wrap(inner *types.Supervisor) *Supervisor {
 	return &s
 }
 
+// GetAllSupervisors retrieves all available Supervisors
 func (vcdClient *VCDClient) GetAllSupervisors(queryParameters url.Values) ([]*Supervisor, error) {
 	c := crudConfig{
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointSupervisors,
@@ -34,6 +35,7 @@ func (vcdClient *VCDClient) GetAllSupervisors(queryParameters url.Values) ([]*Su
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetSupervisorById retrieves supervisor by ID
 func (vcdClient *VCDClient) GetSupervisorById(id string) (*Supervisor, error) {
 	c := crudConfig{
 		entityLabel:    labelSupervisor,
@@ -45,6 +47,7 @@ func (vcdClient *VCDClient) GetSupervisorById(id string) (*Supervisor, error) {
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// GetSupervisorByName retrieves Supervisor by name
 func (vcdClient *VCDClient) GetSupervisorByName(name string) (*Supervisor, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelSupervisor)
@@ -73,6 +76,7 @@ func (v VCenter) GetAllSupervisors(queryParameters url.Values) ([]*Supervisor, e
 	return v.client.GetAllSupervisors(queryParams)
 }
 
+// GetSupervisorByName retrieves Supervisor by name in a given vCenter server
 func (v VCenter) GetSupervisorByName(name string) (*Supervisor, error) {
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
