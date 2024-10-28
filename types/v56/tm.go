@@ -112,3 +112,68 @@ type TmOrg struct {
 	// VappCount contains vApp count in the Org
 	VappCount int `json:"vappCount,omitempty"`
 }
+
+type Region struct {
+	ID string `json:"id,omitempty"`
+	// The name of the region. It must follow RFC 1123 Label Names to conform with Kubernetes standards.
+	Name string `json:"name"`
+	// The NSX manager for the region.
+	NsxManager *OpenApiReference `json:"nsxManager"`
+	// Total CPU resources in MHz available to this Region.
+	CPUCapacityMHz int `json:"cpuCapacityMHz,omitempty"`
+	// Total CPU reservation resources in MHz available to this Region.
+	CPUReservationCapacityMHz int `json:"cpuReservationCapacityMHz,omitempty"`
+	// The description of the region.
+	Description string `json:"description"`
+	// Whether the region is enabled or not.
+	IsEnabled bool `json:"isEnabled,omitempty"`
+	// Total memory resources (in mebibytes) available to this Region.
+	MemoryCapacityMiB int `json:"memoryCapacityMiB,omitempty"`
+	// Total memory reservation resources (in mebibytes) available to this Region.
+	MemoryReservationCapacityMiB int `json:"memoryReservationCapacityMiB,omitempty"`
+	// The creation status of the Provider VDC. Possible values are READY, NOT_READY, ERROR, FAILED.
+	// A Region needs to be ready and enabled to be usable.
+	Status string `json:"status,omitempty"`
+	// A list of supervisors in a region
+
+	Supervisors []OpenApiReference `json:"supervisors,omitempty"`
+	// A list of distinct vCenter storage policy names from the vCenters taking part in this region.
+	// A storage policy with the given name must exist in all the vCenters of this region otherwise
+	// it will not be accepted. Only the storage policies added to a region can be published to the
+	// tenant Virtual Datacenters.
+	StoragePolicies []string `json:"storagePolicies,omitempty"`
+}
+
+type Supervisor struct {
+	// The immutable identifier of this supervisor.
+	SupervisorID string `json:"supervisorId"`
+	// The name of this supervisor.
+	Name string `json:"name"`
+	// The Region this Supervisor is associated with. If null, it has not been associated with a Region.
+	Region *OpenApiReference `json:"region,omitempty"`
+	// The vCenter this supervisor is associated with.
+	VirtualCenter *OpenApiReference `json:"virtualCenter"`
+}
+
+type SupervisorZone struct {
+	ID string `json:"id"`
+	// The name of this zone.
+	Name string `json:"name"`
+	// The supervisor this zone belongs to.
+	Supervisor *OpenApiReference `json:"supervisor"`
+	// The vCenter this supervisor zone is associated with.
+	VirtualCenter *OpenApiReference `json:"virtualCenter"`
+
+	// TotalMemoryCapacityMiB - the memory capacity (in mebibytes) in this zone. Total memory
+	// consumption in this zone cannot cross this limit
+	TotalMemoryCapacityMiB int64 `json:"totalMemoryCapacityMiB"`
+	// TotalCPUCapacityMHz - the CPU capacity (in MHz) in this zone. Total CPU consumption in this
+	// zone cannot cross this limit
+	TotalCPUCapacityMHz int64 `json:"totalCPUCapacityMHz"`
+	// MemoryUsedMiB - total memory used (in mebibytes) in this zone
+	MemoryUsedMiB int64 `json:"memoryUsedMiB"`
+	// CpuUsedMHz - total CPU used (in MHz) in this zone
+	CpuUsedMHz int64 `json:"cpuUsedMHz"`
+
+	// region
+}

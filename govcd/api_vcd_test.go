@@ -144,10 +144,12 @@ type TestConfig struct {
 	Tm      struct {
 		RegionStoragePolicy string `yaml:"regionStoragePolicy"`
 
-		CreateVcenter   bool   `yaml:"createVcenter"`
-		VcenterUsername string `yaml:"vcenterUsername"`
-		VcenterPassword string `yaml:"vcenterPassword"`
-		VcenterUrl      string `yaml:"vcenterUrl"`
+		CreateVcenter         bool   `yaml:"createVcenter"`
+		VcenterUsername       string `yaml:"vcenterUsername"`
+		VcenterPassword       string `yaml:"vcenterPassword"`
+		VcenterUrl            string `yaml:"vcenterUrl"`
+		VcenterStorageProfile string `yaml:"vcenterStorageProfile"`
+		VcenterSupervisor     string `yaml:"vcenterSupervisor"`
 
 		CreateNsxtManager   bool   `yaml:"createNsxtManager"`
 		NsxtManagerUsername string `yaml:"nsxtManagerUsername"`
@@ -950,6 +952,26 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		err = edge.DisableAlb()
 		if err != nil {
 			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
+		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
+	case "OpenApiEntityVcenter":
+		vc, err := vcd.client.GetVCenterByName(entity.Name)
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
+			return
+		}
+
+		err = vc.Disable()
+		if err != nil {
+			vcd.infoCleanup("removeLeftoverEntries: [ERROR] Error disabling %s '%s': %s\n", entity.EntityType, entity.Name, err)
+			return
+		}
+
+		err = vc.Delete()
+		if err != nil {
+			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return
 		}
 
