@@ -30,11 +30,14 @@ type crudConfig struct {
 	// additionalHeader can be used to pass additional headers for API calls. One of the common purposes is to pass
 	// tenant context
 	additionalHeader map[string]string
+
+	// requiresTm is a flag to signify if this resource works only in TM
+	requiresTm bool
 }
 
 // validate should catch errors in consuming generic CRUD functions and should never produce false
 // positives.
-func (c crudConfig) validate() error {
+func (c crudConfig) validate(client *Client) error {
 	// crudConfig misconfiguration - we can panic so that developer catches the problem during
 	// development of this SDK
 	if c.entityLabel == "" {
@@ -59,6 +62,10 @@ func (c crudConfig) validate() error {
 		}
 	}
 
+	if c.requiresTm && !client.IsTm() {
+		return fmt.Errorf("this entity requires TM")
+	}
+
 	return nil
 }
 
@@ -68,7 +75,7 @@ func (c crudConfig) validate() error {
 // * `c` holds settings for performing API call
 // * `innerConfig` is the new entity type
 func createInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I, error) {
-	if err := c.validate(); err != nil {
+	if err := c.validate(client); err != nil {
 		return nil, err
 	}
 
@@ -113,7 +120,7 @@ func updateInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I,
 // * `c` holds settings for performing API call
 // * `innerConfig` is the new entity type
 func updateInnerEntityWithHeaders[I any](client *Client, c crudConfig, innerConfig *I) (*I, http.Header, error) {
-	if err := c.validate(); err != nil {
+	if err := c.validate(client); err != nil {
 		return nil, nil, err
 	}
 
@@ -158,7 +165,7 @@ func getInnerEntity[I any](client *Client, c crudConfig) (*I, error) {
 // * `client` is a *Client
 // * `c` holds settings for performing API call
 func getInnerEntityWithHeaders[I any](client *Client, c crudConfig) (*I, http.Header, error) {
-	if err := c.validate(); err != nil {
+	if err := c.validate(client); err != nil {
 		return nil, nil, err
 	}
 
@@ -193,7 +200,7 @@ func getInnerEntityWithHeaders[I any](client *Client, c crudConfig) (*I, http.He
 // * `client` is a *Client
 // * `c` holds settings for performing API call
 func getAllInnerEntities[I any](client *Client, c crudConfig) ([]*I, error) {
-	if err := c.validate(); err != nil {
+	if err := c.validate(client); err != nil {
 		return nil, err
 	}
 
@@ -228,7 +235,7 @@ func getAllInnerEntities[I any](client *Client, c crudConfig) ([]*I, error) {
 // * `client` is a *Client
 // * `c` holds settings for performing API call
 func deleteEntityById(client *Client, c crudConfig) error {
-	if err := c.validate(); err != nil {
+	if err := c.validate(client); err != nil {
 		return err
 	}
 

@@ -453,7 +453,7 @@ const (
 	OpenApiEndpointRdeEntitiesBehaviorsInvocations    = "entities/%s/behaviors/%s/invocations"
 	OpenApiEndpointExternalEndpoints                  = "externalEndpoints/"
 	OpenApiEndpointApiFilters                         = "apiFilters/"
-	OpenApiEndpointVirtualCenters                     = "virtualCenters"
+	OpenApiEndpointVirtualCenters                     = "virtualCenters/"
 	OpenApiEndpointResourcePools                      = "virtualCenters/%s/resourcePools/browse"    // '%s' is vCenter ID
 	OpenApiEndpointResourcePoolsBrowseAll             = "virtualCenters/%s/resourcePools/browseAll" // '%s' is vCenter ID
 	OpenApiEndpointResourcePoolHardware               = "virtualCenters/%s/resourcePools/%s/hwv"    // first '%s' is vCenter ID. Second one is Resource Pool MoRef
@@ -469,6 +469,7 @@ const (
 	OpenApiEndpointExtensionsUiTenantsUnpublish       = "extensions/ui/%s/tenants/unpublish"
 	OpenApiEndpointImportableTransportZones           = "nsxTResources/importableTransportZones"
 	OpenApiEndpointVCenterDistributedSwitch           = "virtualCenters/resources/dvSwitches"
+	OpenApiEndpointTrustedCertificates                = "ssl/trustedCertificates/"
 
 	OpenApiEndpointNsxtSegmentProfileTemplates              = "segmentProfileTemplates/"
 	OpenApiEndpointNsxtGlobalDefaultSegmentProfileTemplates = "segmentProfileTemplates/default"
@@ -522,6 +523,7 @@ const (
 	OpenApiEndpointRegionStoragePolicies = "regionStoragePolicies/"
 	OpenApiEndpointContentLibraries      = "contentLibraries/"
 	OpenApiEndpointContentLibraryItems   = "contentLibraryItems/"
+	OpenApiEndpointNsxManagers           = "nsxManagers/"
 )
 
 // Header keys to run operations in tenant context

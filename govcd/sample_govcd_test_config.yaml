@@ -302,3 +302,11 @@ solutionAddOn:
 tm:
   # An existing Region Storage Policy to create Content Libraries, Regions...
   regionStoragePolicy: "vSAN Default Storage Policy"
+  createVcenter: true # boolean value if the vCenter test should be executed
+  vcenterUsername: username for vCenter auth
+  vcenterPassword: password for vCenter auth
+  vcenterUrl: https://HOST:443
+  createNsxtManager: true # boolean value if the NSX-T Manager test should be executed
+  nsxtManagerUsername: username for NSX-T Manager
+  nsxtManagerPassword: password for NSX-T Manager
+  nsxtManagerUrl: https://HOST
