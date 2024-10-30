@@ -136,7 +136,6 @@ type Region struct {
 	// A Region needs to be ready and enabled to be usable.
 	Status string `json:"status,omitempty"`
 	// A list of supervisors in a region
-
 	Supervisors []OpenApiReference `json:"supervisors,omitempty"`
 	// A list of distinct vCenter storage policy names from the vCenters taking part in this region.
 	// A storage policy with the given name must exist in all the vCenters of this region otherwise
@@ -145,7 +144,7 @@ type Region struct {
 	StoragePolicies []string `json:"storagePolicies,omitempty"`
 }
 
-// Supervisor represents a structure
+// Supervisor represents a single Supervisor within vCenter
 type Supervisor struct {
 	// The immutable identifier of this supervisor.
 	SupervisorID string `json:"supervisorId"`
@@ -166,7 +165,6 @@ type SupervisorZone struct {
 	Supervisor *OpenApiReference `json:"supervisor"`
 	// The vCenter this supervisor zone is associated with.
 	VirtualCenter *OpenApiReference `json:"virtualCenter"`
-
 	// TotalMemoryCapacityMiB - the memory capacity (in mebibytes) in this zone. Total memory
 	// consumption in this zone cannot cross this limit
 	TotalMemoryCapacityMiB int64 `json:"totalMemoryCapacityMiB"`
@@ -177,7 +175,6 @@ type SupervisorZone struct {
 	MemoryUsedMiB int64 `json:"memoryUsedMiB"`
 	// CpuUsedMHz - total CPU used (in MHz) in this zone
 	CpuUsedMHz int64 `json:"cpuUsedMHz"`
-
 	// Region contains a reference to parent region
 	Region *OpenApiReference `json:"region"`
 }
