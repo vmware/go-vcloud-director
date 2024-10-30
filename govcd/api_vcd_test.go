@@ -150,6 +150,7 @@ type TestConfig struct {
 		VcenterUrl            string `yaml:"vcenterUrl"`
 		VcenterStorageProfile string `yaml:"vcenterStorageProfile"`
 		VcenterSupervisor     string `yaml:"vcenterSupervisor"`
+		VcenterSupervisorZone string `yaml:"vcenterSupervisorZone"`
 
 		CreateNsxtManager   bool   `yaml:"createNsxtManager"`
 		NsxtManagerUsername string `yaml:"nsxtManagerUsername"`

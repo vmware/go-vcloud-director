@@ -17,16 +17,7 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	// TODO - remove from here
-	// rCleanup, err := vcd.client.GetRegionByName(check.TestName())
-	// check.Assert(err, IsNil)
-	// check.Assert(rCleanup, NotNil)
-	// err = rCleanup.Delete()
-	// check.Assert(err, IsNil)
-	// check.Assert(true, Equals, false)
-	// TODO - remove until here
-
-	vc, nsxtManager := getOrCreateVcAndNsxtManager(vcd, check)
+	vc, vcCreated, nsxtManager, nsxtManagerCreated := getOrCreateVcAndNsxtManager(vcd, check)
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
 
@@ -85,10 +76,24 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
 
+	// Cleanup
+	if vcCreated {
+		err = vc.Disable()
+		check.Assert(err, IsNil)
+		err = vc.Delete()
+		check.Assert(err, IsNil)
+	}
+
+	if nsxtManagerCreated {
+		err = nsxtManager.Delete()
+		check.Assert(err, IsNil)
+	}
 }
 
 // getOrCreateVcAndNsxtManager will check configuration file
-func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, *NsxtManagerOpenApi) {
+func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, bool, *NsxtManagerOpenApi, bool) {
+	vCenterCreated := false
+	nsxtManagerCreated := false
 	vc, err := vcd.client.GetVCenterByUrl(vcd.config.Tm.VcenterUrl)
 	if ContainsNotFound(err) && !vcd.config.Tm.CreateVcenter {
 		check.Skip("vCenter is not configured and configuration is not allowed in config file")
@@ -115,6 +120,7 @@ func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, *NsxtManager
 		check.Assert(vc, NotNil)
 		PrependToCleanupList(vcCfg.Name, "OpenApiEntityVcenter", check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+vc.VSphereVCenter.VcId)
 
+		vCenterCreated = true
 		// Refresh connected vCenter to be sure that all artifacts are loaded
 		printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
 		err = vc.Refresh()
@@ -148,7 +154,8 @@ func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, *NsxtManager
 		check.Assert(err, IsNil)
 		check.Assert(nsxtManager, NotNil)
 		PrependToCleanupListOpenApi(nsxtManager.NsxtManagerOpenApi.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointNsxManagers+nsxtManager.NsxtManagerOpenApi.ID)
+		nsxtManagerCreated = true
 	}
 
-	return vc, nsxtManager
+	return vc, vCenterCreated, nsxtManager, nsxtManagerCreated
 }

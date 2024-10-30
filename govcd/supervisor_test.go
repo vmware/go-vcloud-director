@@ -14,7 +14,7 @@ func (vcd *TestVCD) Test_TmSupervisor(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	vc, _ := getOrCreateVcAndNsxtManager(vcd, check)
+	vc, vcCreated, nsxtManager, nsxtManagerCreated := getOrCreateVcAndNsxtManager(vcd, check)
 
 	allSupervisors, err := vcd.client.GetAllSupervisors(nil)
 	check.Assert(err, IsNil)
@@ -52,4 +52,17 @@ func (vcd *TestVCD) Test_TmSupervisor(check *C) {
 	check.Assert(zoneByName, NotNil)
 
 	check.Assert(zoneById.SupervisorZone, DeepEquals, zoneByName.SupervisorZone)
+
+	// Cleanup
+	if vcCreated {
+		err = vc.Disable()
+		check.Assert(err, IsNil)
+		err = vc.Delete()
+		check.Assert(err, IsNil)
+	}
+
+	if nsxtManagerCreated {
+		err = nsxtManager.Delete()
+		check.Assert(err, IsNil)
+	}
 }
