@@ -118,16 +118,16 @@ type Region struct {
 	ID string `json:"id,omitempty"`
 	// The name of the region. It must follow RFC 1123 Label Names to conform with Kubernetes standards.
 	Name string `json:"name"`
+	// The description of the region.
+	Description string `json:"description"`
 	// The NSX manager for the region.
 	NsxManager *OpenApiReference `json:"nsxManager"`
 	// Total CPU resources in MHz available to this Region.
 	CPUCapacityMHz int `json:"cpuCapacityMHz,omitempty"`
 	// Total CPU reservation resources in MHz available to this Region.
 	CPUReservationCapacityMHz int `json:"cpuReservationCapacityMHz,omitempty"`
-	// The description of the region.
-	Description string `json:"description"`
 	// Whether the region is enabled or not.
-	IsEnabled bool `json:"isEnabled,omitempty"`
+	IsEnabled bool `json:"isEnabled"`
 	// Total memory resources (in mebibytes) available to this Region.
 	MemoryCapacityMiB int `json:"memoryCapacityMiB,omitempty"`
 	// Total memory reservation resources (in mebibytes) available to this Region.

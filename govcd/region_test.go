@@ -120,7 +120,7 @@ func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, *NsxtManager
 		err = vc.Refresh()
 		check.Assert(err, IsNil)
 
-		printVerbose("# Refreshing Storage Profiles %s\n", vc.VSphereVCenter.Url)
+		printVerbose("# Refreshing Storage Profiles in vCenter %s\n", vc.VSphereVCenter.Url)
 		err = vc.RefreshStorageProfiles()
 		check.Assert(err, IsNil)
 	}
