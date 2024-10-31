@@ -78,6 +78,12 @@ func (cl *ContentLibrary) GetContentLibraryItemById(id string) (*ContentLibraryI
 	return getOuterEntity(&cl.vcdClient.Client, outerType, c)
 }
 
+// Update updates an existing Content Library Item with the given configuration
+// TODO: TM: Not supported in UI yet
+func (o *ContentLibraryItem) Update(contentLibraryItemConfig *types.ContentLibraryItem) (*ContentLibraryItem, error) {
+	return nil, fmt.Errorf("not supported")
+}
+
 // Delete deletes the receiver Content Library Item
 func (cli *ContentLibraryItem) Delete() error {
 	cli.ContentLibraryItem = nil
