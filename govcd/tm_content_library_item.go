@@ -28,6 +28,23 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 
 // CreateContentLibraryItem creates a Content Library Item
 func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem) (*ContentLibraryItem, error) {
+	// POST https:///tm/cloudapi/vcf/contentLibraryItems
+	//application/json;version=41.0.0-alpha
+	//{"name":"test-iso","description":"","contentLibrary":{"id":"urn:vcloud:contentLibrary:2e3ea73c-af69-4ae2-9a7a-bdeb3f213e61"}}
+	//
+	//GET https:///tm/cloudapi/vcf/contentLibraryItems/urn:vcloud:contentLibraryItem:28e4fdc2-bb0d-48b9-95fa-07741b6c95c3/files?page=1&pageSize=128&links=true
+	//{
+	//            "expectedSizeBytes": -1,
+	//            "bytesTransferred": 0,
+	//            "name": "descriptor.ovf",
+	//            "transferUrl": "https:///transfer/3b71f71d-c819-42a5-8e85-c520c0892323/descriptor.ovf"
+	//        }
+	//
+	//PUT https://tm/transfer/3b71f71d-c819-42a5-8e85-c520c0892323/descriptor.ovf
+	//Payload is OVF XML
+	//
+	//PUT https:/tm/transfer/3b71f71d-c819-42a5-8e85-c520c0892323/photon-ova-disk1.vmdk
+	//Payload is OVA
 	return nil, nil
 }
 
