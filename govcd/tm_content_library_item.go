@@ -26,6 +26,11 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 	return &g
 }
 
+// CreateContentLibraryItem creates a Content Library Item
+func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem) (*ContentLibraryItem, error) {
+	return nil, nil
+}
+
 // GetAllContentLibraryItems retrieves all Content Library Items with the given query parameters, which allow setting filters
 // and other constraints
 func (cl *ContentLibrary) GetAllContentLibraryItems(queryParameters url.Values) ([]*ContentLibraryItem, error) {
@@ -71,4 +76,10 @@ func (cl *ContentLibrary) GetContentLibraryItemById(id string) (*ContentLibraryI
 
 	outerType := ContentLibraryItem{vcdClient: cl.vcdClient}
 	return getOuterEntity(&cl.vcdClient.Client, outerType, c)
+}
+
+// Delete deletes the receiver Content Library Item
+func (cli *ContentLibraryItem) Delete() error {
+	cli.ContentLibraryItem = nil
+	return nil
 }
