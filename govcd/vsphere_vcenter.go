@@ -146,7 +146,7 @@ func (v VCenter) GetVimServerUrl() (string, error) {
 // Refresh triggers a refresh operation on vCenter that syncs up vCenter components such as
 // supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
-func (v VCenter) Refresh() error {
+func (v *VCenter) Refresh() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refresh")
 	if err != nil {
 		return fmt.Errorf("error building refresh path: %s", err)
@@ -173,7 +173,7 @@ func (v VCenter) Refresh() error {
 // RefreshStorageProfiles triggers a refresh operation on vCenter that syncs up vCenter components
 // such as supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
-func (v VCenter) RefreshStorageProfiles() error {
+func (v *VCenter) RefreshStorageProfiles() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refreshStorageProfiles")
 	if err != nil {
 		return fmt.Errorf("error building storage policy refresh path: %s", err)

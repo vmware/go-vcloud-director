@@ -70,14 +70,14 @@ func (vcdClient *VCDClient) GetSupervisorByName(name string) (*Supervisor, error
 }
 
 // GetAllSupervisors returns all Supervisors that are available in this vCenter
-func (v VCenter) GetAllSupervisors(queryParameters url.Values) ([]*Supervisor, error) {
+func (v *VCenter) GetAllSupervisors(queryParameters url.Values) ([]*Supervisor, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 	queryParams = queryParameterFilterAnd(fmt.Sprintf("virtualCenter.id==%s", v.VSphereVCenter.VcId), queryParams)
 	return v.client.GetAllSupervisors(queryParams)
 }
 
 // GetSupervisorByName retrieves Supervisor by name in a given vCenter server
-func (v VCenter) GetSupervisorByName(name string) (*Supervisor, error) {
+func (v *VCenter) GetSupervisorByName(name string) (*Supervisor, error) {
 	if name == "" {
 		return nil, fmt.Errorf("name is required")
 	}
