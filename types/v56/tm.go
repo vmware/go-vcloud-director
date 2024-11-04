@@ -1,5 +1,17 @@
 package types
 
+// BackingObjectRef references entities which are external to Tenant Manager and do not have a URN identifier
+type BackingObjectRef struct {
+	// The id of the entity
+	Id string `json:"id,omitempty"`
+	// The owner of the backing object
+	ManagingOwnerRef *OpenApiReference `json:"managingOwnerRef,omitempty"`
+	// The name of the entity
+	Name string `json:"name,omitempty"`
+	// Type of the entity
+	Type string `json:"type,omitempty"`
+}
+
 // RegionStoragePolicy defines a Region storage policy
 type RegionStoragePolicy struct {
 	Id string `json:"id,omitempty"`
@@ -111,4 +123,27 @@ type TmOrg struct {
 	UserCount int `json:"userCount,omitempty"`
 	// VappCount contains vApp count in the Org
 	VappCount int `json:"vappCount,omitempty"`
+}
+
+// VirtualPrivateCloud describes a networking Virtual Private Cloud
+type VirtualPrivateCloud struct {
+	// Display name for the Virtual Private Cloud
+	Name string `json:"name"`
+	// The VDC this Virtual Private Cloud belongs to
+	VdcRef OpenApiReference `json:"vdcRef"`
+	// The backing information for this Virtual Private Cloud. This property is read-only
+	BackingRef *BackingObjectRef `json:"backingRef,omitempty"`
+	// Description for the Virtual Private Cloud
+	Description string `json:"description,omitempty"`
+	// The identifier of the Virtual Private Cloud in URN format
+	Id string `json:"id,omitempty"`
+	// The organization this Virtual Private Cloud belongs to. This property is read-only
+	OrgRef *OpenApiReference `json:"orgRef,omitempty"`
+	// Represents current status of the networking entity. Possible values are:
+	// - PENDING - Desired entity configuration has been received by system and is pending realization.
+	// - CONFIGURING - The system is in process of realizing the entity.
+	// - REALIZED - The entity is successfully realized in the system.
+	// - REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
+	// - UNKNOWN - Current state of entity is unknown.
+	Status string `json:"status"`
 }
