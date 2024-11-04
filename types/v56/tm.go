@@ -178,3 +178,38 @@ type SupervisorZone struct {
 	// Region contains a reference to parent region
 	Region *OpenApiReference `json:"region"`
 }
+
+// TmVdc defines a structure for creating VDCs using OpenAPI endpoint
+type TmVdc struct {
+	ID string `json:"id,omitempty"`
+	// Name of the VDC
+	Name string `json:"name"`
+	// Description of the VDC
+	Description string `json:"description"`
+	// IsEnabled defines if the VDC is enabled
+	IsEnabled bool `json:"isEnabled"`
+	// Org reference
+	Org *OpenApiReference `json:"org"`
+	// Region reference
+	Region *OpenApiReference `json:"region"`
+	// Status contains creation status of the VDC
+	Status string `json:"status"`
+	// Supervisors contain references to Supervisors
+	Supervisors []OpenApiReference `json:"supervisors,omitempty"`
+	// ZoneResourceAllocation contain references of each zone within Supervisor
+	ZoneResourceAllocation []*TmVdcZoneResourceAllocation `json:"zoneResourceAllocation,omitempty"`
+}
+
+// TmVdcZoneResourceAllocation defines resource allocation for a single zone
+type TmVdcZoneResourceAllocation struct {
+	ResourceAllocation TmVdcResourceAllocation `json:"resourceAllocation"`
+	Zone               *OpenApiReference       `json:"zone"`
+}
+
+// TmVdcResourceAllocation defines compute resources of single VDC
+type TmVdcResourceAllocation struct {
+	CPULimitMHz          int `json:"cpuLimitMHz"`
+	CPUReservationMHz    int `json:"cpuReservationMHz"`
+	MemoryLimitMiB       int `json:"memoryLimitMiB"`
+	MemoryReservationMiB int `json:"memoryReservationMiB"`
+}
