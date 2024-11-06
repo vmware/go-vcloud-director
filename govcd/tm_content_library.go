@@ -16,7 +16,7 @@ const labelContentLibrary = "Content Library"
 // ContentLibrary defines the Content Library data structure
 type ContentLibrary struct {
 	ContentLibrary *types.ContentLibrary
-	vcdClient      *VCDClient
+	client         *Client
 }
 
 // wrap is a hidden helper that facilitates the usage of a generic CRUD function
@@ -37,7 +37,7 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 		entityLabel: labelContentLibrary,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 	}
-	outerType := ContentLibrary{vcdClient: vcdClient}
+	outerType := ContentLibrary{client: &vcdClient.Client}
 	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
 	//        - Problem: The returned Task references a Catalog instead of a ContentLibrary, hence retrieving the resulting object
 	//                from finished Task fails.
@@ -64,7 +64,10 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 // GetAllContentLibraries retrieves all Content Libraries with the given query parameters, which allow setting filters
 // and other constraints
 func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values) ([]*ContentLibrary, error) {
-	if !vcdClient.Client.IsTm() {
+	return getAllContentLibraries(&vcdClient.Client, queryParameters)
+}
+func getAllContentLibraries(client *Client, queryParameters url.Values) ([]*ContentLibrary, error) {
+	if !client.IsTm() {
 		return nil, fmt.Errorf("retrieving Content Libraries is only supported in TM")
 	}
 	c := crudConfig{
@@ -73,8 +76,8 @@ func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values) (
 		queryParameters: queryParameters,
 	}
 
-	outerType := ContentLibrary{vcdClient: vcdClient}
-	return getAllOuterEntities(&vcdClient.Client, outerType, c)
+	outerType := ContentLibrary{client: client}
+	return getAllOuterEntities(client, outerType, c)
 }
 
 // GetContentLibraryByName retrieves a Content Library with the given name
@@ -100,7 +103,7 @@ func (vcdClient *VCDClient) GetContentLibraryByName(name string) (*ContentLibrar
 		return nil, err
 	}
 
-	return vcdClient.GetContentLibraryById(singleEntity.ContentLibrary.Id)
+	return vcdClient.GetContentLibraryById(singleEntity.ContentLibrary.ID)
 }
 
 // GetContentLibraryById retrieves a Content Library with the given ID
@@ -115,7 +118,7 @@ func (vcdClient *VCDClient) GetContentLibraryById(id string) (*ContentLibrary, e
 		endpointParams: []string{id},
 	}
 
-	outerType := ContentLibrary{vcdClient: vcdClient}
+	outerType := ContentLibrary{client: &vcdClient.Client}
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
@@ -130,7 +133,7 @@ func (o *ContentLibrary) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelContentLibrary,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
-		endpointParams: []string{o.ContentLibrary.Id},
+		endpointParams: []string{o.ContentLibrary.ID},
 	}
-	return deleteEntityById(&o.vcdClient.Client, c)
+	return deleteEntityById(o.client, c)
 }

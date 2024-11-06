@@ -28,7 +28,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 
 	clDefinition := &types.ContentLibrary{
 		Name:            check.TestName(),
-		StoragePolicies: []types.OpenApiReference{{ID: rsp.RegionStoragePolicy.Id}},
+		StoragePolicies: []types.OpenApiReference{{ID: rsp.RegionStoragePolicy.ID}},
 		AutoAttach:      true, // TODO: TM: Test with false, still does not work
 		Description:     check.TestName(),
 	}
@@ -36,18 +36,18 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	createdCl, err := vcd.client.CreateContentLibrary(clDefinition)
 	check.Assert(err, IsNil)
 	check.Assert(createdCl, NotNil)
-	AddToCleanupListOpenApi(createdCl.ContentLibrary.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraries+createdCl.ContentLibrary.Id)
+	AddToCleanupListOpenApi(createdCl.ContentLibrary.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraries+createdCl.ContentLibrary.ID)
 
 	// Defer deletion for a correct cleanup
 	defer func() {
 		err = createdCl.Delete()
 		check.Assert(err, IsNil)
 	}()
-	check.Assert(isUrn(createdCl.ContentLibrary.Id), Equals, true)
+	check.Assert(isUrn(createdCl.ContentLibrary.ID), Equals, true)
 	check.Assert(createdCl.ContentLibrary.Name, Equals, clDefinition.Name)
 	check.Assert(createdCl.ContentLibrary.Description, Equals, clDefinition.Description)
 	check.Assert(len(createdCl.ContentLibrary.StoragePolicies), Equals, 1)
-	check.Assert(createdCl.ContentLibrary.StoragePolicies[0].ID, Equals, rsp.RegionStoragePolicy.Id)
+	check.Assert(createdCl.ContentLibrary.StoragePolicies[0].ID, Equals, rsp.RegionStoragePolicy.ID)
 	check.Assert(createdCl.ContentLibrary.AutoAttach, Equals, clDefinition.AutoAttach)
 	// "Computed" values
 	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // TODO: TM: Still not used in UI
@@ -63,7 +63,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(cls), Equals, existingContentLibraryCount+1)
 	for _, l := range cls {
-		if l.ContentLibrary.Id == createdCl.ContentLibrary.Id {
+		if l.ContentLibrary.ID == createdCl.ContentLibrary.ID {
 			check.Assert(*l.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
 			break
 		}
@@ -74,7 +74,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(cl, NotNil)
 	check.Assert(*cl.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
 
-	cl, err = vcd.client.GetContentLibraryById(cl.ContentLibrary.Id)
+	cl, err = vcd.client.GetContentLibraryById(cl.ContentLibrary.ID)
 	check.Assert(err, IsNil)
 	check.Assert(cl, NotNil)
 	check.Assert(*cl.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)

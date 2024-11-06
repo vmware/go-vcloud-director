@@ -2,7 +2,7 @@ package types
 
 // RegionStoragePolicy defines a Region storage policy
 type RegionStoragePolicy struct {
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Name for the policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
 	Name string `json:"name"`
 	// The Region that this policy belongs to
@@ -34,7 +34,7 @@ type ContentLibrary struct {
 	// The description of the Content Library
 	Description string `json:"description,omitempty"`
 	// A unique identifier for the Content library
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Whether this Content Library is shared with other organizations
 	IsShared bool `json:"isShared,omitempty"`
 	// Whether this Content Library is subscribed from an external published library
@@ -67,13 +67,15 @@ type ContentLibraryItem struct {
 	ContentLibrary OpenApiReference `json:"contentLibrary"`
 	// The name of the content library item
 	Name string `json:"name"`
+	// The type of content library item. This field is only required for content library upload
+	ItemType string `json:"itemType"`
 
 	// The ISO-8601 timestamp representing when this item was created
 	CreationDate string `json:"creationDate,omitempty"`
 	// The description of the content library item
 	Description string `json:"description,omitempty"`
 	// A unique identifier for the library item
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Virtual Machine Identifier (VMI) of the item. This is a ReadOnly field
 	ImageIdentifier string `json:"imageIdentifier,omitempty"`
 	// Whether this item is published
@@ -88,6 +90,14 @@ type ContentLibraryItem struct {
 	Status string `json:"status,omitempty"`
 	// The version of this item. For a subscribed library, this version is same as in publisher library
 	Version int `json:"version,omitempty"`
+}
+
+// ContentLibraryItemFile specifies a Content Library Item file for uploads
+type ContentLibraryItemFile struct {
+	ExpectedSizeBytes int    `json:"expectedSizeBytes"`
+	BytesTransferred  int    `json:"bytesTransferred"`
+	Name              string `json:"name"`
+	TransferUrl       string `json:"transferUrl"`
 }
 
 // TmOrg defines structure for creating TM Organization

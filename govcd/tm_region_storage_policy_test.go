@@ -23,7 +23,7 @@ func (vcd *TestVCD) Test_RegionStoragePolicy(check *C) {
 		check.Skip("didn't find any Region Storage Policy")
 	}
 
-	rspById, err := vcd.client.GetRegionStoragePolicyById(allRegionStoragePolicies[0].RegionStoragePolicy.Id)
+	rspById, err := vcd.client.GetRegionStoragePolicyById(allRegionStoragePolicies[0].RegionStoragePolicy.ID)
 	check.Assert(err, IsNil)
 	check.Assert(*rspById.RegionStoragePolicy, DeepEquals, *allRegionStoragePolicies[0].RegionStoragePolicy)
 
