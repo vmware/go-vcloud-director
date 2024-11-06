@@ -2,7 +2,7 @@ package types
 
 // RegionStoragePolicy defines a Region storage policy
 type RegionStoragePolicy struct {
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Name for the policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
 	Name string `json:"name"`
 	// The Region that this policy belongs to
@@ -34,7 +34,7 @@ type ContentLibrary struct {
 	// The description of the Content Library
 	Description string `json:"description,omitempty"`
 	// A unique identifier for the Content library
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 	// Whether this Content Library is shared with other organizations
 	IsShared bool `json:"isShared,omitempty"`
 	// Whether this Content Library is subscribed from an external published library

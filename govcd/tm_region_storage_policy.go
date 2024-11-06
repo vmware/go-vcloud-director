@@ -16,7 +16,7 @@ const labelRegionStoragePolicy = "Region Storage Policy"
 // RegionStoragePolicy defines the Region Storage Policy data structure
 type RegionStoragePolicy struct {
 	RegionStoragePolicy *types.RegionStoragePolicy
-	vcdClient           *VCDClient
+	client              *Client
 }
 
 // wrap is a hidden helper that facilitates the usage of a generic CRUD function
@@ -27,29 +27,32 @@ func (g RegionStoragePolicy) wrap(inner *types.RegionStoragePolicy) *RegionStora
 	return &g
 }
 
-// GetAllRegionStoragePolicies retrieves all Region Storage Policies with the given query parameters, which allow setting filters
+// GetAllStoragePolicies retrieves all Region Storage Policies with the given query parameters, which allow setting filters
 // and other constraints
-func (vcdClient *VCDClient) GetAllRegionStoragePolicies(queryParameters url.Values) ([]*RegionStoragePolicy, error) {
+func (r *Region) GetAllStoragePolicies(queryParameters url.Values) ([]*RegionStoragePolicy, error) {
+	return getAllStoragePolicies(r, queryParameters)
+}
+func getAllStoragePolicies(r *Region, queryParameters url.Values) ([]*RegionStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:     labelRegionStoragePolicy,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies,
 		queryParameters: queryParameters,
 	}
 
-	outerType := RegionStoragePolicy{vcdClient: vcdClient}
-	return getAllOuterEntities(&vcdClient.Client, outerType, c)
+	outerType := RegionStoragePolicy{client: &r.vcdClient.Client}
+	return getAllOuterEntities(&r.vcdClient.Client, outerType, c)
 }
 
-// GetRegionStoragePolicyByName retrieves a Region Storage Policy by name
-func (vcdClient *VCDClient) GetRegionStoragePolicyByName(name string) (*RegionStoragePolicy, error) {
+// GetStoragePolicyByName retrieves a Region Storage Policy by name
+func (r *Region) GetStoragePolicyByName(name string) (*RegionStoragePolicy, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelRegionStoragePolicy)
 	}
 
 	queryParams := url.Values{}
-	queryParams.Add("filter", "name=="+name)
+	queryParams.Add("filter", fmt.Sprintf("(name==%s;region.id==%s)", name, r.Region.ID))
 
-	filteredEntities, err := vcdClient.GetAllRegionStoragePolicies(queryParams)
+	filteredEntities, err := getAllStoragePolicies(r, queryParams)
 	if err != nil {
 		return nil, err
 	}
@@ -64,17 +67,26 @@ func (vcdClient *VCDClient) GetRegionStoragePolicyByName(name string) (*RegionSt
 	//	return nil, err
 	//}
 
-	return vcdClient.GetRegionStoragePolicyById(singleEntity.RegionStoragePolicy.Id)
+	return getStoragePolicyById(&r.vcdClient.Client, singleEntity.RegionStoragePolicy.ID)
+}
+
+// GetStoragePolicyById retrieves a Region Storage Policy by ID
+func (r *Region) GetStoragePolicyById(id string) (*RegionStoragePolicy, error) {
+	return getStoragePolicyById(&r.vcdClient.Client, id)
 }
 
 // GetRegionStoragePolicyById retrieves a Region Storage Policy by ID
 func (vcdClient *VCDClient) GetRegionStoragePolicyById(id string) (*RegionStoragePolicy, error) {
+	return getStoragePolicyById(&vcdClient.Client, id)
+}
+
+func getStoragePolicyById(client *Client, id string) (*RegionStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:    labelRegionStoragePolicy,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies,
 		endpointParams: []string{id},
 	}
 
-	outerType := RegionStoragePolicy{vcdClient: vcdClient}
-	return getOuterEntity(&vcdClient.Client, outerType, c)
+	outerType := RegionStoragePolicy{client: client}
+	return getOuterEntity(client, outerType, c)
 }

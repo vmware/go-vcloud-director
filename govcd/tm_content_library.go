@@ -100,7 +100,7 @@ func (vcdClient *VCDClient) GetContentLibraryByName(name string) (*ContentLibrar
 		return nil, err
 	}
 
-	return vcdClient.GetContentLibraryById(singleEntity.ContentLibrary.Id)
+	return vcdClient.GetContentLibraryById(singleEntity.ContentLibrary.ID)
 }
 
 // GetContentLibraryById retrieves a Content Library with the given ID
@@ -130,7 +130,7 @@ func (o *ContentLibrary) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelContentLibrary,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
-		endpointParams: []string{o.ContentLibrary.Id},
+		endpointParams: []string{o.ContentLibrary.ID},
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
