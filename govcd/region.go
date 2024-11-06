@@ -32,7 +32,7 @@ func (vcdClient *VCDClient) CreateRegion(config *types.Region) (*Region, error) 
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
-// GetAllRegions
+// GetAllRegions retrieves all Regions with an optional query filter
 func (vcdClient *VCDClient) GetAllRegions(queryParameters url.Values) ([]*Region, error) {
 	c := crudConfig{
 		entityLabel:     labelRegion,

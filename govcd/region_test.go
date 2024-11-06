@@ -90,7 +90,9 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	}
 }
 
-// getOrCreateVcAndNsxtManager will check configuration file
+// getOrCreateVcAndNsxtManager will check configuration file and create vCenter and NSX-T Manager if
+// stated in the 'createVcenter' and 'createNsxtManager' properties and they are not present in TM.
+// Otherwise it just retrieves them
 func getOrCreateVcAndNsxtManager(vcd *TestVCD, check *C) (*VCenter, bool, *NsxtManagerOpenApi, bool) {
 	vCenterCreated := false
 	nsxtManagerCreated := false
