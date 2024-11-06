@@ -32,7 +32,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 
 	clDefinition := &types.ContentLibrary{
 		Name:           check.TestName(),
-		StorageClasses: []*types.OpenApiReference{{ID: rsp.RegionStoragePolicy.ID}},
+		StorageClasses: []types.OpenApiReference{{ID: rsp.RegionStoragePolicy.ID}},
 		AutoAttach:     true, // TODO: TM: Test with false, still does not work
 		Description:    check.TestName(),
 	}

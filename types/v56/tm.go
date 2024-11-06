@@ -22,7 +22,7 @@ type ContentLibrary struct {
 	// The name of the Content Library
 	Name string `json:"name"`
 	// A collection of storage class references used by this Content Library
-	StorageClasses []*OpenApiReference `json:"storageClasses,omitempty"`
+	StorageClasses OpenApiReferences `json:"storageClasses,omitempty"`
 	// For Tenant Content Libraries this field represents whether this Content Library should be automatically attached to
 	// all current and future namespaces in the tenant organization. If no value is supplied during Tenant Content Library
 	// creation then this field will default to true. If a value of false is supplied, then this Tenant Content Library will
