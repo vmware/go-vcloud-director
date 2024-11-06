@@ -82,6 +82,34 @@ func (vcdClient *VCDClient) GetNsxtManagerOpenApiByName(name string) (*NsxtManag
 	return singleEntity, nil
 }
 
+// GetNsxtManagerOpenApiByName retrieves NSX-T Manager by name
+func (vcdClient *VCDClient) GetNsxtManagerOpenApiByUrl(nsxtManagerUrl string) (*NsxtManagerOpenApi, error) {
+	if nsxtManagerUrl == "" {
+		return nil, fmt.Errorf("%s lookup requires URL", labelNsxtManagerOpenApi)
+	}
+
+	// API filtering by URL is not supported so relying on local filtering
+	nsxtManagers, err := vcdClient.GetAllNsxtManagersOpenApi(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredEntities := make([]*NsxtManagerOpenApi, 0)
+	for _, nsxtManager := range nsxtManagers {
+		if nsxtManager.NsxtManagerOpenApi.Url == nsxtManagerUrl {
+			filteredEntities = append(filteredEntities, nsxtManager)
+		}
+
+	}
+
+	singleEntity, err := oneOrError("Url", nsxtManagerUrl, filteredEntities)
+	if err != nil {
+		return nil, err
+	}
+
+	return singleEntity, nil
+}
+
 // Update NSX-T Manager configuration
 func (t *NsxtManagerOpenApi) Update(TmNsxtManagerConfig *types.NsxtManagerOpenApi) (*NsxtManagerOpenApi, error) {
 	c := crudConfig{
