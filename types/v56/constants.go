@@ -520,10 +520,11 @@ const (
 	// OpenAPI Org
 	OpenApiEndpointOrgs = "orgs/"
 
-	OpenApiEndpointRegionStoragePolicies = "regionStoragePolicies/"
-	OpenApiEndpointContentLibraries      = "contentLibraries/"
-	OpenApiEndpointContentLibraryItems   = "contentLibraryItems/"
-	OpenApiEndpointNsxManagers           = "nsxManagers/"
+	OpenApiEndpointRegionStoragePolicies   = "regionStoragePolicies/"
+	OpenApiEndpointContentLibraries        = "contentLibraries/"
+	OpenApiEndpointContentLibraryItems     = "contentLibraryItems/"
+	OpenApiEndpointContentLibraryItemFiles = "contentLibraryItems/%s/files"
+	OpenApiEndpointNsxManagers             = "nsxManagers/"
 )
 
 // Header keys to run operations in tenant context

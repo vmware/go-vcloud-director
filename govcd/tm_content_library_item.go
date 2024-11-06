@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const labelContentLibraryItem = "Content Library Item"
@@ -43,6 +44,12 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 	if len(links) == 0 {
 		// TODO: TM: Maybe include retries here?
 		return nil, fmt.Errorf("could not retrieve upload links for Content Library Item %s", cli.ContentLibraryItem.Name)
+	}
+
+	// Refresh
+	cli, err = cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	var firstFile *types.ContentLibraryItemFile
@@ -106,6 +113,7 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 				firstFile = link
 			}
 		}
+		time.Sleep(30 * time.Second)
 	}
 	// Upload the vmdk files
 	links, err = cli.GetFiles(nil)
@@ -161,7 +169,7 @@ func createContentLibraryItem(cl *ContentLibrary, config *types.ContentLibraryIt
 	if config != nil && config.ContentLibrary.ID == "" {
 		config.ContentLibrary.ID = cl.ContentLibrary.ID
 	}
-	if strings.HasSuffix(filePath, "iso") {
+	if filepath.Ext(filePath) == ".iso" {
 		config.ItemType = "ISO"
 	} else {
 		config.ItemType = "TEMPLATE"
@@ -173,7 +181,8 @@ func createContentLibraryItem(cl *ContentLibrary, config *types.ContentLibraryIt
 func (cli *ContentLibraryItem) GetFiles(queryParameters url.Values) ([]*types.ContentLibraryItemFile, error) {
 	c := crudConfig{
 		entityLabel:     labelContentLibraryItem,
-		endpoint:        fmt.Sprintf("%s%s%s/files", types.OpenApiPathVcf, types.OpenApiEndpointContentLibraryItems, cli.ContentLibraryItem.ID),
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItemFiles,
+		endpointParams:  []string{cli.ContentLibraryItem.ID},
 		queryParameters: queryParameters,
 	}
 	return getAllInnerEntities[types.ContentLibraryItemFile](cli.client, c)

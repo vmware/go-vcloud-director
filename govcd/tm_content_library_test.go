@@ -27,10 +27,10 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(rsp, NotNil)
 
 	clDefinition := &types.ContentLibrary{
-		Name:            check.TestName(),
-		StoragePolicies: []types.OpenApiReference{{ID: rsp.RegionStoragePolicy.ID}},
-		AutoAttach:      true, // TODO: TM: Test with false, still does not work
-		Description:     check.TestName(),
+		Name:           check.TestName(),
+		StorageClasses: []types.OpenApiReference{{ID: rsp.RegionStoragePolicy.ID}},
+		AutoAttach:     true, // TODO: TM: Test with false, still does not work
+		Description:    check.TestName(),
 	}
 
 	createdCl, err := vcd.client.CreateContentLibrary(clDefinition)
@@ -46,8 +46,8 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(isUrn(createdCl.ContentLibrary.ID), Equals, true)
 	check.Assert(createdCl.ContentLibrary.Name, Equals, clDefinition.Name)
 	check.Assert(createdCl.ContentLibrary.Description, Equals, clDefinition.Description)
-	check.Assert(len(createdCl.ContentLibrary.StoragePolicies), Equals, 1)
-	check.Assert(createdCl.ContentLibrary.StoragePolicies[0].ID, Equals, rsp.RegionStoragePolicy.ID)
+	check.Assert(len(createdCl.ContentLibrary.StorageClasses), Equals, 1)
+	check.Assert(createdCl.ContentLibrary.StorageClasses[0].ID, Equals, rsp.RegionStoragePolicy.ID)
 	check.Assert(createdCl.ContentLibrary.AutoAttach, Equals, clDefinition.AutoAttach)
 	// "Computed" values
 	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // TODO: TM: Still not used in UI
