@@ -91,7 +91,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 }
 
 // getOrCreateRegion will check configuration file and create a Region if
-// stated in the 'createRegion' testing property and it is not present in TM.
+// stated in the 'createRegion' testing property not present in TM.
 // Otherwise, it just retrieves it
 func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor *Supervisor, check *C) (*Region, func()) {
 	region, err := vcd.client.GetRegionByName(vcd.config.Tm.Region)

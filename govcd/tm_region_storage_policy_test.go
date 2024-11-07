@@ -14,9 +14,15 @@ func (vcd *TestVCD) Test_RegionStoragePolicy(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	region, err := vcd.client.GetRegionByName(vcd.config.Tm.Region)
+	vc, vcCleanup := getOrCreateVCenter(vcd, check)
+	defer vcCleanup()
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
-	check.Assert(region, NotNil)
+
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
+	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
+	defer regionCleanup()
 
 	allRegionStoragePolicies, err := region.GetAllStoragePolicies(nil)
 	check.Assert(err, IsNil)

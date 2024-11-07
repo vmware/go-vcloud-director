@@ -39,21 +39,16 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 	}
 	outerType := ContentLibrary{vcdClient: vcdClient}
 	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
-	//        - Problem: The returned Task references a Catalog instead of a ContentLibrary, hence retrieving the resulting object
-	//                from finished Task fails.
-	//        - Solution: Retry fetching the entity again on error with the information inside of it
+	//        - Problem: When creating a Content Library, it always throws an error 500: "Failed to validate Content Library UUID..."
+	//        - Solution: Retry fetching the entity again with the name provided
 	result, err := createOuterEntity(&vcdClient.Client, outerType, c, config)
 	if err != nil {
 		// The error we want is like:
-		// error creating entity of type 'Content Library': error retrieving item after creation: error in HTTP GET request:
-		// BAD_REQUEST - [ uuid ] validation error on supplied value 'urn:vcloud:catalog:c25ecd89-444c-4ce7-b230-243f906c9896':
-		// Invalid urn string. Value does not match the appropriate urn pattern "urn:vcloud:<type>:<uuid>" or contains an incorrect
-		// object type for the endpoint."
-		if !strings.Contains(err.Error(), "urn:vcloud:catalog:") {
+		// Failed to validate Content Library UUID f215ce12-08ac-488e-bbfb-e13c5bad461b, error: not found
+		if !strings.Contains(err.Error(), "Failed to validate Content Library UUID") {
 			return nil, err
 		}
-		// The created Content Library has the same UUID as the Catalog, which is present in the thrown error above
-		result, err = vcdClient.GetContentLibraryById(fmt.Sprintf("urn:vcloud:contentLibrary:%s", extractUuid(err.Error())))
+		result, err = vcdClient.GetContentLibraryByName(config.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -132,5 +127,15 @@ func (o *ContentLibrary) Delete() error {
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 		endpointParams: []string{o.ContentLibrary.ID},
 	}
-	return deleteEntityById(&o.vcdClient.Client, c)
+	err := deleteEntityById(&o.vcdClient.Client, c)
+	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
+	//        - Problem: When deleting a Content Library, it always throws an error 500: "Failed to validate Content Library UUID..."
+	//        - Solution: Ignore this error, the Content Library is deleted correctly
+	if err != nil {
+		if strings.Contains(err.Error(), "Failed to validate Content Library UUID") {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
