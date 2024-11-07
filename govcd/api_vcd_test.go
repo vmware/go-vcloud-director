@@ -142,6 +142,7 @@ type TestConfig struct {
 	}
 	Tenants []Tenant `yaml:"tenants,omitempty"`
 	Tm      struct {
+		CreateRegion        bool   `yaml:"createRegion"`
 		Region              string `yaml:"region"`
 		RegionStoragePolicy string `yaml:"regionStoragePolicy"`
 

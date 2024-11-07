@@ -18,9 +18,15 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	region, err := vcd.client.GetRegionByName("adam-region-1")
+	vc, vcCleanup := getOrCreateVCenter(vcd, check)
+	defer vcCleanup()
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
-	check.Assert(region, NotNil)
+
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
+	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
+	defer regionCleanup()
 
 	cls, err := vcd.client.GetAllContentLibraries(nil)
 	check.Assert(err, IsNil)
@@ -82,4 +88,55 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cl, NotNil)
 	check.Assert(*cl.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
+}
+
+// getOrCreateRegion will check configuration file and create a Region if
+// stated in the 'createRegion' testing property and it is not present in TM.
+// Otherwise, it just retrieves it
+func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor *Supervisor, check *C) (*Region, func()) {
+	region, err := vcd.client.GetRegionByName(vcd.config.Tm.Region)
+	if err == nil {
+		return region, func() {}
+	}
+	if !ContainsNotFound(err) {
+		check.Fatal(err)
+		return nil, nil
+	}
+	if !vcd.config.Tm.CreateRegion {
+		check.Skip("Region is not configured and configuration is not allowed in config file")
+		return nil, nil
+	}
+	if nsxtManager == nil || supervisor == nil {
+		check.Fatalf("getOrCreateRegion requires a not nil NSX-T Manager and Supervisor")
+	}
+
+	r := &types.Region{
+		Name: check.TestName(),
+		NsxManager: &types.OpenApiReference{
+			ID: nsxtManager.NsxtManagerOpenApi.ID,
+		},
+		Supervisors: []types.OpenApiReference{
+			{
+				ID:   supervisor.Supervisor.SupervisorID,
+				Name: supervisor.Supervisor.Name,
+			},
+		},
+		StoragePolicies: []string{vcd.config.Tm.VcenterStorageProfile},
+		IsEnabled:       true,
+	}
+
+	region, err = vcd.client.CreateRegion(r)
+	check.Assert(err, IsNil)
+	check.Assert(region, NotNil)
+	regionCreated := true
+	AddToCleanupListOpenApi(region.Region.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointRegions+region.Region.ID)
+
+	return region, func() {
+		if !regionCreated {
+			return
+		}
+		err = region.Delete()
+		check.Assert(err, IsNil)
+	}
+
 }
