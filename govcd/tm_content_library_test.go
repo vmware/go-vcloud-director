@@ -42,6 +42,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 		StorageClasses: []types.OpenApiReference{{ID: rsp.RegionStoragePolicy.ID}},
 		AutoAttach:     true, // TODO: TM: Test with false, still does not work
 		Description:    check.TestName(),
+		IsShared:       true, // TODO: TM: This is true even if not sent (false), so we need to test it with false when we can
 	}
 
 	createdCl, err := vcd.client.CreateContentLibrary(clDefinition)
