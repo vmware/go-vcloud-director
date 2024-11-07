@@ -526,6 +526,7 @@ const (
 	OpenApiEndpointRegions               = "regions/"
 	OpenApiEndpointSupervisors           = "supervisors/"
 	OpenApiEndpointSupervisorZones       = "supervisorZones/"
+	OpenApiEndpointZones                 = "zones/"
 	OpenApiEndpointTmVdcs                = "virtualDatacenters/"
 )
 

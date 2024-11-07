@@ -185,15 +185,15 @@ type TmVdc struct {
 	// Name of the VDC
 	Name string `json:"name"`
 	// Description of the VDC
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 	// IsEnabled defines if the VDC is enabled
-	IsEnabled bool `json:"isEnabled"`
+	IsEnabled *bool `json:"isEnabled,omitempty"`
 	// Org reference
 	Org *OpenApiReference `json:"org"`
 	// Region reference
 	Region *OpenApiReference `json:"region"`
 	// Status contains creation status of the VDC
-	Status string `json:"status"`
+	Status string `json:"status,omitempty"`
 	// Supervisors contain references to Supervisors
 	Supervisors []OpenApiReference `json:"supervisors,omitempty"`
 	// ZoneResourceAllocation contain references of each zone within Supervisor
@@ -212,4 +212,18 @@ type TmVdcResourceAllocation struct {
 	CPUReservationMHz    int `json:"cpuReservationMHz"`
 	MemoryLimitMiB       int `json:"memoryLimitMiB"`
 	MemoryReservationMiB int `json:"memoryReservationMiB"`
+}
+
+type Zone struct {
+	ID                       string            `json:"id,omitempty"`
+	CPULimitMhz              int               `json:"cpuLimitMhz"`
+	CPUReservationMhz        int               `json:"cpuReservationMhz"`
+	CPUReservationUsedMhz    int               `json:"cpuReservationUsedMhz"`
+	CPUUsedMhz               int               `json:"cpuUsedMhz"`
+	MemoryLimitMiB           int               `json:"memoryLimitMiB"`
+	MemoryReservationMiB     int               `json:"memoryReservationMiB"`
+	MemoryReservationUsedMiB int               `json:"memoryReservationUsedMiB"`
+	MemoryUsedMiB            int               `json:"memoryUsedMiB"`
+	Name                     string            `json:"name"`
+	Region                   *OpenApiReference `json:"region"`
 }

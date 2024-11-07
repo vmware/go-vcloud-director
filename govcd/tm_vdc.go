@@ -103,7 +103,7 @@ func (o *TmVdc) Delete() error {
 }
 
 func (o *TmVdc) Disable() error {
-	o.TmVdc.IsEnabled = false
+	o.TmVdc.IsEnabled = addrOf(false)
 	_, err := o.Update(o.TmVdc)
 	return err
 }
