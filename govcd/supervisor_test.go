@@ -37,6 +37,10 @@ func (vcd *TestVCD) Test_TmSupervisor(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(vcSupervisorById.Supervisor, DeepEquals, allSupervisors[0].Supervisor)
 
+	singleVcSupervisor, err := vcd.client.GetSupervisorByNameAndVcenterId(allVcSupervisors[0].Supervisor.Name, allVcSupervisors[0].Supervisor.VirtualCenter.ID)
+	check.Assert(err, IsNil)
+	check.Assert(singleVcSupervisor.Supervisor, DeepEquals, allVcSupervisors[0].Supervisor)
+
 	// Checking Supervisor Zones
 	sZones, err := vcSupervisorById.GetAllSupervisorZones(nil)
 	check.Assert(err, IsNil)

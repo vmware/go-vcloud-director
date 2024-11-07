@@ -69,6 +69,28 @@ func (vcdClient *VCDClient) GetSupervisorByName(name string) (*Supervisor, error
 	return singleEntity, nil
 }
 
+// GetSupervisorByNameAndVcenterId retrieves Supervisor by name and a required vCenter ID
+func (vcdClient *VCDClient) GetSupervisorByNameAndVcenterId(supervisorName, vCenterId string) (*Supervisor, error) {
+	if supervisorName == "" || vCenterId == "" {
+		return nil, fmt.Errorf("%s lookup requires Name and vCenter ID", labelSupervisor)
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", fmt.Sprintf("name==%s;virtualCenter.id==%s", supervisorName, vCenterId))
+
+	filteredEntities, err := vcdClient.GetAllSupervisors(queryParams)
+	if err != nil {
+		return nil, err
+	}
+
+	singleEntity, err := oneOrError("name", supervisorName, filteredEntities)
+	if err != nil {
+		return nil, err
+	}
+
+	return singleEntity, nil
+}
+
 // GetAllSupervisors returns all Supervisors that are available in this vCenter
 func (v *VCenter) GetAllSupervisors(queryParameters url.Values) ([]*Supervisor, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
