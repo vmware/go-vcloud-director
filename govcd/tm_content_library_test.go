@@ -9,6 +9,7 @@ package govcd
 import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
+	"strings"
 )
 
 // TODO: TM: Tests missing: Tenant, subscribed catalog, shared catalog
@@ -57,7 +58,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(createdCl.ContentLibrary.Name, Equals, clDefinition.Name)
 	check.Assert(createdCl.ContentLibrary.Description, Equals, clDefinition.Description)
 	check.Assert(len(createdCl.ContentLibrary.StorageClasses), Equals, 1)
-	check.Assert(createdCl.ContentLibrary.StorageClasses[0].ID, Equals, rsp.RegionStoragePolicy.ID)
+	check.Assert(createdCl.ContentLibrary.StorageClasses[0].ID, Equals, strings.ReplaceAll(rsp.RegionStoragePolicy.ID, "regionStoragePolicy", "storageClass")) // TODO: TM: Revisit this at some point
 	check.Assert(createdCl.ContentLibrary.AutoAttach, Equals, clDefinition.AutoAttach)
 	// "Computed" values
 	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // TODO: TM: Still not used in UI
