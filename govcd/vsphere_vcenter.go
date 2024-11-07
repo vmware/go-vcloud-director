@@ -71,6 +71,34 @@ func (vcdClient *VCDClient) GetVCenterByName(name string) (*VCenter, error) {
 	return singleEntity, nil
 }
 
+// GetVCenterByUrl looks up if there is an existing vCenter added with a given URL
+func (vcdClient *VCDClient) GetVCenterByUrl(vcUrl string) (*VCenter, error) {
+	if vcUrl == "" {
+		return nil, fmt.Errorf("%s lookup requires URL", labelVirtualCenter)
+	}
+
+	// API filtering by URL is not supported so relying on local filtering
+	vCenters, err := vcdClient.GetAllVCenters(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredEntities := make([]*VCenter, 0)
+	for _, vc := range vCenters {
+		if vc.VSphereVCenter.Url == vcUrl {
+			filteredEntities = append(filteredEntities, vc)
+		}
+
+	}
+
+	singleEntity, err := oneOrError("Url", vcUrl, filteredEntities)
+	if err != nil {
+		return nil, err
+	}
+
+	return singleEntity, nil
+}
+
 // GetVCenterById retrieves vCenter server by ID
 func (vcdClient *VCDClient) GetVCenterById(id string) (*VCenter, error) {
 	c := crudConfig{
@@ -118,13 +146,40 @@ func (v VCenter) GetVimServerUrl() (string, error) {
 // Refresh triggers a refresh operation on vCenter that syncs up vCenter components such as
 // supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
-func (v VCenter) Refresh() error {
+func (v *VCenter) Refresh() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refresh")
 	if err != nil {
 		return fmt.Errorf("error building refresh path: %s", err)
 	}
 
 	resp, err := v.client.Client.executeJsonRequest(refreshUrl, http.MethodPost, nil, "error triggering vCenter refresh: %s")
+	if err != nil {
+		return err
+	}
+	defer closeBody(resp)
+	task := NewTask(&v.client.Client)
+	err = decodeBody(types.BodyTypeJSON, resp, task.Task)
+	if err != nil {
+		return fmt.Errorf("error triggering retrieving task: %s", err)
+	}
+	err = task.WaitTaskCompletion()
+	if err != nil {
+		return fmt.Errorf("error waiting task completion: %s", err)
+	}
+
+	return nil
+}
+
+// RefreshStorageProfiles triggers a refresh operation on vCenter that syncs up vCenter components
+// such as supervisors
+// It uses legacy endpoint as there is no OpenAPI endpoint for this operation
+func (v *VCenter) RefreshStorageProfiles() error {
+	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refreshStorageProfiles")
+	if err != nil {
+		return fmt.Errorf("error building storage policy refresh path: %s", err)
+	}
+
+	resp, err := v.client.Client.executeJsonRequest(refreshUrl, http.MethodPost, nil, "error triggering vCenter refresh storage policy: %s")
 	if err != nil {
 		return err
 	}
