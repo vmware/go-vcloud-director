@@ -9,7 +9,8 @@
   `VCDClient.GetRegionById`, `Region.Update`, `Region.Delete` [GH-718]
 * Added `Supervisor` and `types.Supervisor` structure for reading available Supervisors
   `VCDClient.GetAllSupervisors`, `VCDClient.GetSupervisorById`, `VCDClient.GetSupervisorByName`,
-  `Vcenter.GetAllSupervisors` [GH-718]
+  `VCDClient.GetSupervisorByNameAndVcenterId`, `Vcenter.GetAllSupervisors`,
+  `Vcenter.GetSupervisorByName` [GH-718]
 * Added `SupervisorZone` and `types.SupervisorZone` structure for reading available Supervisor Zones
   `Supervisor.GetAllSupervisorZones`, `Supervisor.GetSupervisorZoneById`,
   `Supervisor.GetSupervisorZoneByName`, `Supervisor.`, `VCDClient.GetAllSupervisors`,
