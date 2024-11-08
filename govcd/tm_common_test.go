@@ -73,7 +73,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	}
 }
 
-// getOrCreateVCenter will check configuration file and create NSX-T Manager if
+// getOrCreateNsxtManager will check configuration file and create NSX-T Manager if
 // stated in the 'createNsxtManager' property and not present in TM.
 // If created, it returns also a cleanup function to delete it afterward.
 // Otherwise, it just retrieves the existing NSX-T Manager
