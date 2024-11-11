@@ -300,6 +300,9 @@ solutionAddOn:
   # An existing Add-On image within catalog
   addonImageDse: "vmware-vcd-ds-1.4.0-23376809.iso"
 tm:
+  createRegion: true
+  # An existing Region to create VDCs, Content Libraries...
+  region: my-region
   # An existing Region Storage Policy to create Content Libraries, Regions...
   regionStoragePolicy: "vSAN Default Storage Policy"
   createVcenter: true # boolean value if the vCenter test should be executed
