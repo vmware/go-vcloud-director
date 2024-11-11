@@ -525,6 +525,9 @@ const (
 	OpenApiEndpointContentLibraryItems     = "contentLibraryItems/"
 	OpenApiEndpointContentLibraryItemFiles = "contentLibraryItems/%s/files"
 	OpenApiEndpointNsxManagers             = "nsxManagers/"
+	OpenApiEndpointRegions                 = "regions/"
+	OpenApiEndpointSupervisors             = "supervisors/"
+	OpenApiEndpointSupervisorZones         = "supervisorZones/"
 )
 
 // Header keys to run operations in tenant context
