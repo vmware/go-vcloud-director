@@ -16,7 +16,7 @@ func (vcd *TestVCD) Test_ContentLibraryItem(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	cl, err := vcd.client.GetContentLibraryByName("adam-lib-1")
+	cl, err := vcd.client.GetContentLibraryByName("adam-sdhkfgshjdfg")
 	check.Assert(err, IsNil)
 	check.Assert(cl, NotNil)
 
@@ -26,4 +26,7 @@ func (vcd *TestVCD) Test_ContentLibraryItem(check *C) {
 	}, "../test-resources/test_vapp_template.ova")
 	check.Assert(err, IsNil)
 	check.Assert(cli, NotNil)
+
+	err = cli.Delete()
+	check.Assert(err, IsNil)
 }

@@ -86,19 +86,24 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 			return nil, err
 		}
 	}
-
-	request, err := newFileUploadRequest(cli.client, firstFile.TransferUrl, fileContents, 0, int64(len(fileContents)), int64(len(fileContents)))
+	// TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
+	request, err := newFileUploadRequest(cli.client, strings.ReplaceAll(firstFile.TransferUrl, "/transfer", "/tm/transfer"), fileContents, 0, int64(len(fileContents)), int64(len(fileContents)))
 	if err != nil {
 		return nil, err
 	}
-
 	response, err := cli.client.Http.Do(request)
 	if err != nil {
 		return nil, err
 	}
-	err = response.Body.Close()
+	defer func() {
+		err = response.Body.Close()
+		if err != nil {
+			util.Logger.Printf("Error closing response: %s\n", err)
+		}
+	}()
+	response, err = checkRespWithErrType(types.BodyTypeJSON, response, err, &types.OpenApiError{})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Poll for the files list until the ovf file is uploaded(expectedSizeBytes === bytesTransferred)
@@ -134,7 +139,8 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 				if err != nil {
 					return nil, err
 				}
-				request, err := newFileUploadRequest(cli.client, link.TransferUrl, fileContents, 0, int64(len(fileContents)), int64(len(fileContents)))
+				// TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
+				request, err := newFileUploadRequest(cli.client, strings.ReplaceAll(link.TransferUrl, "/transfer", "/tm/transfer"), fileContents, 0, int64(len(fileContents)), int64(len(fileContents)))
 				if err != nil {
 					return nil, err
 				}
@@ -243,6 +249,10 @@ func (o *ContentLibraryItem) Update(contentLibraryItemConfig *types.ContentLibra
 
 // Delete deletes the receiver Content Library Item
 func (cli *ContentLibraryItem) Delete() error {
-	cli.ContentLibraryItem = nil
-	return nil
+	c := crudConfig{
+		entityLabel:    labelContentLibrary,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
+		endpointParams: []string{cli.ContentLibraryItem.ID},
+	}
+	return deleteEntityById(cli.client, c)
 }
