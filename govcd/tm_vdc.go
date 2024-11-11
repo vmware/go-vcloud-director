@@ -13,6 +13,7 @@ import (
 
 const labelVdc = "Vdc"
 
+// TmVdc defines Tenant Manager Virtual Data Center
 type TmVdc struct {
 	TmVdc     *types.TmVdc
 	vcdClient *VCDClient
@@ -27,7 +28,6 @@ func (g TmVdc) wrap(inner *types.TmVdc) *TmVdc {
 }
 
 func (vcdClient *VCDClient) CreateTmVdc(config *types.TmVdc) (*TmVdc, error) {
-
 	c := crudConfig{
 		entityLabel: labelVdc,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
