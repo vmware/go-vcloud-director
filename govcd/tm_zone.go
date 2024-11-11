@@ -75,6 +75,13 @@ func (vcdClient *VCDClient) GetZoneById(id string) (*Zone, error) {
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+func (r *Region) GetAllZones(queryParameters url.Values) ([]*Zone, error) {
+	queryParams := copyOrNewUrlValues(queryParameters)
+	queryParams = queryParameterFilterAnd("region.id=="+r.Region.ID, queryParams)
+
+	return r.vcdClient.GetAllZones(queryParams)
+}
+
 func (r *Region) GetZoneByName(name string) (*Zone, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name ", labelZone)
@@ -82,9 +89,7 @@ func (r *Region) GetZoneByName(name string) (*Zone, error) {
 
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name=="+name)
-	queryParams = queryParameterFilterAnd("region.id=="+r.Region.ID, queryParams)
-
-	filteredEntities, err := r.vcdClient.GetAllZones(queryParams)
+	filteredEntities, err := r.GetAllZones(queryParams)
 	if err != nil {
 		return nil, err
 	}
