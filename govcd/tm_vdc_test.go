@@ -46,26 +46,29 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 		}},
 	}
 
-	vdc, err := vcd.client.CreateTmVdc(vdcType)
+	createdVdc, err := vcd.client.CreateTmVdc(vdcType)
 	check.Assert(err, IsNil)
-	check.Assert(vdc, NotNil)
+	check.Assert(createdVdc, NotNil)
+	// Add to cleanup list
+	PrependToCleanupListOpenApi(createdVdc.TmVdc.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTmVdcs+createdVdc.TmVdc.ID)
+	defer func() {
+		err = createdVdc.Delete()
+		check.Assert(err, IsNil)
+	}()
 
-	// Cleanup
-	err = vdc.Delete()
+	// Get TM VDC By Name
+	byName, err := vcd.client.GetTmVdcByName(vdcType.Name)
 	check.Assert(err, IsNil)
+	check.Assert(byName.TmVdc, DeepEquals, createdVdc.TmVdc)
 
-	// vdc, err := vcd.client.GetTmVdcByName(vcd.config.Tm.Vdc)
-	// check.Assert(err, IsNil)
-	// check.Assert(vdc, NotNil)
+	// Get TM VDC By Id
+	byId, err := vcd.client.GetTmVdcById(createdVdc.TmVdc.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byId.TmVdc, DeepEquals, createdVdc.TmVdc)
 
-	// // Get by ID
-	// vdcById, err := vcd.client.GetTmVdcById(vdc.TmVdc.ID)
-	// check.Assert(err, IsNil)
-	// check.Assert(vdcById, NotNil)
-
-	// check.Assert(vdc.TmVdc, DeepEquals, vdcById.TmVdc)
-
-	// allTmVdc, err := vcd.client.GetAllTmVdcs(nil)
-	// check.Assert(err, IsNil)
-	// check.Assert(len(allTmVdc) > 0, Equals, true)
+	// Update
+	createdVdc.TmVdc.Name = check.TestName() + "-update"
+	updatedVdc, err := createdVdc.Update(createdVdc.TmVdc)
+	check.Assert(err, IsNil)
+	check.Assert(updatedVdc.TmVdc, DeepEquals, createdVdc.TmVdc)
 }
