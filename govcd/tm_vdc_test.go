@@ -17,10 +17,10 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
-	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
-	check.Assert(err, IsNil)
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
 	defer nsxtManagerCleanup()
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
+	check.Assert(err, IsNil)
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 	org, orgCleanup := createOrg(vcd, check, false)
@@ -50,7 +50,7 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(createdVdc, NotNil)
 	// Add to cleanup list
-	PrependToCleanupListOpenApi(createdVdc.TmVdc.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTmVdcs+createdVdc.TmVdc.ID)
+	PrependToCleanupListOpenApi(createdVdc.TmVdc.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+createdVdc.TmVdc.ID)
 	defer func() {
 		err = createdVdc.Delete()
 		check.Assert(err, IsNil)
@@ -65,6 +65,15 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 	byId, err := vcd.client.GetTmVdcById(createdVdc.TmVdc.ID)
 	check.Assert(err, IsNil)
 	check.Assert(byId.TmVdc, DeepEquals, createdVdc.TmVdc)
+
+	// Not Found tests
+	byNameInvalid, err := vcd.client.GetTmVdcByName("fake-name")
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(byNameInvalid, IsNil)
+
+	byIdInvalid, err := vcd.client.GetTmVdcById("urn:vcloud:virtualDatacenter:5344b964-0000-0000-0000-d554913db643")
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(byIdInvalid, IsNil)
 
 	// Update
 	createdVdc.TmVdc.Name = check.TestName() + "-update"

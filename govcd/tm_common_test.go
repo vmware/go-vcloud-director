@@ -161,6 +161,7 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 	check.Assert(region, NotNil)
 	regionCreated := true
 	AddToCleanupListOpenApi(region.Region.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointRegions+region.Region.ID)
+	check.Assert(region.Region.Status, Equals, "READY") // Region must be READY to be operational
 
 	return region, func() {
 		if !regionCreated {
