@@ -23,11 +23,9 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	}
 	if !ContainsNotFound(err) {
 		check.Fatal(err)
-		return nil, nil
 	}
 	if !vcd.config.Tm.CreateVcenter {
 		check.Skip("vCenter is not configured and configuration is not allowed in config file")
-		return nil, nil
 	}
 
 	vcCfg := &types.VSphereVirtualCenter{
@@ -84,11 +82,9 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 	}
 	if !ContainsNotFound(err) {
 		check.Fatal(err)
-		return nil, nil
 	}
 	if !vcd.config.Tm.CreateNsxtManager {
 		check.Skip("NSX-T Manager is not configured and configuration is not allowed in config file")
-		return nil, nil
 	}
 
 	nsxtCfg := &types.NsxtManagerOpenApi{
@@ -124,24 +120,25 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 // stated in the 'createRegion' testing property not present in TM.
 // Otherwise, it just retrieves it
 func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor *Supervisor, check *C) (*Region, func()) {
+	if vcd.config.Tm.Region == "" {
+		check.Fatal("testing configuration property 'tm.region' is required")
+	}
 	region, err := vcd.client.GetRegionByName(vcd.config.Tm.Region)
 	if err == nil {
 		return region, func() {}
 	}
 	if !ContainsNotFound(err) {
 		check.Fatal(err)
-		return nil, nil
 	}
 	if !vcd.config.Tm.CreateRegion {
 		check.Skip("Region is not configured and configuration is not allowed in config file")
-		return nil, nil
 	}
 	if nsxtManager == nil || supervisor == nil {
 		check.Fatalf("getOrCreateRegion requires a not nil NSX-T Manager and Supervisor")
 	}
 
 	r := &types.Region{
-		Name: check.TestName(),
+		Name: vcd.config.Tm.Region,
 		NsxManager: &types.OpenApiReference{
 			ID: nsxtManager.NsxtManagerOpenApi.ID,
 		},
@@ -173,17 +170,19 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 // getOrCreateContentLibrary will check configuration file and create a Content Library if
 // not present in TM. Otherwise, it just retrieves it
 func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy, check *C) (*ContentLibrary, func()) {
+	if vcd.config.Tm.ContentLibrary == "" {
+		check.Fatal("testing configuration property 'tm.contentLibrary' is required")
+	}
 	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary)
 	if err == nil {
 		return cl, func() {}
 	}
 	if !ContainsNotFound(err) {
 		check.Fatal(err)
-		return nil, nil
 	}
 
 	payload := types.ContentLibrary{
-		Name: check.TestName(),
+		Name: vcd.config.Tm.ContentLibrary,
 		StorageClasses: types.OpenApiReferences{{
 			Name: storagePolicy.RegionStoragePolicy.Name,
 			ID:   storagePolicy.RegionStoragePolicy.ID,

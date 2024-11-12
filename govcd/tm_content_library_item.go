@@ -37,11 +37,11 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 	if err != nil {
 		return nil, err
 	}
-	links, err := cli.GetFiles(nil)
+	files, err := cli.GetFiles(nil)
 	if err != nil {
 		return nil, err
 	}
-	if len(links) == 0 {
+	if len(files) == 0 {
 		// TODO: TM: Maybe include retries here?
 		return nil, fmt.Errorf("could not retrieve upload links for Content Library Item %s", cli.ContentLibraryItem.Name)
 	}
@@ -52,110 +52,97 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		return nil, err
 	}
 
-	var firstFile *types.ContentLibraryItemFile
-	var fileContents []byte
-	if cli.ContentLibraryItem.ItemType == "TEMPLATE" {
+	uploadFile := func(name string, filesToUpload []*types.ContentLibraryItemFile, localFilePath string) error {
+		var fileToUpload *types.ContentLibraryItemFile
 		// Search for OVF descriptor
-		for _, link := range links {
-			if link.Name == "descriptor.ovf" {
-				firstFile = link
+		for _, f := range files {
+			if f.Name == name {
+				fileToUpload = f
 			}
 		}
-		if firstFile == nil {
-			return nil, fmt.Errorf("descriptor.ovf not found for Content Library Item '%s'", cli.ContentLibraryItem.Name)
+		if fileToUpload == nil {
+			return fmt.Errorf("'%s' not found among the Content Library Item '%s' files", name, cli.ContentLibraryItem.Name)
 		}
-		filesAbsPaths, tmpDir, err := util.Unpack(filePath)
+		filesAbsPaths, tmpDir, err := util.Unpack(localFilePath)
 		if err != nil {
-			return nil, fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
+			return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
 		}
-		ovfFilePath, err := getOvfPath(filesAbsPaths)
+		asgjdf := ""
+		if name == "descriptor.ovf" {
+			asgjdf, err = getOvfPath(filesAbsPaths)
+			if err != nil {
+				return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
+			}
+		}
+		fileContents, err := os.ReadFile(filepath.Clean(asgjdf))
 		if err != nil {
-			return nil, fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
+			return err
 		}
-		fileContents, err = os.ReadFile(filepath.Clean(ovfFilePath))
+		// TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
+		request, err := newFileUploadRequest(cli.client, strings.ReplaceAll(fileToUpload.TransferUrl, "/transfer", "/tm/transfer"), fileContents, 0, int64(len(fileContents)), int64(len(fileContents)))
+		if err != nil {
+			return err
+		}
+		response, err := cli.client.Http.Do(request)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			err = response.Body.Close()
+			if err != nil {
+				util.Logger.Printf("Error closing response: %s\n", err)
+			}
+		}()
+		response, err = checkRespWithErrType(types.BodyTypeJSON, response, err, &types.OpenApiError{})
+		if err != nil {
+			return err
+		}
+		// Poll for the files list until the ovf file is uploaded(expectedSizeBytes === bytesTransferred)
+		// and then fetch the files list again to get the urls for the vmdk files
+		for {
+			files, err = cli.GetFiles(nil)
+			if err != nil {
+				return err
+			}
+			for _, f := range files {
+				if f.Name == fileToUpload.Name {
+					fileToUpload = f
+				}
+			}
+			if fileToUpload.BytesTransferred != fileToUpload.ExpectedSizeBytes {
+				time.Sleep(30 * time.Second)
+				continue
+			}
+			break
+		}
+		return nil
+	}
+
+	if cli.ContentLibraryItem.ItemType == "TEMPLATE" {
+		// The descriptor must be uploaded first
+		err = uploadFile("descriptor.ovf", files, filePath)
 		if err != nil {
 			return nil, err
 		}
-
+		// When descriptor is uploaded, the links for the remaining files will be present in the file list.
+		// Refresh the file list and upload each one of them.
+		files, err = cli.GetFiles(nil)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range files {
+			if f.Name == "descriptor.ovf" {
+				// Already uploaded
+				continue
+			}
+			err = uploadFile(f.Name, files, filePath)
+			if err != nil {
+				return nil, err
+			}
+		}
 	} else {
-		// ISO file
-		// TODO: TM: ISO upload?
-		firstFile = links[0]
-		fileContents, err = os.ReadFile(filepath.Clean(filePath))
-		if err != nil {
-			return nil, err
-		}
-	}
-	// TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
-	request, err := newFileUploadRequest(cli.client, strings.ReplaceAll(firstFile.TransferUrl, "/transfer", "/tm/transfer"), fileContents, 0, int64(len(fileContents)), int64(len(fileContents)))
-	if err != nil {
-		return nil, err
-	}
-	response, err := cli.client.Http.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err = response.Body.Close()
-		if err != nil {
-			util.Logger.Printf("Error closing response: %s\n", err)
-		}
-	}()
-	response, err = checkRespWithErrType(types.BodyTypeJSON, response, err, &types.OpenApiError{})
-	if err != nil {
-		return nil, err
-	}
-
-	// Poll for the files list until the ovf file is uploaded(expectedSizeBytes === bytesTransferred)
-	// and then fetch the files list again to get the urls for the vmdk files
-	for firstFile.BytesTransferred != firstFile.ExpectedSizeBytes {
-		links, err = cli.GetFiles(nil)
-		if err != nil {
-			return nil, err
-		}
-		for _, link := range links {
-			if link.Name == firstFile.Name {
-				firstFile = link
-			}
-		}
-		time.Sleep(30 * time.Second)
-	}
-	// Upload the vmdk files
-	links, err = cli.GetFiles(nil)
-	if err != nil {
-		return nil, err
-	}
-	for _, link := range links {
-		if link.Name == "descriptor.ovf" {
-			continue
-		}
-		filesAbsPaths, tmpDir, err := util.Unpack(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
-		}
-		for _, path := range filesAbsPaths {
-			if strings.Contains(path, link.Name) {
-				fileContents, err = os.ReadFile(filepath.Clean(path))
-				if err != nil {
-					return nil, err
-				}
-				// TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
-				request, err := newFileUploadRequest(cli.client, strings.ReplaceAll(link.TransferUrl, "/transfer", "/tm/transfer"), fileContents, 0, int64(len(fileContents)), int64(len(fileContents)))
-				if err != nil {
-					return nil, err
-				}
-
-				response, err := cli.client.Http.Do(request)
-				if err != nil {
-					return nil, err
-				}
-				err = response.Body.Close()
-				if err != nil {
-					panic(err)
-				}
-				break
-			}
-		}
+		// TODO: TM: ISO upload
+		return nil, fmt.Errorf("not supported")
 	}
 
 	return cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
