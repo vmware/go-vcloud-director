@@ -5,11 +5,11 @@ package govcd
  */
 
 import (
+	"errors"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -31,19 +31,35 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 	return &g
 }
 
+func getContentLibraryItemFiles(cli *ContentLibraryItem, expectedAtLeast, retries int) ([]*types.ContentLibraryItemFile, error) {
+	i := 0
+	var files []*types.ContentLibraryItemFile
+	var err error
+	for i < retries {
+		files, err = cli.GetFiles(nil)
+		if err != nil {
+			return nil, err
+		}
+		if len(files) == 0 || len(files) < expectedAtLeast {
+			time.Sleep(10 * time.Second)
+			i++
+			continue
+		}
+		return files, nil
+	}
+	return nil, fmt.Errorf("was expecting at least %d files to upload for Content Library Item '%s' but got none in %d retries", expectedAtLeast, cli.ContentLibraryItem.Name, retries)
+}
+
 // CreateContentLibraryItem creates a Content Library Item
 func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, filePath string) (*ContentLibraryItem, error) {
+
 	cli, err := createContentLibraryItem(cl, config, filePath)
 	if err != nil {
 		return nil, err
 	}
-	files, err := cli.GetFiles(nil)
+	files, err := getContentLibraryItemFiles(cli, 1, 10)
 	if err != nil {
 		return nil, err
-	}
-	if len(files) == 0 {
-		// TODO: TM: Maybe include retries here?
-		return nil, fmt.Errorf("could not retrieve upload links for Content Library Item %s", cli.ContentLibraryItem.Name)
 	}
 
 	// Refresh
@@ -52,100 +68,76 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		return nil, err
 	}
 
-	uploadFile := func(name string, filesToUpload []*types.ContentLibraryItemFile, localFilePath string) error {
-		var fileToUpload *types.ContentLibraryItemFile
-		// Search for OVF descriptor
-		for _, f := range files {
-			if f.Name == name {
-				fileToUpload = f
-			}
-		}
-		if fileToUpload == nil {
-			return fmt.Errorf("'%s' not found among the Content Library Item '%s' files", name, cli.ContentLibraryItem.Name)
-		}
-		filesAbsPaths, tmpDir, err := util.Unpack(localFilePath)
-		if err != nil {
-			return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
-		}
-		asgjdf := ""
-		if name == "descriptor.ovf" {
-			asgjdf, err = getOvfPath(filesAbsPaths)
-			if err != nil {
-				return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
-			}
-		}
-		fileContents, err := os.ReadFile(filepath.Clean(asgjdf))
-		if err != nil {
-			return err
-		}
-		// TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
-		request, err := newFileUploadRequest(cli.client, strings.ReplaceAll(fileToUpload.TransferUrl, "/transfer", "/tm/transfer"), fileContents, 0, int64(len(fileContents)), int64(len(fileContents)))
-		if err != nil {
-			return err
-		}
-		response, err := cli.client.Http.Do(request)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			err = response.Body.Close()
-			if err != nil {
-				util.Logger.Printf("Error closing response: %s\n", err)
-			}
-		}()
-		response, err = checkRespWithErrType(types.BodyTypeJSON, response, err, &types.OpenApiError{})
-		if err != nil {
-			return err
-		}
-		// Poll for the files list until the ovf file is uploaded(expectedSizeBytes === bytesTransferred)
-		// and then fetch the files list again to get the urls for the vmdk files
-		for {
-			files, err = cli.GetFiles(nil)
-			if err != nil {
-				return err
-			}
-			for _, f := range files {
-				if f.Name == fileToUpload.Name {
-					fileToUpload = f
-				}
-			}
-			if fileToUpload.BytesTransferred != fileToUpload.ExpectedSizeBytes {
-				time.Sleep(30 * time.Second)
-				continue
-			}
-			break
-		}
-		return nil
-	}
-
 	if cli.ContentLibraryItem.ItemType == "TEMPLATE" {
 		// The descriptor must be uploaded first
-		err = uploadFile("descriptor.ovf", files, filePath)
+
+		err = uploadContentLibraryItemFile("descriptor.ovf", cli, files, filePath)
 		if err != nil {
 			return nil, err
 		}
-		// When descriptor is uploaded, the links for the remaining files will be present in the file list.
+		// When descriptor.ovf is uploaded, the links for the remaining files will be present in the file list.
 		// Refresh the file list and upload each one of them.
-		files, err = cli.GetFiles(nil)
+		files, err = getContentLibraryItemFiles(cli, 2, 10)
 		if err != nil {
 			return nil, err
 		}
+
 		for _, f := range files {
 			if f.Name == "descriptor.ovf" {
 				// Already uploaded
 				continue
 			}
-			err = uploadFile(f.Name, files, filePath)
+			err = uploadContentLibraryItemFile(f.Name, cli, files, filePath)
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else {
 		// TODO: TM: ISO upload
-		return nil, fmt.Errorf("not supported")
+		return nil, fmt.Errorf("ISO upload not supported")
 	}
 
 	return cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
+}
+
+func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToUpload []*types.ContentLibraryItemFile, localFilePath string) error {
+	if cli == nil || len(filesToUpload) == 0 {
+		return fmt.Errorf("the Content Library Item or its files cannot be nil / empty")
+	}
+
+	// We just want to upload the selected file (named after the 'name' input parameter)
+	var fileToUpload *types.ContentLibraryItemFile
+	for _, f := range filesToUpload {
+		if f.Name == name {
+			fileToUpload = f
+		}
+	}
+	if fileToUpload == nil {
+		return fmt.Errorf("'%s' not found among the Content Library Item '%s' files", name, cli.ContentLibraryItem.Name)
+	}
+	filesAbsPaths, tmpDir, err := util.Unpack(localFilePath)
+	if err != nil {
+		return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
+	}
+
+	ud := uploadDetails{
+		uploadLink:               strings.ReplaceAll(fileToUpload.TransferUrl, "/transfer", "/tm/transfer"), // TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
+		uploadedBytes:            0,
+		fileSizeToUpload:         fileToUpload.ExpectedSizeBytes,
+		uploadPieceSize:          1024,
+		uploadedBytesForCallback: 0,
+		allFilesSize:             fileToUpload.ExpectedSizeBytes,
+		callBack: func(bytesUpload, totalSize int64) {
+			util.Logger.Printf("[DEBUG] Uploaded Content Library Item file '%s': %d/%d", name, bytesUpload, totalSize)
+		},
+		uploadError: addrOf(errors.New("")),
+	}
+
+	_, err = uploadFile(cli.client, findFilePath(filesAbsPaths, name), ud)
+	if err != nil {
+		return fmt.Errorf("could not upload the file: %s", err)
+	}
+	return nil
 }
 
 // createContentLibraryItem creates a hollow Content Library Item with the provided configuration and returns
@@ -185,7 +177,7 @@ func (cli *ContentLibraryItem) GetFiles(queryParameters url.Values) ([]*types.Co
 // and other constraints
 func (cl *ContentLibrary) GetAllContentLibraryItems(queryParameters url.Values) ([]*ContentLibraryItem, error) {
 	c := crudConfig{
-		entityLabel:     labelContentLibrary,
+		entityLabel:     labelContentLibraryItem,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		queryParameters: queryParameters,
 	}
@@ -219,7 +211,7 @@ func (cl *ContentLibrary) GetContentLibraryItemByName(name string) (*ContentLibr
 // GetContentLibraryItemById retrieves a Content Library Item with the given ID
 func (cl *ContentLibrary) GetContentLibraryItemById(id string) (*ContentLibraryItem, error) {
 	c := crudConfig{
-		entityLabel:    labelContentLibrary,
+		entityLabel:    labelContentLibraryItem,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		endpointParams: []string{id},
 	}
@@ -237,7 +229,7 @@ func (o *ContentLibraryItem) Update(contentLibraryItemConfig *types.ContentLibra
 // Delete deletes the receiver Content Library Item
 func (cli *ContentLibraryItem) Delete() error {
 	c := crudConfig{
-		entityLabel:    labelContentLibrary,
+		entityLabel:    labelContentLibraryItem,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		endpointParams: []string{cli.ContentLibraryItem.ID},
 	}

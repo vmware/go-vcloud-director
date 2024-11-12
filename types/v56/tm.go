@@ -94,8 +94,8 @@ type ContentLibraryItem struct {
 
 // ContentLibraryItemFile specifies a Content Library Item file for uploads
 type ContentLibraryItemFile struct {
-	ExpectedSizeBytes int    `json:"expectedSizeBytes"`
-	BytesTransferred  int    `json:"bytesTransferred"`
+	ExpectedSizeBytes int64  `json:"expectedSizeBytes"`
+	BytesTransferred  int64  `json:"bytesTransferred"`
 	Name              string `json:"name"`
 	TransferUrl       string `json:"transferUrl"`
 }
