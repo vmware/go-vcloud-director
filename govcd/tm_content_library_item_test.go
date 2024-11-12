@@ -16,10 +16,26 @@ func (vcd *TestVCD) Test_ContentLibraryItem(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	cl, err := vcd.client.GetContentLibraryByName("adam-sdhkfgshjdfg")
+	// Pre-requisites
+	vc, vcCleanup := getOrCreateVCenter(vcd, check)
+	defer vcCleanup()
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
-	check.Assert(cl, NotNil)
 
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
+	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
+	defer regionCleanup()
+
+	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.RegionStoragePolicy)
+	check.Assert(err, IsNil)
+	check.Assert(sp, NotNil)
+
+	cl, clCleanup := getOrCreateContentLibrary(vcd, sp, check)
+	check.Assert(err, IsNil)
+	defer clCleanup()
+
+	// Test begins
 	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
 		Name:        "adam-8",
 		Description: "testing for Terraform provider",

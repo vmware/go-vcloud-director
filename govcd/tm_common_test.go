@@ -169,3 +169,39 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 		check.Assert(err, IsNil)
 	}
 }
+
+// getOrCreateContentLibrary will check configuration file and create a Content Library if
+// not present in TM. Otherwise, it just retrieves it
+func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy, check *C) (*ContentLibrary, func()) {
+	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary)
+	if err == nil {
+		return cl, func() {}
+	}
+	if !ContainsNotFound(err) {
+		check.Fatal(err)
+		return nil, nil
+	}
+
+	payload := types.ContentLibrary{
+		Name: check.TestName(),
+		StorageClasses: types.OpenApiReferences{{
+			Name: storagePolicy.RegionStoragePolicy.Name,
+			ID:   storagePolicy.RegionStoragePolicy.ID,
+		}},
+		Description: check.TestName(),
+	}
+
+	contentLibrary, err := vcd.client.CreateContentLibrary(&payload)
+	check.Assert(err, IsNil)
+	check.Assert(contentLibrary, NotNil)
+	contentLibraryCreated := true
+	AddToCleanupListOpenApi(contentLibrary.ContentLibrary.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraries+contentLibrary.ContentLibrary.ID)
+
+	return contentLibrary, func() {
+		if !contentLibraryCreated {
+			return
+		}
+		err = contentLibrary.Delete()
+		check.Assert(err, IsNil)
+	}
+}
