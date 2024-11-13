@@ -37,7 +37,7 @@ func (vcd *TestVCD) Test_ContentLibraryItem(check *C) {
 
 	// Test begins
 	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
-		Name:        "adam-5",
+		Name:        "adam-6",
 		Description: "testing for Terraform provider",
 	}, "../test-resources/test_vapp_template.ova")
 	check.Assert(err, IsNil)
