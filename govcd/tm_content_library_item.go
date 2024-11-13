@@ -174,6 +174,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 	for _, f := range filesToUpload {
 		if f.Name == name {
 			fileToUpload = f
+			break
 		}
 	}
 	if fileToUpload == nil {
