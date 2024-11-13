@@ -39,7 +39,10 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, filePath string) (*ContentLibraryItem, error) {
 	cli, err := createContentLibraryItem(cl, config, filePath)
 	if err != nil {
-		// We use name for cleanup because ID may or may not be available
+		if cli == nil || cli.ContentLibraryItem == nil {
+			return nil, err
+		}
+		// We use Name for cleanup because ID may or may not be available
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.Name, err)
 	}
 	files, err := getContentLibraryItemFiles(cli, 1, 10)
