@@ -75,10 +75,6 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(obtainedCliById, NotNil)
 	check.Assert(*obtainedCliById.ContentLibraryItem, DeepEquals, *obtainedCliByName.ContentLibraryItem)
 
-	files, err := obtainedCliById.GetFiles(nil)
-	check.Assert(err, IsNil)
-	check.Assert(len(files), Not(Equals), 0)
-
 	// Not found errors
 	_, err = cl.GetContentLibraryItemByName("notexist")
 	check.Assert(ContainsNotFound(err), Equals, true)

@@ -42,7 +42,7 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		// We use Name for cleanup because ID may or may not be available
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.Name, err)
 	}
-	files, err := getContentLibraryItemFiles(cli, 1, 10)
+	files, err := getContentLibraryItemPendingFilesToUpload(cli, 1, 10)
 	if err != nil {
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 	}
@@ -61,7 +61,7 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		}
 		// When descriptor.ovf is uploaded, the links for the remaining files will be present in the file list.
 		// Refresh the file list and upload each one of them.
-		files, err = getContentLibraryItemFiles(cli, 2, 10)
+		files, err = getContentLibraryItemPendingFilesToUpload(cli, 2, 10)
 		if err != nil {
 			return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 		}
@@ -93,14 +93,14 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 	return cli, nil
 }
 
-// getContentLibraryItemFiles polls the Content Library Item until a minimum amount of expected files is obtained for
+// getContentLibraryItemPendingFilesToUpload polls the Content Library Item until a minimum amount of expected files is obtained for
 // the given amount of retries. If retries are reached and the expected files are not retrieved, returns an error.
-func getContentLibraryItemFiles(cli *ContentLibraryItem, expectedAtLeast, retries int) ([]*types.ContentLibraryItemFile, error) {
+func getContentLibraryItemPendingFilesToUpload(cli *ContentLibraryItem, expectedAtLeast, retries int) ([]*types.ContentLibraryItemFile, error) {
 	i := 0
 	var files []*types.ContentLibraryItemFile
 	var err error
 	for i < retries {
-		files, err = cli.GetFiles(nil)
+		files, err = getContentLibraryItemFiles(cli)
 		if err != nil {
 			return nil, err
 		}
@@ -242,13 +242,12 @@ func waitForContentLibraryItemUploadTask(cli *ContentLibraryItem) error {
 	return nil
 }
 
-// GetFiles retrieves the files information for a given Content Library Item
-func (cli *ContentLibraryItem) GetFiles(queryParameters url.Values) ([]*types.ContentLibraryItemFile, error) {
+// getContentLibraryItemFiles retrieves the Content Library Item files that need to be uploaded
+func getContentLibraryItemFiles(cli *ContentLibraryItem) ([]*types.ContentLibraryItemFile, error) {
 	c := crudConfig{
-		entityLabel:     labelContentLibraryItem,
-		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItemFiles,
-		endpointParams:  []string{cli.ContentLibraryItem.ID},
-		queryParameters: queryParameters,
+		entityLabel:    labelContentLibraryItem,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItemFiles,
+		endpointParams: []string{cli.ContentLibraryItem.ID},
 	}
 	return getAllInnerEntities[types.ContentLibraryItemFile](cli.client, c)
 }
