@@ -32,7 +32,8 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 	return &g
 }
 
-// CreateContentLibraryItem creates a Content Library Item
+// CreateContentLibraryItem creates a Content Library Item with the given file located in 'filePath' parameter, which must
+// be an OVA or ISO file.
 func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, filePath string) (*ContentLibraryItem, error) {
 	cli, err := createContentLibraryItem(cl, config, filePath)
 	if err != nil {
@@ -55,7 +56,6 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 
 	if cli.ContentLibraryItem.ItemType == "TEMPLATE" {
 		// The descriptor must be uploaded first
-
 		err = uploadContentLibraryItemFile("descriptor.ovf", cli, files, filePath)
 		if err != nil {
 			return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
@@ -112,7 +112,7 @@ func getContentLibraryItemFiles(cli *ContentLibraryItem, expectedAtLeast, retrie
 		}
 		return files, nil
 	}
-	return nil, fmt.Errorf("was expecting at least %d files to upload for Content Library Item '%s' but got none in %d retries", expectedAtLeast, cli.ContentLibraryItem.Name, retries)
+	return nil, fmt.Errorf("was expecting at least %d files to upload for Content Library Item '%s' in %d retries, but failed", expectedAtLeast, cli.ContentLibraryItem.Name, retries)
 }
 
 // createContentLibraryItem creates a hollow Content Library Item with the provided configuration and returns
@@ -163,7 +163,7 @@ func cleanupContentLibraryItemOnUploadError(client *Client, identifier string, o
 	return originalError
 }
 
-// uploadContentLibraryItemFile uploads a Content Library Item file from the given slice with the given
+// uploadContentLibraryItemFile uploads a Content Library Item file from the given slice with the given file present on disk
 func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToUpload []*types.ContentLibraryItemFile, localFilePath string) error {
 	if cli == nil || len(filesToUpload) == 0 {
 		return fmt.Errorf("the Content Library Item or its files cannot be nil / empty")
