@@ -256,14 +256,18 @@ func (cli *ContentLibraryItem) GetFiles(queryParameters url.Values) ([]*types.Co
 // GetAllContentLibraryItems retrieves all Content Library Items with the given query parameters, which allow setting filters
 // and other constraints
 func (cl *ContentLibrary) GetAllContentLibraryItems(queryParameters url.Values) ([]*ContentLibraryItem, error) {
+	return getAllContentLibraryItems(cl.client, queryParameters)
+}
+
+func getAllContentLibraryItems(client *Client, queryParameters url.Values) ([]*ContentLibraryItem, error) {
 	c := crudConfig{
 		entityLabel:     labelContentLibraryItem,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		queryParameters: queryParameters,
 	}
 
-	outerType := ContentLibraryItem{client: cl.client}
-	return getAllOuterEntities(cl.client, outerType, c)
+	outerType := ContentLibraryItem{client: client}
+	return getAllOuterEntities(client, outerType, c)
 }
 
 // GetContentLibraryItemByName retrieves a Content Library Item with the given name
@@ -279,7 +283,7 @@ func getContentLibraryItemByName(client *Client, name string) (*ContentLibraryIt
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name=="+name)
 
-	filteredEntities, err := getAllContentLibraries(client, queryParams)
+	filteredEntities, err := getAllContentLibraryItems(client, queryParams)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +293,7 @@ func getContentLibraryItemByName(client *Client, name string) (*ContentLibraryIt
 		return nil, err
 	}
 
-	return getContentLibraryItemById(client, singleEntity.ContentLibrary.ID)
+	return getContentLibraryItemById(client, singleEntity.ContentLibraryItem.ID)
 }
 
 // GetContentLibraryItemById retrieves a Content Library Item with the given ID

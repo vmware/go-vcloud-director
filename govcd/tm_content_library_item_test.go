@@ -50,16 +50,27 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 		check.Assert(err, IsNil)
 	}()
 
+	allClis, err := cl.GetAllContentLibraryItems(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(allClis) > 0, Equals, true)
+	found := false
+	for _, i := range allClis {
+		if i.ContentLibraryItem.ID == cli.ContentLibraryItem.ID {
+			found = true
+		}
+	}
+	check.Assert(found, Equals, true)
+
 	obtainedCliByName, err := cl.GetContentLibraryItemByName(check.TestName())
 	check.Assert(err, IsNil)
 	check.Assert(obtainedCliByName, NotNil)
 
-	obtainedCliById, err := cl.GetContentLibraryItemById(check.TestName())
+	obtainedCliById, err := cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
 	check.Assert(err, IsNil)
 	check.Assert(obtainedCliById, NotNil)
 	check.Assert(*obtainedCliById.ContentLibraryItem, DeepEquals, *obtainedCliByName.ContentLibraryItem)
 
-	obtainedCliById, err = vcd.client.GetContentLibraryItemById(check.TestName())
+	obtainedCliById, err = vcd.client.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
 	check.Assert(err, IsNil)
 	check.Assert(obtainedCliById, NotNil)
 	check.Assert(*obtainedCliById.ContentLibraryItem, DeepEquals, *obtainedCliByName.ContentLibraryItem)
