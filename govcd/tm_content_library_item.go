@@ -186,7 +186,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 	defer func() {
 		err = os.RemoveAll(tmpDir)
 		if err != nil {
-			util.Logger.Printf("[DEBUG] could not cleanup tmp directory %s", tmpDir)
+			util.Logger.Printf("[DEBUG] could not clean up tmp directory %s", tmpDir)
 		}
 	}()
 
