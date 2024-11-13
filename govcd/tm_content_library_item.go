@@ -5,7 +5,6 @@ package govcd
  */
 
 import (
-	"errors"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
@@ -184,6 +183,12 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 	if err != nil {
 		return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
 	}
+	defer func() {
+		err = os.RemoveAll(tmpDir)
+		if err != nil {
+			util.Logger.Printf("[DEBUG] could not cleanup tmp directory %s", tmpDir)
+		}
+	}()
 
 	ud := uploadDetails{
 		uploadLink:               strings.ReplaceAll(fileToUpload.TransferUrl, "/transfer", "/tm/transfer"), // TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
@@ -195,18 +200,12 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 		callBack: func(bytesUpload, totalSize int64) {
 			util.Logger.Printf("[DEBUG] Uploaded Content Library Item file '%s': %d/%d", name, bytesUpload, totalSize)
 		},
-		uploadError: addrOf(errors.New("")),
+		uploadError: addrOf(fmt.Errorf("error uploading Content Library Item file '%s'", name)),
 	}
 
 	_, err = uploadFile(cli.client, findFilePath(filesAbsPaths, name), ud)
 	if err != nil {
 		return fmt.Errorf("could not upload the file: %s", err)
-	}
-
-	err = os.RemoveAll(tmpDir)
-	if err != nil {
-		return err
-		// util.Logger.Printf("[DEBUG] could not cleanup tmp directory %s", tmpDir)
 	}
 	return nil
 }
