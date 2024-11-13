@@ -37,12 +37,44 @@ func (vcd *TestVCD) Test_ContentLibraryItem(check *C) {
 
 	// Test begins
 	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
-		Name:        "adam-2",
-		Description: "testing for Terraform provider",
+		Name:        check.TestName(),
+		Description: check.TestName(),
 	}, "../test-resources/test_vapp_template.ova")
 	check.Assert(err, IsNil)
 	check.Assert(cli, NotNil)
+	AddToCleanupListOpenApi(cli.ContentLibraryItem.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraryItems+cli.ContentLibraryItem.ID)
 
-	err = cli.Delete()
+	// Defer deletion for a correct cleanup
+	defer func() {
+		err = cli.Delete()
+		check.Assert(err, IsNil)
+	}()
+
+	obtainedCliByName, err := cl.GetContentLibraryItemByName(check.TestName())
 	check.Assert(err, IsNil)
+	check.Assert(obtainedCliByName, NotNil)
+
+	obtainedCliById, err := cl.GetContentLibraryItemById(check.TestName())
+	check.Assert(err, IsNil)
+	check.Assert(obtainedCliById, NotNil)
+	check.Assert(*obtainedCliById.ContentLibraryItem, DeepEquals, *obtainedCliByName.ContentLibraryItem)
+
+	obtainedCliById, err = vcd.client.GetContentLibraryItemById(check.TestName())
+	check.Assert(err, IsNil)
+	check.Assert(obtainedCliById, NotNil)
+	check.Assert(*obtainedCliById.ContentLibraryItem, DeepEquals, *obtainedCliByName.ContentLibraryItem)
+
+	files, err := obtainedCliById.GetFiles(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(files), Not(Equals), 0)
+
+	// Not found errors
+	_, err = cl.GetContentLibraryItemByName("notexist")
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	_, err = cl.GetContentLibraryItemById("urn:vcloud:contentLibraryItem:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	_, err = vcd.client.GetContentLibraryItemById("urn:vcloud:contentLibraryItem:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
+	check.Assert(ContainsNotFound(err), Equals, true)
 }

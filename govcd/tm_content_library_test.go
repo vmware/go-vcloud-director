@@ -92,4 +92,14 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cl, NotNil)
 	check.Assert(*cl.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
+
+	// Not found errors
+	_, err = cl.GetContentLibraryItemByName("notexist")
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	_, err = cl.GetContentLibraryItemById("urn:vcloud:contentLibrary:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
+	check.Assert(ContainsNotFound(err), Equals, true)
+
+	_, err = vcd.client.GetContentLibraryItemById("urn:vcloud:contentLibrary:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
+	check.Assert(ContainsNotFound(err), Equals, true)
 }
