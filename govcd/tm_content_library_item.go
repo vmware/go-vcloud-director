@@ -295,6 +295,11 @@ func (cl *ContentLibrary) GetContentLibraryItemById(id string) (*ContentLibraryI
 	return getContentLibraryItemById(cl.client, id)
 }
 
+// GetContentLibraryItemById retrieves a Content Library Item with the given ID
+func (vcdClient *VCDClient) GetContentLibraryItemById(id string) (*ContentLibraryItem, error) {
+	return getContentLibraryItemById(&vcdClient.Client, id)
+}
+
 func getContentLibraryItemById(client *Client, id string) (*ContentLibraryItem, error) {
 	c := crudConfig{
 		entityLabel:    labelContentLibraryItem,

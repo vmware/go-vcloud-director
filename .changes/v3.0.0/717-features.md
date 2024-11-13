@@ -1,4 +1,4 @@
 * Added `ContentLibraryItem` and `types.ContentLibraryItem` structures to manage Content Library Items
   with methods `ContentLibrary.CreateContentLibraryItem`, `ContentLibrary.GetAllContentLibraryItems`,
   `ContentLibrary.GetContentLibraryItemByName`, `ContentLibrary.GetContentLibraryItemById`, `ContentLibraryItem.Update`,
-  `ContentLibraryItem.Delete` [GH-717]
+  `ContentLibraryItem.Delete`, `VCDClient.GetContentLibraryItemById`, `ContentLibraryItem.GetFiles` [GH-717]
