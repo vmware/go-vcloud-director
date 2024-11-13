@@ -9,7 +9,7 @@ import (
 
 const labelZone = "Zone"
 
-// Zone represents region zones
+// Zone represents Region Zones
 type Zone struct {
 	Zone      *types.Zone
 	vcdClient *VCDClient
@@ -23,15 +23,7 @@ func (g Zone) wrap(inner *types.Zone) *Zone {
 	return &g
 }
 
-// func (vcdClient *VCDClient) CreateZone(config *types.Zone) (*Zone, error) {
-// 	c := crudConfig{
-// 		entityLabel: labelZone,
-// 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointZones,
-// 	}
-// 	outerType := Zone{vcdClient: vcdClient}
-// 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
-// }
-
+// GetAllZones retrieves all Region Zones
 func (vcdClient *VCDClient) GetAllZones(queryParameters url.Values) ([]*Zone, error) {
 	c := crudConfig{
 		entityLabel:     labelZone,
@@ -43,6 +35,7 @@ func (vcdClient *VCDClient) GetAllZones(queryParameters url.Values) ([]*Zone, er
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetZoneByName retrieves Region Zone by name
 func (vcdClient *VCDClient) GetZoneByName(name string) (*Zone, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelZone)
@@ -64,6 +57,7 @@ func (vcdClient *VCDClient) GetZoneByName(name string) (*Zone, error) {
 	return vcdClient.GetZoneById(singleEntity.Zone.ID)
 }
 
+// GetZoneById retrieves Region Zone by ID
 func (vcdClient *VCDClient) GetZoneById(id string) (*Zone, error) {
 	c := crudConfig{
 		entityLabel:    labelZone,
@@ -75,6 +69,7 @@ func (vcdClient *VCDClient) GetZoneById(id string) (*Zone, error) {
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// GetAllZones retrieves all Region Zones within a particular Region
 func (r *Region) GetAllZones(queryParameters url.Values) ([]*Zone, error) {
 	queryParams := copyOrNewUrlValues(queryParameters)
 	queryParams = queryParameterFilterAnd("region.id=="+r.Region.ID, queryParams)
@@ -82,6 +77,7 @@ func (r *Region) GetAllZones(queryParameters url.Values) ([]*Zone, error) {
 	return r.vcdClient.GetAllZones(queryParams)
 }
 
+// GetZoneByName retrieves Region Zone by name within a particular Region
 func (r *Region) GetZoneByName(name string) (*Zone, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name ", labelZone)
@@ -100,23 +96,4 @@ func (r *Region) GetZoneByName(name string) (*Zone, error) {
 	}
 
 	return r.vcdClient.GetZoneById(singleEntity.Zone.ID)
-}
-
-func (o *Zone) Update(ZoneConfig *types.Zone) (*Zone, error) {
-	c := crudConfig{
-		entityLabel:    labelZone,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointZones,
-		endpointParams: []string{o.Zone.ID},
-	}
-	outerType := Zone{vcdClient: o.vcdClient}
-	return updateOuterEntity(&o.vcdClient.Client, outerType, c, ZoneConfig)
-}
-
-func (o *Zone) Delete() error {
-	c := crudConfig{
-		entityLabel:    labelZone,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointZones,
-		endpointParams: []string{o.Zone.ID},
-	}
-	return deleteEntityById(&o.vcdClient.Client, c)
 }

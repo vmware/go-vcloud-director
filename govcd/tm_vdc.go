@@ -11,9 +11,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-const labelVdc = "Vdc"
+const labelTmVdc = "Vdc"
 
-// TmVdc defines Tenant Manager Virtual Data Center
+// TmVdc defines Tenant Manager Virtual Data Center structure
 type TmVdc struct {
 	TmVdc     *types.TmVdc
 	vcdClient *VCDClient
@@ -27,9 +27,10 @@ func (g TmVdc) wrap(inner *types.TmVdc) *TmVdc {
 	return &g
 }
 
+// CreateTmVdc sets up a new Tenant Manager VDC
 func (vcdClient *VCDClient) CreateTmVdc(config *types.TmVdc) (*TmVdc, error) {
 	c := crudConfig{
-		entityLabel: labelVdc,
+		entityLabel: labelTmVdc,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
 		requiresTm:  true,
 	}
@@ -37,9 +38,10 @@ func (vcdClient *VCDClient) CreateTmVdc(config *types.TmVdc) (*TmVdc, error) {
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// GetAllTmVdcs retrieves all Tenant Manager VDCs
 func (vcdClient *VCDClient) GetAllTmVdcs(queryParameters url.Values) ([]*TmVdc, error) {
 	c := crudConfig{
-		entityLabel:     labelVdc,
+		entityLabel:     labelTmVdc,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
 		queryParameters: queryParameters,
 		requiresTm:      true,
@@ -49,9 +51,10 @@ func (vcdClient *VCDClient) GetAllTmVdcs(queryParameters url.Values) ([]*TmVdc, 
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetTmVdcByName retrieves Tenant Manager by a given name
 func (vcdClient *VCDClient) GetTmVdcByName(name string) (*TmVdc, error) {
 	if name == "" {
-		return nil, fmt.Errorf("%s lookup requires name", labelVdc)
+		return nil, fmt.Errorf("%s lookup requires name", labelTmVdc)
 	}
 
 	// TODO - revisit filtering as filtering by name returns an error
@@ -69,9 +72,10 @@ func (vcdClient *VCDClient) GetTmVdcByName(name string) (*TmVdc, error) {
 	return nil, fmt.Errorf("%s no VDC found by name '%s'", ErrorEntityNotFound, name)
 }
 
+// GetTmVdcById retrieves a Tenant Manager VDC by a given ID
 func (vcdClient *VCDClient) GetTmVdcById(id string) (*TmVdc, error) {
 	c := crudConfig{
-		entityLabel:    labelVdc,
+		entityLabel:    labelTmVdc,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
 		endpointParams: []string{id},
 		requiresTm:     true,
@@ -81,9 +85,10 @@ func (vcdClient *VCDClient) GetTmVdcById(id string) (*TmVdc, error) {
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// Update Tenant Manager VDC
 func (o *TmVdc) Update(TmVdcConfig *types.TmVdc) (*TmVdc, error) {
 	c := crudConfig{
-		entityLabel:    labelVdc,
+		entityLabel:    labelTmVdc,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
 		endpointParams: []string{o.TmVdc.ID},
 		requiresTm:     true,
@@ -92,18 +97,13 @@ func (o *TmVdc) Update(TmVdcConfig *types.TmVdc) (*TmVdc, error) {
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmVdcConfig)
 }
 
+// Delete Tenant Manager VDC
 func (o *TmVdc) Delete() error {
 	c := crudConfig{
-		entityLabel:    labelVdc,
+		entityLabel:    labelTmVdc,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
 		endpointParams: []string{o.TmVdc.ID},
 		requiresTm:     true,
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
-}
-
-func (o *TmVdc) Disable() error {
-	o.TmVdc.IsEnabled = addrOf(false)
-	_, err := o.Update(o.TmVdc)
-	return err
 }
