@@ -11,8 +11,8 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// Test_ContentLibraryItem tests CRUD operations for a Content Library Item
-func (vcd *TestVCD) Test_ContentLibraryItem(check *C) {
+// Test_ContentLibraryItemOva tests CRUD operations for a Content Library Item when uploading an OVA
+func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
@@ -77,4 +77,37 @@ func (vcd *TestVCD) Test_ContentLibraryItem(check *C) {
 
 	_, err = vcd.client.GetContentLibraryItemById("urn:vcloud:contentLibraryItem:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
 	check.Assert(ContainsNotFound(err), Equals, true)
+}
+
+// Test_ContentLibraryItemIso tests CRUD operations for a Content Library Item when uploading an ISO file
+func (vcd *TestVCD) Test_ContentLibraryItemIso(check *C) {
+	skipNonTm(vcd, check)
+	sysadminOnly(vcd, check)
+
+	// Pre-requisites
+	vc, vcCleanup := getOrCreateVCenter(vcd, check)
+	defer vcCleanup()
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
+	check.Assert(err, IsNil)
+
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
+	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
+	defer regionCleanup()
+
+	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.RegionStoragePolicy)
+	check.Assert(err, IsNil)
+	check.Assert(sp, NotNil)
+
+	cl, clCleanup := getOrCreateContentLibrary(vcd, sp, check)
+	check.Assert(err, IsNil)
+	defer clCleanup()
+
+	// TODO: TM: ISO upload is not supported in TM yet, we just check that it fails gracefully
+	_, err = cl.CreateContentLibraryItem(&types.ContentLibraryItem{
+		Name:        check.TestName(),
+		Description: check.TestName(),
+	}, "../test-resources/test.iso")
+	check.Assert(err, NotNil)
+	check.Assert(err.Error(), Equals, "ISO uploads not supported")
 }

@@ -133,7 +133,7 @@ func createContentLibraryItem(cl *ContentLibrary, config *types.ContentLibraryIt
 		config.ContentLibrary.ID = cl.ContentLibrary.ID
 	}
 	if filepath.Ext(filePath) == ".iso" {
-		// TODO: TM: Early exit for ISO uploads
+		// TODO: TM: Early exit for ISO uploads as they are not supported yet in TM
 		return nil, fmt.Errorf("ISO uploads not supported")
 		// config.ItemType = "ISO"
 	} else {
