@@ -210,7 +210,12 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 
 // waitForContentLibraryItemUploadTask waits until the file upload for the given Content Library Item is complete
 func waitForContentLibraryItemUploadTask(cli *ContentLibraryItem) error {
-	taskRecords, err := cli.client.QueryTaskList(nil)
+	taskRecords, err := cli.client.QueryTaskList(map[string]string{
+		"name":       "contentLibraryItemUpload",
+		"status":     "running,preRunning,queued,error",
+		"objectType": "contentLibraryItem",
+		"objectName": cli.ContentLibraryItem.Name,
+	})
 	if err != nil {
 		return err
 	}
@@ -218,14 +223,15 @@ func waitForContentLibraryItemUploadTask(cli *ContentLibraryItem) error {
 	for _, tr := range taskRecords {
 		if strings.Contains(tr.Object, cli.ContentLibraryItem.ID) {
 			task, err = cli.client.GetTaskByHREF(tr.HREF)
-			if err != nil {
+			if err != nil && !ContainsNotFound(err) {
 				return err
 			}
 			break
 		}
 	}
 	if task == nil {
-		return fmt.Errorf("could not find upload task for Content Library Item '%s'", cli.ContentLibraryItem.Name)
+		// The task with the above filters is not found, so upload has finished already
+		return nil
 	}
 	err = task.WaitTaskCompletion()
 	if err != nil {
