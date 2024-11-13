@@ -18,9 +18,6 @@ import (
 
 const labelContentLibraryItem = "Content Library Item"
 
-// TODO: Remove Content Library Item on errors
-// TODO: Wait for tasks when uploading
-
 // ContentLibraryItem defines the Content Library Item data structure
 type ContentLibraryItem struct {
 	ContentLibraryItem *types.ContentLibraryItem
