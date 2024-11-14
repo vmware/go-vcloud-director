@@ -59,7 +59,7 @@ testnsxv:
 testtm:
 	cd govcd && go test -tags "tm" -timeout 0  -check.vv
 
-testtm-cover:
+testtm-coverage:
 	cd govcd && go test --coverprofile tm.cover -tags "tm" -timeout 0  -check.vv
 # vet runs the Go source code static analysis tool `vet` to find
 # any common errors.

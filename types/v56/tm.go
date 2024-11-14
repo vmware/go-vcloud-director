@@ -210,11 +210,11 @@ type TmVdcZoneResourceAllocation struct {
 type TmVdcResourceAllocation struct {
 	// CPULimitMHz defines maximum CPU consumption limit in MHz
 	CPULimitMHz int `json:"cpuLimitMHz"`
-	// CPUReservationMHz defines reserver CPU capacity in MHz
+	// CPUReservationMHz defines reserved CPU capacity in MHz
 	CPUReservationMHz int `json:"cpuReservationMHz"`
 	// MemoryLimitMiB defines maximum memory consumption limit in MiB
 	MemoryLimitMiB int `json:"memoryLimitMiB"`
-	// MemoryReservationMiB defines reserver memory in Mib
+	// MemoryReservationMiB defines reserved memory in Mib
 	MemoryReservationMiB int `json:"memoryReservationMiB"`
 }
 
