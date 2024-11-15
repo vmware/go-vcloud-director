@@ -7,7 +7,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-const labelZone = "Zone"
+const labelZone = "Region Zone"
 
 // Zone represents Region Zones
 type Zone struct {
