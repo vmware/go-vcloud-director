@@ -71,6 +71,11 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(byNameAndOrgId.TmVdc, DeepEquals, createdVdc.TmVdc)
 
+	// Get By Name and Org ID in non existent Org
+	byNameAndInvalidOrgId, err := vcd.client.GetTmVdcByNameAndOrgId(createdVdc.TmVdc.Name, "urn:vcloud:org:a93c9db9-0000-0000-0000-a8f7eeda85f9")
+	check.Assert(err, NotNil)
+	check.Assert(byNameAndInvalidOrgId, IsNil)
+
 	// Not Found tests
 	byNameInvalid, err := vcd.client.GetTmVdcByName("fake-name")
 	check.Assert(ContainsNotFound(err), Equals, true)
