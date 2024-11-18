@@ -66,6 +66,11 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(byId.TmVdc, DeepEquals, createdVdc.TmVdc)
 
+	// Get By Name and Org ID
+	byNameAndOrgId, err := vcd.client.GetTmVdcByNameAndOrgId(createdVdc.TmVdc.Name, org.TmOrg.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byNameAndOrgId.TmVdc, DeepEquals, createdVdc.TmVdc)
+
 	// Not Found tests
 	byNameInvalid, err := vcd.client.GetTmVdcByName("fake-name")
 	check.Assert(ContainsNotFound(err), Equals, true)

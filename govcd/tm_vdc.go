@@ -72,6 +72,30 @@ func (vcdClient *VCDClient) GetTmVdcByName(name string) (*TmVdc, error) {
 	return nil, fmt.Errorf("%s no VDC found by name '%s'", ErrorEntityNotFound, name)
 }
 
+// GetTmVdcByNameAndOrgId retrieves VDC by Name and Org ID
+func (vcdClient *VCDClient) GetTmVdcByNameAndOrgId(name, orgId string) (*TmVdc, error) {
+	if name == "" {
+		return nil, fmt.Errorf("%s lookup requires name and Org ID to be present", labelTmOrgVdc)
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", fmt.Sprintf("org.id==%s", orgId))
+
+	// TODO - revisit filtering as filtering by name returns an error
+	filteredEntities, err := vcdClient.GetAllTmVdcs(queryParams)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range filteredEntities {
+		if filteredEntities[i].TmVdc.Name == name {
+			return filteredEntities[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("%s no VDC found by name '%s'", ErrorEntityNotFound, name)
+}
+
 // GetTmVdcById retrieves a Tenant Manager VDC by a given ID
 func (vcdClient *VCDClient) GetTmVdcById(id string) (*TmVdc, error) {
 	c := crudConfig{
