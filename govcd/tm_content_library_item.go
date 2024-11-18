@@ -5,6 +5,7 @@ package govcd
  */
 
 import (
+	"errors"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
@@ -34,6 +35,9 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 // CreateContentLibraryItem creates a Content Library Item with the given file located in 'filePath' parameter, which must
 // be an OVA or ISO file.
 func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, filePath string) (*ContentLibraryItem, error) {
+	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("error reading provided path '%s': %s", filePath, err)
+	}
 	cli, err := createContentLibraryItem(cl, config, filePath)
 	if err != nil {
 		if cli == nil || cli.ContentLibraryItem == nil {
