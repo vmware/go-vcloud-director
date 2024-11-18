@@ -11,9 +11,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-const labelTmOrgVdc = "Vdc"
+const labelTmOrgVdc = "TM Org Vdc"
 
-// TmVdc defines Tenant Manager Virtual Data Center structure
+// TmVdc defines Tenant Manager Organization Virtual Data Center structure
 type TmVdc struct {
 	TmVdc     *types.TmVdc
 	vcdClient *VCDClient
