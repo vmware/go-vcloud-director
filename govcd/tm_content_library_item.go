@@ -207,7 +207,19 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 		uploadError: addrOf(fmt.Errorf("error uploading Content Library Item file '%s'", name)),
 	}
 
-	_, err = uploadFile(cli.client, findFilePath(filesAbsPaths, name), ud)
+	// When TM asks for a file called 'descriptor.ovf', it can be that inside the OVA
+	// it is not named like that. We search for an .ovf file in this case and we use it
+	foundName := name
+	if name == "descriptor.ovf" {
+		for _, f := range filesAbsPaths {
+			if filepath.Ext(f) == ".ovf" {
+				_, foundName = filepath.Split(f)
+				break
+			}
+		}
+	}
+
+	_, err = uploadFile(cli.client, findFilePath(filesAbsPaths, foundName), ud)
 	if err != nil {
 		return fmt.Errorf("could not upload the file: %s", err)
 	}
