@@ -31,6 +31,7 @@ func (vcdClient *VCDClient) CreateNsxtManagerOpenApi(config *types.NsxtManagerOp
 	c := crudConfig{
 		entityLabel: labelNsxtManagerOpenApi,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
+		requiresTm:  true,
 	}
 	outerType := NsxtManagerOpenApi{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
@@ -42,6 +43,7 @@ func (vcdClient *VCDClient) GetAllNsxtManagersOpenApi(queryParameters url.Values
 		entityLabel:     labelNsxtManagerOpenApi,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := NsxtManagerOpenApi{vcdClient: vcdClient}
@@ -54,6 +56,7 @@ func (vcdClient *VCDClient) GetNsxtManagerOpenApiById(id string) (*NsxtManagerOp
 		entityLabel:    labelNsxtManagerOpenApi,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 		endpointParams: []string{id},
+		requiresTm:     true,
 	}
 
 	outerType := NsxtManagerOpenApi{vcdClient: vcdClient}
@@ -116,6 +119,7 @@ func (t *NsxtManagerOpenApi) Update(TmNsxtManagerConfig *types.NsxtManagerOpenAp
 		entityLabel:    labelNsxtManagerOpenApi,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 		endpointParams: []string{t.NsxtManagerOpenApi.ID},
+		requiresTm:     true,
 	}
 	outerType := NsxtManagerOpenApi{vcdClient: t.vcdClient}
 	return updateOuterEntity(&t.vcdClient.Client, outerType, c, TmNsxtManagerConfig)
@@ -127,6 +131,7 @@ func (t *NsxtManagerOpenApi) Delete() error {
 		entityLabel:    labelNsxtManagerOpenApi,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
 		endpointParams: []string{t.NsxtManagerOpenApi.ID},
+		requiresTm:     true,
 	}
 	return deleteEntityById(&t.vcdClient.Client, c)
 }
