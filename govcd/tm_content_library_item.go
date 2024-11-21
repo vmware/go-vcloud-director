@@ -85,7 +85,13 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, fmt.Errorf("ISO upload not supported"))
 	}
 
-	err = waitForContentLibraryItemUploadTask(cli)
+	err = getContentLibraryItemUploadTask(cli, func(task Task) error {
+		err = task.WaitTaskCompletion()
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 	}
@@ -159,7 +165,17 @@ func cleanupContentLibraryItemOnUploadError(client *Client, identifier string, o
 	if err != nil {
 		return fmt.Errorf("the Content Library Item creation failed with error: %s\nCleanup of stranded Content Library Item also failed: %s", originalError, err)
 	}
-	err = cli.Delete()
+	err = getContentLibraryItemUploadTask(cli, func(task Task) error {
+		err = task.CancelTask()
+		if err != nil {
+			return err
+		}
+		err = cli.Delete()
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return fmt.Errorf("the Content Library Item creation failed with error: %s\nCleanup of stranded Content Library Item also failed: %s", originalError, err)
 	}
@@ -226,8 +242,9 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 	return nil
 }
 
-// waitForContentLibraryItemUploadTask waits until the file upload for the given Content Library Item is complete
-func waitForContentLibraryItemUploadTask(cli *ContentLibraryItem) error {
+// getContentLibraryItemUploadTask searches for the task associated to the given Content Library Item upload and runs the input
+// function on it
+func getContentLibraryItemUploadTask(cli *ContentLibraryItem, operation func(task Task) error) error {
 	taskRecords, err := cli.client.QueryTaskList(map[string]string{
 		"name":       "contentLibraryItemUpload",
 		"status":     "running,preRunning,queued,error",
@@ -251,7 +268,7 @@ func waitForContentLibraryItemUploadTask(cli *ContentLibraryItem) error {
 		// The task with the above filters is not found, so upload has finished already
 		return nil
 	}
-	err = task.WaitTaskCompletion()
+	err = operation(*task)
 	if err != nil {
 		return err
 	}
