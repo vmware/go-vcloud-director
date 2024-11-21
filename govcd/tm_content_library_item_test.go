@@ -40,7 +40,7 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
 		Name:        check.TestName() + "2",
 		Description: check.TestName(),
-	}, "/Users/abarreiro/Documents/Development/vcd-terraform-config-gen/images/photon-hw11-3.0-26156e2.ova")
+	}, "../test-resources/test_vapp_template.ova")
 	check.Assert(err, IsNil)
 	check.Assert(cli, NotNil)
 	AddToCleanupListOpenApi(cli.ContentLibraryItem.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraryItems+cli.ContentLibraryItem.ID)
