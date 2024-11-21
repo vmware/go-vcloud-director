@@ -62,8 +62,16 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	}
 	check.Assert(found, Equals, true)
 
-	obtainedCliByName, err := cl.GetContentLibraryItemByName(check.TestName())
+	obtainedClisByName, err := cl.GetContentLibraryItemsByName(check.TestName())
 	check.Assert(err, IsNil)
+	check.Assert(len(obtainedClisByName), Not(Equals), 0)
+	var obtainedCliByName *ContentLibraryItem
+	for _, item := range obtainedClisByName {
+		if item.ContentLibraryItem.ID == cli.ContentLibraryItem.ID {
+			obtainedCliByName = item
+			break
+		}
+	}
 	check.Assert(obtainedCliByName, NotNil)
 
 	obtainedCliById, err := cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
@@ -77,7 +85,7 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(*obtainedCliById.ContentLibraryItem, DeepEquals, *obtainedCliByName.ContentLibraryItem)
 
 	// Not found errors
-	_, err = cl.GetContentLibraryItemByName("notexist")
+	_, err = cl.GetContentLibraryItemsByName("notexist")
 	check.Assert(ContainsNotFound(err), Equals, true)
 
 	_, err = cl.GetContentLibraryItemById("urn:vcloud:contentLibraryItem:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
