@@ -51,7 +51,7 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 	}
 
-	// Refresh
+	// TODO: TM: We do a refresh as POST response does not populate ItemType
 	cli, err = cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
 	if err != nil {
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
