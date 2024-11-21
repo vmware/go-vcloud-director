@@ -38,7 +38,7 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 
 	// Test begins
 	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
-		Name:        check.TestName() + "2",
+		Name:        check.TestName(),
 		Description: check.TestName(),
 	}, "../test-resources/test_vapp_template.ova")
 	check.Assert(err, IsNil)
