@@ -169,13 +169,14 @@ func cleanupContentLibraryItemOnUploadError(client *Client, id string, originalE
 	err = getContentLibraryItemUploadTask(cli, func(task *Task) error {
 		var innerErr error
 		if task == nil {
-			// The task does not exist, so we try to delete the cli
+			// The task does not exist, so we try to delete the Content Library Item directly
 			innerErr = cli.Delete()
 			if innerErr != nil {
 				return innerErr
 			}
 			return nil
 		}
+		// Task exists, so we cancel it and let TM do the cleanup
 		innerErr = task.CancelTask()
 		if innerErr != nil {
 			return innerErr
