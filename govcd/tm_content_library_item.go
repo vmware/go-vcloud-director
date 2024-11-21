@@ -165,7 +165,7 @@ func cleanupContentLibraryItemOnUploadError(client *Client, identifier string, o
 	}
 	if ContainsNotFound(err) {
 		// Nothing to do
-		return nil
+		return originalError
 	}
 	if err != nil {
 		return fmt.Errorf("the Content Library Item creation failed with error: %s\nCleanup of stranded Content Library Item also failed: %s", originalError, err)
