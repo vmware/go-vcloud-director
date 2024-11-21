@@ -43,7 +43,8 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		if cli == nil || cli.ContentLibraryItem == nil {
 			return nil, err
 		}
-		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
+		// We use Name for cleanup because ID may or may not be available
+		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.Name, err)
 	}
 	files, err := getContentLibraryItemPendingFilesToUpload(cli, 1, 10)
 	if err != nil {
@@ -154,11 +155,14 @@ func createContentLibraryItem(cl *ContentLibrary, config *types.ContentLibraryIt
 
 // cleanupContentLibraryItemOnUploadError prevents leaving stranded Content Library Items when any step of the creation (upload)
 // process fails.
-func cleanupContentLibraryItemOnUploadError(client *Client, id string, originalError error) error {
-	if id == "" {
-		return fmt.Errorf("the Content Library Item creation failed with error: %s\nCleanup of stranded Content Library Item also failed as its ID is empty", originalError)
+func cleanupContentLibraryItemOnUploadError(client *Client, identifier string, originalError error) error {
+	var err error
+	var cli *ContentLibraryItem
+	if strings.Contains(identifier, "urn:vcloud:contentLibraryItem") {
+		cli, err = getContentLibraryItemById(client, identifier)
+	} else {
+		cli, err = getContentLibraryItemByName(client, identifier)
 	}
-	cli, err := getContentLibraryItemById(client, id)
 	if ContainsNotFound(err) {
 		// Nothing to do
 		return nil
@@ -305,12 +309,12 @@ func getAllContentLibraryItems(client *Client, queryParameters url.Values) ([]*C
 	return getAllOuterEntities(client, outerType, c)
 }
 
-// GetContentLibraryItemsByName retrieves multiple Content Library Items with the given name
-func (cl *ContentLibrary) GetContentLibraryItemsByName(name string) ([]*ContentLibraryItem, error) {
-	return getContentLibraryItemsByName(cl.client, name)
+// GetContentLibraryItemByName retrieves a Content Library Item with the given name
+func (cl *ContentLibrary) GetContentLibraryItemByName(name string) (*ContentLibraryItem, error) {
+	return getContentLibraryItemByName(cl.client, name)
 }
 
-func getContentLibraryItemsByName(client *Client, name string) ([]*ContentLibraryItem, error) {
+func getContentLibraryItemByName(client *Client, name string) (*ContentLibraryItem, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelContentLibraryItem)
 	}
@@ -318,14 +322,17 @@ func getContentLibraryItemsByName(client *Client, name string) ([]*ContentLibrar
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name=="+name)
 
-	itemsByName, err := getAllContentLibraryItems(client, queryParams)
+	filteredEntities, err := getAllContentLibraryItems(client, queryParams)
 	if err != nil {
 		return nil, err
 	}
-	if len(itemsByName) == 0 {
-		return nil, fmt.Errorf("could not find any Content Library Item with name '%s': %s", name, ErrorEntityNotFound)
+
+	singleEntity, err := oneOrError("name", name, filteredEntities)
+	if err != nil {
+		return nil, err
 	}
-	return itemsByName, nil
+
+	return getContentLibraryItemById(client, singleEntity.ContentLibraryItem.ID)
 }
 
 // GetContentLibraryItemById retrieves a Content Library Item with the given ID
