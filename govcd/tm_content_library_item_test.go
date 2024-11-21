@@ -38,7 +38,7 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 
 	// Test begins
 	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
-		Name:        check.TestName(),
+		Name:        check.TestName() + "2",
 		Description: check.TestName(),
 	}, "/Users/abarreiro/Documents/Development/vcd-terraform-config-gen/images/photon-hw11-3.0-26156e2.ova")
 	check.Assert(err, IsNil)

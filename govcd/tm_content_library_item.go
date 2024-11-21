@@ -85,7 +85,11 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, fmt.Errorf("ISO upload not supported"))
 	}
 
-	err = getContentLibraryItemUploadTask(cli, func(task Task) error {
+	err = getContentLibraryItemUploadTask(cli, func(task *Task) error {
+		if task == nil {
+			// The task does not exist, so upload has finished already
+			return nil
+		}
 		err = task.WaitTaskCompletion()
 		if err != nil {
 			return err
@@ -162,14 +166,19 @@ func cleanupContentLibraryItemOnUploadError(client *Client, id string, originalE
 	if err != nil {
 		return fmt.Errorf("the Content Library Item creation failed with error: %s\nCleanup of stranded Content Library Item also failed: %s", originalError, err)
 	}
-	err = getContentLibraryItemUploadTask(cli, func(task Task) error {
-		err = task.CancelTask()
-		if err != nil {
-			return err
+	err = getContentLibraryItemUploadTask(cli, func(task *Task) error {
+		var innerErr error
+		if task == nil {
+			// The task does not exist, so we try to delete the cli
+			innerErr = cli.Delete()
+			if innerErr != nil {
+				return innerErr
+			}
+			return nil
 		}
-		err = cli.Delete()
-		if err != nil {
-			return err
+		innerErr = task.CancelTask()
+		if innerErr != nil {
+			return innerErr
 		}
 		return nil
 	})
@@ -241,7 +250,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 
 // getContentLibraryItemUploadTask searches for the task associated to the given Content Library Item upload and runs the input
 // function on it
-func getContentLibraryItemUploadTask(cli *ContentLibraryItem, operation func(task Task) error) error {
+func getContentLibraryItemUploadTask(cli *ContentLibraryItem, operation func(task *Task) error) error {
 	taskRecords, err := cli.client.QueryTaskList(map[string]string{
 		"name":       "contentLibraryItemUpload",
 		"status":     "running,preRunning,queued,error",
@@ -261,11 +270,7 @@ func getContentLibraryItemUploadTask(cli *ContentLibraryItem, operation func(tas
 			break
 		}
 	}
-	if task == nil {
-		// The task with the above filters is not found, so upload has finished already
-		return nil
-	}
-	err = operation(*task)
+	err = operation(task)
 	if err != nil {
 		return err
 	}
