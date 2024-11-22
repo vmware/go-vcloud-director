@@ -217,7 +217,10 @@ func ResourceInProgress(tasksInProgress *types.TasksInProgress) bool {
 		return false
 	}
 	tasks := tasksInProgress.Task
+	util.Logger.Printf("[TRACE] ResourceInProgress - has '%d' tasks\n", len(tasks))
 	for _, task := range tasks {
+		util.Logger.Printf("[TRACE] ResourceInProgress - task (ID '%s') '%s' has status %s \n",
+			task.ID, task.Name, task.Status)
 		if isTaskCompleteOrError(task.Status) {
 			continue
 		}
@@ -241,12 +244,16 @@ func WaitResource(refresh func() (*types.TasksInProgress, error)) error {
 	if tasks == nil {
 		return nil
 	}
+	operationCounter := 0
 	for err == nil {
+		operationCounter++
+		util.Logger.Printf("[TRACE] WaitResource iteration %d\n", operationCounter)
 		time.Sleep(time.Second)
 		tasks, err = refresh()
 		if err != nil {
 			return err
 		}
+		util.Logger.Printf("[TRACE] WaitResource value of tasks in iteration %d: %#v\n", operationCounter, tasks)
 		if tasks == nil || ResourceComplete(tasks) {
 			return nil
 		}
