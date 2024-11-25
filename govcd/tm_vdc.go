@@ -57,19 +57,19 @@ func (vcdClient *VCDClient) GetTmVdcByName(name string) (*TmVdc, error) {
 		return nil, fmt.Errorf("%s lookup requires name", labelTmOrgVdc)
 	}
 
-	// TODO - revisit filtering as filtering by name returns an error
-	filteredEntities, err := vcdClient.GetAllTmVdcs(nil)
+	queryParams := url.Values{}
+	queryParams.Add("filter", fmt.Sprintf("name==%s", name))
+	filteredEntities, err := vcdClient.GetAllTmVdcs(queryParams)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range filteredEntities {
-		if filteredEntities[i].TmVdc.Name == name {
-			return filteredEntities[i], nil
-		}
+	singleResult, err := oneOrError("name", name, filteredEntities)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("%s no VDC found by name '%s'", ErrorEntityNotFound, name)
+	return singleResult, nil
 }
 
 // GetTmVdcByNameAndOrgId retrieves VDC by Name and Org ID
@@ -79,21 +79,19 @@ func (vcdClient *VCDClient) GetTmVdcByNameAndOrgId(name, orgId string) (*TmVdc, 
 	}
 
 	queryParams := url.Values{}
-	queryParams.Add("filter", fmt.Sprintf("org.id==%s", orgId))
+	queryParams.Add("filter", fmt.Sprintf("org.id==%s;name==%s", orgId, name))
 
-	// TODO - revisit filtering as filtering by name returns an error
 	filteredEntities, err := vcdClient.GetAllTmVdcs(queryParams)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range filteredEntities {
-		if filteredEntities[i].TmVdc.Name == name {
-			return filteredEntities[i], nil
-		}
+	singleResult, err := oneOrError("name", name, filteredEntities)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("%s no VDC found by name '%s'", ErrorEntityNotFound, name)
+	return singleResult, nil
 }
 
 // GetTmVdcById retrieves a Tenant Manager VDC by a given ID
