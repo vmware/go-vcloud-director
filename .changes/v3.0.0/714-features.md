@@ -9,4 +9,4 @@
 * Add NSX-T Manager management types `NsxtManagerOpenApi`, `types.NsxtManagerOpenApi` and methods
   `VCDClient.CreateNsxtManagerOpenApi`, `VCDClient.GetAllNsxtManagersOpenApi`,
   `VCDClient.GetNsxtManagerOpenApiById`, `VCDClient.GetNsxtManagerOpenApiByName`,
-  `TmNsxtManager.Update`, `TmNsxtManager.Delete` [GH-714, GH-722]
+  `TmNsxtManager.Update`, `TmNsxtManager.Delete` [GH-714]
