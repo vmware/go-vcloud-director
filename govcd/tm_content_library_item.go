@@ -35,6 +35,7 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 // CreateContentLibraryItem creates a Content Library Item with the given file located in 'filePath' parameter, which must
 // be an OVA or ISO file.
 func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, filePath string) (*ContentLibraryItem, error) {
+	retriesForPollingFilesToUpload := 10
 	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		// We use Name for cleanup because ID may or may not be available
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.Name, err)
 	}
-	files, err := getContentLibraryItemPendingFilesToUpload(cli, 1, 10)
+	files, err := getContentLibraryItemPendingFilesToUpload(cli, 1, retriesForPollingFilesToUpload)
 	if err != nil {
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 	}
@@ -66,7 +67,7 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		}
 		// When descriptor.ovf is uploaded, the links for the remaining files will be present in the file list.
 		// Refresh the file list and upload each one of them.
-		files, err = getContentLibraryItemPendingFilesToUpload(cli, 2, 10)
+		files, err = getContentLibraryItemPendingFilesToUpload(cli, 2, retriesForPollingFilesToUpload)
 		if err != nil {
 			return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 		}

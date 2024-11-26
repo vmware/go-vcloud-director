@@ -12,7 +12,8 @@ import (
 	"strings"
 )
 
-// TODO: TM: Test upload failures
+// TODO: TM: Test upload failures:
+//       https://github.com/vmware/go-vcloud-director/pull/717#discussion_r1853767609
 
 // Test_ContentLibraryItemOva tests CRUD operations for a Content Library Item when uploading an OVA
 func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
