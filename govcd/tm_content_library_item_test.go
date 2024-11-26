@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+// TODO: TM: Test upload failures
+
 // Test_ContentLibraryItemOva tests CRUD operations for a Content Library Item when uploading an OVA
 func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	skipNonTm(vcd, check)
