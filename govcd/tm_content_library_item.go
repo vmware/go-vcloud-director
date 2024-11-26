@@ -111,6 +111,9 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 
 // getContentLibraryItemPendingFilesToUpload polls the Content Library Item until a minimum amount of expected files is obtained for
 // the given amount of retries. If retries are reached and the expected files are not retrieved, returns an error.
+// This function should be used to poll TM until it returns the files that the client SDK should upload next during the upload process.
+// For example, at the beginning of the upload, only one file is expected (descriptor.ovf), but once it is uploaded, more files will be
+// *eventually* returned by TM to upload next. This function can poll TM until these are returned correctly.
 func getContentLibraryItemPendingFilesToUpload(cli *ContentLibraryItem, expectedAtLeast, retries int) ([]*types.ContentLibraryItemFile, error) {
 	i := 0
 	var files []*types.ContentLibraryItemFile
