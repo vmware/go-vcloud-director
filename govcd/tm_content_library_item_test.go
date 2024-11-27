@@ -43,7 +43,9 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
 		Name:        check.TestName(),
 		Description: check.TestName(),
-	}, "../test-resources/test_vapp_template.ova")
+	}, ContentLibraryItemUploadArguments{
+		FilePath: "../test-resources/test_vapp_template.ova",
+	})
 	check.Assert(err, IsNil)
 	check.Assert(cli, NotNil)
 	AddToCleanupListOpenApi(cli.ContentLibraryItem.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraryItems+cli.ContentLibraryItem.ID)
@@ -122,7 +124,9 @@ func (vcd *TestVCD) Test_ContentLibraryItemIso(check *C) {
 	_, err = cl.CreateContentLibraryItem(&types.ContentLibraryItem{
 		Name:        check.TestName(),
 		Description: check.TestName(),
-	}, "../test-resources/test.iso")
+	}, ContentLibraryItemUploadArguments{
+		FilePath: "../test-resources/test.iso",
+	})
 	check.Assert(err, NotNil)
 	check.Assert(err.Error(), Equals, "ISO uploads not supported")
 }

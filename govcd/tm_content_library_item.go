@@ -18,10 +18,20 @@ import (
 
 const labelContentLibraryItem = "Content Library Item"
 
+// retriesForPollingContentLibraryItemFilesToUpload specifies the amount of retries used when retrieving the
+// Content Library Items files to upload
+const retriesForPollingContentLibraryItemFilesToUpload = 10
+
 // ContentLibraryItem defines the Content Library Item data structure
 type ContentLibraryItem struct {
 	ContentLibraryItem *types.ContentLibraryItem
 	client             *Client
+}
+
+// ContentLibraryItemUploadArguments defines the required arguments for Content Library Item uploads
+type ContentLibraryItemUploadArguments struct {
+	FilePath        string // Path to the file to upload
+	UploadPieceSize int64  // When uploading big files, the payloads are divided into chunks of this size in bytes. Defaults to 'defaultPieceSize'
 }
 
 // wrap is a hidden helper that facilitates the usage of a generic CRUD function
@@ -34,12 +44,11 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 
 // CreateContentLibraryItem creates a Content Library Item with the given file located in 'filePath' parameter, which must
 // be an OVA or ISO file.
-func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, filePath string) (*ContentLibraryItem, error) {
-	retriesForPollingFilesToUpload := 10
-	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, args ContentLibraryItemUploadArguments) (*ContentLibraryItem, error) {
+	if _, err := os.Stat(args.FilePath); errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
-	cli, err := createContentLibraryItem(cl, config, filePath)
+	cli, err := createContentLibraryItem(cl, config, args.FilePath)
 	if err != nil {
 		if cli == nil || cli.ContentLibraryItem == nil {
 			return nil, err
@@ -47,7 +56,7 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		// We use Name for cleanup because ID may or may not be available
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.Name, err)
 	}
-	files, err := getContentLibraryItemPendingFilesToUpload(cli, 1, retriesForPollingFilesToUpload)
+	files, err := getContentLibraryItemPendingFilesToUpload(cli, 1, retriesForPollingContentLibraryItemFilesToUpload)
 	if err != nil {
 		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 	}
@@ -61,13 +70,13 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 
 	if cli.ContentLibraryItem.ItemType == "TEMPLATE" {
 		// The descriptor must be uploaded first
-		err = uploadContentLibraryItemFile("descriptor.ovf", cli, files, filePath)
+		err = uploadContentLibraryItemFile("descriptor.ovf", cli, files, args)
 		if err != nil {
 			return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 		}
 		// When descriptor.ovf is uploaded, the links for the remaining files will be present in the file list.
 		// Refresh the file list and upload each one of them.
-		files, err = getContentLibraryItemPendingFilesToUpload(cli, 2, retriesForPollingFilesToUpload)
+		files, err = getContentLibraryItemPendingFilesToUpload(cli, 2, retriesForPollingContentLibraryItemFilesToUpload)
 		if err != nil {
 			return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 		}
@@ -77,7 +86,7 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 				// Already uploaded
 				continue
 			}
-			err = uploadContentLibraryItemFile(f.Name, cli, files, filePath)
+			err = uploadContentLibraryItemFile(f.Name, cli, files, args)
 			if err != nil {
 				return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
 			}
@@ -198,7 +207,7 @@ func cleanupContentLibraryItemOnUploadError(client *Client, identifier string, o
 }
 
 // uploadContentLibraryItemFile uploads a Content Library Item file from the given slice with the given file present on disk
-func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToUpload []*types.ContentLibraryItemFile, localFilePath string) error {
+func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToUpload []*types.ContentLibraryItemFile, args ContentLibraryItemUploadArguments) error {
 	if cli == nil || len(filesToUpload) == 0 {
 		return fmt.Errorf("the Content Library Item or its files cannot be nil / empty")
 	}
@@ -214,7 +223,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 	if fileToUpload == nil {
 		return fmt.Errorf("'%s' not found among the Content Library Item '%s' files", name, cli.ContentLibraryItem.Name)
 	}
-	filesAbsPaths, tmpDir, err := util.Unpack(localFilePath)
+	filesAbsPaths, tmpDir, err := util.Unpack(args.FilePath)
 	if err != nil {
 		return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
 	}
@@ -229,7 +238,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 		uploadLink:               strings.ReplaceAll(fileToUpload.TransferUrl, "/transfer", "/tm/transfer"), // TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
 		uploadedBytes:            0,
 		fileSizeToUpload:         fileToUpload.ExpectedSizeBytes,
-		uploadPieceSize:          1024,
+		uploadPieceSize:          args.UploadPieceSize,
 		uploadedBytesForCallback: 0,
 		allFilesSize:             fileToUpload.ExpectedSizeBytes,
 		callBack: func(bytesUpload, totalSize int64) {
