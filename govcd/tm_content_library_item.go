@@ -25,7 +25,7 @@ const retriesForPollingContentLibraryItemFilesToUpload = 10
 // ContentLibraryItem defines the Content Library Item data structure
 type ContentLibraryItem struct {
 	ContentLibraryItem *types.ContentLibraryItem
-	client             *Client
+	vcdClient          *VCDClient
 }
 
 // ContentLibraryItemUploadArguments defines the required arguments for Content Library Item uploads
@@ -54,31 +54,31 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 			return nil, err
 		}
 		// We use Name for cleanup because ID may or may not be available
-		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.Name, err)
+		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.Name, err)
 	}
 	files, err := getContentLibraryItemPendingFilesToUpload(cli, 1, retriesForPollingContentLibraryItemFilesToUpload)
 	if err != nil {
-		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
+		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 	}
 
 	// TODO: TM: We do a refresh as POST response does not populate ItemType. This should be fixed in TM
 	//       at some point
 	cli, err = cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
 	if err != nil {
-		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
+		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 	}
 
 	if cli.ContentLibraryItem.ItemType == "TEMPLATE" {
 		// The descriptor must be uploaded first
 		err = uploadContentLibraryItemFile("descriptor.ovf", cli, files, args)
 		if err != nil {
-			return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
+			return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 		}
 		// When descriptor.ovf is uploaded, the links for the remaining files will be present in the file list.
 		// Refresh the file list and upload each one of them.
 		files, err = getContentLibraryItemPendingFilesToUpload(cli, 2, retriesForPollingContentLibraryItemFilesToUpload)
 		if err != nil {
-			return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
+			return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 		}
 
 		for _, f := range files {
@@ -88,12 +88,12 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 			}
 			err = uploadContentLibraryItemFile(f.Name, cli, files, args)
 			if err != nil {
-				return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
+				return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 			}
 		}
 	} else {
 		// TODO: TM: ISO upload
-		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, fmt.Errorf("ISO upload not supported"))
+		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, fmt.Errorf("ISO upload not supported"))
 	}
 
 	err = getContentLibraryItemUploadTask(cli, func(task *Task) error {
@@ -108,12 +108,12 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		return nil
 	})
 	if err != nil {
-		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
+		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 	}
 
 	cli, err = cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
 	if err != nil {
-		return nil, cleanupContentLibraryItemOnUploadError(cl.client, cli.ContentLibraryItem.ID, err)
+		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 	}
 	return cli, nil
 }
@@ -149,7 +149,7 @@ func createContentLibraryItem(cl *ContentLibrary, config *types.ContentLibraryIt
 		entityLabel: labelContentLibraryItem,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 	}
-	outerType := ContentLibraryItem{client: cl.client}
+	outerType := ContentLibraryItem{vcdClient: cl.vcdClient}
 	if config != nil && config.ContentLibrary.Name == "" {
 		config.ContentLibrary.Name = cl.ContentLibrary.Name
 	}
@@ -163,18 +163,18 @@ func createContentLibraryItem(cl *ContentLibrary, config *types.ContentLibraryIt
 	} else {
 		config.ItemType = "TEMPLATE"
 	}
-	return createOuterEntity(cl.client, outerType, c, config)
+	return createOuterEntity(&cl.vcdClient.Client, outerType, c, config)
 }
 
 // cleanupContentLibraryItemOnUploadError prevents leaving stranded Content Library Items when any step of the creation (upload)
 // process fails.
-func cleanupContentLibraryItemOnUploadError(client *Client, identifier string, originalError error) error {
+func cleanupContentLibraryItemOnUploadError(cl *ContentLibrary, identifier string, originalError error) error {
 	var err error
 	var cli *ContentLibraryItem
 	if strings.Contains(identifier, "urn:vcloud:contentLibraryItem") {
-		cli, err = getContentLibraryItemById(client, identifier)
+		cli, err = cl.GetContentLibraryItemById(identifier)
 	} else {
-		cli, err = getContentLibraryItemByName(client, identifier)
+		cli, err = cl.GetContentLibraryItemByName(identifier)
 	}
 	if ContainsNotFound(err) {
 		// Nothing to do
@@ -259,7 +259,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 		}
 	}
 
-	_, err = uploadFile(cli.client, findFilePath(filesAbsPaths, foundName), ud)
+	_, err = uploadFile(&cli.vcdClient.Client, findFilePath(filesAbsPaths, foundName), ud)
 	if err != nil {
 		return fmt.Errorf("could not upload the file: %s", err)
 	}
@@ -269,7 +269,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 // getContentLibraryItemUploadTask searches for the task associated to the given Content Library Item upload and runs the input
 // function on it
 func getContentLibraryItemUploadTask(cli *ContentLibraryItem, operation func(task *Task) error) error {
-	taskRecords, err := cli.client.QueryTaskList(map[string]string{
+	taskRecords, err := cli.vcdClient.Client.QueryTaskList(map[string]string{
 		"name":       "contentLibraryItemUpload",
 		"status":     "running,preRunning,queued,error",
 		"objectType": "contentLibraryItem",
@@ -280,8 +280,8 @@ func getContentLibraryItemUploadTask(cli *ContentLibraryItem, operation func(tas
 	}
 	var task *Task
 	for _, tr := range taskRecords {
-		if strings.Contains(tr.Object, cli.ContentLibraryItem.ID) {
-			task, err = cli.client.GetTaskByHREF(tr.HREF)
+		if equalIds(cli.ContentLibraryItem.ID, tr.Object, tr.HREF) {
+			task, err = cli.vcdClient.Client.GetTaskByHREF(tr.HREF)
 			if err != nil && !ContainsNotFound(err) {
 				return err
 			}
@@ -302,32 +302,24 @@ func getContentLibraryItemFiles(cli *ContentLibraryItem) ([]*types.ContentLibrar
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItemFiles,
 		endpointParams: []string{cli.ContentLibraryItem.ID},
 	}
-	return getAllInnerEntities[types.ContentLibraryItemFile](cli.client, c)
+	return getAllInnerEntities[types.ContentLibraryItemFile](&cli.vcdClient.Client, c)
 }
 
 // GetAllContentLibraryItems retrieves all Content Library Items with the given query parameters, which allow setting filters
 // and other constraints
 func (cl *ContentLibrary) GetAllContentLibraryItems(queryParameters url.Values) ([]*ContentLibraryItem, error) {
-	return getAllContentLibraryItems(cl.client, queryParameters)
-}
-
-func getAllContentLibraryItems(client *Client, queryParameters url.Values) ([]*ContentLibraryItem, error) {
 	c := crudConfig{
 		entityLabel:     labelContentLibraryItem,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		queryParameters: queryParameters,
 	}
 
-	outerType := ContentLibraryItem{client: client}
-	return getAllOuterEntities(client, outerType, c)
+	outerType := ContentLibraryItem{vcdClient: cl.vcdClient}
+	return getAllOuterEntities(&cl.vcdClient.Client, outerType, c)
 }
 
 // GetContentLibraryItemByName retrieves a Content Library Item with the given name
 func (cl *ContentLibrary) GetContentLibraryItemByName(name string) (*ContentLibraryItem, error) {
-	return getContentLibraryItemByName(cl.client, name)
-}
-
-func getContentLibraryItemByName(client *Client, name string) (*ContentLibraryItem, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelContentLibraryItem)
 	}
@@ -335,7 +327,7 @@ func getContentLibraryItemByName(client *Client, name string) (*ContentLibraryIt
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name=="+name)
 
-	filteredEntities, err := getAllContentLibraryItems(client, queryParams)
+	filteredEntities, err := cl.GetAllContentLibraryItems(queryParams)
 	if err != nil {
 		return nil, err
 	}
@@ -345,28 +337,24 @@ func getContentLibraryItemByName(client *Client, name string) (*ContentLibraryIt
 		return nil, err
 	}
 
-	return getContentLibraryItemById(client, singleEntity.ContentLibraryItem.ID)
+	return cl.GetContentLibraryItemById(singleEntity.ContentLibraryItem.ID)
 }
 
 // GetContentLibraryItemById retrieves a Content Library Item with the given ID
 func (cl *ContentLibrary) GetContentLibraryItemById(id string) (*ContentLibraryItem, error) {
-	return getContentLibraryItemById(cl.client, id)
+	return cl.vcdClient.GetContentLibraryItemById(id)
 }
 
 // GetContentLibraryItemById retrieves a Content Library Item with the given ID
 func (vcdClient *VCDClient) GetContentLibraryItemById(id string) (*ContentLibraryItem, error) {
-	return getContentLibraryItemById(&vcdClient.Client, id)
-}
-
-func getContentLibraryItemById(client *Client, id string) (*ContentLibraryItem, error) {
 	c := crudConfig{
 		entityLabel:    labelContentLibraryItem,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		endpointParams: []string{id},
 	}
 
-	outerType := ContentLibraryItem{client: client}
-	return getOuterEntity(client, outerType, c)
+	outerType := ContentLibraryItem{vcdClient: vcdClient}
+	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
 // Update updates an existing Content Library Item with the given configuration
@@ -382,5 +370,5 @@ func (cli *ContentLibraryItem) Delete() error {
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		endpointParams: []string{cli.ContentLibraryItem.ID},
 	}
-	return deleteEntityById(cli.client, c)
+	return deleteEntityById(&cli.vcdClient.Client, c)
 }

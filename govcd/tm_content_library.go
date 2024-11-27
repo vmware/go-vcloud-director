@@ -16,7 +16,7 @@ const labelContentLibrary = "Content Library"
 // ContentLibrary defines the Content Library data structure
 type ContentLibrary struct {
 	ContentLibrary *types.ContentLibrary
-	client         *Client
+	vcdClient      *VCDClient
 }
 
 // wrap is a hidden helper that facilitates the usage of a generic CRUD function
@@ -37,7 +37,7 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 		entityLabel: labelContentLibrary,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 	}
-	outerType := ContentLibrary{client: &vcdClient.Client}
+	outerType := ContentLibrary{vcdClient: vcdClient}
 	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
 	//        - Problem: When creating a Content Library, it always throws an error 500: "Failed to validate Content Library UUID..."
 	//        - Solution: Retry fetching the entity again with the name provided
@@ -59,10 +59,7 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 // GetAllContentLibraries retrieves all Content Libraries with the given query parameters, which allow setting filters
 // and other constraints
 func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values) ([]*ContentLibrary, error) {
-	return getAllContentLibraries(&vcdClient.Client, queryParameters)
-}
-func getAllContentLibraries(client *Client, queryParameters url.Values) ([]*ContentLibrary, error) {
-	if !client.IsTm() {
+	if !vcdClient.Client.IsTm() {
 		return nil, fmt.Errorf("retrieving Content Libraries is only supported in TM")
 	}
 	c := crudConfig{
@@ -71,8 +68,8 @@ func getAllContentLibraries(client *Client, queryParameters url.Values) ([]*Cont
 		queryParameters: queryParameters,
 	}
 
-	outerType := ContentLibrary{client: client}
-	return getAllOuterEntities(client, outerType, c)
+	outerType := ContentLibrary{vcdClient: vcdClient}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
 // GetContentLibraryByName retrieves a Content Library with the given name
@@ -113,7 +110,7 @@ func (vcdClient *VCDClient) GetContentLibraryById(id string) (*ContentLibrary, e
 		endpointParams: []string{id},
 	}
 
-	outerType := ContentLibrary{client: &vcdClient.Client}
+	outerType := ContentLibrary{vcdClient: vcdClient}
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
@@ -130,7 +127,7 @@ func (o *ContentLibrary) Delete() error {
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 		endpointParams: []string{o.ContentLibrary.ID},
 	}
-	err := deleteEntityById(o.client, c)
+	err := deleteEntityById(&o.vcdClient.Client, c)
 	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
 	//        - Problem: When deleting a Content Library, it always throws an error 500: "Failed to validate Content Library UUID..."
 	//        - Solution: Ignore this error, the Content Library is deleted correctly
