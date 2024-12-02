@@ -9,6 +9,8 @@ import (
 
 const labelTmIpSpace = "TM IP Space"
 
+// TmIpSpace provides configuration of mainly the external (or Inbound) IP Prefixes that specifies
+// the accessible external networks from the data center
 type TmIpSpace struct {
 	TmIpSpace *types.TmIpSpace
 	vcdClient *VCDClient
@@ -22,6 +24,7 @@ func (g TmIpSpace) wrap(inner *types.TmIpSpace) *TmIpSpace {
 	return &g
 }
 
+// CreateTmIpSpace with a given configuration
 func (vcdClient *VCDClient) CreateTmIpSpace(config *types.TmIpSpace) (*TmIpSpace, error) {
 	c := crudConfig{
 		entityLabel: labelTmIpSpace,
@@ -31,6 +34,7 @@ func (vcdClient *VCDClient) CreateTmIpSpace(config *types.TmIpSpace) (*TmIpSpace
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// GetAllTmIpSpaces fetches all TM IP Spaces with an optional query filter
 func (vcdClient *VCDClient) GetAllTmIpSpaces(queryParameters url.Values) ([]*TmIpSpace, error) {
 	c := crudConfig{
 		entityLabel:     labelTmIpSpace,
@@ -42,6 +46,7 @@ func (vcdClient *VCDClient) GetAllTmIpSpaces(queryParameters url.Values) ([]*TmI
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetTmIpSpaceByName retrieves TM IP Spaces with a given name
 func (vcdClient *VCDClient) GetTmIpSpaceByName(name string) (*TmIpSpace, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelTmIpSpace)
@@ -63,6 +68,7 @@ func (vcdClient *VCDClient) GetTmIpSpaceByName(name string) (*TmIpSpace, error) 
 	return vcdClient.GetTmIpSpaceById(singleEntity.TmIpSpace.ID)
 }
 
+// GetTmIpSpaceById retrieves an exact IP Space with a given ID
 func (vcdClient *VCDClient) GetTmIpSpaceById(id string) (*TmIpSpace, error) {
 	c := crudConfig{
 		entityLabel:    labelTmIpSpace,
@@ -74,6 +80,7 @@ func (vcdClient *VCDClient) GetTmIpSpaceById(id string) (*TmIpSpace, error) {
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// GetTmIpSpaceByNameAndRegionId retrieves TM IP Spaces with a given name in a provided Region
 func (vcdClient *VCDClient) GetTmIpSpaceByNameAndRegionId(name, regionId string) (*TmIpSpace, error) {
 	if name == "" || regionId == "" {
 		return nil, fmt.Errorf("%s lookup requires name and Region ID", labelTmIpSpace)
@@ -96,6 +103,7 @@ func (vcdClient *VCDClient) GetTmIpSpaceByNameAndRegionId(name, regionId string)
 	return vcdClient.GetTmIpSpaceById(singleEntity.TmIpSpace.ID)
 }
 
+// Update TM IP Space
 func (o *TmIpSpace) Update(TmIpSpaceConfig *types.TmIpSpace) (*TmIpSpace, error) {
 	c := crudConfig{
 		entityLabel:    labelTmIpSpace,
@@ -106,6 +114,7 @@ func (o *TmIpSpace) Update(TmIpSpaceConfig *types.TmIpSpace) (*TmIpSpace, error)
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmIpSpaceConfig)
 }
 
+// Delete TM IP Space
 func (o *TmIpSpace) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelTmIpSpace,

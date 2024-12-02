@@ -179,7 +179,7 @@ type SupervisorZone struct {
 	Region *OpenApiReference `json:"region"`
 }
 
-// TmIpSpace provider configuration of mainly the external (or Inbound) IP Prefixes that specifies
+// TmIpSpace provides configuration of mainly the external (or Inbound) IP Prefixes that specifies
 // the accessible external networks from the data center
 type TmIpSpace struct {
 	ID string `json:"id,omitempty"`
