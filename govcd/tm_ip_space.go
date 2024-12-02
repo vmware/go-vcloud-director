@@ -39,7 +39,7 @@ func (vcdClient *VCDClient) GetAllTmIpSpaces(queryParameters url.Values) ([]*TmI
 	}
 
 	outerType := TmIpSpace{vcdClient: vcdClient}
-	return getAllOuterEntities[TmIpSpace, types.TmIpSpace](&vcdClient.Client, outerType, c)
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
 func (vcdClient *VCDClient) GetTmIpSpaceByName(name string) (*TmIpSpace, error) {
@@ -71,17 +71,17 @@ func (vcdClient *VCDClient) GetTmIpSpaceById(id string) (*TmIpSpace, error) {
 	}
 
 	outerType := TmIpSpace{vcdClient: vcdClient}
-	return getOuterEntity[TmIpSpace, types.TmIpSpace](&vcdClient.Client, outerType, c)
+	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
-func (vcdClient *VCDClient) GetTmIpSpaceByNameAndOrgId(name, orgId string) (*TmIpSpace, error) {
-	if name == "" || orgId == "" {
-		return nil, fmt.Errorf("%s lookup requires name and Org ID", labelTmIpSpace)
+func (vcdClient *VCDClient) GetTmIpSpaceByNameAndRegionId(name, regionId string) (*TmIpSpace, error) {
+	if name == "" || regionId == "" {
+		return nil, fmt.Errorf("%s lookup requires name and Region ID", labelTmIpSpace)
 	}
 
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name=="+name)
-	queryParams = queryParameterFilterAnd("orgRef.id=="+orgId, queryParams)
+	queryParams = queryParameterFilterAnd("regionRef.id=="+regionId, queryParams)
 
 	filteredEntities, err := vcdClient.GetAllTmIpSpaces(queryParams)
 	if err != nil {
