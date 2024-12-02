@@ -178,3 +178,7 @@ type SupervisorZone struct {
 	// Region contains a reference to parent region
 	Region *OpenApiReference `json:"region"`
 }
+
+type TmIpSpace struct {
+	ID string
+}
