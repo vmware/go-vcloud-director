@@ -182,21 +182,3 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 		check.Assert(err, IsNil)
 	}
 }
-
-func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
-	cfg := &types.TmOrg{
-		Name:          check.TestName(),
-		DisplayName:   check.TestName(),
-		CanManageOrgs: canManageOrgs,
-	}
-	tmOrg, err := vcd.client.CreateTmOrg(cfg)
-	check.Assert(err, IsNil)
-	check.Assert(tmOrg, NotNil)
-
-	PrependToCleanupListOpenApi(tmOrg.TmOrg.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgs+tmOrg.TmOrg.ID)
-
-	return tmOrg, func() {
-		err = tmOrg.Delete()
-		check.Assert(err, IsNil)
-	}
-}
