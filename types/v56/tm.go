@@ -182,3 +182,11 @@ type SupervisorZone struct {
 type TmIpSpace struct {
 	ID string
 }
+
+type TmProviderGateway struct {
+	ID string
+}
+
+type TmTier0Gateway struct {
+	ID string
+}
