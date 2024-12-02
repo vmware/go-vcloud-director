@@ -96,13 +96,13 @@ func (vcdClient *VCDClient) GetTmIpSpaceByNameAndOrgId(name, orgId string) (*TmI
 	return vcdClient.GetTmIpSpaceById(singleEntity.TmIpSpace.ID)
 }
 
-func (o *TmIpSpace) Update(TmIpSpaceConfig *types.IpSpace) (*IpSpace, error) {
+func (o *TmIpSpace) Update(TmIpSpaceConfig *types.TmIpSpace) (*TmIpSpace, error) {
 	c := crudConfig{
 		entityLabel:    labelTmIpSpace,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces,
 		endpointParams: []string{o.TmIpSpace.ID},
 	}
-	outerType := IpSpace{vcdClient: o.vcdClient}
+	outerType := TmIpSpace{vcdClient: o.vcdClient}
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmIpSpaceConfig)
 }
 
