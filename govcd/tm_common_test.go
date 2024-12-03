@@ -182,3 +182,33 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 		check.Assert(err, IsNil)
 	}
 }
+
+func createTmIpSpace(vcd *TestVCD, region *Region, check *C) (*TmIpSpace, func()) {
+	ipSpaceType := &types.TmIpSpace{
+		Name:        check.TestName(),
+		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
+		Description: check.TestName(),
+		DefaultQuota: types.TmIpSpaceDefaultQuota{
+			MaxCidrCount:  3,
+			MaxIPCount:    -1,
+			MaxSubnetSize: 24,
+		},
+		ExternalScopeCidr: "12.12.0.0/30",
+		InternalScopeCidrBlocks: []types.TmIpSpaceInternalScopeCidrBlocks{
+			{
+				Cidr: "10.0.0.0/24",
+			},
+		},
+	}
+
+	ipSpace, err := vcd.client.CreateTmIpSpace(ipSpaceType)
+	check.Assert(err, IsNil)
+	check.Assert(ipSpace, NotNil)
+	AddToCleanupListOpenApi(ipSpace.TmIpSpace.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmIpSpaces+ipSpace.TmIpSpace.ID)
+
+	return ipSpace, func() {
+		printVerbose("# Deleting IP Space %s\n", ipSpace.TmIpSpace.Name)
+		err = ipSpace.Delete()
+		check.Assert(err, IsNil)
+	}
+}

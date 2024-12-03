@@ -240,14 +240,21 @@ type TmIpSpaceInternalScopeCidrBlocks struct {
 	Cidr string `json:"cidr,omitempty"`
 }
 
-type TmProviderGateway struct {
-	ID string
-}
-
 type TmTier0Gateway struct {
 	ID              string `json:"id"`
 	Description     string `json:"description"`
 	DisplayName     string `json:"displayName"`
 	ParentTier0ID   string `json:"parentTier0Id"`
 	AlreadyImported bool   `json:"alreadyImported"`
+}
+
+type TmProviderGateway struct {
+	ID          string              `json:"id,omitempty"`
+	Name        string              `json:"name"`
+	Description string              `json:"description,omitempty"`
+	OrgRef      *OpenApiReference   `json:"orgRef,omitempty"`
+	BackingRef  *OpenApiReference   `json:"backingRef,omitempty"`
+	BackingType string              `json:"backingType,omitempty"`
+	RegionRef   *OpenApiReference   `json:"regionRef,omitempty"`
+	IPSpaceRefs []*OpenApiReference `json:"ipSpaceRefs,omitempty"`
 }
