@@ -305,6 +305,8 @@ tm:
   region: my-region
   # An existing Region Storage Policy to create Content Libraries, Regions...
   regionStoragePolicy: "vSAN Default Storage Policy"
+  # An existing Content Library to create Content Library Items
+  contentLibrary: "My Content Library"
   createVcenter: true # boolean value if the vCenter test should be executed
   vcenterUsername: username for vCenter auth
   vcenterPassword: password for vCenter auth
