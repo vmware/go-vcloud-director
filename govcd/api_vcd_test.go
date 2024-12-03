@@ -158,6 +158,8 @@ type TestConfig struct {
 		NsxtManagerUsername string `yaml:"nsxtManagerUsername"`
 		NsxtManagerPassword string `yaml:"nsxtManagerPassword"`
 		NsxtManagerUrl      string `yaml:"nsxtManagerUrl"`
+
+		NsxtTier0Gateway string `yaml:"nsxtTier0Gateway"`
 	} `yaml:"tm,omitempty"`
 	VCD struct {
 		Org         string `yaml:"org"`

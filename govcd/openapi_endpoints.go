@@ -254,6 +254,9 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgs: {
 		"40.0", // TM Orgs
 	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers: {
+		"40.0", // TM Tier 0 Gateways
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with

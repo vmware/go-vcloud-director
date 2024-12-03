@@ -245,5 +245,9 @@ type TmProviderGateway struct {
 }
 
 type TmTier0Gateway struct {
-	ID string
+	ID              string `json:"id"`
+	Description     string `json:"description"`
+	DisplayName     string `json:"displayName"`
+	ParentTier0ID   string `json:"parentTier0Id"`
+	AlreadyImported bool   `json:"alreadyImported"`
 }

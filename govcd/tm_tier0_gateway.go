@@ -7,6 +7,10 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
+// Sample query
+// https://vcfa.10.162.145.191.vcfd.broadcom.net/tm/cloudapi/1.0.0/nsxTResources/importableTier0Routers
+// ?page=1&pageSize=128&filterEncoded=true&filter=(alreadyImported==false;_context==urn:vcloud:region:7544b246-84c6-40ad-8c3b-beed9fe145cd)&links=true
+
 const labelTmTier0Gateway = "TM Tier0 Gateway"
 
 type TmTier0Gateway struct {
@@ -22,76 +26,60 @@ func (g TmTier0Gateway) wrap(inner *types.TmTier0Gateway) *TmTier0Gateway {
 	return &g
 }
 
-func (vcdClient *VCDClient) CreateTmTier0Gateway(config *types.TmTier0Gateway) (*TmTier0Gateway, error) {
-	c := crudConfig{
-		entityLabel: labelTmTier0Gateway,
-		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmTier0Gateways,
+func (vcdClient *VCDClient) GetAllTmTier0GatewaysWithContext(contextEntity string, listImported bool) ([]*TmTier0Gateway, error) {
+	if contextEntity == "" {
+		return nil, fmt.Errorf("empty region provided")
 	}
-	outerType := TmTier0Gateway{vcdClient: vcdClient}
-	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+	queryParams := copyOrNewUrlValues(nil)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("_context==%s", contextEntity), queryParams)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("alreadyImported==%t", listImported), queryParams)
+
+	return vcdClient.getAllTmTier0Gateways(queryParams)
 }
 
-func (vcdClient *VCDClient) GetAllTmTier0Gateways(queryParameters url.Values) ([]*TmTier0Gateway, error) {
+func (vcdClient *VCDClient) GetTmTier0GatewayWithContextByName(displayName, contextEntity string, listImported bool) (*TmTier0Gateway, error) {
+	if contextEntity == "" {
+		return nil, fmt.Errorf("empty region provided")
+	}
+	if displayName == "" {
+		return nil, fmt.Errorf("empty name provided")
+	}
+
+	queryParams := copyOrNewUrlValues(nil)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("_context==%s", contextEntity), queryParams)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("alreadyImported==%t", listImported), queryParams)
+
+	allT0s, err := vcdClient.getAllTmTier0Gateways(queryParams)
+	if err != nil {
+		return nil, err
+	}
+
+	var foundValue *TmTier0Gateway
+	for _, v := range allT0s {
+		if v.TmTier0Gateway.DisplayName == displayName {
+			if foundValue != nil {
+				return nil, fmt.Errorf("found more than one %s by Name '%s'", labelTmTier0Gateway, displayName)
+			}
+			foundValue = v
+		}
+	}
+
+	if foundValue == nil {
+		return nil, fmt.Errorf("no %s found by Name '%s'", labelTmTier0Gateway, displayName)
+	}
+
+	return foundValue, nil
+}
+
+// getAllTmTier0Gateways is kept private as one receives 0 entries when querying without filters,
+// but it is useful construct in higher level functions
+func (vcdClient *VCDClient) getAllTmTier0Gateways(queryParameters url.Values) ([]*TmTier0Gateway, error) {
 	c := crudConfig{
 		entityLabel:     labelTmTier0Gateway,
-		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmTier0Gateways,
+		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers,
 		queryParameters: queryParameters,
 	}
 
 	outerType := TmTier0Gateway{vcdClient: vcdClient}
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
-}
-
-func (vcdClient *VCDClient) GetTmTier0GatewayByName(name string) (*TmTier0Gateway, error) {
-	if name == "" {
-		return nil, fmt.Errorf("%s lookup requires name", labelTmTier0Gateway)
-	}
-
-	queryParams := url.Values{}
-	queryParams.Add("filter", "name=="+name)
-
-	filteredEntities, err := vcdClient.GetAllTmTier0Gateways(queryParams)
-	if err != nil {
-		return nil, err
-	}
-
-	singleEntity, err := oneOrError("name", name, filteredEntities)
-	if err != nil {
-		return nil, err
-	}
-
-	return vcdClient.GetTmTier0GatewayById(singleEntity.TmTier0Gateway.ID)
-}
-
-func (vcdClient *VCDClient) GetTmTier0GatewayById(id string) (*TmTier0Gateway, error) {
-	c := crudConfig{
-		entityLabel:    labelTmTier0Gateway,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmTier0Gateways,
-		endpointParams: []string{id},
-	}
-
-	outerType := TmTier0Gateway{vcdClient: vcdClient}
-	return getOuterEntity(&vcdClient.Client, outerType, c)
-}
-
-func (vcdClient *VCDClient) GetTmTier0GatewayByNameAndOrgId(name, orgId string) (*TmTier0Gateway, error) {
-	if name == "" || orgId == "" {
-		return nil, fmt.Errorf("%s lookup requires name and Org ID", labelTmTier0Gateway)
-	}
-
-	queryParams := url.Values{}
-	queryParams.Add("filter", "name=="+name)
-	queryParams = queryParameterFilterAnd("orgRef.id=="+orgId, queryParams)
-
-	filteredEntities, err := vcdClient.GetAllTmTier0Gateways(queryParams)
-	if err != nil {
-		return nil, err
-	}
-
-	singleEntity, err := oneOrError("name", name, filteredEntities)
-	if err != nil {
-		return nil, err
-	}
-
-	return vcdClient.GetTmTier0GatewayById(singleEntity.TmTier0Gateway.ID)
 }
