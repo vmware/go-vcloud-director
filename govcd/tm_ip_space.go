@@ -9,7 +9,7 @@ import (
 
 const labelTmIpSpace = "TM IP Space"
 
-// TmIpSpace provides configuration of mainly the external (or Inbound) IP Prefixes that specifies
+// TmIpSpace provides configuration of mainly the external IP Prefixes that specifies
 // the accessible external networks from the data center
 type TmIpSpace struct {
 	TmIpSpace *types.TmIpSpace

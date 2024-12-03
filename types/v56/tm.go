@@ -179,7 +179,7 @@ type SupervisorZone struct {
 	Region *OpenApiReference `json:"region"`
 }
 
-// TmIpSpace provides configuration of mainly the external (or Inbound) IP Prefixes that specifies
+// TmIpSpace provides configuration of mainly the external IP Prefixes that specifies
 // the accessible external networks from the data center
 type TmIpSpace struct {
 	ID string `json:"id,omitempty"`
@@ -190,10 +190,8 @@ type TmIpSpace struct {
 	// RegionRef is the region that this IP Space belongs in. Only Provider Gateways in the same Region can be
 	// associated with this IP Space. This field cannot be updated
 	RegionRef OpenApiReference `json:"regionRef"`
-
 	// Default IP quota that applies to all the organizations the Ip Space is assigned to
 	DefaultQuota TmIpSpaceDefaultQuota `json:"defaultQuota,omitempty"`
-
 	// ExternalScopeCidr defines the total span of IP addresses to which the IP space has access.
 	// This typically defines the span of IP addresses outside the bounds of a Data Center. For the
 	// internet, this may be 0.0.0.0/0. For a WAN, this could be 10.0.0.0/8.
@@ -203,7 +201,6 @@ type TmIpSpace struct {
 	// the IP Block's name can be updated. If an existing CIDR value is removed from the list, the
 	// the IP Block is removed from the IP Space.
 	InternalScopeCidrBlocks []TmIpSpaceInternalScopeCidrBlocks `json:"internalScopeCidrBlocks,omitempty"`
-
 	// Represents current status of the networking entity. Possible values are:
 	// * PENDING - Desired entity configuration has been received by system and is pending realization.
 	// * CONFIGURING - The system is in process of realizing the entity.
