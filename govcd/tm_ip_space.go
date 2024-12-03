@@ -24,7 +24,7 @@ func (g TmIpSpace) wrap(inner *types.TmIpSpace) *TmIpSpace {
 	return &g
 }
 
-// CreateTmIpSpace with a given configuration
+// CreateTmIpSpace creates a TM IP Space with a given configuration
 func (vcdClient *VCDClient) CreateTmIpSpace(config *types.TmIpSpace) (*TmIpSpace, error) {
 	c := crudConfig{
 		entityLabel: labelTmIpSpace,
