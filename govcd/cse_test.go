@@ -36,6 +36,10 @@ func requireCseConfig(check *C, testConfig TestConfig) {
 func (vcd *TestVCD) Test_Cse(check *C) {
 	requireCseConfig(check, vcd.config)
 
+	if vcd.config.Cse.Version == "4.2.2" || vcd.config.Cse.Version == "4.2.3" {
+		check.Skip("CSE versions 4.2.2 and 4.2.3 do not work with System Administrator")
+	}
+
 	// Prerequisites: We need to read several items before creating the cluster.
 	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
 	check.Assert(err, IsNil)
@@ -288,6 +292,10 @@ func (vcd *TestVCD) Test_Cse(check *C) {
 func (vcd *TestVCD) Test_CseWithAutoscaler(check *C) {
 	requireCseConfig(check, vcd.config)
 
+	if vcd.config.Cse.Version == "4.2.2" || vcd.config.Cse.Version == "4.2.3" {
+		check.Skip("CSE versions 4.2.2 and 4.2.3 do not work with System Administrator")
+	}
+
 	// Prerequisites: We need to read several items before creating the cluster.
 	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
 	check.Assert(err, IsNil)
@@ -428,6 +436,10 @@ func (vcd *TestVCD) Test_CseWithAutoscaler(check *C) {
 // Test_CseFailure tests cluster creation errors and their consequences
 func (vcd *TestVCD) Test_CseFailure(check *C) {
 	requireCseConfig(check, vcd.config)
+
+	if vcd.config.Cse.Version == "4.2.2" || vcd.config.Cse.Version == "4.2.3" {
+		check.Skip("CSE versions 4.2.2 and 4.2.3 do not work with System Administrator")
+	}
 
 	// Prerequisites: We need to read several items before creating the cluster.
 	org, err := vcd.client.GetOrgByName(vcd.config.Cse.TenantOrg)
