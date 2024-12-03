@@ -118,13 +118,13 @@ func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndOrgId(name, orgId strin
 	return vcdClient.GetTmProviderGatewayById(singleEntity.TmProviderGateway.ID)
 }
 
-func (o *TmProviderGateway) Update(TmProviderGatewayConfig *types.IpSpace) (*IpSpace, error) {
+func (o *TmProviderGateway) Update(TmProviderGatewayConfig *types.TmProviderGateway) (*TmProviderGateway, error) {
 	c := crudConfig{
 		entityLabel:    labelTmProviderGateway,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways,
 		endpointParams: []string{o.TmProviderGateway.ID},
 	}
-	outerType := IpSpace{vcdClient: o.vcdClient}
+	outerType := TmProviderGateway{vcdClient: o.vcdClient}
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmProviderGatewayConfig)
 }
 

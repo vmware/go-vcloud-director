@@ -39,7 +39,7 @@ func (vcdClient *VCDClient) GetAllTmTier0Gateways(queryParameters url.Values) ([
 	}
 
 	outerType := TmTier0Gateway{vcdClient: vcdClient}
-	return getAllOuterEntities[TmTier0Gateway, types.TmTier0Gateway](&vcdClient.Client, outerType, c)
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
 func (vcdClient *VCDClient) GetTmTier0GatewayByName(name string) (*TmTier0Gateway, error) {
@@ -71,7 +71,7 @@ func (vcdClient *VCDClient) GetTmTier0GatewayById(id string) (*TmTier0Gateway, e
 	}
 
 	outerType := TmTier0Gateway{vcdClient: vcdClient}
-	return getOuterEntity[TmTier0Gateway, types.TmTier0Gateway](&vcdClient.Client, outerType, c)
+	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
 func (vcdClient *VCDClient) GetTmTier0GatewayByNameAndOrgId(name, orgId string) (*TmTier0Gateway, error) {
