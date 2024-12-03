@@ -56,7 +56,8 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 		}},
 	}
 
-	createdProviderGateway, err := vcd.client.CreateTmProviderGateway(t)
+	_, err = vcd.client.CreateTmProviderGateway(t)
+	panic(err)
 
 }
 
