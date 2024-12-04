@@ -520,14 +520,18 @@ const (
 	// OpenAPI Org
 	OpenApiEndpointOrgs = "orgs/"
 
-	OpenApiEndpointRegionStoragePolicies = "regionStoragePolicies/"
-	OpenApiEndpointContentLibraries      = "contentLibraries/"
-	OpenApiEndpointNsxManagers           = "nsxManagers/"
-	OpenApiEndpointRegions               = "regions/"
-	OpenApiEndpointSupervisors           = "supervisors/"
-	OpenApiEndpointSupervisorZones       = "supervisorZones/"
-	OpenApiEndpointTmIpSpaces            = "ipSpaces/"
-	OpenApiEndpointTmProviderGateways    = "providerGateways/"
+	OpenApiEndpointRegionStoragePolicies   = "regionStoragePolicies/"
+	OpenApiEndpointContentLibraries        = "contentLibraries/"
+	OpenApiEndpointContentLibraryItems     = "contentLibraryItems/"
+	OpenApiEndpointContentLibraryItemFiles = "contentLibraryItems/%s/files"
+	OpenApiEndpointNsxManagers             = "nsxManagers/"
+	OpenApiEndpointRegions                 = "regions/"
+	OpenApiEndpointSupervisors             = "supervisors/"
+	OpenApiEndpointSupervisorZones         = "supervisorZones/"
+	OpenApiEndpointZones                   = "zones/"
+	OpenApiEndpointTmVdcs                  = "virtualDatacenters/"
+	OpenApiEndpointTmIpSpaces              = "ipSpaces/"
+	OpenApiEndpointTmProviderGateways      = "providerGateways/"
 )
 
 // Header keys to run operations in tenant context
