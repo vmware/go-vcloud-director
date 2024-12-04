@@ -217,3 +217,77 @@ type SupervisorZone struct {
 	// Region contains a reference to parent region
 	Region *OpenApiReference `json:"region"`
 }
+
+// TmVdc defines a structure for creating VDCs using OpenAPI endpoint
+type TmVdc struct {
+	ID string `json:"id,omitempty"`
+	// Name of the VDC
+	Name string `json:"name"`
+	// Description of the VDC
+	Description string `json:"description,omitempty"`
+	// IsEnabled defines if the VDC is enabled
+	IsEnabled *bool `json:"isEnabled,omitempty"`
+	// Org reference
+	Org *OpenApiReference `json:"org"`
+	// Region reference
+	Region *OpenApiReference `json:"region"`
+	// Status contains creation status of the VDC
+	Status string `json:"status,omitempty"`
+	// Supervisors contain references to Supervisors
+	Supervisors []OpenApiReference `json:"supervisors,omitempty"`
+	// ZoneResourceAllocation contain references of each zone within Supervisor
+	ZoneResourceAllocation []*TmVdcZoneResourceAllocation `json:"zoneResourceAllocation,omitempty"`
+}
+
+// TmVdcZoneResourceAllocation defines resource allocation for a single zone
+type TmVdcZoneResourceAllocation struct {
+	ResourceAllocation TmVdcResourceAllocation `json:"resourceAllocation"`
+	Zone               *OpenApiReference       `json:"zone"`
+}
+
+// TmVdcResourceAllocation defines compute resources of single VDC
+type TmVdcResourceAllocation struct {
+	// CPULimitMHz defines maximum CPU consumption limit in MHz
+	CPULimitMHz int `json:"cpuLimitMHz"`
+	// CPUReservationMHz defines reserved CPU capacity in MHz
+	CPUReservationMHz int `json:"cpuReservationMHz"`
+	// MemoryLimitMiB defines maximum memory consumption limit in MiB
+	MemoryLimitMiB int `json:"memoryLimitMiB"`
+	// MemoryReservationMiB defines reserved memory in Mib
+	MemoryReservationMiB int `json:"memoryReservationMiB"`
+}
+
+// Zone defines a Region Zone structure
+type Zone struct {
+	ID string `json:"id,omitempty"`
+	// Name of the Region Zone
+	Name string `json:"name"`
+	// Region reference
+	Region *OpenApiReference `json:"region"`
+	// CPULimitMhz defines the total amount of reserved and unreserved CPU resources allocated in
+	// MHz
+	CPULimitMhz int `json:"cpuLimitMhz"`
+	// CPUReservationMhz contains the total amount of CPU resources reserved in MHz
+	CPUReservationMhz int `json:"cpuReservationMhz"`
+	// CPUReservationUsedMhz defines the amount of CPU resources used in MHz. For Tenants, this
+	// value represents the total given to all of a Tenant's Namespaces. For Providers, this value
+	// represents the total given to all Tenants
+	CPUReservationUsedMhz int `json:"cpuReservationUsedMhz"`
+	// CPUUsedMhz defines the amount of reserved and unreserved CPU resources used in MHz. For
+	// Tenants, this value represents the total given to all of a Tenant's Namespaces. For
+	// Providers, this value represents the total given to all Tenants
+	CPUUsedMhz int `json:"cpuUsedMhz"`
+	// MemoryLimitMiB defines the total amount of reserved and unreserved memory resources allocated
+	// in MiB
+	MemoryLimitMiB int `json:"memoryLimitMiB"`
+	// MemoryReservationMiB defines the amount of reserved memory resources reserved in MiB
+	MemoryReservationMiB int `json:"memoryReservationMiB"`
+	// MemoryReservationUsedMiB defines the amount of reserved memory resources used in MiB. For
+	// Tenants, this value represents the total given to all of a Tenant's Namespaces. For
+	// Providers, this value represents the total given to all Tenants
+	MemoryReservationUsedMiB int `json:"memoryReservationUsedMiB"`
+	// MemoryUsedMiB defines the total amount of reserved and unreserved memory resources used in
+	// MiB. For Tenants, this value represents the total given to all of a Tenant's Namespaces. For
+	// Providers, this value represents the total given to all Tenants
+	MemoryUsedMiB int `json:"memoryUsedMiB"`
+}

@@ -963,6 +963,11 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 	case "OpenApiEntityVcenter":
 		vc, err := vcd.client.GetVCenterByName(entity.Name)
+		if ContainsNotFound(err) {
+			vcd.infoCleanup(notFoundMsg, entity.EntityType, entity.Name)
+			return
+		}
+
 		if err != nil {
 			vcd.infoCleanup(notDeletedMsg, entity.EntityType, entity.Name, err)
 			return

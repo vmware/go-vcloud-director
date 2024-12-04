@@ -7,9 +7,11 @@
 package govcd
 
 import (
+	"net/url"
+	"time"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
-	"net/url"
 )
 
 // getOrCreateVCenter will check configuration file and create vCenter if
@@ -27,7 +29,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	if !vcd.config.Tm.CreateVcenter {
 		check.Skip("vCenter is not configured and configuration is not allowed in config file")
 	}
-
+	printVerbose("# Will create vCenter %s\n", vcd.config.Tm.VcenterUrl)
 	vcCfg := &types.VSphereVirtualCenter{
 		Name:      check.TestName() + "-vc",
 		Username:  vcd.config.Tm.VcenterUsername,
@@ -41,6 +43,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	trustedCert, err := vcd.client.AutoTrustCertificate(url)
 	check.Assert(err, IsNil)
 	if trustedCert != nil {
+		printVerbose("# Certificate for vCenter is trusted %s\n", trustedCert.TrustedCertificate.ID)
 		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
 	}
 
@@ -49,6 +52,8 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	check.Assert(vc, NotNil)
 	PrependToCleanupList(vcCfg.Name, "OpenApiEntityVcenter", check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+vc.VSphereVCenter.VcId)
 
+	printVerbose("# Sleeping after vCenter creation\n")
+	time.Sleep(1 * time.Minute) // TODO: TM: Reevaluate need for sleep
 	// Refresh connected vCenter to be sure that all artifacts are loaded
 	printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
 	err = vc.Refresh()
@@ -58,12 +63,15 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	err = vc.RefreshStorageProfiles()
 	check.Assert(err, IsNil)
 
+	printVerbose("# Sleeping after vCenter refreshes\n")
+	time.Sleep(1 * time.Minute) // TODO: TM: Reevaluate need for sleep
 	vCenterCreated := true
 
 	return vc, func() {
 		if !vCenterCreated {
 			return
 		}
+		printVerbose("# Disabling and deleting vCenter %s\n", vcd.config.Tm.VcenterUrl)
 		err = vc.Disable()
 		check.Assert(err, IsNil)
 		err = vc.Delete()
@@ -87,6 +95,7 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 		check.Skip("NSX-T Manager is not configured and configuration is not allowed in config file")
 	}
 
+	printVerbose("# Will create NSX-T Manager %s\n", vcd.config.Tm.NsxtManagerUrl)
 	nsxtCfg := &types.NsxtManagerOpenApi{
 		Name:     check.TestName(),
 		Username: vcd.config.Tm.NsxtManagerUsername,
@@ -99,6 +108,7 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 	trustedCert, err := vcd.client.AutoTrustCertificate(url)
 	check.Assert(err, IsNil)
 	if trustedCert != nil {
+		printVerbose("# Certificate for NSX-T Manager is trusted %s\n", trustedCert.TrustedCertificate.ID)
 		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
 	}
 	nsxtManager, err = vcd.client.CreateNsxtManagerOpenApi(nsxtCfg)
@@ -111,6 +121,7 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 		if !nsxtManagerCreated {
 			return
 		}
+		printVerbose("# Deleting NSX-T Manager %s\n", nsxtManager.NsxtManagerOpenApi.Name)
 		err = nsxtManager.Delete()
 		check.Assert(err, IsNil)
 	}
@@ -157,11 +168,13 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 	check.Assert(region, NotNil)
 	regionCreated := true
 	AddToCleanupListOpenApi(region.Region.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointRegions+region.Region.ID)
+	check.Assert(region.Region.Status, Equals, "READY") // Region must be READY to be operational
 
 	return region, func() {
 		if !regionCreated {
 			return
 		}
+		printVerbose("# Deleting Region %s\n", region.Region.Name)
 		err = region.Delete()
 		check.Assert(err, IsNil)
 	}
@@ -201,6 +214,24 @@ func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy,
 			return
 		}
 		err = contentLibrary.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
+	cfg := &types.TmOrg{
+		Name:          check.TestName(),
+		DisplayName:   check.TestName(),
+		CanManageOrgs: canManageOrgs,
+	}
+	tmOrg, err := vcd.client.CreateTmOrg(cfg)
+	check.Assert(err, IsNil)
+	check.Assert(tmOrg, NotNil)
+
+	PrependToCleanupListOpenApi(tmOrg.TmOrg.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgs+tmOrg.TmOrg.ID)
+
+	return tmOrg, func() {
+		err = tmOrg.Delete()
 		check.Assert(err, IsNil)
 	}
 }
