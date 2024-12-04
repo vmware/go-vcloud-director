@@ -45,8 +45,8 @@ func (r *Region) GetStorageClassByName(name string) (*StorageClass, error) {
 	return getStorageClassByName(r.vcdClient, name, r.Region.ID)
 }
 
-// GetStoragePolicyByName retrieves a Storage Class by name
-func (vcdClient *VCDClient) GetStoragePolicyByName(name string) (*StorageClass, error) {
+// GetStorageClassByName retrieves a Storage Class by name
+func (vcdClient *VCDClient) GetStorageClassByName(name string) (*StorageClass, error) {
 	return getStorageClassByName(vcdClient, name, "")
 }
 

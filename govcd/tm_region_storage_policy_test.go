@@ -26,17 +26,21 @@ func (vcd *TestVCD) Test_RegionStoragePolicy(check *C) {
 
 	allRegionStoragePolicies, err := vcd.client.GetAllRegionStoragePolicies(nil)
 	check.Assert(err, IsNil)
+	check.Assert(len(allRegionStoragePolicies), Not(Equals), 0)
 
 	rspById, err := vcd.client.GetRegionStoragePolicyById(allRegionStoragePolicies[0].RegionStoragePolicy.ID)
 	check.Assert(err, IsNil)
+	check.Assert(rspById, NotNil)
 	check.Assert(*rspById.RegionStoragePolicy, DeepEquals, *allRegionStoragePolicies[0].RegionStoragePolicy)
 
 	rspByName, err := vcd.client.GetRegionStoragePolicyByName(allRegionStoragePolicies[0].RegionStoragePolicy.Name)
 	check.Assert(err, IsNil)
+	check.Assert(rspByName, NotNil)
 	check.Assert(*rspByName.RegionStoragePolicy, DeepEquals, *rspById.RegionStoragePolicy)
 
 	rspByName2, err := region.GetStoragePolicyByName(allRegionStoragePolicies[0].RegionStoragePolicy.Name)
 	check.Assert(err, IsNil)
+	check.Assert(rspByName2, NotNil)
 	check.Assert(*rspByName2.RegionStoragePolicy, DeepEquals, *allRegionStoragePolicies[0].RegionStoragePolicy)
 
 	// Check ENF errors
@@ -49,7 +53,7 @@ func (vcd *TestVCD) Test_RegionStoragePolicy(check *C) {
 	check.Assert(err, NotNil)
 	check.Assert(ContainsNotFound(err), Equals, true)
 
-	_, err = vcd.client.GetStoragePolicyByName("NotExists")
+	_, err = vcd.client.GetRegionStoragePolicyByName("NotExists")
 	check.Assert(err, NotNil)
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
