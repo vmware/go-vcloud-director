@@ -49,9 +49,9 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 		Name:        check.TestName(),
 		Description: check.TestName(),
 		BackingType: "NSX_TIER0",
-		BackingRef:  &types.OpenApiReference{ID: t0ByNameInRegion.TmTier0Gateway.ID},
-		RegionRef:   &types.OpenApiReference{ID: region.Region.ID},
-		IPSpaceRefs: []*types.OpenApiReference{{
+		BackingRef:  types.OpenApiReference{ID: t0ByNameInRegion.TmTier0Gateway.ID},
+		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
+		IPSpaceRefs: []types.OpenApiReference{{
 			ID: ipSpace.TmIpSpace.ID,
 		}},
 	}
@@ -60,24 +60,3 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	panic(err)
 
 }
-
-// {
-//     "name": "test-provider-gw",
-//     "description": "",
-//     "orgRef": null,
-//     "backingRef": {
-//         "id": "37273049-ecda-4974-baf6-5c107f30a969",
-//         "name": "vcfcons-mgt-vc03-Tier0"
-//     },
-//     "backingType": "NSX_TIER0",
-//     "regionRef": {
-//         "id": "urn:vcloud:region:7544b246-84c6-40ad-8c3b-beed9fe145cd",
-//         "name": "Terraform demo Region"
-//     },
-//     "ipSpaceRefs": [
-//         {
-//             "id": "urn:vcloud:ipSpace:feb3d26d-08e7-4e3f-90cc-f54f13a45697",
-//             "name": "demo-ip-space"
-//         }
-//     ]
-// }

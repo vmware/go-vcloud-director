@@ -7,28 +7,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-// This is a template of how a "standard" outer entity implementation can be done when using generic
-// functions. It might not cover all scenarios, but is a skeleton for quicker bootstraping of a new
-// entity.
-//
-// "Search and replace the following entries"
-//
-// TmProviderGateway - outer type (e.g. IpSpace2)
-// This should be a non existing new type to create in 'govcd' package
-//
-// types.TmProviderGateway - inner type (e.g. types.IpSpace)
-// This should be an already existing inner type in `types` package
-//
-// TM Provider Gateway - constant name for entity label (the lower case prefix 'label' prefix is hardcoded)
-// The 'label' prefix is hardcoded in the example so that we have autocompletion working for all labelXXXX. (e.g. IpSpace2)
-//
-// TM Provider Gateway - text for entity label (e.g. Ip Space 2)
-// This will be the entity label (used for logging purposes in generic functions)
-//
-// types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways (e.g. types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointIpSpaces)
-// An OpenAPI endpoint that is defined in `endpointMinApiVersions` map and in `constants.go`
-// NOTE. While this example REPLACES ALL ENDPOINTS to be THE SAME, in reality they can be DIFFERENT
-
 const labelTmProviderGateway = "TM Provider Gateway"
 
 type TmProviderGateway struct {

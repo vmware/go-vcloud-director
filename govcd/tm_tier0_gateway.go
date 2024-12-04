@@ -7,10 +7,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-// Sample query
-// https://vcfa.10.162.145.191.vcfd.broadcom.net/tm/cloudapi/1.0.0/nsxTResources/importableTier0Routers
-// ?page=1&pageSize=128&filterEncoded=true&filter=(alreadyImported==false;_context==urn:vcloud:region:7544b246-84c6-40ad-8c3b-beed9fe145cd)&links=true
-
 const labelTmTier0Gateway = "TM Tier0 Gateway"
 
 type TmTier0Gateway struct {

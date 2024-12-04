@@ -362,12 +362,12 @@ type TmTier0Gateway struct {
 }
 
 type TmProviderGateway struct {
-	ID          string              `json:"id,omitempty"`
-	Name        string              `json:"name"`
-	Description string              `json:"description,omitempty"`
-	OrgRef      *OpenApiReference   `json:"orgRef,omitempty"`
-	BackingRef  *OpenApiReference   `json:"backingRef,omitempty"`
-	BackingType string              `json:"backingType,omitempty"`
-	RegionRef   *OpenApiReference   `json:"regionRef,omitempty"`
-	IPSpaceRefs []*OpenApiReference `json:"ipSpaceRefs,omitempty"`
+	ID          string             `json:"id,omitempty"`
+	Name        string             `json:"name"`
+	Description string             `json:"description,omitempty"`
+	OrgRef      *OpenApiReference  `json:"orgRef,omitempty"`
+	BackingRef  OpenApiReference   `json:"backingRef,omitempty"`
+	BackingType string             `json:"backingType,omitempty"`
+	RegionRef   OpenApiReference   `json:"regionRef,omitempty"`
+	IPSpaceRefs []OpenApiReference `json:"ipSpaceRefs,omitempty"`
 }
