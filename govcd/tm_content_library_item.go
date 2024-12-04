@@ -235,7 +235,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 	}()
 
 	ud := uploadDetails{
-		uploadLink:               strings.ReplaceAll(fileToUpload.TransferUrl, "/transfer", "/tm/transfer"), // TODO: TM: Workaround, the link is missing /tm in path, so it gives 404 as-is
+		uploadLink:               fileToUpload.TransferUrl,
 		uploadedBytes:            0,
 		fileSizeToUpload:         fileToUpload.ExpectedSizeBytes,
 		uploadPieceSize:          args.UploadPieceSize,
