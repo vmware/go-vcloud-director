@@ -17,6 +17,21 @@ type RegionStoragePolicy struct {
 	StorageConsumedMB int64 `json:"storageConsumedMB,omitempty"`
 }
 
+// StorageClass defines a Storage Class
+type StorageClass struct {
+	ID string `json:"id,omitempty"`
+	// Name for the policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
+	Name string `json:"name"`
+	// Description of the policy
+	Description string `json:"description,omitempty"`
+	// The creation status of the region storage policy. Can be [NOT_READY, READY]
+	Status string `json:"status,omitempty"`
+	// Storage capacity in megabytes for this policy
+	StorageCapacityMB int64 `json:"storageCapacityMB,omitempty"`
+	// Consumed storage in megabytes for this policy
+	StorageConsumedMB int64 `json:"storageConsumedMB,omitempty"`
+}
+
 // ContentLibrary is an object representing a VCF Content Library
 type ContentLibrary struct {
 	// The name of the Content Library

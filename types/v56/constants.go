@@ -521,6 +521,7 @@ const (
 	OpenApiEndpointOrgs = "orgs/"
 
 	OpenApiEndpointRegionStoragePolicies   = "regionStoragePolicies/"
+	OpenApiEndpointStorageClasses          = "storageClasses/"
 	OpenApiEndpointContentLibraries        = "contentLibraries/"
 	OpenApiEndpointContentLibraryItems     = "contentLibraryItems/"
 	OpenApiEndpointContentLibraryItemFiles = "contentLibraryItems/%s/files"
