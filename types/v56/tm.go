@@ -61,6 +61,45 @@ type ContentLibrarySubscriptionConfig struct {
 	Password string `json:"password,omitempty"`
 }
 
+// ContentLibraryItem is an object representing a VCF Content Library Item
+type ContentLibraryItem struct {
+	// The reference to the content library that this item belongs to
+	ContentLibrary OpenApiReference `json:"contentLibrary"`
+	// The name of the content library item
+	Name string `json:"name"`
+	// The type of content library item. This field is only required for content library upload
+	ItemType string `json:"itemType"`
+
+	// The ISO-8601 timestamp representing when this item was created
+	CreationDate string `json:"creationDate,omitempty"`
+	// The description of the content library item
+	Description string `json:"description,omitempty"`
+	// A unique identifier for the library item
+	ID string `json:"id,omitempty"`
+	// Virtual Machine Identifier (VMI) of the item. This is a ReadOnly field
+	ImageIdentifier string `json:"imageIdentifier,omitempty"`
+	// Whether this item is published
+	IsPublished bool `json:"isPublished,omitempty"`
+	// Whether this item is subscribed
+	IsSubscribed bool `json:"isSubscribed,omitempty"`
+	// The ISO-8601 timestamp representing when this item was last synced if subscribed
+	LastSuccessfulSync string `json:"lastSuccessfulSync,omitempty"`
+	// The reference to the organization that the item belongs to
+	Org *OpenApiReference `json:"org,omitempty"`
+	// Status of this content library item
+	Status string `json:"status,omitempty"`
+	// The version of this item. For a subscribed library, this version is same as in publisher library
+	Version int `json:"version,omitempty"`
+}
+
+// ContentLibraryItemFile specifies a Content Library Item file for uploads
+type ContentLibraryItemFile struct {
+	ExpectedSizeBytes int64  `json:"expectedSizeBytes"`
+	BytesTransferred  int64  `json:"bytesTransferred"`
+	Name              string `json:"name"`
+	TransferUrl       string `json:"transferUrl"`
+}
+
 // TmOrg defines structure for creating TM Organization
 type TmOrg struct {
 	ID string `json:"id,omitempty"`
@@ -177,6 +216,80 @@ type SupervisorZone struct {
 	CpuUsedMHz int64 `json:"cpuUsedMHz"`
 	// Region contains a reference to parent region
 	Region *OpenApiReference `json:"region"`
+}
+
+// TmVdc defines a structure for creating VDCs using OpenAPI endpoint
+type TmVdc struct {
+	ID string `json:"id,omitempty"`
+	// Name of the VDC
+	Name string `json:"name"`
+	// Description of the VDC
+	Description string `json:"description,omitempty"`
+	// IsEnabled defines if the VDC is enabled
+	IsEnabled *bool `json:"isEnabled,omitempty"`
+	// Org reference
+	Org *OpenApiReference `json:"org"`
+	// Region reference
+	Region *OpenApiReference `json:"region"`
+	// Status contains creation status of the VDC
+	Status string `json:"status,omitempty"`
+	// Supervisors contain references to Supervisors
+	Supervisors []OpenApiReference `json:"supervisors,omitempty"`
+	// ZoneResourceAllocation contain references of each zone within Supervisor
+	ZoneResourceAllocation []*TmVdcZoneResourceAllocation `json:"zoneResourceAllocation,omitempty"`
+}
+
+// TmVdcZoneResourceAllocation defines resource allocation for a single zone
+type TmVdcZoneResourceAllocation struct {
+	ResourceAllocation TmVdcResourceAllocation `json:"resourceAllocation"`
+	Zone               *OpenApiReference       `json:"zone"`
+}
+
+// TmVdcResourceAllocation defines compute resources of single VDC
+type TmVdcResourceAllocation struct {
+	// CPULimitMHz defines maximum CPU consumption limit in MHz
+	CPULimitMHz int `json:"cpuLimitMHz"`
+	// CPUReservationMHz defines reserved CPU capacity in MHz
+	CPUReservationMHz int `json:"cpuReservationMHz"`
+	// MemoryLimitMiB defines maximum memory consumption limit in MiB
+	MemoryLimitMiB int `json:"memoryLimitMiB"`
+	// MemoryReservationMiB defines reserved memory in Mib
+	MemoryReservationMiB int `json:"memoryReservationMiB"`
+}
+
+// Zone defines a Region Zone structure
+type Zone struct {
+	ID string `json:"id,omitempty"`
+	// Name of the Region Zone
+	Name string `json:"name"`
+	// Region reference
+	Region *OpenApiReference `json:"region"`
+	// CPULimitMhz defines the total amount of reserved and unreserved CPU resources allocated in
+	// MHz
+	CPULimitMhz int `json:"cpuLimitMhz"`
+	// CPUReservationMhz contains the total amount of CPU resources reserved in MHz
+	CPUReservationMhz int `json:"cpuReservationMhz"`
+	// CPUReservationUsedMhz defines the amount of CPU resources used in MHz. For Tenants, this
+	// value represents the total given to all of a Tenant's Namespaces. For Providers, this value
+	// represents the total given to all Tenants
+	CPUReservationUsedMhz int `json:"cpuReservationUsedMhz"`
+	// CPUUsedMhz defines the amount of reserved and unreserved CPU resources used in MHz. For
+	// Tenants, this value represents the total given to all of a Tenant's Namespaces. For
+	// Providers, this value represents the total given to all Tenants
+	CPUUsedMhz int `json:"cpuUsedMhz"`
+	// MemoryLimitMiB defines the total amount of reserved and unreserved memory resources allocated
+	// in MiB
+	MemoryLimitMiB int `json:"memoryLimitMiB"`
+	// MemoryReservationMiB defines the amount of reserved memory resources reserved in MiB
+	MemoryReservationMiB int `json:"memoryReservationMiB"`
+	// MemoryReservationUsedMiB defines the amount of reserved memory resources used in MiB. For
+	// Tenants, this value represents the total given to all of a Tenant's Namespaces. For
+	// Providers, this value represents the total given to all Tenants
+	MemoryReservationUsedMiB int `json:"memoryReservationUsedMiB"`
+	// MemoryUsedMiB defines the total amount of reserved and unreserved memory resources used in
+	// MiB. For Tenants, this value represents the total given to all of a Tenant's Namespaces. For
+	// Providers, this value represents the total given to all Tenants
+	MemoryUsedMiB int `json:"memoryUsedMiB"`
 }
 
 // TmIpSpace provides configuration of mainly the external IP Prefixes that specifies

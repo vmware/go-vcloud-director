@@ -156,7 +156,7 @@ func newFileUploadRequest(client *Client, requestUrl string, filePart []byte, of
 	uploadReq.ContentLength = filePartSize
 	uploadReq.Header.Set("Content-Length", strconv.FormatInt(uploadReq.ContentLength, 10))
 
-	rangeExpression := "bytes " + strconv.FormatInt(int64(offset), 10) + "-" + strconv.FormatInt(int64(offset+filePartSize-1), 10) + "/" + strconv.FormatInt(int64(fileSizeToUpload), 10)
+	rangeExpression := "bytes " + strconv.FormatInt(offset, 10) + "-" + strconv.FormatInt(offset+filePartSize-1, 10) + "/" + strconv.FormatInt(fileSizeToUpload, 10)
 	uploadReq.Header.Set("Content-Range", rangeExpression)
 
 	sanitizedHeader := util.SanitizedHeader(uploadReq.Header)
