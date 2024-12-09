@@ -9,6 +9,11 @@ import (
 
 const labelTmProviderGateway = "TM Provider Gateway"
 
+// TmProviderGateway manages Provider Gateway creation and configuration.
+//
+// NOTE. While creation of Provider Gateway requires at least one IP Space (`TmIpSpace`) reference,
+// they are not being returned by API after creation. One must use `TmIpSpaceAssociation` for
+// managing IP Space associations with Provider gateways after the initial creation is done.
 type TmProviderGateway struct {
 	TmProviderGateway *types.TmProviderGateway
 	vcdClient         *VCDClient

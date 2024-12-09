@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"fmt"
 	"net/url"
 	"time"
 
@@ -236,9 +237,9 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 	}
 }
 
-func createTmIpSpace(vcd *TestVCD, region *Region, check *C) (*TmIpSpace, func()) {
+func createTmIpSpace(vcd *TestVCD, region *Region, check *C, nameSuffix, octet3 string) (*TmIpSpace, func()) {
 	ipSpaceType := &types.TmIpSpace{
-		Name:        check.TestName(),
+		Name:        check.TestName() + "-" + nameSuffix,
 		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
 		Description: check.TestName(),
 		DefaultQuota: types.TmIpSpaceDefaultQuota{
@@ -246,10 +247,10 @@ func createTmIpSpace(vcd *TestVCD, region *Region, check *C) (*TmIpSpace, func()
 			MaxIPCount:    -1,
 			MaxSubnetSize: 24,
 		},
-		ExternalScopeCidr: "12.12.0.0/30",
+		ExternalScopeCidr: fmt.Sprintf("12.12.%s.0/30", octet3),
 		InternalScopeCidrBlocks: []types.TmIpSpaceInternalScopeCidrBlocks{
 			{
-				Cidr: "10.0.0.0/24",
+				Cidr: fmt.Sprintf("10.0.%s.0/24", octet3),
 			},
 		},
 	}

@@ -53,7 +53,7 @@ func (vcdClient *VCDClient) GetTmIpSpaceAssociationById(id string) (*TmIpSpaceAs
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
-func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByProviderGatewayId(providerGatewayId string) ([]*TmProviderGateway, error) {
+func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByProviderGatewayId(providerGatewayId string) ([]*TmIpSpaceAssociation, error) {
 	if providerGatewayId == "" {
 		return nil, fmt.Errorf("%s lookup requires %s ID", labelTmIpSpaceAssociation, labelTmProviderGateway)
 	}
@@ -61,18 +61,17 @@ func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByProviderGatewayId(provi
 	queryParams := url.Values{}
 	queryParams = queryParameterFilterAnd("providerGatewayRef.id=="+providerGatewayId, queryParams)
 
-	return vcdClient.GetAllTmProviderGateways(queryParams)
+	return vcdClient.GetAllTmIpSpaceAssociations(queryParams)
 }
 
-func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpaceId string) ([]*TmProviderGateway, error) {
+func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpaceId string) ([]*TmIpSpaceAssociation, error) {
 	if ipSpaceId == "" {
 		return nil, fmt.Errorf("%s lookup requires %s ID", labelTmIpSpaceAssociation, labelTmProviderGateway)
 	}
 
 	queryParams := url.Values{}
 	queryParams = queryParameterFilterAnd("ipSpaceRef.id=="+ipSpaceId, queryParams)
-
-	return vcdClient.GetAllTmProviderGateways(queryParams)
+	return vcdClient.GetAllTmIpSpaceAssociations(queryParams)
 }
 
 func (o *TmIpSpaceAssociation) Delete() error {
