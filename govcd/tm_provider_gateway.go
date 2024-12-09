@@ -71,7 +71,7 @@ func (vcdClient *VCDClient) GetTmProviderGatewayById(id string) (*TmProviderGate
 	}
 
 	outerType := TmProviderGateway{vcdClient: vcdClient}
-	return getOuterEntity[TmProviderGateway, types.TmProviderGateway](&vcdClient.Client, outerType, c)
+	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
 func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndOrgId(name, orgId string) (*TmProviderGateway, error) {

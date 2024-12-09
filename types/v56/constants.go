@@ -532,6 +532,7 @@ const (
 	OpenApiEndpointTmVdcs                  = "virtualDatacenters/"
 	OpenApiEndpointTmIpSpaces              = "ipSpaces/"
 	OpenApiEndpointTmProviderGateways      = "providerGateways/"
+	OpenApiEndpointTmIpSpaceAssociations   = "ipSpaceAssociations/"
 )
 
 // Header keys to run operations in tenant context

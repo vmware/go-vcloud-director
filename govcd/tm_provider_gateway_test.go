@@ -48,7 +48,7 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	t := &types.TmProviderGateway{
 		Name:        check.TestName(),
 		Description: check.TestName(),
-		BackingType: "NSX_TIER0",
+		BackingType: "NSX_TIER0", // TODO TODO - does it support T0 VRF?
 		BackingRef:  types.OpenApiReference{ID: t0ByNameInRegion.TmTier0Gateway.ID},
 		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
 		IPSpaceRefs: []types.OpenApiReference{{
@@ -56,7 +56,46 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 		}},
 	}
 
-	_, err = vcd.client.CreateTmProviderGateway(t)
-	panic(err)
+	createdTmProviderGateway, err := vcd.client.CreateTmProviderGateway(t)
+	check.Assert(err, IsNil)
+	AddToCleanupListOpenApi(createdTmProviderGateway.TmProviderGateway.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmProviderGateways+createdTmProviderGateway.TmProviderGateway.ID)
+	defer func() {
+		err = createdTmProviderGateway.Delete()
+		check.Assert(err, IsNil)
+	}()
+
+	// Get TM VDC By Name
+	byName, err := vcd.client.GetTmProviderGatewayByName(t.Name)
+	check.Assert(err, IsNil)
+	check.Assert(byName.TmProviderGateway, DeepEquals, createdTmProviderGateway.TmProviderGateway)
+
+	// Get TM VDC By Id
+	byId, err := vcd.client.GetTmProviderGatewayById(createdTmProviderGateway.TmProviderGateway.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byId.TmProviderGateway, DeepEquals, createdTmProviderGateway.TmProviderGateway)
+
+	// Not Found tests
+	byNameInvalid, err := vcd.client.GetTmProviderGatewayByName("fake-name")
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(byNameInvalid, IsNil)
+
+	byIdInvalid, err := vcd.client.GetTmProviderGatewayById("urn:vcloud:providerGateway:5344b964-0000-0000-0000-d554913db643")
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(byIdInvalid, IsNil)
+
+	// Update (IPSpaceRefs can only be managed using 'TmIpSpaceAssociation' after initial creation)
+	createdTmProviderGateway.TmProviderGateway.Name = check.TestName() + "-update"
+	updatedVdc, err := createdTmProviderGateway.Update(createdTmProviderGateway.TmProviderGateway)
+	check.Assert(err, IsNil)
+	check.Assert(updatedVdc.TmProviderGateway, DeepEquals, createdTmProviderGateway.TmProviderGateway)
+
+	// IP Space Association management testing
+	associationByProviderGateway, err := vcd.client.GetAllTmIpSpaceAssociationsByProviderGatewayId(createdTmProviderGateway.TmProviderGateway.ID)
+	check.Assert(err, IsNil)
+	check.Assert(len(associationByProviderGateway) == 1, Equals, true)
+
+	associationByIpSpace, err := vcd.client.GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpace.TmIpSpace.ID)
+	check.Assert(err, IsNil)
+	check.Assert(len(associationByIpSpace) == 1, Equals, true)
 
 }
