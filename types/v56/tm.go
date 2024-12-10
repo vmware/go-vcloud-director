@@ -353,22 +353,32 @@ type TmIpSpaceInternalScopeCidrBlocks struct {
 	Cidr string `json:"cidr,omitempty"`
 }
 
+// TmTier0Gateway represents NSX-T Tier-0 Gateway that are available for consumption in TM
 type TmTier0Gateway struct {
-	ID              string `json:"id"`
-	Description     string `json:"description"`
-	DisplayName     string `json:"displayName"`
-	ParentTier0ID   string `json:"parentTier0Id"`
-	AlreadyImported bool   `json:"alreadyImported"`
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	DisplayName string `json:"displayName"`
+	// ParentTier0ID in case this is a Tier 0 Gateway VRF
+	ParentTier0ID string `json:"parentTier0Id"`
+	// AlreadyImported displays if the Tier 0 Gateway is already consumed by TM
+	AlreadyImported bool `json:"alreadyImported"`
 }
 
+// TmProviderGateway reflects a TM Provider Gateway that is a mapping of
 type TmProviderGateway struct {
-	ID          string             `json:"id,omitempty"`
-	Name        string             `json:"name"`
-	Description string             `json:"description,omitempty"`
-	OrgRef      *OpenApiReference  `json:"orgRef,omitempty"`
-	BackingRef  OpenApiReference   `json:"backingRef,omitempty"`
-	BackingType string             `json:"backingType,omitempty"`
-	RegionRef   OpenApiReference   `json:"regionRef,omitempty"`
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// OrgRef contains a reference to Org
+	OrgRef     *OpenApiReference `json:"orgRef,omitempty"`
+	BackingRef OpenApiReference  `json:"backingRef,omitempty"`
+	// BackingType - NSX_TIER0
+	BackingType string `json:"backingType,omitempty"`
+	// RegionRef contains Region reference
+	RegionRef OpenApiReference `json:"regionRef,omitempty"`
+	// IPSpaceRefs - a list of IP Space references to create associations with.
+	// NOTE. It is used _only_ for creation. Reading will return it empty, and update will not work
+	// - one must use `TmIpSpaceAssociation` to update IP Space associations with Provider Gateway
 	IPSpaceRefs []OpenApiReference `json:"ipSpaceRefs,omitempty"`
 	// Represents current status of the networking entity. Possible values are:
 	// * PENDING - Desired entity configuration has been received by system and is pending realization.
@@ -379,6 +389,7 @@ type TmProviderGateway struct {
 	Status string `json:"status,omitempty"`
 }
 
+// TmIpSpaceAssociation manages IP Space and Provider Gateway associations
 type TmIpSpaceAssociation struct {
 	ID                 string            `json:"id,omitempty"`
 	Description        string            `json:"description,omitempty"`

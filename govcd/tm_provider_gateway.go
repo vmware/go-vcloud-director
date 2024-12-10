@@ -27,6 +27,7 @@ func (g TmProviderGateway) wrap(inner *types.TmProviderGateway) *TmProviderGatew
 	return &g
 }
 
+// Creates TM Provider Gateway with provided configuration
 func (vcdClient *VCDClient) CreateTmProviderGateway(config *types.TmProviderGateway) (*TmProviderGateway, error) {
 	c := crudConfig{
 		entityLabel: labelTmProviderGateway,
@@ -36,6 +37,7 @@ func (vcdClient *VCDClient) CreateTmProviderGateway(config *types.TmProviderGate
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// GetAllTmProviderGateways retrieves all Provider Gateways with optional filter
 func (vcdClient *VCDClient) GetAllTmProviderGateways(queryParameters url.Values) ([]*TmProviderGateway, error) {
 	c := crudConfig{
 		entityLabel:     labelTmProviderGateway,
@@ -47,6 +49,7 @@ func (vcdClient *VCDClient) GetAllTmProviderGateways(queryParameters url.Values)
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetTmProviderGatewayByName retrieves Provider Gateway by Name
 func (vcdClient *VCDClient) GetTmProviderGatewayByName(name string) (*TmProviderGateway, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelTmProviderGateway)
@@ -68,6 +71,7 @@ func (vcdClient *VCDClient) GetTmProviderGatewayByName(name string) (*TmProvider
 	return vcdClient.GetTmProviderGatewayById(singleEntity.TmProviderGateway.ID)
 }
 
+// GetTmProviderGatewayById retrieves a given Provider Gateway by ID
 func (vcdClient *VCDClient) GetTmProviderGatewayById(id string) (*TmProviderGateway, error) {
 	c := crudConfig{
 		entityLabel:    labelTmProviderGateway,
@@ -79,7 +83,7 @@ func (vcdClient *VCDClient) GetTmProviderGatewayById(id string) (*TmProviderGate
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
-func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndOrgId(name, orgId string) (*TmProviderGateway, error) {
+/* func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndOrgId(name, orgId string) (*TmProviderGateway, error) {
 	if name == "" || orgId == "" {
 		return nil, fmt.Errorf("%s lookup requires name and Org ID", labelTmProviderGateway)
 	}
@@ -99,8 +103,32 @@ func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndOrgId(name, orgId strin
 	}
 
 	return vcdClient.GetTmProviderGatewayById(singleEntity.TmProviderGateway.ID)
+} */
+
+// GetTmProviderGatewayByNameAndRegionId retrieves Provider Gateway by name in a given Region
+func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndRegionId(name, regionId string) (*TmProviderGateway, error) {
+	if name == "" || regionId == "" {
+		return nil, fmt.Errorf("%s lookup requires name and Org ID", labelTmProviderGateway)
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", "name=="+name)
+	queryParams = queryParameterFilterAnd("regionRef.id=="+regionId, queryParams)
+
+	filteredEntities, err := vcdClient.GetAllTmProviderGateways(queryParams)
+	if err != nil {
+		return nil, err
+	}
+
+	singleEntity, err := oneOrError("name", name, filteredEntities)
+	if err != nil {
+		return nil, err
+	}
+
+	return vcdClient.GetTmProviderGatewayById(singleEntity.TmProviderGateway.ID)
 }
 
+// Update existing Provider Gateway
 func (o *TmProviderGateway) Update(TmProviderGatewayConfig *types.TmProviderGateway) (*TmProviderGateway, error) {
 	c := crudConfig{
 		entityLabel:    labelTmProviderGateway,
@@ -111,6 +139,7 @@ func (o *TmProviderGateway) Update(TmProviderGatewayConfig *types.TmProviderGate
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmProviderGatewayConfig)
 }
 
+// Delete Provider Gateway
 func (o *TmProviderGateway) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelTmProviderGateway,

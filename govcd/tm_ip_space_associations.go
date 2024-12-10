@@ -9,6 +9,9 @@ import (
 
 const labelTmIpSpaceAssociation = "TM IP Space Association"
 
+// TmIpSpaceAssociation manages associations between Provider Gateways and IP Spaces. Each
+// association results in a separate entity. The first association is created automatically when
+// a Provider Gateway (`TmProviderGateway`) is created.
 type TmIpSpaceAssociation struct {
 	TmIpSpaceAssociation *types.TmIpSpaceAssociation
 	vcdClient            *VCDClient
@@ -22,6 +25,7 @@ func (g TmIpSpaceAssociation) wrap(inner *types.TmIpSpaceAssociation) *TmIpSpace
 	return &g
 }
 
+// Creates TM IP Space Association with Provider Gateway
 func (vcdClient *VCDClient) CreateTmIpSpaceAssociation(config *types.TmIpSpaceAssociation) (*TmIpSpaceAssociation, error) {
 	c := crudConfig{
 		entityLabel: labelTmIpSpaceAssociation,
@@ -31,6 +35,7 @@ func (vcdClient *VCDClient) CreateTmIpSpaceAssociation(config *types.TmIpSpaceAs
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// GetAllTmIpSpaceAssociations retrieves all TM IP Space and Provider Gateway associations
 func (vcdClient *VCDClient) GetAllTmIpSpaceAssociations(queryParameters url.Values) ([]*TmIpSpaceAssociation, error) {
 	c := crudConfig{
 		entityLabel:     labelTmIpSpaceAssociation,
@@ -42,6 +47,7 @@ func (vcdClient *VCDClient) GetAllTmIpSpaceAssociations(queryParameters url.Valu
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
+// GetTmIpSpaceAssociationById retrieves a single IP Spaces and Provider Gateway association by ID
 func (vcdClient *VCDClient) GetTmIpSpaceAssociationById(id string) (*TmIpSpaceAssociation, error) {
 	c := crudConfig{
 		entityLabel:    labelTmIpSpaceAssociation,
@@ -53,6 +59,8 @@ func (vcdClient *VCDClient) GetTmIpSpaceAssociationById(id string) (*TmIpSpaceAs
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
+// GetAllTmIpSpaceAssociationsByProviderGatewayId retrieves all IP Space associations to a
+// particulat Provider Gateway
 func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByProviderGatewayId(providerGatewayId string) ([]*TmIpSpaceAssociation, error) {
 	if providerGatewayId == "" {
 		return nil, fmt.Errorf("%s lookup requires %s ID", labelTmIpSpaceAssociation, labelTmProviderGateway)
@@ -64,6 +72,7 @@ func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByProviderGatewayId(provi
 	return vcdClient.GetAllTmIpSpaceAssociations(queryParams)
 }
 
+// GetAllTmIpSpaceAssociationsByIpSpaceId retrieves all associations for a given IP Space ID
 func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpaceId string) ([]*TmIpSpaceAssociation, error) {
 	if ipSpaceId == "" {
 		return nil, fmt.Errorf("%s lookup requires %s ID", labelTmIpSpaceAssociation, labelTmProviderGateway)
@@ -74,6 +83,7 @@ func (vcdClient *VCDClient) GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpaceId str
 	return vcdClient.GetAllTmIpSpaceAssociations(queryParams)
 }
 
+// Delete the association
 func (o *TmIpSpaceAssociation) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelTmIpSpaceAssociation,

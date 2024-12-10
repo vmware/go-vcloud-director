@@ -66,12 +66,17 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 		check.Assert(err, IsNil)
 	}()
 
-	// Get TM VDC By Name
+	// Get TM Provider Gateway By Name
 	byName, err := vcd.client.GetTmProviderGatewayByName(t.Name)
 	check.Assert(err, IsNil)
 	check.Assert(byName.TmProviderGateway, DeepEquals, createdTmProviderGateway.TmProviderGateway)
 
-	// Get TM VDC By Id
+	// Get TM Provider Gateway By Name and Region ID
+	byNameAndRegionId, err := vcd.client.GetTmProviderGatewayByNameAndRegionId(t.Name, region.Region.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byNameAndRegionId.TmProviderGateway, DeepEquals, createdTmProviderGateway.TmProviderGateway)
+
+	// Get TM Provider Gateway By Id
 	byId, err := vcd.client.GetTmProviderGatewayById(createdTmProviderGateway.TmProviderGateway.ID)
 	check.Assert(err, IsNil)
 	check.Assert(byId.TmProviderGateway, DeepEquals, createdTmProviderGateway.TmProviderGateway)
@@ -116,10 +121,6 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	newAssociation, err := vcd.client.CreateTmIpSpaceAssociation(ipSpaceAssociationCfg)
 	check.Assert(err, IsNil)
 	AddToCleanupListOpenApi(newAssociation.TmIpSpaceAssociation.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmIpSpaceAssociations+newAssociation.TmIpSpaceAssociation.ID)
-	defer func() {
-		err = newAssociation.Delete()
-		check.Assert(err, IsNil)
-	}()
 
 	// Check new association numbers in Provider Gateway
 	updatedAssociationByProviderGateway, err := vcd.client.GetAllTmIpSpaceAssociationsByProviderGatewayId(createdTmProviderGateway.TmProviderGateway.ID)

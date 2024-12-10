@@ -9,6 +9,7 @@ import (
 
 const labelTmTier0Gateway = "TM Tier0 Gateway"
 
+// TmTier0Gateway is a structure for reading TM Tier0 Gateways that originate from NSX-T
 type TmTier0Gateway struct {
 	TmTier0Gateway *types.TmTier0Gateway
 	vcdClient      *VCDClient
