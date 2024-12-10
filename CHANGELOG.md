@@ -2,6 +2,11 @@
 
 Changes in progress for v3.0.0 are available at [.changes/v3.0.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v3.0.0) until the release.
 
+## 2.26.1 (December 5, 2024)
+
+### IMPROVEMENTS
+* Added CSE 4.2.2 and 4.2.3 support ([#723](https://github.com/vmware/go-vcloud-director/pull/723))
+
 ## 2.26.0 (September 17, 2024)
 
 ### FEATURES
