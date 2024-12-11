@@ -1,4 +1,34 @@
 {
+  "v1.30.2+vmware.1-tkg.1-00b380629c7a9c10afaaa9df46ba2283": {
+    "tkg": "v2.5.2",
+    "tkr": "v1.30.2---vmware.1-tkg.1",
+    "etcd": "v3.5.12_vmware.5",
+    "coreDns": "v1.11.1_vmware.10"
+  },
+  "v1.29.6+vmware.1-tkg.3-c6934e3c00b6ca9a7c3e56acb773ce3a": {
+    "tkg": "v2.5.2",
+    "tkr": "v1.29.6---vmware.1-tkg.3",
+    "etcd": "v3.5.12_vmware.5",
+    "coreDns": "v1.10.1_vmware.23"
+  },
+  "v1.28.11+vmware.2-tkg.2-7820f47053de95b5aaf7e33a17511e47": {
+    "tkg": "v2.5.2",
+    "tkr": "v1.28.11---vmware.2-tkg.2",
+    "etcd": "v3.5.12_vmware.5",
+    "coreDns": "v1.10.1_vmware.21"
+  },
+  "v1.27.15+vmware.1-tkg.2-138e363d8ee0f5eeda35a0de81a33f9f": {
+    "tkg": "v2.5.2",
+    "tkr": "v1.27.15---vmware.1-tkg.2",
+    "etcd": "v3.5.12_vmware.5",
+    "coreDns": "v1.10.1_vmware.20"
+  },
+  "v1.26.14+vmware.1-tkg.2-6378700fb9360ffd64bebc53dbde5bb9": {
+    "tkg": "v2.5.2",
+    "tkr": "v1.26.14---vmware.1-tkg.4",
+    "etcd": "v3.5.12_vmware.5",
+    "coreDns": "v1.9.3_vmware.22"
+  },
   "v1.28.4+vmware.1-tkg.1-1e7baa840b8869c8bdce0cafff0da59d": {
     "tkg": "v2.5.0",
     "tkr": "v1.28.4---vmware.1-tkg.1-rc.5",
@@ -126,3 +156,4 @@
     "coreDns": "v1.7.0_vmware.15"
   }
 }
+

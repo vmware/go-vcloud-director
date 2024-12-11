@@ -143,10 +143,26 @@ func (v VCenter) GetVimServerUrl() (string, error) {
 	return url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId))
 }
 
-// Refresh triggers a refresh operation on vCenter that syncs up vCenter components such as
+// Refresh vCenter structure
+func (v *VCenter) Refresh() error {
+	// Retrieval endpoints by Name and by ID return differently formated url (the by Id one returns
+	// URL with port http://host:443, while the one by name - doesn't). Using the same getByName to
+	// match format everywhere
+
+	// newVcenter, err := v.client.GetVCenterById(v.VSphereVCenter.VcId)
+	newVcenter, err := v.client.GetVCenterByName(v.VSphereVCenter.Name) // TODO: TM: use above retrieval by ID
+	if err != nil {
+		return fmt.Errorf("error refreshing vCenter: %s", err)
+	}
+
+	v.VSphereVCenter = newVcenter.VSphereVCenter
+	return nil
+}
+
+// RefreshVcenter triggers a refresh operation on vCenter that syncs up vCenter components such as
 // supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
-func (v *VCenter) Refresh() error {
+func (v *VCenter) RefreshVcenter() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refresh")
 	if err != nil {
 		return fmt.Errorf("error building refresh path: %s", err)
