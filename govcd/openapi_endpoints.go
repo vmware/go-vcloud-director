@@ -168,6 +168,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVcf + types.OpenApiEndpointSupervisorZones:         "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointZones:                   "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs:                  "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces:              "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions

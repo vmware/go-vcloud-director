@@ -38,10 +38,13 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(v, NotNil)
 
+	err = v.Refresh()
+	check.Assert(err, IsNil)
+
 	// Add to cleanup list
 	PrependToCleanupListOpenApi(v.VSphereVCenter.VcId, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+v.VSphereVCenter.VcId)
 
-	err = v.Refresh()
+	err = v.RefreshVcenter()
 	check.Assert(err, IsNil)
 
 	// Get By Name

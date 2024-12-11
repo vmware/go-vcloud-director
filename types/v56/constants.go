@@ -531,6 +531,7 @@ const (
 	OpenApiEndpointSupervisorZones         = "supervisorZones/"
 	OpenApiEndpointZones                   = "zones/"
 	OpenApiEndpointTmVdcs                  = "virtualDatacenters/"
+	OpenApiEndpointTmIpSpaces              = "ipSpaces/"
 )
 
 // Header keys to run operations in tenant context
