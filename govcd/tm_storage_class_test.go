@@ -18,9 +18,10 @@ func (vcd *TestVCD) Test_StorageClass(check *C) {
 	defer vcCleanup()
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
-
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
 	defer nsxtManagerCleanup()
+	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
+	defer regionCleanup()
 
 	allStorageClasses, err := vcd.client.GetAllStorageClasses(nil)
 	check.Assert(err, IsNil)
@@ -36,13 +37,9 @@ func (vcd *TestVCD) Test_StorageClass(check *C) {
 	check.Assert(rspByName, NotNil)
 	check.Assert(*rspByName.StorageClass, DeepEquals, *rspById.StorageClass)
 
-	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
-	defer regionCleanup()
-
 	rspByName2, err := region.GetStorageClassByName(vcd.config.Tm.RegionStoragePolicy)
 	check.Assert(err, IsNil)
 	check.Assert(rspByName2, NotNil)
-	check.Assert(rspByName2.StorageClass.Name, Equals, vcd.config.Tm.RegionStoragePolicy)
 	check.Assert(rspByName2.StorageClass.Name, Equals, vcd.config.Tm.RegionStoragePolicy)
 
 	// Check ENF errors
