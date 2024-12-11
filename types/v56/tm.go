@@ -291,3 +291,64 @@ type Zone struct {
 	// Providers, this value represents the total given to all Tenants
 	MemoryUsedMiB int `json:"memoryUsedMiB"`
 }
+
+// TmIpSpace provides configuration of mainly the external IP Prefixes that specifies
+// the accessible external networks from the data center
+type TmIpSpace struct {
+	ID string `json:"id,omitempty"`
+	// Name of the IP Space
+	Name string `json:"name"`
+	// Description of the IP Space
+	Description string `json:"description,omitempty"`
+	// RegionRef is the region that this IP Space belongs in. Only Provider Gateways in the same Region can be
+	// associated with this IP Space. This field cannot be updated
+	RegionRef OpenApiReference `json:"regionRef"`
+	// Default IP quota that applies to all the organizations the Ip Space is assigned to
+	DefaultQuota TmIpSpaceDefaultQuota `json:"defaultQuota,omitempty"`
+	// ExternalScopeCidr defines the total span of IP addresses to which the IP space has access.
+	// This typically defines the span of IP addresses outside the bounds of a Data Center. For the
+	// internet, this may be 0.0.0.0/0. For a WAN, this could be 10.0.0.0/8.
+	ExternalScopeCidr string `json:"externalScopeCidr,omitempty"`
+	// InternalScopeCidrBlocks defines the span of IP addresses used within a Data Center. For new
+	// CIDR value not in the existing list, a new IP Block will be created. For existing CIDR value,
+	// the IP Block's name can be updated. If an existing CIDR value is removed from the list, the
+	// the IP Block is removed from the IP Space.
+	InternalScopeCidrBlocks []TmIpSpaceInternalScopeCidrBlocks `json:"internalScopeCidrBlocks,omitempty"`
+	// Represents current status of the networking entity. Possible values are:
+	// * PENDING - Desired entity configuration has been received by system and is pending realization.
+	// * CONFIGURING - The system is in process of realizing the entity.
+	// * REALIZED - The entity is successfully realized in the system.
+	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
+	// * UNKNOWN - Current state of entity is unknown.
+	Status string `json:"status,omitempty"`
+}
+
+// IP Space quota defines the maximum number of IPv4 IPs and CIDRs that can be allocated and used by
+// the IP Space across all its Internal Scopes
+type TmIpSpaceDefaultQuota struct {
+	// The maximum number of CIDRs with size maxSubnetSize or less, that can be allocated from all
+	// the Internal Scopes of the IP Space. A '-1' value means no cap on the number of the CIDRs
+	// used
+	MaxCidrCount int `json:"maxCidrCount,omitempty"`
+	// The maximum number of single floating IP addresses that can be allocated and used from all
+	// the Internal Scopes of the IP Space. A '-1' value means no cap on the number of floating IP
+	// Addresses
+	MaxIPCount int `json:"maxIpCount,omitempty"`
+	// The maximum size of the subnets, represented as a prefix length. The CIDRs that are allocated
+	// from the Internal Scopes of the IP Space must be smaller or equal to the specified size. For
+	// example, for a maxSubnetSize of 24, CIDRs with prefix length of 24, 28 or 30 can be
+	// allocated
+	MaxSubnetSize int `json:"maxSubnetSize,omitempty"`
+}
+
+// An IP Block represents a named CIDR that is backed by a network provider
+type TmIpSpaceInternalScopeCidrBlocks struct {
+	// Unique backing ID of the IP Block. This is not a Tenant Manager URN. This field is read-only and is ignored on create/update
+	ID string `json:"id,omitempty"`
+	// The name of the IP Block. If not set, a random name will be generated that will be prefixed
+	// with the name of the IP Space. This property is updatable if there's an existing IP Block
+	// with the CIDR value
+	Name string `json:"name,omitempty"`
+	// The CIDR that represents this IP Block. This property is not updatable
+	Cidr string `json:"cidr,omitempty"`
+}

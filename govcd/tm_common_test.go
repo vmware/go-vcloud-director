@@ -56,7 +56,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	time.Sleep(1 * time.Minute) // TODO: TM: Reevaluate need for sleep
 	// Refresh connected vCenter to be sure that all artifacts are loaded
 	printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
-	err = vc.Refresh()
+	err = vc.RefreshVcenter()
 	check.Assert(err, IsNil)
 
 	printVerbose("# Refreshing Storage Profiles in vCenter %s\n", vc.VSphereVCenter.Url)
