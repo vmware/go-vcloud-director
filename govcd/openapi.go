@@ -316,7 +316,11 @@ func (client *Client) OpenApiPostItemAndGetHeaders(apiVersion string, urlRef *ur
 		// Task Owner ID is the ID of created object. ID must be used (although HREF exists in task) because HREF points to
 		// old XML API and here we need to pull data from OpenAPI.
 
+		if task.Task.Owner == nil || task.Task.Owner.ID == "" {
+			return nil, fmt.Errorf("could not find the created item UUID from the task '%s' so it can't be retrieved", task.Task.ID)
+		}
 		newObjectUrl := urlParseRequestURI(urlRefCopy.String() + task.Task.Owner.ID)
+
 		err = client.OpenApiGetItem(apiVersion, newObjectUrl, nil, outType, additionalHeader)
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving item after creation: %s", err)
