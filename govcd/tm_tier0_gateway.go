@@ -75,6 +75,7 @@ func (vcdClient *VCDClient) getAllTmTier0Gateways(queryParameters url.Values) ([
 		entityLabel:     labelTmTier0Gateway,
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := TmTier0Gateway{vcdClient: vcdClient}

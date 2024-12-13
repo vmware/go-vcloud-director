@@ -32,6 +32,7 @@ func (vcdClient *VCDClient) CreateTmProviderGateway(config *types.TmProviderGate
 	c := crudConfig{
 		entityLabel: labelTmProviderGateway,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways,
+		requiresTm:  true,
 	}
 	outerType := TmProviderGateway{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
@@ -43,6 +44,7 @@ func (vcdClient *VCDClient) GetAllTmProviderGateways(queryParameters url.Values)
 		entityLabel:     labelTmProviderGateway,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := TmProviderGateway{vcdClient: vcdClient}
@@ -77,6 +79,7 @@ func (vcdClient *VCDClient) GetTmProviderGatewayById(id string) (*TmProviderGate
 		entityLabel:    labelTmProviderGateway,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways,
 		endpointParams: []string{id},
+		requiresTm:     true,
 	}
 
 	outerType := TmProviderGateway{vcdClient: vcdClient}
@@ -112,6 +115,7 @@ func (o *TmProviderGateway) Update(TmProviderGatewayConfig *types.TmProviderGate
 		entityLabel:    labelTmProviderGateway,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways,
 		endpointParams: []string{o.TmProviderGateway.ID},
+		requiresTm:     true,
 	}
 	outerType := TmProviderGateway{vcdClient: o.vcdClient}
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmProviderGatewayConfig)
@@ -123,6 +127,7 @@ func (o *TmProviderGateway) Delete() error {
 		entityLabel:    labelTmProviderGateway,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways,
 		endpointParams: []string{o.TmProviderGateway.ID},
+		requiresTm:     true,
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }

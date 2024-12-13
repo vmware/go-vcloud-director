@@ -30,6 +30,7 @@ func (vcdClient *VCDClient) CreateTmIpSpaceAssociation(config *types.TmIpSpaceAs
 	c := crudConfig{
 		entityLabel: labelTmIpSpaceAssociation,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations,
+		requiresTm:  true,
 	}
 	outerType := TmIpSpaceAssociation{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
@@ -41,6 +42,7 @@ func (vcdClient *VCDClient) GetAllTmIpSpaceAssociations(queryParameters url.Valu
 		entityLabel:     labelTmIpSpaceAssociation,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := TmIpSpaceAssociation{vcdClient: vcdClient}
@@ -53,6 +55,7 @@ func (vcdClient *VCDClient) GetTmIpSpaceAssociationById(id string) (*TmIpSpaceAs
 		entityLabel:    labelTmIpSpaceAssociation,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations,
 		endpointParams: []string{id},
+		requiresTm:     true,
 	}
 
 	outerType := TmIpSpaceAssociation{vcdClient: vcdClient}
@@ -89,6 +92,7 @@ func (o *TmIpSpaceAssociation) Delete() error {
 		entityLabel:    labelTmIpSpaceAssociation,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations,
 		endpointParams: []string{o.TmIpSpaceAssociation.ID},
+		requiresTm:     true,
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
