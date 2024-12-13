@@ -83,28 +83,6 @@ func (vcdClient *VCDClient) GetTmProviderGatewayById(id string) (*TmProviderGate
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
-/* func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndOrgId(name, orgId string) (*TmProviderGateway, error) {
-	if name == "" || orgId == "" {
-		return nil, fmt.Errorf("%s lookup requires name and Org ID", labelTmProviderGateway)
-	}
-
-	queryParams := url.Values{}
-	queryParams.Add("filter", "name=="+name)
-	queryParams = queryParameterFilterAnd("orgRef.id=="+orgId, queryParams)
-
-	filteredEntities, err := vcdClient.GetAllTmProviderGateways(queryParams)
-	if err != nil {
-		return nil, err
-	}
-
-	singleEntity, err := oneOrError("name", name, filteredEntities)
-	if err != nil {
-		return nil, err
-	}
-
-	return vcdClient.GetTmProviderGatewayById(singleEntity.TmProviderGateway.ID)
-} */
-
 // GetTmProviderGatewayByNameAndRegionId retrieves Provider Gateway by name in a given Region
 func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndRegionId(name, regionId string) (*TmProviderGateway, error) {
 	if name == "" || regionId == "" {
