@@ -364,7 +364,7 @@ type TmTier0Gateway struct {
 	AlreadyImported bool `json:"alreadyImported"`
 }
 
-// TmProviderGateway reflects a TM Provider Gateway that is a mapping of
+// TmProviderGateway reflects a TM Provider Gateway
 type TmProviderGateway struct {
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name"`
@@ -391,11 +391,14 @@ type TmProviderGateway struct {
 
 // TmIpSpaceAssociation manages IP Space and Provider Gateway associations
 type TmIpSpaceAssociation struct {
-	ID                 string            `json:"id,omitempty"`
-	Description        string            `json:"description,omitempty"`
-	Name               string            `json:"name,omitempty"`
-	IPSpaceRef         *OpenApiReference `json:"ipSpaceRef,omitempty"`
-	ProviderGatewayRef *OpenApiReference `json:"providerGatewayRef,omitempty"`
+	ID          string `json:"id,omitempty"`
+	Description string `json:"description,omitempty"`
+	Name        string `json:"name,omitempty"`
+	// IPSpaceRef must contain an IP Space reference that will be associated with Provider Gateway
+	IPSpaceRef *OpenApiReference `json:"ipSpaceRef"`
+	// ProviderGatewayRef must contain a Provider Gateway reference that will be association with an
+	// IP Space
+	ProviderGatewayRef *OpenApiReference `json:"providerGatewayRef"`
 	// Represents current status of the networking entity. Possible values are:
 	// * PENDING - Desired entity configuration has been received by system and is pending realization.
 	// * CONFIGURING - The system is in process of realizing the entity.

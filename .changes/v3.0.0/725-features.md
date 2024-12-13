@@ -3,7 +3,7 @@
   `VCDClient.GetTmProviderGatewayByName`, `VCDClient.GetTmProviderGatewayById`,
   `VCDClient.GetTmProviderGatewayByNameAndRegionId`, `TmProviderGateway.Update`,
   `TmProviderGateway.Delete` to manage Provider Gateways [GH-725]
-* Added `TmTier0Gateway` and `types.TmTier0Gateway` structures consumption and methods
+* Added `TmTier0Gateway` and `types.TmTier0Gateway` structures and methods
   `VCDClient.GetAllTmTier0GatewaysWithContext`, `VCDClient.GetTmTier0GatewayWithContextByName` to
   read Tier 0 Gateways that are available for TM consumption [GH-725]
 * Added `TmIpSpaceAssociation` and `types.TmIpSpaceAssociation` structures and methods

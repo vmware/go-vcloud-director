@@ -50,7 +50,7 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	t := &types.TmProviderGateway{
 		Name:        check.TestName(),
 		Description: check.TestName(),
-		BackingType: "NSX_TIER0", // TODO TODO - does it support T0 VRF?
+		BackingType: "NSX_TIER0",
 		BackingRef:  types.OpenApiReference{ID: t0ByNameInRegion.TmTier0Gateway.ID},
 		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
 		IPSpaceRefs: []types.OpenApiReference{{
@@ -98,7 +98,7 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 
 	// IP Space Association management testing
 
-	// Retrieve existing
+	// Retrieve existing association (the one that was created during Provider Gateway creation)
 	associationByProviderGateway, err := vcd.client.GetAllTmIpSpaceAssociationsByProviderGatewayId(createdTmProviderGateway.TmProviderGateway.ID)
 	check.Assert(err, IsNil)
 	check.Assert(len(associationByProviderGateway) == 1, Equals, true)
@@ -107,7 +107,7 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(associationByIpSpace1) == 1, Equals, true)
 
-	// Attempt to find an association that does not exist
+	// Attempt to find an association that does not yet exist
 	associationByIpSpace2, err := vcd.client.GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpace2.TmIpSpace.ID)
 	check.Assert(err, IsNil)
 	check.Assert(associationByIpSpace2, NotNil)
@@ -127,6 +127,7 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(updatedAssociationByProviderGateway) == 2, Equals, true)
 
+	// Check association by IP Space
 	newAssociationByIpSpace2, err := vcd.client.GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpace2.TmIpSpace.ID)
 	check.Assert(err, IsNil)
 	check.Assert(len(newAssociationByIpSpace2) == 1, Equals, true)

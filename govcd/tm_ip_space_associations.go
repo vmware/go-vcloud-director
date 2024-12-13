@@ -10,8 +10,8 @@ import (
 const labelTmIpSpaceAssociation = "TM IP Space Association"
 
 // TmIpSpaceAssociation manages associations between Provider Gateways and IP Spaces. Each
-// association results in a separate entity. The first association is created automatically when
-// a Provider Gateway (`TmProviderGateway`) is created.
+// association results in a separate entity. There is no update option. The first association is
+// created automatically when a Provider Gateway (`TmProviderGateway`) is created.
 type TmIpSpaceAssociation struct {
 	TmIpSpaceAssociation *types.TmIpSpaceAssociation
 	vcdClient            *VCDClient
