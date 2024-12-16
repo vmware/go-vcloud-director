@@ -520,18 +520,21 @@ const (
 	// OpenAPI Org
 	OpenApiEndpointOrgs = "orgs/"
 
-	OpenApiEndpointRegionStoragePolicies   = "regionStoragePolicies/"
-	OpenApiEndpointStorageClasses          = "storageClasses/"
-	OpenApiEndpointContentLibraries        = "contentLibraries/"
-	OpenApiEndpointContentLibraryItems     = "contentLibraryItems/"
-	OpenApiEndpointContentLibraryItemFiles = "contentLibraryItems/%s/files"
-	OpenApiEndpointNsxManagers             = "nsxManagers/"
-	OpenApiEndpointRegions                 = "regions/"
-	OpenApiEndpointSupervisors             = "supervisors/"
-	OpenApiEndpointSupervisorZones         = "supervisorZones/"
-	OpenApiEndpointZones                   = "zones/"
-	OpenApiEndpointTmVdcs                  = "virtualDatacenters/"
-	OpenApiEndpointTmIpSpaces              = "ipSpaces/"
+	OpenApiEndpointRegionStoragePolicies            = "regionStoragePolicies/"
+	OpenApiEndpointStorageClasses                   = "storageClasses/"
+	OpenApiEndpointContentLibraries                 = "contentLibraries/"
+	OpenApiEndpointContentLibraryItems              = "contentLibraryItems/"
+	OpenApiEndpointContentLibraryItemFiles          = "contentLibraryItems/%s/files"
+	OpenApiEndpointNsxManagers                      = "nsxManagers/"
+	OpenApiEndpointRegions                          = "regions/"
+	OpenApiEndpointSupervisors                      = "supervisors/"
+	OpenApiEndpointSupervisorZones                  = "supervisorZones/"
+	OpenApiEndpointZones                            = "zones/"
+	OpenApiEndpointTmVdcs                           = "virtualDatacenters/"
+	OpenApiEndpointTmIpSpaces                       = "ipSpaces/"
+	OpenApiEndpointTmEdgeClusters                   = "edgeClusters/"
+	OpenApiEndpointTmEdgeClusterTransportNodeStatus = "edgeClusters/%s/transportNodesStatus"
+	OpenApiEndpointTmEdgeClustersSync               = "edgeClusters/sync"
 )
 
 // Header keys to run operations in tenant context
