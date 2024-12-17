@@ -510,9 +510,10 @@ const (
 	OpenApiEndpointAlbEdgeGateway                     = "edgeGateways/%s/loadBalancer"
 
 	// OpenApiEndpointServiceAccountGrant is needed for granting a Service Account
-	OpenApiEndpointServiceAccountGrant = "deviceLookup/grant"
-	OpenApiEndpointTokens              = "tokens/"
-	OpenApiEndpointServiceAccounts     = "serviceAccounts/"
+	OpenApiEndpointServiceAccountGrant         = "deviceLookup/grant"
+	OpenApiEndpointTokens                      = "tokens/"
+	OpenApiEndpointServiceAccounts             = "serviceAccounts/"
+	OpenApiEndpointServiceAccountAuthorization = "oauth/%s/device_authorization"
 
 	// OpenApiEndpointVgpuProfile is used to query vGPU profiles
 	OpenApiEndpointVgpuProfile = "vgpuProfiles"
