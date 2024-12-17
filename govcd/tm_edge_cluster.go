@@ -60,6 +60,33 @@ func (vcdClient *VCDClient) GetTmEdgeClusterByName(name string) (*TmEdgeCluster,
 	return vcdClient.GetTmEdgeClusterById(singleEntity.TmEdgeCluster.ID)
 }
 
+// GetTmEdgeClusterByName retrieves TM Edge Cluster by Name
+func (vcdClient *VCDClient) GetTmEdgeClusterByNameAndRegionId(name, regionId string) (*TmEdgeCluster, error) {
+	if name == "" {
+		return nil, fmt.Errorf("%s lookup requires name", labelTmEdgeCluster)
+	}
+
+	if regionId == "" {
+		return nil, fmt.Errorf("%s lookup requires %s ID", labelTmEdgeCluster, labelRegion)
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", "name=="+name)
+	queryParams = queryParameterFilterAnd(fmt.Sprintf("regionRef.id==%s", regionId), queryParams)
+
+	filteredEntities, err := vcdClient.GetAllTmEdgeClusters(queryParams)
+	if err != nil {
+		return nil, err
+	}
+
+	singleEntity, err := oneOrError("name", name, filteredEntities)
+	if err != nil {
+		return nil, err
+	}
+
+	return vcdClient.GetTmEdgeClusterById(singleEntity.TmEdgeCluster.ID)
+}
+
 // GetTmEdgeClusterById retrieves TM Edge Cluster by ID
 func (vcdClient *VCDClient) GetTmEdgeClusterById(id string) (*TmEdgeCluster, error) {
 	c := crudConfig{
@@ -111,6 +138,23 @@ func (e *TmEdgeCluster) Update(TmEdgeClusterConfig *types.TmEdgeCluster) (*TmEdg
 	}
 	outerType := TmEdgeCluster{vcdClient: e.vcdClient}
 	return updateOuterEntity(&e.vcdClient.Client, outerType, c, TmEdgeClusterConfig)
+}
+
+// Delete removes the QoS configuration for a given TM Edge Cluster as the Edge Cluster itself is
+// not removable
+func (e *TmEdgeCluster) Delete() error {
+	if e.TmEdgeCluster == nil {
+		return fmt.Errorf("nil %s", labelTmEdgeCluster)
+	}
+	e.TmEdgeCluster.DefaultQosConfig.EgressProfile = nil
+	e.TmEdgeCluster.DefaultQosConfig.IngressProfile = nil
+
+	_, err := e.Update(e.TmEdgeCluster)
+	if err != nil {
+		return fmt.Errorf("error removing QoS configuration for  %s: %s", labelTmEdgeCluster, err)
+	}
+
+	return nil
 }
 
 // GetTransportNodeStatus retrieves status of all member transport nodes of specified Edge Cluster

@@ -374,8 +374,8 @@ type TmEdgeCluster struct {
 	// Display name for the Edge Cluster.
 	Name string `json:"name,omitempty"`
 	// Description for the Edge Cluster
-	Description string           `json:"description,omitempty"`
-	RegionRef   OpenApiReference `json:"regionRef,omitempty"`
+	Description string            `json:"description,omitempty"`
+	RegionRef   *OpenApiReference `json:"regionRef,omitempty"`
 	// Deployment type for transport nodes in the Edge Cluster. Possible values are:
 	// * VIRTUAL_MACHINE - If all members are of type VIRTUAL_MACHINE
 	// * PHYSICAL_MACHINE - If all members are of type PHYSICAL_MACHINE
@@ -402,7 +402,7 @@ type TmEdgeCluster struct {
 	// The default ingress and egress QoS config associated with this Edge Cluster. This will be
 	// used to configure default QoS profiles when the cluster is associated with the organization
 	// through a Regional Networking Assignment.
-	DefaultQosConfig TmEdgeClusterDefaultQosConfig `json:"defaultQosConfig,omitempty"`
+	DefaultQosConfig TmEdgeClusterDefaultQosConfig `json:"defaultQosConfig"`
 	// BackingRef contains reference to the backing NSX edge cluster.
 	BackingRef *OpenApiReference `json:"backingRef,omitempty"`
 	// Status represents current status of the networking entity. Possible values are:
@@ -414,15 +414,36 @@ type TmEdgeCluster struct {
 	Status string `json:"status,omitempty"`
 }
 
+// The default ingress and egress QoS config associated with this Edge Cluster. This will be used to
+// configure default QoS profiles when the cluster is associated with the organization through a
+// Regional Networking Assignment.
 type TmEdgeClusterDefaultQosConfig struct {
-	IngressProfile TmEdgeClusterQosProfile `json:"ingressProfile,omitempty"`
-	EgressProfile  TmEdgeClusterQosProfile `json:"egressProfile,omitempty"`
+	// Gateway QoS profile applicable to Ingress traffic. Setting this property to NULL results in
+	// no QoS being applied for traffic in ingress direction.
+	IngressProfile *TmEdgeClusterQosProfile `json:"ingressProfile"`
+	// Gateway QoS profile applicable to Egress traffic. Setting this property to NULL results in no
+	// QoS being applied for traffic in egress direction.
+	EgressProfile *TmEdgeClusterQosProfile `json:"egressProfile"`
 }
 
 type TmEdgeClusterQosProfile struct {
-	CommittedBandwidthMbps int    `json:"committedBandwidthMbps,omitempty"`
-	BurstSizeBytes         int    `json:"burstSizeBytes,omitempty"`
-	Type                   string `json:"type,omitempty"`
+	// Unique backing ID of the QoS profile in NSX manager backing the region. This is not a Tenant Manager URN.
+	ID string `json:"id,omitempty"`
+
+	// Name  of the QoS profile in NSX manager backing the region.
+	Name string `json:"name,omitempty"`
+	// Committed bandwidth specified in Mbps. Bandwidth is limited to line rate when the value
+	// configured is greater than line rate. Traffic exceeding bandwidth will be dropped.
+	// Minimum Value: 1
+	CommittedBandwidthMbps int `json:"committedBandwidthMbps,omitempty"`
+	// Burst size in bytes
+	// Minimum Value - 1
+	BurstSizeBytes int `json:"burstSizeBytes,omitempty"`
+	// Type of the referenced profile.
+	// * DEFAULT: The default profile associated with the Edge Cluster.
+	// * CUSTOM: Custom profile for Organization workloads running within region.
+	// To override the values and create new profile, set the type to CUSTOM.
+	Type string `json:"type,omitempty"`
 }
 
 // An object representing the status of a member Transport Node of an Edge Cluster.
