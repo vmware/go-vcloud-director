@@ -315,3 +315,4 @@ tm:
   nsxtManagerUsername: username for NSX-T Manager
   nsxtManagerPassword: password for NSX-T Manager
   nsxtManagerUrl: https://HOST
+  nsxtTier0Gateway: tier0gateway

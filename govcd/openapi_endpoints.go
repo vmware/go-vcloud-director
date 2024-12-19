@@ -169,6 +169,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVcf + types.OpenApiEndpointZones:                   "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs:                  "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces:              "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways:      "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations:   "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
@@ -257,6 +259,9 @@ var endpointElevatedApiVersions = map[string][]string{
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgs: {
 		"40.0", // TM Orgs
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers: {
+		"40.0", // TM Tier 0 Gateways
 	},
 }
 
