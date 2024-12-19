@@ -11,7 +11,7 @@ const labelTmEdgeCluster = "TM Edge Cluster"
 const labelTmEdgeClusterSync = "TM Edge Cluster Sync"
 const labelTmEdgeClusterTransportNodeStatus = "TM Edge Cluster Transport Node Status"
 
-// TmEdgeCluster manages read operations for NSX-T Edge Clusters that are backing provider gateways
+// TmEdgeCluster manages read operations for NSX-T Edge Clusters and their QoS settings
 type TmEdgeCluster struct {
 	TmEdgeCluster *types.TmEdgeCluster
 	vcdClient     *VCDClient
@@ -60,7 +60,7 @@ func (vcdClient *VCDClient) GetTmEdgeClusterByName(name string) (*TmEdgeCluster,
 	return vcdClient.GetTmEdgeClusterById(singleEntity.TmEdgeCluster.ID)
 }
 
-// GetTmEdgeClusterByName retrieves TM Edge Cluster by Name
+// GetTmEdgeClusterByNameAndRegionId retrieves TM Edge Cluster by Name and a Region ID
 func (vcdClient *VCDClient) GetTmEdgeClusterByNameAndRegionId(name, regionId string) (*TmEdgeCluster, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelTmEdgeCluster)
@@ -100,7 +100,8 @@ func (vcdClient *VCDClient) GetTmEdgeClusterById(id string) (*TmEdgeCluster, err
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
-// TmSyncEdgeClusters
+// TmSyncEdgeClusters triggers a global sync operation that re-reads available Edge Clusters in all
+// configured NSX-T Managers
 func (vcdClient *VCDClient) TmSyncEdgeClusters() error {
 	client := vcdClient.Client
 	endpoint := types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClustersSync
@@ -129,6 +130,7 @@ func (vcdClient *VCDClient) TmSyncEdgeClusters() error {
 }
 
 // Update TM Edge Cluster with a given config
+// Note. Only `DefaultQosConfig` structure is updatable
 func (e *TmEdgeCluster) Update(TmEdgeClusterConfig *types.TmEdgeCluster) (*TmEdgeCluster, error) {
 	c := crudConfig{
 		entityLabel:    labelTmEdgeCluster,

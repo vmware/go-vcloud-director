@@ -95,4 +95,13 @@ func (vcd *TestVCD) Test_TmEdgeCluster(check *C) {
 	check.Assert(afterQosRemoval, NotNil)
 	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.EgressProfile, IsNil)
 	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.IngressProfile, IsNil)
+
+	// Check Transport Node endpoint
+	tn, err := afterQosRemoval.GetTransportNodeStatus()
+	check.Assert(err, IsNil)
+	check.Assert(tn, NotNil)
+	check.Assert(len(tn) > 0, Equals, true)
+	for i := range tn {
+		check.Assert(tn[i].NodeName != "", Equals, true)
+	}
 }
