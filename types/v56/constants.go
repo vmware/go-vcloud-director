@@ -532,6 +532,8 @@ const (
 	OpenApiEndpointZones                            = "zones/"
 	OpenApiEndpointTmVdcs                           = "virtualDatacenters/"
 	OpenApiEndpointTmIpSpaces                       = "ipSpaces/"
+	OpenApiEndpointTmProviderGateways               = "providerGateways/"
+	OpenApiEndpointTmIpSpaceAssociations            = "ipSpaceAssociations/"
 	OpenApiEndpointTmEdgeClusters                   = "edgeClusters/"
 	OpenApiEndpointTmEdgeClusterTransportNodeStatus = "edgeClusters/%s/transportNodesStatus"
 	OpenApiEndpointTmEdgeClustersSync               = "edgeClusters/sync"
