@@ -368,3 +368,58 @@ type TmIpSpaceInternalScopeCidrBlocks struct {
 	// The CIDR that represents this IP Block. This property is not updatable
 	Cidr string `json:"cidr,omitempty"`
 }
+
+// TmTier0Gateway represents NSX-T Tier-0 Gateway that are available for consumption in TM
+type TmTier0Gateway struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	DisplayName string `json:"displayName"`
+	// ParentTier0ID in case this is a Tier 0 Gateway VRF
+	ParentTier0ID string `json:"parentTier0Id"`
+	// AlreadyImported displays if the Tier 0 Gateway is already consumed by TM
+	AlreadyImported bool `json:"alreadyImported"`
+}
+
+// TmProviderGateway reflects a TM Provider Gateway
+type TmProviderGateway struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// OrgRef contains a reference to Org
+	OrgRef     *OpenApiReference `json:"orgRef,omitempty"`
+	BackingRef OpenApiReference  `json:"backingRef,omitempty"`
+	// BackingType - NSX_TIER0
+	BackingType string `json:"backingType,omitempty"`
+	// RegionRef contains Region reference
+	RegionRef OpenApiReference `json:"regionRef,omitempty"`
+	// IPSpaceRefs - a list of IP Space references to create associations with.
+	// NOTE. It is used _only_ for creation. Reading will return it empty, and update will not work
+	// - one must use `TmIpSpaceAssociation` to update IP Space associations with Provider Gateway
+	IPSpaceRefs []OpenApiReference `json:"ipSpaceRefs,omitempty"`
+	// Represents current status of the networking entity. Possible values are:
+	// * PENDING - Desired entity configuration has been received by system and is pending realization.
+	// * CONFIGURING - The system is in process of realizing the entity.
+	// * REALIZED - The entity is successfully realized in the system.
+	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
+	// * UNKNOWN - Current state of entity is unknown.
+	Status string `json:"status,omitempty"`
+}
+
+// TmIpSpaceAssociation manages IP Space and Provider Gateway associations
+type TmIpSpaceAssociation struct {
+	ID          string `json:"id,omitempty"`
+	Description string `json:"description,omitempty"`
+	Name        string `json:"name,omitempty"`
+	// IPSpaceRef must contain an IP Space reference that will be associated with Provider Gateway
+	IPSpaceRef *OpenApiReference `json:"ipSpaceRef"`
+	// ProviderGatewayRef must contain a Provider Gateway reference that will be association with an
+	// IP Space
+	ProviderGatewayRef *OpenApiReference `json:"providerGatewayRef"`
+	// Represents current status of the networking entity. Possible values are:
+	// * PENDING - Desired entity configuration has been received by system and is pending realization.
+	// * CONFIGURING - The system is in process of realizing the entity.
+	// * REALIZED - The entity is successfully realized in the system.
+	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
+	// * UNKNOWN - Current state of entity is unknown.
+	Status string `json:"status,omitempty"`
+}
