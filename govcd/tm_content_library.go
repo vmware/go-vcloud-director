@@ -38,22 +38,7 @@ func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 	}
 	outerType := ContentLibrary{vcdClient: vcdClient}
-	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
-	//        - Problem: When creating a Content Library, it always throws an error 500: "Failed to validate Content Library UUID..."
-	//        - Solution: Retry fetching the entity again with the name provided
-	result, err := createOuterEntity(&vcdClient.Client, outerType, c, config)
-	if err != nil {
-		// The error we want is like:
-		// Failed to validate Content Library UUID f215ce12-08ac-488e-bbfb-e13c5bad461b, error: not found
-		if !strings.Contains(err.Error(), "Failed to validate Content Library UUID") {
-			return nil, err
-		}
-		result, err = vcdClient.GetContentLibraryByName(config.Name)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
+	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
 // GetAllContentLibraries retrieves all Content Libraries with the given query parameters, which allow setting filters
@@ -115,9 +100,15 @@ func (vcdClient *VCDClient) GetContentLibraryById(id string) (*ContentLibrary, e
 }
 
 // Update updates an existing Content Library with the given configuration
-// TODO: TM: Not supported in UI yet
 func (o *ContentLibrary) Update(contentLibraryConfig *types.ContentLibrary) (*ContentLibrary, error) {
-	return nil, fmt.Errorf("not supported")
+	c := crudConfig{
+		entityLabel:    labelContentLibrary,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
+		endpointParams: []string{o.ContentLibrary.ID},
+		requiresTm:     true,
+	}
+	outerType := ContentLibrary{vcdClient: o.vcdClient}
+	return updateOuterEntity(&o.vcdClient.Client, outerType, c, contentLibraryConfig)
 }
 
 // Delete deletes the receiver Content Library
