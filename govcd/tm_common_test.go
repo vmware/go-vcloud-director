@@ -224,6 +224,7 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 		Name:          check.TestName(),
 		DisplayName:   check.TestName(),
 		CanManageOrgs: canManageOrgs,
+		IsEnabled:     true,
 	}
 	tmOrg, err := vcd.client.CreateTmOrg(cfg)
 	check.Assert(err, IsNil)
@@ -232,6 +233,10 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 	PrependToCleanupListOpenApi(tmOrg.TmOrg.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgs+tmOrg.TmOrg.ID)
 
 	return tmOrg, func() {
+		if tmOrg.TmOrg.IsEnabled {
+			err = tmOrg.Disable()
+			check.Assert(err, IsNil)
+		}
 		err = tmOrg.Delete()
 		check.Assert(err, IsNil)
 	}
