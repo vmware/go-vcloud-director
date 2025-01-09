@@ -243,7 +243,7 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 }
 
 // Creates a VDC (Region Quota) for testing in Tenant Manager
-func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func()) {
+func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func()) {
 	if org == nil || org.TmOrg == nil {
 		check.Fatal("an Organization is required to create the Region Quota")
 	}
@@ -276,14 +276,14 @@ func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmV
 			},
 		}},
 	}
-	regionQuota, err := vcd.client.CreateTmVdc(cfg)
+	vdc, err := vcd.client.CreateTmVdc(cfg)
 	check.Assert(err, IsNil)
-	check.Assert(regionQuota, NotNil)
+	check.Assert(vdc, NotNil)
 
-	PrependToCleanupListOpenApi(regionQuota.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+regionQuota.TmVdc.ID)
+	PrependToCleanupListOpenApi(vdc.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+vdc.TmVdc.ID)
 
-	return regionQuota, func() {
-		err = regionQuota.Delete()
+	return vdc, func() {
+		err = vdc.Delete()
 		check.Assert(err, IsNil)
 	}
 }

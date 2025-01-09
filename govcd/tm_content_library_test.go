@@ -130,7 +130,7 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 	defer orgCleanup()
 
 	// A Region Quota is needed to have Storage classes available in the Organization
-	_, regionQuotaCleanup := createRegionQuota(vcd, org, region, check)
+	_, regionQuotaCleanup := createVdc(vcd, org, region, check)
 	defer regionQuotaCleanup()
 
 	cls, err := org.GetAllContentLibraries(nil)

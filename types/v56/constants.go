@@ -531,6 +531,8 @@ const (
 	OpenApiEndpointSupervisorZones                  = "supervisorZones/"
 	OpenApiEndpointZones                            = "zones/"
 	OpenApiEndpointTmVdcs                           = "virtualDatacenters/"
+	OpenApiEndpointTmVdcsVmClasses                  = "virtualDatacenters/%s/virtualMachineClasses"
+	OpenApiEndpointTmVdcStorageClasses              = "virtualDatacenterStoragePolicies/"
 	OpenApiEndpointTmIpSpaces                       = "ipSpaces/"
 	OpenApiEndpointTmProviderGateways               = "providerGateways/"
 	OpenApiEndpointTmIpSpaceAssociations            = "ipSpaceAssociations/"
