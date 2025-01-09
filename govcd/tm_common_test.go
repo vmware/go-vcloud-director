@@ -187,7 +187,7 @@ func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, check *
 	if vcd.config.Tm.ContentLibrary == "" {
 		check.Fatal("testing configuration property 'tm.contentLibrary' is required")
 	}
-	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary)
+	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary, nil)
 	if err == nil {
 		return cl, func() {}
 	}
@@ -204,7 +204,7 @@ func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, check *
 		Description: check.TestName(),
 	}
 
-	contentLibrary, err := vcd.client.CreateContentLibrary(&payload)
+	contentLibrary, err := vcd.client.CreateContentLibrary(&payload, nil)
 	check.Assert(err, IsNil)
 	check.Assert(contentLibrary, NotNil)
 	contentLibraryCreated := true
@@ -238,6 +238,52 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 			check.Assert(err, IsNil)
 		}
 		err = tmOrg.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+// Creates a VDC (Region Quota) for testing in Tenant Manager
+func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func()) {
+	if org == nil || org.TmOrg == nil {
+		check.Fatal("an Organization is required to create the Region Quota")
+	}
+	if region == nil || region.Region == nil {
+		check.Fatal("a Region is required to create the Region Quota")
+	}
+	regionZones, err := region.GetAllZones(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(regionZones) > 0, Equals, true)
+
+	cfg := &types.TmVdc{
+		Name:      fmt.Sprintf("%s_%s", org.TmOrg.Name, region.Region.Name),
+		IsEnabled: addrOf(true),
+		Org: &types.OpenApiReference{
+			Name: org.TmOrg.Name,
+			ID:   org.TmOrg.ID,
+		},
+		Region: &types.OpenApiReference{
+			Name: region.Region.Name,
+			ID:   region.Region.ID,
+		},
+		Supervisors: region.Region.Supervisors,
+		ZoneResourceAllocation: []*types.TmVdcZoneResourceAllocation{{
+			Zone: &types.OpenApiReference{ID: regionZones[0].Zone.ID},
+			ResourceAllocation: types.TmVdcResourceAllocation{
+				CPUReservationMHz:    100,
+				CPULimitMHz:          500,
+				MemoryReservationMiB: 256,
+				MemoryLimitMiB:       512,
+			},
+		}},
+	}
+	regionQuota, err := vcd.client.CreateTmVdc(cfg)
+	check.Assert(err, IsNil)
+	check.Assert(regionQuota, NotNil)
+
+	PrependToCleanupListOpenApi(regionQuota.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+regionQuota.TmVdc.ID)
+
+	return regionQuota, func() {
+		err = regionQuota.Delete()
 		check.Assert(err, IsNil)
 	}
 }
