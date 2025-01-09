@@ -89,6 +89,16 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(cl, NotNil)
 	check.Assert(*cl.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
 
+	// Test updating an existing Content Library
+	clDefinition.Name = check.TestName() + "Updated"
+	clDefinition.Description = check.TestName() + "Updated"
+	updatedCl, err := createdCl.Update(clDefinition)
+	check.Assert(err, IsNil)
+	check.Assert(updatedCl, NotNil)
+	check.Assert(updatedCl.ContentLibrary.ID, Equals, createdCl.ContentLibrary.ID)
+	check.Assert(updatedCl.ContentLibrary.Name, Equals, clDefinition.Name)
+	check.Assert(updatedCl.ContentLibrary.Description, Equals, clDefinition.Description)
+
 	// Not found errors
 	_, err = vcd.client.GetContentLibraryByName("notexist")
 	check.Assert(ContainsNotFound(err), Equals, true)
