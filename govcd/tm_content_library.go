@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/url"
-	"strings"
 )
 
 const labelContentLibrary = "Content Library"
@@ -111,22 +110,19 @@ func (o *ContentLibrary) Update(contentLibraryConfig *types.ContentLibrary) (*Co
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, contentLibraryConfig)
 }
 
-// Delete deletes the receiver Content Library
-func (o *ContentLibrary) Delete() error {
+// Delete deletes the receiver Content Library.
+// The 'recursive' flag deletes the Content Library, including its content library items, in a single operation.
+// The 'force' flag forcefully deletes the Content Library and its items.
+func (o *ContentLibrary) Delete(force, recursive bool) error {
+	queryParams := url.Values{}
+	queryParams.Add("force", fmt.Sprintf("%t", force))
+	queryParams.Add("recursive", fmt.Sprintf("%t", recursive))
+
 	c := crudConfig{
-		entityLabel:    labelContentLibrary,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
-		endpointParams: []string{o.ContentLibrary.ID},
+		entityLabel:     labelContentLibrary,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
+		endpointParams:  []string{o.ContentLibrary.ID},
+		queryParameters: queryParams,
 	}
-	err := deleteEntityById(&o.vcdClient.Client, c)
-	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
-	//        - Problem: When deleting a Content Library, it always throws an error 500: "Failed to validate Content Library UUID..."
-	//        - Solution: Ignore this error, the Content Library is deleted correctly
-	if err != nil {
-		if strings.Contains(err.Error(), "Failed to validate Content Library UUID") {
-			return nil
-		}
-		return err
-	}
-	return nil
+	return deleteEntityById(&o.vcdClient.Client, c)
 }

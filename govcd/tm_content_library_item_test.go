@@ -30,11 +30,11 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
-	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.RegionStoragePolicy)
+	sc, err := region.GetStorageClassByName(vcd.config.Tm.StorageClass)
 	check.Assert(err, IsNil)
-	check.Assert(sp, NotNil)
+	check.Assert(sc, NotNil)
 
-	cl, clCleanup := getOrCreateContentLibrary(vcd, sp, check)
+	cl, clCleanup := getOrCreateContentLibrary(vcd, sc, check)
 	check.Assert(err, IsNil)
 	defer clCleanup()
 
@@ -48,6 +48,15 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cli, NotNil)
 	AddToCleanupListOpenApi(cli.ContentLibraryItem.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraryItems+cli.ContentLibraryItem.ID)
+	check.Assert(cli.ContentLibraryItem.ItemType, Equals, "TEMPLATE")
+	check.Assert(cli.ContentLibraryItem.Name, Equals, check.TestName())
+	check.Assert(cli.ContentLibraryItem.Description, Equals, check.TestName())
+	check.Assert(cli.ContentLibraryItem.Version, Equals, 1)
+	check.Assert(cli.ContentLibraryItem.CreationDate, Not(Equals), "")
+
+	// Content library deletion should fail with force=false and recursive=false
+	err = cl.Delete(false, false)
+	check.Assert(err, NotNil)
 
 	// Defer deletion for a correct cleanup
 	defer func() {
@@ -107,11 +116,11 @@ func (vcd *TestVCD) Test_ContentLibraryItemIso(check *C) {
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
-	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.RegionStoragePolicy)
+	sc, err := region.GetStorageClassByName(vcd.config.Tm.StorageClass)
 	check.Assert(err, IsNil)
-	check.Assert(sp, NotNil)
+	check.Assert(sc, NotNil)
 
-	cl, clCleanup := getOrCreateContentLibrary(vcd, sp, check)
+	cl, clCleanup := getOrCreateContentLibrary(vcd, sc, check)
 	check.Assert(err, IsNil)
 	defer clCleanup()
 

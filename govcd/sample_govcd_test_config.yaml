@@ -303,8 +303,8 @@ tm:
   createRegion: true
   # An existing Region to create VDCs, Content Libraries...
   region: my-region
-  # An existing Region Storage Policy to create Content Libraries, Regions...
-  regionStoragePolicy: "vSAN Default Storage Policy"
+  # An existing Storage Class (belonging to the specified "region") to create Content Libraries, Regions...
+  storageClass: "vSAN Default Storage Policy"
   # An existing Content Library to create Content Library Items
   contentLibrary: "My Content Library"
   createVcenter: true # boolean value if the vCenter test should be executed
