@@ -368,3 +368,162 @@ type TmIpSpaceInternalScopeCidrBlocks struct {
 	// The CIDR that represents this IP Block. This property is not updatable
 	Cidr string `json:"cidr,omitempty"`
 }
+
+// TmTier0Gateway represents NSX-T Tier-0 Gateway that are available for consumption in TM
+type TmTier0Gateway struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	DisplayName string `json:"displayName"`
+	// ParentTier0ID in case this is a Tier 0 Gateway VRF
+	ParentTier0ID string `json:"parentTier0Id"`
+	// AlreadyImported displays if the Tier 0 Gateway is already consumed by TM
+	AlreadyImported bool `json:"alreadyImported"`
+}
+
+// TmProviderGateway reflects a TM Provider Gateway
+type TmProviderGateway struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// OrgRef contains a reference to Org
+	OrgRef     *OpenApiReference `json:"orgRef,omitempty"`
+	BackingRef OpenApiReference  `json:"backingRef,omitempty"`
+	// BackingType - NSX_TIER0
+	BackingType string `json:"backingType,omitempty"`
+	// RegionRef contains Region reference
+	RegionRef OpenApiReference `json:"regionRef,omitempty"`
+	// IPSpaceRefs - a list of IP Space references to create associations with.
+	// NOTE. It is used _only_ for creation. Reading will return it empty, and update will not work
+	// - one must use `TmIpSpaceAssociation` to update IP Space associations with Provider Gateway
+	IPSpaceRefs []OpenApiReference `json:"ipSpaceRefs,omitempty"`
+	// Represents current status of the networking entity. Possible values are:
+	// * PENDING - Desired entity configuration has been received by system and is pending realization.
+	// * CONFIGURING - The system is in process of realizing the entity.
+	// * REALIZED - The entity is successfully realized in the system.
+	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
+	// * UNKNOWN - Current state of entity is unknown.
+	Status string `json:"status,omitempty"`
+}
+
+// TmIpSpaceAssociation manages IP Space and Provider Gateway associations
+type TmIpSpaceAssociation struct {
+	ID          string `json:"id,omitempty"`
+	Description string `json:"description,omitempty"`
+	Name        string `json:"name,omitempty"`
+	// IPSpaceRef must contain an IP Space reference that will be associated with Provider Gateway
+	IPSpaceRef *OpenApiReference `json:"ipSpaceRef"`
+	// ProviderGatewayRef must contain a Provider Gateway reference that will be association with an
+	// IP Space
+	ProviderGatewayRef *OpenApiReference `json:"providerGatewayRef"`
+	// Represents current status of the networking entity. Possible values are:
+	// * PENDING - Desired entity configuration has been received by system and is pending realization.
+	// * CONFIGURING - The system is in process of realizing the entity.
+	// * REALIZED - The entity is successfully realized in the system.
+	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
+	// * UNKNOWN - Current state of entity is unknown.
+	Status string `json:"status,omitempty"`
+}
+
+// TmEdgeCluster defines NSX-T Edge Cluster representation structure within TM
+type TmEdgeCluster struct {
+	ID string `json:"id,omitempty"`
+	// Display name for the Edge Cluster
+	Name string `json:"name,omitempty"`
+	// Description for the Edge Cluster
+	Description string            `json:"description,omitempty"`
+	RegionRef   *OpenApiReference `json:"regionRef,omitempty"`
+	// Deployment type for transport nodes in the Edge Cluster. Possible values are:
+	// * VIRTUAL_MACHINE - If all members are of type VIRTUAL_MACHINE
+	// * PHYSICAL_MACHINE - If all members are of type PHYSICAL_MACHINE
+	// * UNKNOWN - If there are no members or their type is not known
+	DeploymentType string `json:"deploymentType,omitempty"`
+	// NodeCount contains number of transport nodes in the Edge Cluster. If this information is not
+	// available, nodeCount will be set to -1
+	NodeCount int `json:"nodeCount,omitempty"`
+	// Number of Organizations using the Edge Cluster
+	OrgCount int `json:"orgCount,omitempty"`
+	// Number of VPCs using the Edge Cluster
+	VpcCount int `json:"vpcCount,omitempty"`
+	// Average CPU utilization across all member nodes. This is inclusive of both Data plane and
+	// Service CPU cores across all the member nodes
+	AvgCPUUsagePercentage float64 `json:"avgCpuUsagePercentage,omitempty"`
+	// Average RAM utilization across all member nodes
+	AvgMemoryUsagePercentage float64 `json:"avgMemoryUsagePercentage,omitempty"`
+	// The current health status of the Edge Cluster. Possible values are:
+	// * UP - The Edge Cluster is healthy
+	// * DOWN - The Edge Cluster is down
+	// * DEGRADED - The Edge Cluster is not operating at capacity. One or more member nodes are down or inactive
+	// * UNKNOWN - The Edge Cluster state is unknown. If UNKNOWN, avgMemoryUsagePercentage and avgCpuUsagePercentage will be not be set
+	HealthStatus string `json:"healthStatus,omitempty"`
+	// The default ingress and egress QoS config associated with this Edge Cluster. This will be
+	// used to configure default QoS profiles when the cluster is associated with the organization
+	// through a Regional Networking Assignment
+	DefaultQosConfig TmEdgeClusterDefaultQosConfig `json:"defaultQosConfig"`
+	// BackingRef contains reference to the backing NSX edge cluster
+	BackingRef *OpenApiReference `json:"backingRef,omitempty"`
+	// Status represents current status of the networking entity. Possible values are:
+	// * PENDING - Desired entity configuration has been received by system and is pending realization
+	// * CONFIGURING - The system is in process of realizing the entity
+	// * REALIZED - The entity is successfully realized in the system
+	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity
+	// * UNKNOWN - Current state of entity is unknown
+	Status string `json:"status,omitempty"`
+}
+
+// The default ingress and egress QoS config associated with this Edge Cluster. This will be used to
+// configure default QoS profiles when the cluster is associated with the organization through a
+// Regional Networking Assignment
+type TmEdgeClusterDefaultQosConfig struct {
+	// Gateway QoS profile applicable to Ingress traffic. Setting this property to NULL results in
+	// no QoS being applied for traffic in ingress direction
+	IngressProfile *TmEdgeClusterQosProfile `json:"ingressProfile"`
+	// Gateway QoS profile applicable to Egress traffic. Setting this property to NULL results in no
+	// QoS being applied for traffic in egress direction
+	EgressProfile *TmEdgeClusterQosProfile `json:"egressProfile"`
+}
+
+// TmEdgeClusterQosProfile represents the Gateway QoS profile for egress/ingress traffic
+type TmEdgeClusterQosProfile struct {
+	// Unique backing ID of the QoS profile in NSX manager backing the region. This is not a Tenant Manager URN
+	ID string `json:"id,omitempty"`
+	// Name  of the QoS profile in NSX manager backing the region
+	Name string `json:"name,omitempty"`
+	// Committed bandwidth specified in Mbps. Bandwidth is limited to line rate when the value
+	// configured is greater than line rate. Traffic exceeding bandwidth will be dropped
+	// Minimum Value: 1
+	CommittedBandwidthMbps int `json:"committedBandwidthMbps,omitempty"`
+	// Burst size in bytes
+	// Minimum Value - 1
+	BurstSizeBytes int `json:"burstSizeBytes,omitempty"`
+	// Type of the referenced profile.
+	// * DEFAULT: The default profile associated with the Edge Cluster
+	// * CUSTOM: Custom profile for Organization workloads running within region
+	// To override the values and create new profile, set the type to CUSTOM
+	Type string `json:"type,omitempty"`
+}
+
+// An object representing the status of a member Transport Node of an Edge Cluster
+type TmEdgeClusterTransportNodeStatus struct {
+	// Average utilization of all the DPDK CPU cores in the system
+	AvgDatapathCPUUsagePercentage float64 `json:"avgDatapathCpuUsagePercentage,omitempty"`
+	// Average utilization of all the Service CPU cores in the system
+	AvgServiceCPUUsagePercentage float64 `json:"avgServiceCpuUsagePercentage,omitempty"`
+	// Number of datapath CPU cores in the system. These cores handle fast path packet processing using DPDK
+	DatapathCPUCoreCount int `json:"datapathCpuCoreCount,omitempty"`
+	// Percentage of memory in use by datapath processes. It is inclusive of heap memory, memory pool and resident memory
+	DatapathMemoryUsagePercentage float64 `json:"datapathMemoryUsagePercentage,omitempty"`
+	// The current health status of the Edge Node. Possible values are:
+	// * UP - The Edge Node is healthy
+	// * DOWN - The Edge Node is down
+	// * DEGRADED - The Edge Node is not operating at capacity
+	// * UNKNOWN - The Edge Node state is unknown
+	HealthStatus string `json:"healthStatus,omitempty"`
+	// The display name of this Transport Node
+	NodeName string `json:"nodeName,omitempty"`
+	// Number of Service CPU cores in the system. These cores handle system and layer-7 related processing
+	ServiceCPUCoreCount int `json:"serviceCpuCoreCount,omitempty"`
+	// Percentage of RAM in use on the edge node
+	SystemMemoryUsagePercentage float64 `json:"systemMemoryUsagePercentage,omitempty"`
+	// Number of CPU cores in the system
+	TotalCPUCoreCount int `json:"totalCpuCoreCount,omitempty"`
+}

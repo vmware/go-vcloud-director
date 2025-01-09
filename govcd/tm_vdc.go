@@ -108,7 +108,7 @@ func (vcdClient *VCDClient) GetTmVdcById(id string) (*TmVdc, error) {
 }
 
 // Update Tenant Manager VDC
-func (o *TmVdc) Update(TmVdcConfig *types.TmVdc) (*TmVdc, error) {
+func (o *TmVdc) Update(tmVdcConfig *types.TmVdc) (*TmVdc, error) {
 	c := crudConfig{
 		entityLabel:    labelTmOrgVdc,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
@@ -116,7 +116,7 @@ func (o *TmVdc) Update(TmVdcConfig *types.TmVdc) (*TmVdc, error) {
 		requiresTm:     true,
 	}
 	outerType := TmVdc{vcdClient: o.vcdClient}
-	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmVdcConfig)
+	return updateOuterEntity(&o.vcdClient.Client, outerType, c, tmVdcConfig)
 }
 
 // Delete Tenant Manager VDC

@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"fmt"
 	"net/url"
 	"time"
 
@@ -223,6 +224,7 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 		Name:          check.TestName(),
 		DisplayName:   check.TestName(),
 		CanManageOrgs: canManageOrgs,
+		IsEnabled:     true,
 	}
 	tmOrg, err := vcd.client.CreateTmOrg(cfg)
 	check.Assert(err, IsNil)
@@ -231,7 +233,41 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 	PrependToCleanupListOpenApi(tmOrg.TmOrg.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgs+tmOrg.TmOrg.ID)
 
 	return tmOrg, func() {
+		if tmOrg.TmOrg.IsEnabled {
+			err = tmOrg.Disable()
+			check.Assert(err, IsNil)
+		}
 		err = tmOrg.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+func createTmIpSpace(vcd *TestVCD, region *Region, check *C, nameSuffix, octet3 string) (*TmIpSpace, func()) {
+	ipSpaceType := &types.TmIpSpace{
+		Name:        check.TestName() + "-" + nameSuffix,
+		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
+		Description: check.TestName(),
+		DefaultQuota: types.TmIpSpaceDefaultQuota{
+			MaxCidrCount:  3,
+			MaxIPCount:    -1,
+			MaxSubnetSize: 24,
+		},
+		ExternalScopeCidr: fmt.Sprintf("12.12.%s.0/30", octet3),
+		InternalScopeCidrBlocks: []types.TmIpSpaceInternalScopeCidrBlocks{
+			{
+				Cidr: fmt.Sprintf("10.0.%s.0/24", octet3),
+			},
+		},
+	}
+
+	ipSpace, err := vcd.client.CreateTmIpSpace(ipSpaceType)
+	check.Assert(err, IsNil)
+	check.Assert(ipSpace, NotNil)
+	AddToCleanupListOpenApi(ipSpace.TmIpSpace.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmIpSpaces+ipSpace.TmIpSpace.ID)
+
+	return ipSpace, func() {
+		printVerbose("# Deleting IP Space %s\n", ipSpace.TmIpSpace.Name)
+		err = ipSpace.Delete()
 		check.Assert(err, IsNil)
 	}
 }

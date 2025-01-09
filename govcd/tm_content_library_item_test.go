@@ -9,7 +9,6 @@ package govcd
 import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
-	"strings"
 )
 
 // TODO: TM: Test upload failures:
@@ -86,14 +85,10 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 
 	_, err = cl.GetContentLibraryItemById("urn:vcloud:contentLibraryItem:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
-	// TODO: TM: Should return ENF, but throws a 500. The API will eventually be fixed
-	check.Assert(strings.Contains(err.Error(), "INTERNAL_SERVER_ERROR"), Equals, true)
-	// check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(ContainsNotFound(err), Equals, true)
 
 	_, err = vcd.client.GetContentLibraryItemById("urn:vcloud:contentLibraryItem:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
-	// TODO: TM: Should return ENF, but throws a 500. The API will eventually be fixed
-	check.Assert(strings.Contains(err.Error(), "INTERNAL_SERVER_ERROR"), Equals, true)
-	// check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
 // Test_ContentLibraryItemIso tests CRUD operations for a Content Library Item when uploading an ISO file
