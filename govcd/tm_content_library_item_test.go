@@ -67,17 +67,20 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	allClis, err := cl.GetAllContentLibraryItems(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allClis) > 0, Equals, true)
-	found := false
-	for _, i := range allClis {
-		if i.ContentLibraryItem.ID == cli.ContentLibraryItem.ID {
-			found = true
+	found := -1
+	for i, k := range allClis {
+		if k.ContentLibraryItem.ID == cli.ContentLibraryItem.ID {
+			found = i
 		}
 	}
-	check.Assert(found, Equals, true)
+	check.Assert(found, Not(Equals), -1)
+	check.Assert(allClis[found], NotNil)
+	check.Assert(*allClis[found].ContentLibraryItem, DeepEquals, *cli.ContentLibraryItem)
 
 	obtainedCliByName, err := cl.GetContentLibraryItemByName(check.TestName())
 	check.Assert(err, IsNil)
 	check.Assert(obtainedCliByName, NotNil)
+	check.Assert(*obtainedCliByName.ContentLibraryItem, DeepEquals, *cli.ContentLibraryItem)
 
 	obtainedCliById, err := cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
 	check.Assert(err, IsNil)
