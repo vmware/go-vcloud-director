@@ -131,29 +131,15 @@ func (o *TmVdc) Delete() error {
 }
 
 // AssignVmClasses assigns VM Classes to the receiver VDC
-func (o *TmVdc) AssignVmClasses(vmClasses types.OpenApiReferences) error {
+func (o *TmVdc) AssignVmClasses(vmClasses *types.RegionVirtualMachineClasses) error {
 	c := crudConfig{
-		entityLabel: labelTmOrgVdc,
-		endpoint:    types.OpenApiPathVcf + fmt.Sprintf(types.OpenApiEndpointTmVdcsVmClasses, o.TmVdc.ID),
-		requiresTm:  true,
+		entityLabel:    labelTmOrgVdc,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses,
+		endpointParams: []string{o.TmVdc.ID},
+		requiresTm:     true,
 	}
 	// It's a PUT call with OpenAPI references, so we reuse generic functions for simplicity
-	_, err := updateInnerEntity[types.OpenApiReferences](&o.vcdClient.Client, c, &vmClasses)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// AssignStorageClasses assigns Storage Classes to the receiver VDC
-func (o *TmVdc) AssignStorageClasses(storageClasses []StorageClass) error {
-	c := crudConfig{
-		entityLabel: labelTmOrgVdc,
-		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStorageClasses,
-		requiresTm:  true,
-	}
-	// It's a POST call with a list of Storage Classes, so we reuse generic functions for simplicity
-	_, err := createInnerEntity[[]StorageClass](&o.vcdClient.Client, c, &storageClasses)
+	_, err := updateInnerEntity[types.RegionVirtualMachineClasses](&o.vcdClient.Client, c, vmClasses)
 	if err != nil {
 		return err
 	}

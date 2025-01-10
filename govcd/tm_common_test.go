@@ -244,6 +244,9 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 
 // Creates a VDC (Region Quota) for testing in Tenant Manager
 func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func()) {
+	if vcd.config.Tm.StorageClass == "" {
+		check.Fatal("testing configuration property 'tm.storageClass' is required")
+	}
 	if org == nil || org.TmOrg == nil {
 		check.Fatal("an Organization is required to create the Region Quota")
 	}
@@ -253,6 +256,14 @@ func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func
 	regionZones, err := region.GetAllZones(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(regionZones) > 0, Equals, true)
+
+	vmClasses, err := region.GetAllVmClasses(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(vmClasses) > 0, Equals, true)
+
+	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.StorageClass)
+	check.Assert(err, IsNil)
+	check.Assert(sp, NotNil)
 
 	cfg := &types.TmVdc{
 		Name:      fmt.Sprintf("%s_%s", org.TmOrg.Name, region.Region.Name),
@@ -281,6 +292,25 @@ func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func
 	check.Assert(vdc, NotNil)
 
 	PrependToCleanupListOpenApi(vdc.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+vdc.TmVdc.ID)
+
+	err = vdc.AssignVmClasses(&types.RegionVirtualMachineClasses{
+		Values: types.OpenApiReferences{{Name: vmClasses[0].Name, ID: vmClasses[0].ID}},
+	})
+	check.Assert(err, IsNil)
+	_, err = vdc.CreateStoragePolicies(&types.VirtualDatacenterStoragePolicies{
+		Values: []types.VirtualDatacenterStoragePolicy{
+			{
+				RegionStoragePolicy: types.OpenApiReference{
+					ID: sp.RegionStoragePolicy.ID,
+				},
+				StorageLimitMiB: 100,
+				VirtualDatacenter: types.OpenApiReference{
+					ID: vdc.TmVdc.ID,
+				},
+			},
+		},
+	})
+	check.Assert(err, IsNil)
 
 	return vdc, func() {
 		err = vdc.Delete()
