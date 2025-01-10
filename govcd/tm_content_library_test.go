@@ -220,6 +220,9 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
+	if vcd.config.Tm.SubscriptionContentLibraryUrl == "" {
+		check.Skip("test configuration tm.subscriptionContentLibraryUrl is empty")
+	}
 
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()

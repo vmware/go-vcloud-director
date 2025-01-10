@@ -27,7 +27,7 @@ func (g ContentLibrary) wrap(inner *types.ContentLibrary) *ContentLibrary {
 }
 
 // CreateContentLibrary creates a Content Library with the given tenant context. If tenant context is nil,
-// it assumes that the Content Library is a provider one.
+// it assumes that the Content Library to create is of Provider type.
 func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary, ctx *TenantContext) (*ContentLibrary, error) {
 	if !vcdClient.Client.IsTm() {
 		return nil, fmt.Errorf("creating Content Libraries is only supported in TM")
