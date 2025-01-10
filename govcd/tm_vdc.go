@@ -129,3 +129,19 @@ func (o *TmVdc) Delete() error {
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
+
+// AssignVmClasses assigns VM Classes to the receiver VDC
+func (o *TmVdc) AssignVmClasses(vmClasses *types.RegionVirtualMachineClasses) error {
+	c := crudConfig{
+		entityLabel:    labelTmOrgVdc,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses,
+		endpointParams: []string{o.TmVdc.ID},
+		requiresTm:     true,
+	}
+	// It's a PUT call with OpenAPI references, so we reuse generic functions for simplicity
+	_, err := updateInnerEntity[types.RegionVirtualMachineClasses](&o.vcdClient.Client, c, vmClasses)
+	if err != nil {
+		return err
+	}
+	return nil
+}

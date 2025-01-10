@@ -34,6 +34,7 @@ func (vcdClient *VCDClient) GetAllStorageClasses(queryParameters url.Values) ([]
 		entityLabel:     labelStorageClass,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointStorageClasses,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := StorageClass{vcdClient: vcdClient}
@@ -81,6 +82,7 @@ func (vcdClient *VCDClient) GetStorageClassById(id string) (*StorageClass, error
 		entityLabel:    labelStorageClass,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointStorageClasses,
 		endpointParams: []string{id},
+		requiresTm:     true,
 	}
 
 	outerType := StorageClass{vcdClient: vcdClient}

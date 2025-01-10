@@ -183,11 +183,11 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 
 // getOrCreateContentLibrary will check configuration file and create a Content Library if
 // not present in TM. Otherwise, it just retrieves it
-func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy, check *C) (*ContentLibrary, func()) {
+func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, check *C) (*ContentLibrary, func()) {
 	if vcd.config.Tm.ContentLibrary == "" {
 		check.Fatal("testing configuration property 'tm.contentLibrary' is required")
 	}
-	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary)
+	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary, nil)
 	if err == nil {
 		return cl, func() {}
 	}
@@ -198,13 +198,13 @@ func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy,
 	payload := types.ContentLibrary{
 		Name: vcd.config.Tm.ContentLibrary,
 		StorageClasses: types.OpenApiReferences{{
-			Name: storagePolicy.RegionStoragePolicy.Name,
-			ID:   storagePolicy.RegionStoragePolicy.ID,
+			Name: storageClass.StorageClass.Name,
+			ID:   storageClass.StorageClass.ID,
 		}},
 		Description: check.TestName(),
 	}
 
-	contentLibrary, err := vcd.client.CreateContentLibrary(&payload)
+	contentLibrary, err := vcd.client.CreateContentLibrary(&payload, nil)
 	check.Assert(err, IsNil)
 	check.Assert(contentLibrary, NotNil)
 	contentLibraryCreated := true
@@ -214,7 +214,7 @@ func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy,
 		if !contentLibraryCreated {
 			return
 		}
-		err = contentLibrary.Delete()
+		err = contentLibrary.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
 }
@@ -238,6 +238,83 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 			check.Assert(err, IsNil)
 		}
 		err = tmOrg.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+// Creates a VDC (Region Quota) for testing in Tenant Manager and configures it with
+// the first found VM class and the configured Storage Class.
+func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func()) {
+	if vcd.config.Tm.StorageClass == "" {
+		check.Fatal("testing configuration property 'tm.storageClass' is required")
+	}
+	if org == nil || org.TmOrg == nil {
+		check.Fatal("an Organization is required to create the Region Quota")
+	}
+	if region == nil || region.Region == nil {
+		check.Fatal("a Region is required to create the Region Quota")
+	}
+	regionZones, err := region.GetAllZones(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(regionZones) > 0, Equals, true)
+
+	vmClasses, err := region.GetAllVmClasses(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(vmClasses) > 0, Equals, true)
+
+	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.StorageClass)
+	check.Assert(err, IsNil)
+	check.Assert(sp, NotNil)
+
+	cfg := &types.TmVdc{
+		Name:      fmt.Sprintf("%s_%s", org.TmOrg.Name, region.Region.Name),
+		IsEnabled: addrOf(true),
+		Org: &types.OpenApiReference{
+			Name: org.TmOrg.Name,
+			ID:   org.TmOrg.ID,
+		},
+		Region: &types.OpenApiReference{
+			Name: region.Region.Name,
+			ID:   region.Region.ID,
+		},
+		Supervisors: region.Region.Supervisors,
+		ZoneResourceAllocation: []*types.TmVdcZoneResourceAllocation{{
+			Zone: &types.OpenApiReference{ID: regionZones[0].Zone.ID},
+			ResourceAllocation: types.TmVdcResourceAllocation{
+				CPUReservationMHz:    100,
+				CPULimitMHz:          500,
+				MemoryReservationMiB: 256,
+				MemoryLimitMiB:       512,
+			},
+		}},
+	}
+	vdc, err := vcd.client.CreateTmVdc(cfg)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	PrependToCleanupListOpenApi(vdc.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+vdc.TmVdc.ID)
+
+	err = vdc.AssignVmClasses(&types.RegionVirtualMachineClasses{
+		Values: types.OpenApiReferences{{Name: vmClasses[0].Name, ID: vmClasses[0].ID}},
+	})
+	check.Assert(err, IsNil)
+	_, err = vdc.CreateStoragePolicies(&types.VirtualDatacenterStoragePolicies{
+		Values: []types.VirtualDatacenterStoragePolicy{
+			{
+				RegionStoragePolicy: types.OpenApiReference{
+					ID: sp.RegionStoragePolicy.ID,
+				},
+				StorageLimitMiB: 100,
+				VirtualDatacenter: types.OpenApiReference{
+					ID: vdc.TmVdc.ID,
+				},
+			},
+		},
+	})
+	check.Assert(err, IsNil)
+
+	return vdc, func() {
+		err = vdc.Delete()
 		check.Assert(err, IsNil)
 	}
 }

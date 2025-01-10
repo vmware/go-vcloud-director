@@ -29,6 +29,7 @@ func (vcdClient *VCDClient) CreateTmIpSpace(config *types.TmIpSpace) (*TmIpSpace
 	c := crudConfig{
 		entityLabel: labelTmIpSpace,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces,
+		requiresTm:  true,
 	}
 	outerType := TmIpSpace{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
@@ -40,6 +41,7 @@ func (vcdClient *VCDClient) GetAllTmIpSpaces(queryParameters url.Values) ([]*TmI
 		entityLabel:     labelTmIpSpace,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := TmIpSpace{vcdClient: vcdClient}
@@ -74,6 +76,7 @@ func (vcdClient *VCDClient) GetTmIpSpaceById(id string) (*TmIpSpace, error) {
 		entityLabel:    labelTmIpSpace,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces,
 		endpointParams: []string{id},
+		requiresTm:     true,
 	}
 
 	outerType := TmIpSpace{vcdClient: vcdClient}
@@ -109,6 +112,7 @@ func (o *TmIpSpace) Update(TmIpSpaceConfig *types.TmIpSpace) (*TmIpSpace, error)
 		entityLabel:    labelTmIpSpace,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces,
 		endpointParams: []string{o.TmIpSpace.ID},
+		requiresTm:     true,
 	}
 	outerType := TmIpSpace{vcdClient: o.vcdClient}
 	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmIpSpaceConfig)
@@ -120,6 +124,7 @@ func (o *TmIpSpace) Delete() error {
 		entityLabel:    labelTmIpSpace,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces,
 		endpointParams: []string{o.TmIpSpace.ID},
+		requiresTm:     true,
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
