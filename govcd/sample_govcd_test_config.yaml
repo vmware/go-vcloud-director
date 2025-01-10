@@ -307,6 +307,7 @@ tm:
   storageClass: "vSAN Default Storage Policy"
   # An existing Content Library to create Content Library Items
   contentLibrary: "My Content Library"
+  subscriptionContentLibraryUrl: "https://my-vcenter.com/cls/vcsp/lib/608ca073-7d94-4544-9d30-bbae455baa4d/lib.json"
   createVcenter: true # boolean value if the vCenter test should be executed
   vcenterUsername: username for vCenter auth
   vcenterPassword: password for vCenter auth

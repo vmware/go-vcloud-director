@@ -145,7 +145,8 @@ type TestConfig struct {
 		Region       string `yaml:"region"`
 		StorageClass string `yaml:"storageClass"`
 
-		ContentLibrary string `yaml:"contentLibrary"`
+		ContentLibrary                string `yaml:"contentLibrary"`
+		SubscriptionContentLibraryUrl string `yaml:"subscriptionContentLibraryUrl"`
 
 		CreateVcenter         bool   `yaml:"createVcenter"`
 		VcenterUsername       string `yaml:"vcenterUsername"`

@@ -39,7 +39,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	clDefinition := &types.ContentLibrary{
 		Name:           check.TestName(),
 		StorageClasses: []types.OpenApiReference{{ID: sc.StorageClass.ID}},
-		AutoAttach:     true, // Always true for Providers
+		AutoAttach:     true, // Always true for providers
 		Description:    check.TestName(),
 	}
 
@@ -144,7 +144,7 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 	clDefinition := &types.ContentLibrary{
 		Name:           check.TestName(),
 		StorageClasses: []types.OpenApiReference{{ID: sc.StorageClass.ID}},
-		AutoAttach:     true, // TODO: TM: Test with false
+		AutoAttach:     true,
 		Description:    check.TestName(),
 	}
 
@@ -214,4 +214,88 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 
 	_, err = org.GetContentLibraryById("urn:vcloud:contentLibrary:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
 	check.Assert(ContainsNotFound(err), Equals, true)
+}
+
+// Test_ContentLibraryProvider tests CRUD operations for a Content Library that is subscribed to another from vCenter
+func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
+	skipNonTm(vcd, check)
+	sysadminOnly(vcd, check)
+
+	vc, vcCleanup := getOrCreateVCenter(vcd, check)
+	defer vcCleanup()
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
+	check.Assert(err, IsNil)
+
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
+	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
+	defer regionCleanup()
+
+	cls, err := vcd.client.GetAllContentLibraries(nil, nil)
+	check.Assert(err, IsNil)
+	existingContentLibraryCount := len(cls)
+
+	sc, err := region.GetStorageClassByName(vcd.config.Tm.StorageClass)
+	check.Assert(err, IsNil)
+	check.Assert(sc, NotNil)
+
+	clDefinition := &types.ContentLibrary{
+		Name:           check.TestName(),
+		StorageClasses: []types.OpenApiReference{{ID: sc.StorageClass.ID}},
+		Description:    check.TestName(), // This should be ignored as it takes publisher description
+		AutoAttach:     true,             // Always true for providers
+		SubscriptionConfig: &types.ContentLibrarySubscriptionConfig{
+			SubscriptionUrl: vcd.config.Tm.SubscriptionContentLibraryUrl,
+			NeedLocalCopy:   true,
+		},
+	}
+
+	createdCl, err := vcd.client.CreateContentLibrary(clDefinition, nil)
+	check.Assert(err, IsNil)
+	check.Assert(createdCl, NotNil)
+	AddToCleanupListOpenApi(createdCl.ContentLibrary.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraries+createdCl.ContentLibrary.ID)
+
+	// Defer deletion for a correct cleanup
+	defer func() {
+		err = createdCl.Delete(true, true)
+		check.Assert(err, IsNil)
+	}()
+	check.Assert(isUrn(createdCl.ContentLibrary.ID), Equals, true)
+	check.Assert(createdCl.ContentLibrary.Name, Equals, clDefinition.Name)
+	check.Assert(createdCl.ContentLibrary.Description, Not(Equals), clDefinition.Description) // It takes publisher description
+	check.Assert(len(createdCl.ContentLibrary.StorageClasses), Equals, 1)
+	check.Assert(createdCl.ContentLibrary.StorageClasses[0].ID, Equals, sc.StorageClass.ID)
+	check.Assert(createdCl.ContentLibrary.AutoAttach, Equals, clDefinition.AutoAttach)
+	// "Computed" values
+	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // Always true for providers
+	check.Assert(createdCl.ContentLibrary.IsSubscribed, Equals, true)
+	check.Assert(createdCl.ContentLibrary.LibraryType, Equals, "PROVIDER")
+	check.Assert(createdCl.ContentLibrary.VersionNumber >= int64(1), Equals, true) // Version can differ from 1
+	check.Assert(createdCl.ContentLibrary.Org, NotNil)
+	check.Assert(createdCl.ContentLibrary.Org.Name, Equals, "System")
+	check.Assert(createdCl.ContentLibrary.SubscriptionConfig, NotNil)
+	check.Assert(createdCl.ContentLibrary.SubscriptionConfig.SubscriptionUrl, Equals, vcd.config.Tm.SubscriptionContentLibraryUrl)
+	check.Assert(createdCl.ContentLibrary.SubscriptionConfig.NeedLocalCopy, Equals, true)
+	check.Assert(createdCl.ContentLibrary.SubscriptionConfig.Password, Equals, "******") // Password is returned sealed
+	check.Assert(createdCl.ContentLibrary.CreationDate, Not(Equals), "")
+
+	cls, err = vcd.client.GetAllContentLibraries(nil, nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(cls), Equals, existingContentLibraryCount+1)
+	for _, l := range cls {
+		if l.ContentLibrary.ID == createdCl.ContentLibrary.ID {
+			check.Assert(*l.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
+			break
+		}
+	}
+
+	cl, err := vcd.client.GetContentLibraryByName(check.TestName(), nil)
+	check.Assert(err, IsNil)
+	check.Assert(cl, NotNil)
+	check.Assert(*cl.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
+
+	cl, err = vcd.client.GetContentLibraryById(cl.ContentLibrary.ID, nil)
+	check.Assert(err, IsNil)
+	check.Assert(cl, NotNil)
+	check.Assert(*cl.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
 }
