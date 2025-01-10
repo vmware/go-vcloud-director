@@ -30,13 +30,11 @@ func (g ContentLibrary) wrap(inner *types.ContentLibrary) *ContentLibrary {
 // it assumes that the Content Library to create is of Provider type.
 // TODO: TM: Subscribed catalogs create Tasks for every OVA from the publisher. These are ignored at the moment, so a better mechanism must be implemented (like CreateCatalogFromSubscription for VCD catalogs)
 func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary, ctx *TenantContext) (*ContentLibrary, error) {
-	if !vcdClient.Client.IsTm() {
-		return nil, fmt.Errorf("creating Content Libraries is only supported in TM")
-	}
 	c := crudConfig{
 		entityLabel:      labelContentLibrary,
 		endpoint:         types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 		additionalHeader: getTenantContextHeader(ctx),
+		requiresTm:       true,
 	}
 	outerType := ContentLibrary{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
@@ -53,14 +51,12 @@ func (org *TmOrg) CreateContentLibrary(config *types.ContentLibrary) (*ContentLi
 // GetAllContentLibraries retrieves all Content Libraries with the given query parameters, which allow setting filters
 // and other constraints. Tenant context can be nil, or can be used to retrieve the Content Libraries as a tenant.
 func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values, ctx *TenantContext) ([]*ContentLibrary, error) {
-	if !vcdClient.Client.IsTm() {
-		return nil, fmt.Errorf("retrieving Content Libraries is only supported in TM")
-	}
 	c := crudConfig{
 		entityLabel:      labelContentLibrary,
 		endpoint:         types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 		queryParameters:  queryParameters,
 		additionalHeader: getTenantContextHeader(ctx),
+		requiresTm:       true,
 	}
 
 	outerType := ContentLibrary{vcdClient: vcdClient}
@@ -113,15 +109,12 @@ func (org *TmOrg) GetContentLibraryByName(name string) (*ContentLibrary, error) 
 
 // GetContentLibraryById retrieves a Content Library with the given ID
 func (vcdClient *VCDClient) GetContentLibraryById(id string, ctx *TenantContext) (*ContentLibrary, error) {
-	if !vcdClient.Client.IsTm() {
-		return nil, fmt.Errorf("retrieving Content Libraries is only supported in TM")
-	}
-
 	c := crudConfig{
 		entityLabel:      labelContentLibrary,
 		endpoint:         types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 		endpointParams:   []string{id},
 		additionalHeader: getTenantContextHeader(ctx),
+		requiresTm:       true,
 	}
 
 	outerType := ContentLibrary{vcdClient: vcdClient}
@@ -161,6 +154,7 @@ func (o *ContentLibrary) Delete(force, recursive bool) error {
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 		endpointParams:  []string{o.ContentLibrary.ID},
 		queryParameters: queryParams,
+		requiresTm:      true,
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }

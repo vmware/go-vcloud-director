@@ -214,7 +214,7 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
-// Test_ContentLibraryProvider tests CRUD operations for a Content Library that is subscribed to another from vCenter
+// Test_ContentLibrarySubscribed tests CRUD operations for a Content Library that is subscribed to another from vCenter
 func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)

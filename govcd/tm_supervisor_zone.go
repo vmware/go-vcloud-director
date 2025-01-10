@@ -29,6 +29,7 @@ func (s *Supervisor) GetAllSupervisorZones(queryParameters url.Values) ([]*Super
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointSupervisorZones,
 		entityLabel:     labelSupervisorZone,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := SupervisorZone{vcdClient: s.vcdClient}
@@ -49,6 +50,7 @@ func (s *Supervisor) GetSupervisorZoneById(id string) (*SupervisorZone, error) {
 		entityLabel:     labelSupervisorZone,
 		queryParameters: queryParams,
 		endpointParams:  []string{id},
+		requiresTm:      true,
 	}
 
 	outerType := SupervisorZone{vcdClient: s.vcdClient}
