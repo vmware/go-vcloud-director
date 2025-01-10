@@ -60,9 +60,9 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(createdCl.ContentLibrary.StorageClasses[0].ID, Equals, sc.StorageClass.ID)
 	check.Assert(createdCl.ContentLibrary.AutoAttach, Equals, clDefinition.AutoAttach)
 	// "Computed" values
-	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // TODO: TM: Still not used in UI
+	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // Always true for providers
 	check.Assert(createdCl.ContentLibrary.IsSubscribed, Equals, false)
-	check.Assert(createdCl.ContentLibrary.LibraryType, Equals, "PROVIDER") // TODO: TM: Test with Tenant once implemented
+	check.Assert(createdCl.ContentLibrary.LibraryType, Equals, "PROVIDER")
 	check.Assert(createdCl.ContentLibrary.VersionNumber, Equals, int64(1))
 	check.Assert(createdCl.ContentLibrary.Org, NotNil)
 	check.Assert(createdCl.ContentLibrary.Org.Name, Equals, "System")
@@ -165,12 +165,12 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 	check.Assert(createdCl.ContentLibrary.StorageClasses[0].ID, Equals, sc.StorageClass.ID)
 	check.Assert(createdCl.ContentLibrary.AutoAttach, Equals, clDefinition.AutoAttach)
 	// "Computed" values
-	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // TODO: TM: Still not used in UI
+	check.Assert(createdCl.ContentLibrary.IsShared, Equals, false) // False for tenants
 	check.Assert(createdCl.ContentLibrary.IsSubscribed, Equals, false)
-	check.Assert(createdCl.ContentLibrary.LibraryType, Equals, "PROVIDER") // TODO: TM: Test with Tenant once implemented
+	check.Assert(createdCl.ContentLibrary.LibraryType, Equals, "TENANT")
 	check.Assert(createdCl.ContentLibrary.VersionNumber, Equals, int64(1))
 	check.Assert(createdCl.ContentLibrary.Org, NotNil)
-	check.Assert(createdCl.ContentLibrary.Org.Name, Equals, "System")
+	check.Assert(createdCl.ContentLibrary.Org.Name, Equals, org.TmOrg.Name)
 	check.Assert(createdCl.ContentLibrary.SubscriptionConfig, IsNil)
 	check.Assert(createdCl.ContentLibrary.CreationDate, Not(Equals), "")
 
