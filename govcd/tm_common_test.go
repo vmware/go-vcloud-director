@@ -242,7 +242,8 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 	}
 }
 
-// Creates a VDC (Region Quota) for testing in Tenant Manager
+// Creates a VDC (Region Quota) for testing in Tenant Manager and configures it with
+// the first found VM class and the configured Storage Class.
 func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func()) {
 	if vcd.config.Tm.StorageClass == "" {
 		check.Fatal("testing configuration property 'tm.storageClass' is required")

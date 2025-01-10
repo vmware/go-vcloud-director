@@ -11,8 +11,6 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-// TODO: TM: Tests missing: subscribed catalog, shared catalog
-
 // Test_ContentLibraryProvider tests CRUD operations for a Content Library with the Provider user
 func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	skipNonTm(vcd, check)
