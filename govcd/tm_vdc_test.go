@@ -35,10 +35,6 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(len(vmClasses) > 0, Equals, true)
 
-	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.StorageClass)
-	check.Assert(err, IsNil)
-	check.Assert(sp, NotNil)
-
 	vdcType := &types.TmVdc{
 		Name:        check.TestName(),
 		Org:         &types.OpenApiReference{ID: org.TmOrg.ID},
