@@ -40,7 +40,7 @@ func (o *TmVdc) CreateStoragePolicies(regionStoragePolicies *types.VirtualDatace
 	_, err := createInnerEntity[types.VirtualDatacenterStoragePolicies](&o.vcdClient.Client, c, regionStoragePolicies)
 	if err != nil {
 		// TODO: TM: The returned task contains a wrong URN in the "Owner" field, so the VDC can't be retrieved.
-		//           We don't really need it neither, so we ignore this error.
+		//           We don't really need it either, so we ignore this error.
 		if !strings.Contains(err.Error(), "error retrieving item after creation") {
 			return nil, err
 		}
