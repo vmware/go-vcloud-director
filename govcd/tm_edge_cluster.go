@@ -148,8 +148,16 @@ func (e *TmEdgeCluster) Delete() error {
 	if e.TmEdgeCluster == nil {
 		return fmt.Errorf("nil %s", labelTmEdgeCluster)
 	}
-	e.TmEdgeCluster.DefaultQosConfig.EgressProfile = nil
-	e.TmEdgeCluster.DefaultQosConfig.IngressProfile = nil
+	e.TmEdgeCluster.DefaultQosConfig.EgressProfile = &types.TmEdgeClusterQosProfile{
+		Type:                   "DEFAULT",
+		CommittedBandwidthMbps: -1,
+		BurstSizeBytes:         -1,
+	}
+	e.TmEdgeCluster.DefaultQosConfig.IngressProfile = &types.TmEdgeClusterQosProfile{
+		Type:                   "DEFAULT",
+		CommittedBandwidthMbps: -1,
+		BurstSizeBytes:         -1,
+	}
 
 	_, err := e.Update(e.TmEdgeCluster)
 	if err != nil {

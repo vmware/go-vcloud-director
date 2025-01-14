@@ -2,4 +2,4 @@
   their QoS settings `VCDClient.GetAllTmEdgeClusters`, `VCDClient.GetTmEdgeClusterByName`,
   `VCDClient.GetTmEdgeClusterByNameAndRegionId`, `VCDClient.GetTmEdgeClusterById`,
   `VCDClient.TmSyncEdgeClusters`, `TmEdgeCluster.Update`, `TmEdgeCluster.Delete`,
-  `TmEdgeCluster.GetTransportNodeStatus` [GH-730]
+  `TmEdgeCluster.GetTransportNodeStatus` [GH-730, GH-735]

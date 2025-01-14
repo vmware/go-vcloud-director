@@ -42,11 +42,21 @@ func (vcd *TestVCD) Test_TmEdgeCluster(check *C) {
 	ecById, err := vcd.client.GetTmEdgeClusterById(ecByName.TmEdgeCluster.ID)
 	check.Assert(err, IsNil)
 	check.Assert(ecById, NotNil)
+
+	// resetting both values to 0 so that no different values are returned
+	ecByName.TmEdgeCluster.AvgCPUUsagePercentage = 0
+	ecByName.TmEdgeCluster.AvgMemoryUsagePercentage = 0
+	ecById.TmEdgeCluster.AvgCPUUsagePercentage = 0
+	ecById.TmEdgeCluster.AvgMemoryUsagePercentage = 0
+
 	check.Assert(ecById.TmEdgeCluster, DeepEquals, ecByName.TmEdgeCluster)
 
 	ecByNameAndRegionId, err := vcd.client.GetTmEdgeClusterByNameAndRegionId(vcd.config.Tm.NsxtEdgeCluster, region.Region.ID)
 	check.Assert(err, IsNil)
 	check.Assert(ecByNameAndRegionId, NotNil)
+	// resetting both values to 0 so that no different values are returned
+	ecByNameAndRegionId.TmEdgeCluster.AvgCPUUsagePercentage = 0
+	ecByNameAndRegionId.TmEdgeCluster.AvgMemoryUsagePercentage = 0
 	check.Assert(ecByNameAndRegionId.TmEdgeCluster, DeepEquals, ecById.TmEdgeCluster)
 
 	ecByNameAndWrongRegionId, err := vcd.client.GetTmEdgeClusterByNameAndRegionId(vcd.config.Tm.NsxtEdgeCluster, "urn:vcloud:region:167d34b3-0000-0000-0000-a388505e6102")
@@ -93,8 +103,12 @@ func (vcd *TestVCD) Test_TmEdgeCluster(check *C) {
 	afterQosRemoval, err := vcd.client.GetTmEdgeClusterByName(vcd.config.Tm.NsxtEdgeCluster)
 	check.Assert(err, IsNil)
 	check.Assert(afterQosRemoval, NotNil)
-	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.EgressProfile, IsNil)
-	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.IngressProfile, IsNil)
+	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.EgressProfile, NotNil)
+	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.EgressProfile.BurstSizeBytes, Equals, -1)
+	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.EgressProfile.CommittedBandwidthMbps, Equals, -1)
+	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.IngressProfile, NotNil)
+	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.IngressProfile.BurstSizeBytes, Equals, -1)
+	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.IngressProfile.CommittedBandwidthMbps, Equals, -1)
 
 	// Check Transport Node endpoint
 	tn, err := afterQosRemoval.GetTransportNodeStatus()
