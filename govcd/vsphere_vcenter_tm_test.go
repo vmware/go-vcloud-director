@@ -44,6 +44,10 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	// Add to cleanup list
 	PrependToCleanupListOpenApi(v.VSphereVCenter.VcId, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+v.VSphereVCenter.VcId)
 
+	printVerbose("# Waiting for listener status to become 'CONNECTED'\n")
+	err = waitForListenerStatusConnected(v)
+	check.Assert(err, IsNil)
+
 	err = v.RefreshVcenter()
 	check.Assert(err, IsNil)
 
