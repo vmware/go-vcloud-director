@@ -33,6 +33,19 @@ type StorageClass struct {
 	Zones OpenApiReferences `json:"zones,omitempty"`
 }
 
+// VirtualDatacenterStoragePolicies represents a slice of RegionStoragePolicy
+type VirtualDatacenterStoragePolicies struct {
+	Values []VirtualDatacenterStoragePolicy `json:"values"`
+}
+
+// VirtualDatacenterStoragePolicy describes a Virtual Datacenter Storage Policy
+type VirtualDatacenterStoragePolicy struct {
+	ID                  string           `json:"id,omitempty"`
+	RegionStoragePolicy OpenApiReference `json:"regionStoragePolicy"`
+	StorageLimitMiB     int64            `json:"storageLimitMiB"`
+	VirtualDatacenter   OpenApiReference `json:"virtualDatacenter"`
+}
+
 // ContentLibrary is an object representing a VCF Content Library
 type ContentLibrary struct {
 	// The name of the Content Library
@@ -306,6 +319,23 @@ type Zone struct {
 	// MiB. For Tenants, this value represents the total given to all of a Tenant's Namespaces. For
 	// Providers, this value represents the total given to all Tenants
 	MemoryUsedMiB int `json:"memoryUsedMiB"`
+}
+
+// RegionVirtualMachineClass represents virtual machine sizing configurations information including cpu, memory
+type RegionVirtualMachineClass struct {
+	ID                   string            `json:"id,omitempty"`
+	Region               *OpenApiReference `json:"region,omitempty"`
+	Name                 string            `json:"name,omitempty"`
+	CpuReservationMHz    int               `json:"cpuReservationMHz,omitempty"`
+	MemoryReservationMiB int               `json:"memoryReservationMiB,omitempty"`
+	CpuCount             int               `json:"cpuCount,omitempty"`
+	MemoryMiB            int               `json:"memoryMiB,omitempty"`
+	Reserved             bool              `json:"reserved,omitempty"`
+}
+
+// RegionVirtualMachineClasses represents a slice of RegionVirtualMachineClass
+type RegionVirtualMachineClasses struct {
+	Values OpenApiReferences `json:"values"`
 }
 
 // TmIpSpace provides configuration of mainly the external IP Prefixes that specifies

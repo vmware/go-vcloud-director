@@ -29,6 +29,7 @@ func (vcdClient *VCDClient) GetAllSupervisors(queryParameters url.Values) ([]*Su
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointSupervisors,
 		entityLabel:     labelSupervisor,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := Supervisor{vcdClient: vcdClient}
@@ -41,6 +42,7 @@ func (vcdClient *VCDClient) GetSupervisorById(id string) (*Supervisor, error) {
 		entityLabel:    labelSupervisor,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointSupervisors,
 		endpointParams: []string{id},
+		requiresTm:     true,
 	}
 
 	outerType := Supervisor{vcdClient: vcdClient}

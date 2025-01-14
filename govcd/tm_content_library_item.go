@@ -301,6 +301,7 @@ func getContentLibraryItemFiles(cli *ContentLibraryItem) ([]*types.ContentLibrar
 		entityLabel:    labelContentLibraryItem,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItemFiles,
 		endpointParams: []string{cli.ContentLibraryItem.ID},
+		requiresTm:     true,
 	}
 	return getAllInnerEntities[types.ContentLibraryItemFile](&cli.vcdClient.Client, c)
 }
@@ -312,6 +313,7 @@ func (cl *ContentLibrary) GetAllContentLibraryItems(queryParameters url.Values) 
 		entityLabel:     labelContentLibraryItem,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := ContentLibraryItem{vcdClient: cl.vcdClient}
@@ -351,6 +353,7 @@ func (vcdClient *VCDClient) GetContentLibraryItemById(id string) (*ContentLibrar
 		entityLabel:    labelContentLibraryItem,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		endpointParams: []string{id},
+		requiresTm:     true,
 	}
 
 	outerType := ContentLibraryItem{vcdClient: vcdClient}
@@ -369,6 +372,7 @@ func (cli *ContentLibraryItem) Delete() error {
 		entityLabel:    labelContentLibraryItem,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		endpointParams: []string{cli.ContentLibraryItem.ID},
+		requiresTm:     true,
 	}
 	return deleteEntityById(&cli.vcdClient.Client, c)
 }
