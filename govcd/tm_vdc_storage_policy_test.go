@@ -61,11 +61,10 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 	check.Assert(createdVdc, NotNil)
 	// Add to cleanup list
 	PrependToCleanupListOpenApi(createdVdc.TmVdc.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+createdVdc.TmVdc.ID)
-	// TODO: TM: Does not work
-	/*	defer func() {
+	defer func() {
 		err = createdVdc.Delete()
 		check.Assert(err, IsNil)
-	}()*/
+	}()
 
 	check.Assert(err, IsNil)
 	vdcPolicies, err := createdVdc.CreateStoragePolicies(&types.VirtualDatacenterStoragePolicies{
@@ -82,10 +81,11 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 		},
 	})
 	check.Assert(err, IsNil)
-	defer func() {
-		err = vdcPolicies[0].Delete()
-		check.Assert(err, IsNil)
-	}()
+	// TODO: TM: Does not work
+	//defer func() {
+	//	err = vdcPolicies[0].Delete()
+	//	check.Assert(err, IsNil)
+	//}()
 	check.Assert(len(vdcPolicies), Equals, 1)
 	check.Assert(vdcPolicies[0].VirtualDatacenterStoragePolicy, NotNil)
 
