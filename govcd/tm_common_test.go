@@ -53,8 +53,9 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	check.Assert(vc, NotNil)
 	PrependToCleanupList(vcCfg.Name, "OpenApiEntityVcenter", check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+vc.VSphereVCenter.VcId)
 
-	printVerbose("# Sleeping after vCenter creation\n")
-	time.Sleep(1 * time.Minute) // TODO: TM: Reevaluate need for sleep
+	printVerbose("# Waiting for listener status to become 'CONNECTED'\n")
+	err = waitForListenerStatusConnected(vc)
+	check.Assert(err, IsNil)
 	// Refresh connected vCenter to be sure that all artifacts are loaded
 	printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
 	err = vc.RefreshVcenter()
@@ -78,6 +79,26 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 		err = vc.Delete()
 		check.Assert(err, IsNil)
 	}
+}
+
+func waitForListenerStatusConnected(v *VCenter) error {
+	startTime := time.Now()
+	tryCount := 20
+	for c := 0; c < tryCount; c++ {
+		err := v.Refresh()
+		if err != nil {
+			return fmt.Errorf("error refreshing vCenter: %s", err)
+		}
+
+		if v.VSphereVCenter.ListenerState == "CONNECTED" {
+			return nil
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return fmt.Errorf("waiting for listener state to become 'CONNECTED' expired after %d tries (%d seconds), got '%s'",
+		tryCount, int(time.Since(startTime)/time.Second), v.VSphereVCenter.ListenerState)
 }
 
 // getOrCreateNsxtManager will check configuration file and create NSX-T Manager if

@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"net/url"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -220,6 +222,15 @@ func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 	sysadminOnly(vcd, check)
 	if vcd.config.Tm.SubscriptionContentLibraryUrl == "" {
 		check.Skip("test configuration tm.subscriptionContentLibraryUrl is empty")
+	}
+
+	// Certificate must be trusted before adding subscribed content library
+	url, err := url.Parse(vcd.config.Tm.SubscriptionContentLibraryUrl)
+	check.Assert(err, IsNil)
+	trustedCert, err := vcd.client.AutoTrustCertificate(url)
+	check.Assert(err, IsNil)
+	if trustedCert != nil {
+		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
 	}
 
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)

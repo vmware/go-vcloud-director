@@ -19,7 +19,7 @@ func (vcd *TestVCD) Test_TmOrg(check *C) {
 	cfg := &types.TmOrg{
 		Name:          check.TestName(),
 		DisplayName:   check.TestName(),
-		CanManageOrgs: true,
+		CanManageOrgs: false,
 	}
 
 	tmOrg, err := vcd.client.CreateTmOrg(cfg)
