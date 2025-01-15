@@ -82,7 +82,9 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 }
 
 func waitForListenerStatusConnected(v *VCenter) error {
-	for c := 0; c < 20; c++ {
+	startTime := time.Now()
+	tryCount := 20
+	for c := 0; c < tryCount; c++ {
 		err := v.Refresh()
 		if err != nil {
 			return fmt.Errorf("error refreshing vCenter: %s", err)
@@ -95,7 +97,8 @@ func waitForListenerStatusConnected(v *VCenter) error {
 		time.Sleep(2 * time.Second)
 	}
 
-	return fmt.Errorf("failed waiting for listener state to become 'CONNECTED', got '%s'", v.VSphereVCenter.ListenerState)
+	return fmt.Errorf("waiting for listener state to become 'CONNECTED' expired after %d tries (%d seconds), got '%s'",
+		tryCount, int(time.Since(startTime)/time.Second), v.VSphereVCenter.ListenerState)
 }
 
 // getOrCreateNsxtManager will check configuration file and create NSX-T Manager if
