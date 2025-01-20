@@ -84,6 +84,24 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
 
+	// Try to create async version
+	task, err := vcd.client.CreateVcenterAsync(cfg)
+	check.Assert(err, IsNil)
+	check.Assert(task, NotNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	byIdAsync, err := vcd.client.GetVCenterById(task.Task.Owner.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byIdAsync.VSphereVCenter.Name, Equals, cfg.Name)
+	// Add to cleanup list
+	PrependToCleanupListOpenApi(byIdAsync.VSphereVCenter.VcId, check.TestName()+"-async", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+v.VSphereVCenter.VcId)
+
+	err = byIdAsync.Disable()
+	check.Assert(err, IsNil)
+	err = byIdAsync.Delete()
+	check.Assert(err, IsNil)
+
 	// Remove trusted cert if it was created
 	if trustedCert != nil {
 		err = trustedCert.Delete()
