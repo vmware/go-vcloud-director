@@ -37,6 +37,15 @@ func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// CreateVcenterAsync adds new vCenter and returns its task for tracking
+func (vcdClient *VCDClient) CreateVcenterAsync(config *types.VSphereVirtualCenter) (*Task, error) {
+	c := crudConfig{
+		entityLabel: labelVirtualCenter,
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+	}
+	return createInnerEntityAsync(&vcdClient.Client, c, config)
+}
+
 // GetAllVCenters retrieves all vCenter servers based on optional query filtering
 func (vcdClient *VCDClient) GetAllVCenters(queryParams url.Values) ([]*VCenter, error) {
 	c := crudConfig{
