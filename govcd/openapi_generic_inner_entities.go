@@ -103,6 +103,39 @@ func createInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I,
 	return createdInnerEntityConfig, nil
 }
 
+// createInnerEntityAsync implements a common pattern for creating an entity throughout codebase
+// Parameters:
+// * `client` is a *Client
+// * `c` holds settings for performing API call
+// * `innerConfig` is the new entity type
+func createInnerEntityAsync[I any](client *Client, c crudConfig, innerConfig *I) (*Task, error) {
+	if err := c.validate(client); err != nil {
+		return nil, err
+	}
+
+	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityLabel, err)
+	}
+
+	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
+	if err != nil {
+		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
+	}
+
+	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", c.entityLabel, err)
+	}
+
+	task, err := client.OpenApiPostItemAsyncWithHeaders(apiVersion, urlRef, c.queryParameters, innerConfig, c.additionalHeader)
+	if err != nil {
+		return nil, fmt.Errorf("error creating entity of type '%s': %s", c.entityLabel, err)
+	}
+
+	return &task, nil
+}
+
 // updateInnerEntity implements a common pattern for updating entity throughout codebase
 // Parameters:
 // * `client` is a *Client
