@@ -182,7 +182,6 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 			},
 		},
 		StoragePolicies: []string{vcd.config.Tm.VcenterStorageProfile},
-		IsEnabled:       true,
 	}
 
 	region, err = vcd.client.CreateRegion(r)

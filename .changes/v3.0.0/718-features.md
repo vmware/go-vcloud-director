@@ -6,7 +6,7 @@
   [GH-718]
 * Added `Region` and `types.Region` structures for OpenAPI management of Regions with methods
   `VCDClient.CreateRegion`, `VCDClient.GetAllRegions`, `VCDClient.GetRegionByName`,
-  `VCDClient.GetRegionById`, `Region.Update`, `Region.Delete` [GH-718]
+  `VCDClient.GetRegionById`, `Region.Update`, `Region.Delete` [GH-718, GH-737]
 * Added `Supervisor` and `types.Supervisor` structure for reading available Supervisors
   `VCDClient.GetAllSupervisors`, `VCDClient.GetSupervisorById`, `VCDClient.GetSupervisorByName`,
   `VCDClient.GetSupervisorByNameAndVcenterId`, `Vcenter.GetAllSupervisors`,

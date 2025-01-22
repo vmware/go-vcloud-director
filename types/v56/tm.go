@@ -194,8 +194,6 @@ type Region struct {
 	CPUCapacityMHz int `json:"cpuCapacityMHz,omitempty"`
 	// Total CPU reservation resources in MHz available to this Region.
 	CPUReservationCapacityMHz int `json:"cpuReservationCapacityMHz,omitempty"`
-	// Whether the region is enabled or not.
-	IsEnabled bool `json:"isEnabled"`
 	// Total memory resources (in mebibytes) available to this Region.
 	MemoryCapacityMiB int `json:"memoryCapacityMiB,omitempty"`
 	// Total memory reservation resources (in mebibytes) available to this Region.
