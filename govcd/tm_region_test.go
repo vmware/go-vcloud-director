@@ -35,7 +35,6 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 			},
 		},
 		StoragePolicies: []string{vcd.config.Tm.VcenterStorageProfile},
-		IsEnabled:       true,
 	}
 
 	createdRegion, err := vcd.client.CreateRegion(r)
@@ -63,12 +62,12 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	check.Assert(allRegions, NotNil)
 	check.Assert(len(allRegions) > 0, Equals, true)
 
-	// TODO: TM: No Update so far
 	// Update
-	// createdRegion.Region.IsEnabled = false
-	// updated, err := createdRegion.Update(createdRegion.Region)
-	// check.Assert(err, IsNil)
-	// check.Assert(updated, NotNil)
+	createdRegion.Region.Description = "new-description"
+	updated, err := createdRegion.Update(createdRegion.Region)
+	check.Assert(err, IsNil)
+	check.Assert(updated, NotNil)
+	check.Assert(updated.Region.Description, Equals, "new-description")
 
 	// Delete
 	err = createdRegion.Delete()
