@@ -56,6 +56,8 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	printVerbose("# Waiting for listener status to become 'CONNECTED'\n")
 	err = waitForListenerStatusConnected(vc)
 	check.Assert(err, IsNil)
+	printVerbose("# Sleeping after vCenter is 'CONNECTED'\n")
+	time.Sleep(4 * time.Second) // TODO: TM: Re-evaluate need for sleep
 	// Refresh connected vCenter to be sure that all artifacts are loaded
 	printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
 	err = vc.RefreshVcenter()
@@ -66,7 +68,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	check.Assert(err, IsNil)
 
 	printVerbose("# Sleeping after vCenter refreshes\n")
-	time.Sleep(1 * time.Minute) // TODO: TM: Reevaluate need for sleep
+	time.Sleep(1 * time.Minute) // TODO: TM: Re-evaluate need for sleep
 	vCenterCreated := true
 
 	return vc, func() {

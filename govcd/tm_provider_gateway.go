@@ -38,6 +38,16 @@ func (vcdClient *VCDClient) CreateTmProviderGateway(config *types.TmProviderGate
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// CreateTmProviderGatewayAsync adds new Provider gateway and returns its task for tracking
+func (vcdClient *VCDClient) CreateTmProviderGatewayAsync(config *types.TmProviderGateway) (*Task, error) {
+	c := crudConfig{
+		entityLabel: labelTmProviderGateway,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways,
+		requiresTm:  true,
+	}
+	return createInnerEntityAsync(&vcdClient.Client, c, config)
+}
+
 // GetAllTmProviderGateways retrieves all Provider Gateways with optional filter
 func (vcdClient *VCDClient) GetAllTmProviderGateways(queryParameters url.Values) ([]*TmProviderGateway, error) {
 	c := crudConfig{

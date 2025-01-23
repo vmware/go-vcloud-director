@@ -58,6 +58,23 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 		}},
 	}
 
+	// Test Async creation
+	// Try to create async version
+	task, err := vcd.client.CreateTmProviderGatewayAsync(t)
+	check.Assert(err, IsNil)
+	check.Assert(task, NotNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	byIdAsync, err := vcd.client.GetTmProviderGatewayById(task.Task.Owner.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byIdAsync.TmProviderGateway.Name, Equals, t.Name)
+	// Add to cleanup list
+	AddToCleanupListOpenApi(byIdAsync.TmProviderGateway.ID, check.TestName()+"-async", types.OpenApiPathVcf+types.OpenApiEndpointTmProviderGateways+byIdAsync.TmProviderGateway.ID)
+	err = byIdAsync.Delete()
+	check.Assert(err, IsNil)
+
+	// Test Sync
 	createdTmProviderGateway, err := vcd.client.CreateTmProviderGateway(t)
 	check.Assert(err, IsNil)
 	AddToCleanupListOpenApi(createdTmProviderGateway.TmProviderGateway.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmProviderGateways+createdTmProviderGateway.TmProviderGateway.ID)
