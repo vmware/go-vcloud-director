@@ -252,8 +252,6 @@ type TmVdc struct {
 	Name string `json:"name"`
 	// Description of the VDC
 	Description string `json:"description,omitempty"`
-	// IsEnabled defines if the VDC is enabled
-	IsEnabled *bool `json:"isEnabled,omitempty"`
 	// Org reference
 	Org *OpenApiReference `json:"org"`
 	// Region reference

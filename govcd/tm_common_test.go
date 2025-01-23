@@ -287,8 +287,7 @@ func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func
 	check.Assert(sp, NotNil)
 
 	cfg := &types.TmVdc{
-		Name:      fmt.Sprintf("%s_%s", org.TmOrg.Name, region.Region.Name),
-		IsEnabled: addrOf(true),
+		Name: fmt.Sprintf("%s_%s", org.TmOrg.Name, region.Region.Name),
 		Org: &types.OpenApiReference{
 			Name: org.TmOrg.Name,
 			ID:   org.TmOrg.ID,
