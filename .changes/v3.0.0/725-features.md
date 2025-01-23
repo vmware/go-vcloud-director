@@ -12,5 +12,5 @@
   `VCDClient.GetAllTmIpSpaceAssociationsByProviderGatewayId`,
   `VCDClient.GetAllTmIpSpaceAssociationsByIpSpaceId`, `TmIpSpaceAssociation.Delete` to manage IP
   Space associations with Provider Gateways [GH-725]
-* Added `VCDClient.CreateTmProviderGateway` that exposes the creation task of as it is needed in
+* Added `VCDClient.CreateTmProviderGateway` that exposes the creation task it is needed in
   some cases to retrieve ID of incomplete Provider Gateway creation [GH-739]
