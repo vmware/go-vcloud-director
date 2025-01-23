@@ -38,7 +38,7 @@ func (vcdClient *VCDClient) CreateTmProviderGateway(config *types.TmProviderGate
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
-// CreateVcenterAsync adds new vCenter and returns its task for tracking
+// CreateTmProviderGatewayAsync adds new Provider gateway and returns its task for tracking
 func (vcdClient *VCDClient) CreateTmProviderGatewayAsync(config *types.TmProviderGateway) (*Task, error) {
 	c := crudConfig{
 		entityLabel: labelTmProviderGateway,
