@@ -56,19 +56,19 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	printVerbose("# Waiting for listener status to become 'CONNECTED'\n")
 	err = waitForListenerStatusConnected(vc)
 	check.Assert(err, IsNil)
-	printVerbose("# Sleeping after vCenter is 'CONNECTED'\n")
-	time.Sleep(4 * time.Second) // TODO: TM: Re-evaluate need for sleep
-	// Refresh connected vCenter to be sure that all artifacts are loaded
-	printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
-	err = vc.RefreshVcenter()
+
+	// Sometimes the refresh fails with one of 'vCenterEntityBusyRegexp' errors
+	printVerbose("# Attempting vCenter refresh %s\n", vc.VSphereVCenter.Url)
+	err = runWithRetry(vc.RefreshVcenter, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
 	check.Assert(err, IsNil)
 
-	printVerbose("# Refreshing Storage Profiles in vCenter %s\n", vc.VSphereVCenter.Url)
-	err = vc.RefreshStorageProfiles()
+	// Refresh storage policies
+	printVerbose("# Attempting storage profile refresh %s\n", vc.VSphereVCenter.Url)
+	err = runWithRetry(vc.RefreshStorageProfiles, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
 	check.Assert(err, IsNil)
 
 	printVerbose("# Sleeping after vCenter refreshes\n")
-	time.Sleep(1 * time.Minute) // TODO: TM: Re-evaluate need for sleep
+	time.Sleep(10 * time.Second) // TODO: TM: Re-evaluate need for sleep
 	vCenterCreated := true
 
 	return vc, func() {
