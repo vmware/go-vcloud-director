@@ -1,8 +1,8 @@
 //go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || cse || slz || tm || ALL
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
+// © Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: MPL-2.0
 
 package govcd
 
@@ -366,6 +366,50 @@ func createTmIpSpace(vcd *TestVCD, region *Region, check *C, nameSuffix, octet3 
 	return ipSpace, func() {
 		printVerbose("# Deleting IP Space %s\n", ipSpace.TmIpSpace.Name)
 		err = ipSpace.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+func createTmProviderGateway(vcd *TestVCD, region *Region, check *C) (*TmProviderGateway, func()) {
+	ipSpace, ipSpaceCleanup1 := createTmIpSpace(vcd, region, check, "1", "0")
+
+	t0ByNameInRegion, err := vcd.client.GetTmTier0GatewayWithContextByName(vcd.config.Tm.NsxtTier0Gateway, region.Region.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(t0ByNameInRegion, NotNil)
+
+	t := &types.TmProviderGateway{
+		Name:        check.TestName(),
+		Description: check.TestName(),
+		BackingType: "NSX_TIER0",
+		BackingRef:  types.OpenApiReference{ID: t0ByNameInRegion.TmTier0Gateway.ID},
+		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
+		IPSpaceRefs: []types.OpenApiReference{{
+			ID: ipSpace.TmIpSpace.ID,
+		}},
+	}
+
+	pg, err := vcd.client.CreateTmProviderGateway(t)
+	check.Assert(err, IsNil)
+	check.Assert(pg, NotNil)
+	AddToCleanupListOpenApi(pg.TmProviderGateway.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmProviderGateways+pg.TmProviderGateway.ID)
+
+	return pg, func() {
+		printVerbose("# Deleting Provider Gateway %s\n", pg.TmProviderGateway.Name)
+		err = pg.Delete()
+		check.Assert(err, IsNil)
+
+		ipSpaceCleanup1()
+	}
+}
+
+func setOrgShortLogname(vcd *TestVCD, org *TmOrg, check *C) func() {
+	t := &types.TmOrgNetworkingSettings{OrgNameForLogs: "test"}
+	_, err := org.UpdateOrgNetworkingSettings(t)
+	check.Assert(err, IsNil)
+
+	return func() {
+		t := &types.TmOrgNetworkingSettings{OrgNameForLogs: ""}
+		_, err := org.UpdateOrgNetworkingSettings(t)
 		check.Assert(err, IsNil)
 	}
 }
