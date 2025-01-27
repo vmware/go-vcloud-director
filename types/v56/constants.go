@@ -518,7 +518,8 @@ const (
 	OpenApiEndpointVgpuProfile = "vgpuProfiles"
 
 	// OpenAPI Org
-	OpenApiEndpointOrgs = "orgs/"
+	OpenApiEndpointOrgs                    = "orgs/"
+	OpenApiEndpointTmOrgNetworkingSettings = "orgs/%s/networkingSettings"
 
 	OpenApiEndpointRegionStoragePolicies            = "regionStoragePolicies/"
 	OpenApiEndpointStorageClasses                   = "storageClasses/"

@@ -59,3 +59,51 @@ func (vcd *TestVCD) Test_TmOrg(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
 }
+
+func (vcd *TestVCD) Test_TmOrgNetworking(check *C) {
+	skipNonTm(vcd, check)
+	sysadminOnly(vcd, check)
+
+	cfg := &types.TmOrg{
+		Name:          check.TestName(),
+		DisplayName:   check.TestName(),
+		CanManageOrgs: false,
+	}
+
+	tmOrg, err := vcd.client.CreateTmOrg(cfg)
+	check.Assert(err, IsNil)
+	check.Assert(tmOrg, NotNil)
+	defer func() {
+		err = tmOrg.Delete()
+		check.Assert(err, IsNil)
+	}()
+
+	// Add to cleanup list
+	PrependToCleanupListOpenApi(tmOrg.TmOrg.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgs+tmOrg.TmOrg.ID)
+
+	networkingSettings, err := tmOrg.GetOrgNetworkingSettings()
+	check.Assert(err, IsNil)
+	check.Assert(networkingSettings, NotNil)
+	check.Assert(networkingSettings.OrgNameForLogs, Equals, "")
+
+	newNetworkingSettings := &types.TmOrgNetworkingSettings{
+		OrgNameForLogs: "logname",
+	}
+
+	newValues, err := tmOrg.UpdateOrgNetworkingSettings(newNetworkingSettings)
+	check.Assert(err, IsNil)
+	check.Assert(newValues, NotNil)
+	check.Assert(newValues.OrgNameForLogs, Equals, "logname")
+
+	newValuesFetched, err := tmOrg.GetOrgNetworkingSettings()
+	check.Assert(err, IsNil)
+	check.Assert(newValuesFetched, NotNil)
+	check.Assert(newValuesFetched.OrgNameForLogs, Equals, "logname")
+
+	// Unset logname
+	unsetLogName := &types.TmOrgNetworkingSettings{OrgNameForLogs: ""}
+	resetValues, err := tmOrg.UpdateOrgNetworkingSettings(unsetLogName)
+	check.Assert(err, IsNil)
+	check.Assert(resetValues, NotNil)
+	check.Assert(resetValues.OrgNameForLogs, Equals, "")
+}
