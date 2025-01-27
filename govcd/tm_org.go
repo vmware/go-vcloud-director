@@ -12,6 +12,7 @@ import (
 )
 
 const labelOrganization = "Organization"
+const labelOrganizationNetworkingSettings = "Organization Networking Settings"
 
 type TmOrg struct {
 	TmOrg     *types.TmOrg
@@ -86,7 +87,7 @@ func (vcdClient *VCDClient) GetTmOrgById(id string) (*TmOrg, error) {
 }
 
 // Update TM Organization
-func (o *TmOrg) Update(TmOrgConfig *types.TmOrg) (*TmOrg, error) {
+func (o *TmOrg) Update(tmOrgConfig *types.TmOrg) (*TmOrg, error) {
 	c := crudConfig{
 		entityLabel:    labelOrganization,
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgs,
@@ -94,7 +95,7 @@ func (o *TmOrg) Update(TmOrgConfig *types.TmOrg) (*TmOrg, error) {
 		requiresTm:     true,
 	}
 	outerType := TmOrg{vcdClient: o.vcdClient}
-	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmOrgConfig)
+	return updateOuterEntity(&o.vcdClient.Client, outerType, c, tmOrgConfig)
 }
 
 // Delete TM Organization
@@ -113,4 +114,27 @@ func (o *TmOrg) Disable() error {
 	o.TmOrg.IsEnabled = false
 	_, err := o.Update(o.TmOrg)
 	return err
+}
+
+// GetOrgNetworkingSettings retrieves Organization specific network settings
+func (o *TmOrg) GetOrgNetworkingSettings() (*types.TmOrgNetworkingSettings, error) {
+	c := crudConfig{
+		entityLabel:    labelOrganizationNetworkingSettings,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmOrgNetworkingSettings,
+		endpointParams: []string{o.TmOrg.ID},
+		requiresTm:     true,
+	}
+	return getInnerEntity[types.TmOrgNetworkingSettings](&o.vcdClient.Client, c)
+}
+
+// UpdateOrgNetworkingSettings changes Organization specific network settings
+func (o *TmOrg) UpdateOrgNetworkingSettings(tmOrgNetConfig *types.TmOrgNetworkingSettings) (*types.TmOrgNetworkingSettings, error) {
+	c := crudConfig{
+		entityLabel:    labelOrganizationNetworkingSettings,
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmOrgNetworkingSettings,
+		endpointParams: []string{o.TmOrg.ID},
+		requiresTm:     true,
+	}
+
+	return updateInnerEntity(&o.vcdClient.Client, c, tmOrgNetConfig)
 }

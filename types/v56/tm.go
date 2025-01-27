@@ -181,6 +181,19 @@ type TmOrg struct {
 	VappCount int `json:"vappCount,omitempty"`
 }
 
+// TmOrgNetworkingSettings defines structure for managing Org Networking Setttings
+type TmOrgNetworkingSettings struct {
+	// Whether this Organization has tenancy for the network domain in the backing network provider.
+	// If enabled, can only be disabled after all Org VDCs and VDC Groups that have networking
+	// tenancy enabled are deleted. Is disabled by default.
+	NetworkingTenancyEnabled *bool `json:"networkingTenancyEnabled,omitempty"`
+
+	// A short (8 char) display name to identify this Organization in the logs of the backing
+	// network provider. Only applies if the Organization is networking tenancy enabled. This
+	// identifier is globally unique.
+	OrgNameForLogs string `json:"orgNameForLogs"`
+}
+
 // Region represents a collection of supervisor clusters across different VCs
 type Region struct {
 	ID string `json:"id,omitempty"`
