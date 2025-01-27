@@ -48,7 +48,12 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	err = waitForListenerStatusConnected(v)
 	check.Assert(err, IsNil)
 
-	err = v.RefreshVcenter()
+	// Sometimes the refresh fails with one of 'vCenterEntityBusyRegexp' errors
+	err = runWithRetry(v.RefreshVcenter, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+	check.Assert(err, IsNil)
+
+	// Refresh storage policies
+	err = runWithRetry(v.RefreshStorageProfiles, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
 	check.Assert(err, IsNil)
 
 	// Get By Name

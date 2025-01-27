@@ -9,9 +9,11 @@ package govcd
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 	. "gopkg.in/check.v1"
 )
 
@@ -56,19 +58,19 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	printVerbose("# Waiting for listener status to become 'CONNECTED'\n")
 	err = waitForListenerStatusConnected(vc)
 	check.Assert(err, IsNil)
-	printVerbose("# Sleeping after vCenter is 'CONNECTED'\n")
-	time.Sleep(4 * time.Second) // TODO: TM: Re-evaluate need for sleep
-	// Refresh connected vCenter to be sure that all artifacts are loaded
-	printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
-	err = vc.RefreshVcenter()
+
+	// Sometimes the refresh fails with one of 'vCenterEntityBusyRegexp' errors
+	printVerbose("# Attempting vCenter refresh %s\n", vc.VSphereVCenter.Url)
+	err = runWithRetry(vc.RefreshVcenter, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
 	check.Assert(err, IsNil)
 
-	printVerbose("# Refreshing Storage Profiles in vCenter %s\n", vc.VSphereVCenter.Url)
-	err = vc.RefreshStorageProfiles()
+	// Refresh storage policies
+	printVerbose("# Attempting storage profile refresh %s\n", vc.VSphereVCenter.Url)
+	err = runWithRetry(vc.RefreshStorageProfiles, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
 	check.Assert(err, IsNil)
 
 	printVerbose("# Sleeping after vCenter refreshes\n")
-	time.Sleep(1 * time.Minute) // TODO: TM: Re-evaluate need for sleep
+	time.Sleep(10 * time.Second) // TODO: TM: Re-evaluate need for sleep
 	vCenterCreated := true
 
 	return vc, func() {
@@ -367,5 +369,43 @@ func createTmIpSpace(vcd *TestVCD, region *Region, check *C, nameSuffix, octet3 
 		printVerbose("# Deleting IP Space %s\n", ipSpace.TmIpSpace.Name)
 		err = ipSpace.Delete()
 		check.Assert(err, IsNil)
+	}
+}
+
+// vCenter task is sometimes unreliable and trying to refresh it immediately after it becomes
+// connected causes a "BUSY_ENTITY" error (which has a few different messages)
+var maximumVcenterRetryTime = 120 * time.Second                                         // The maximum time a single operation will be retried before giving up
+var vCenterEntityBusyRegexp = regexp.MustCompile(`(is currently busy|400|BUSY_ENTITY)`) // Regexp to match entity busy error
+
+func runWithRetry(runOperation func() error, errRegexp *regexp.Regexp, duration time.Duration) error {
+	startTime := time.Now()
+	endTime := startTime.Add(duration)
+	util.Logger.Printf("[DEBUG] runWithRetry - running with retry for %f seconds if error contains '%s' ", duration.Seconds(), errRegexp)
+	count := 1
+	for {
+		err := runOperation()
+		util.Logger.Printf("[DEBUG] runWithRetry - ran attempt %d, got error: %s ", count, err)
+		// Operation had no error - it succeeded
+		if err == nil {
+			util.Logger.Printf("[DEBUG] runWithRetry - no error occurred after attempt %d, got error: %s ", count, err)
+			return nil
+		}
+		// If there is an error, but it doesn't contain the retryIfErrContains value - exit it
+		if !errRegexp.MatchString(err.Error()) {
+			util.Logger.Printf("[DEBUG] runWithRetry - returning error after attempt %d, got error: %s ", count, err)
+			return err
+		}
+
+		// If time limit is exceeded - return error containing statistics and original error
+		if time.Now().After(endTime) {
+			util.Logger.Printf("[DEBUG] runWithRetry - exceeded time after attempt %d, got error: %s ", count, err)
+			return fmt.Errorf("error attempting to wait until error does not contain '%s' after %f seconds: %s", errRegexp, duration.Seconds(), err)
+		}
+
+		// Sleep and continue
+		util.Logger.Printf("[DEBUG] runWithRetry - sleeping after attempt %d, will retry", count)
+		// Sleep 2 seconds and attempt once more if the timeout is not excdeeded
+		time.Sleep(2 * time.Second)
+		count++
 	}
 }
