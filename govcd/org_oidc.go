@@ -62,7 +62,7 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		if settings.OIDCAttributeMapping == nil {
 			// The whole mapping is missing, we take the whole struct from well-known endpoint
 			settings.OIDCAttributeMapping = wellKnownSettings.OIDCAttributeMapping
-		} else {
+		} else if wellKnownSettings.OIDCAttributeMapping != nil {
 			// Some mappings are present, others are missing. We take the missing ones from well-known endpoint
 			settings.OIDCAttributeMapping.EmailAttributeName = cmp.Or(settings.OIDCAttributeMapping.EmailAttributeName, wellKnownSettings.OIDCAttributeMapping.EmailAttributeName)
 			settings.OIDCAttributeMapping.SubjectAttributeName = cmp.Or(settings.OIDCAttributeMapping.SubjectAttributeName, wellKnownSettings.OIDCAttributeMapping.SubjectAttributeName)
@@ -90,10 +90,11 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 	if settings.MaxClockSkew < 0 {
 		return nil, fmt.Errorf("the Max Clock Skew must be positive to correctly configure OpenID Connect")
 	}
+
+	nameIsEmpty := settings.OIDCAttributeMapping.FullNameAttributeName == "" && (settings.OIDCAttributeMapping.FirstNameAttributeName == "" || settings.OIDCAttributeMapping.LastNameAttributeName == "")
 	if settings.OIDCAttributeMapping == nil || settings.OIDCAttributeMapping.SubjectAttributeName == "" ||
-		settings.OIDCAttributeMapping.EmailAttributeName == "" || settings.OIDCAttributeMapping.FullNameAttributeName == "" ||
-		settings.OIDCAttributeMapping.FirstNameAttributeName == "" || settings.OIDCAttributeMapping.LastNameAttributeName == "" {
-		return nil, fmt.Errorf("the Subject, Email, Full name, First Name and Last name are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect")
+		settings.OIDCAttributeMapping.EmailAttributeName == "" || nameIsEmpty {
+		return nil, fmt.Errorf("the Subject, Email, Full name (or First Name and Last name) are mandatory OIDC Attribute (Claims) Mappings, to configure OpenID Connect")
 	}
 	if settings.OAuthKeyConfigurations == nil || len(settings.OAuthKeyConfigurations.OAuthKeyConfiguration) == 0 {
 		return nil, fmt.Errorf("the OIDC Key Configuration is mandatory to configure OpenID Connect")
