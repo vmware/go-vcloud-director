@@ -94,11 +94,6 @@ func (vcdClient *VCDClient) GetTmRegionalNetworkingSettingByNameAndRegionId(name
 	return getTmRegionalNetworkingSettingByNameAndRefId(vcdClient, name, "regionRef", regionId)
 }
 
-// GetTmRegionalNetworkingSettingByNameAndProviderGatewayId retrieves Regional Networking Setting by Name and Provider Gateway ID
-// func (vcdClient *VCDClient) GetTmRegionalNetworkingSettingByNameAndProviderGatewayId(name, providerGatewayId string) (*TmRegionalNetworkingSetting, error) {
-// 	return getTmRegionalNetworkingSettingByNameAndRefId(vcdClient, name, "providerGatewayRef", providerGatewayId)
-// }
-
 // Update Regional Networking Setting with a given config
 // Note. Only Name and Edge Cluster fields are updateable
 func (o *TmRegionalNetworkingSetting) Update(TmRegionalNetworkingSettingConfig *types.TmRegionalNetworkingSetting) (*TmRegionalNetworkingSetting, error) {
