@@ -118,7 +118,6 @@ func (o *TmRegionalNetworkingSetting) Delete() error {
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
 
-// GetTmRegionalNetworkingSettingByNameAndOrgId retrieves Regional Networking Setting by Name and Region ID
 func getTmRegionalNetworkingSettingByNameAndRefId(vcdClient *VCDClient, name, refName, refId string) (*TmRegionalNetworkingSetting, error) {
 	if name == "" || refId == "" {
 		return nil, fmt.Errorf("%s lookup requires name and refName ID", labelTmRegionalNetworkingSetting)
