@@ -36,6 +36,16 @@ func (vcdClient *VCDClient) CreateTmRegionalNetworkingSetting(config *types.TmRe
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// CreateTmRegionalNetworkingSettingAsync creates a new Regional Networking Setting with a given configuration and returns tracking task
+func (vcdClient *VCDClient) CreateTmRegionalNetworkingSettingAsync(config *types.TmRegionalNetworkingSetting) (*Task, error) {
+	c := crudConfig{
+		entityLabel: labelTmRegionalNetworkingSetting,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettings,
+		requiresTm:  true,
+	}
+	return createInnerEntityAsync(&vcdClient.Client, c, config)
+}
+
 // GetAllTmRegionalNetworkingSettings retrieves all Regional Networking Settings with an optional filter
 func (vcdClient *VCDClient) GetAllTmRegionalNetworkingSettings(queryParameters url.Values) ([]*TmRegionalNetworkingSetting, error) {
 	c := crudConfig{
