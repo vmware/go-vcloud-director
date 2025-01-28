@@ -92,4 +92,78 @@ func (vcd *TestVCD) Test_TmRegionalNetworkingSetting(check *C) {
 	check.Assert(updated, NotNil)
 	check.Assert(updated.TmRegionalNetworkingSetting.Name, Equals, orgNetworkSettings.Name)
 	check.Assert(updated.TmRegionalNetworkingSetting.ServiceEdgeClusterRef.ID, Equals, edgeCluster.TmEdgeCluster.ID)
+
+	// Testing VPC Connectivity Profile QoS
+	vpcProfile, err := byName.GetDefaultVpcConnectivityProfile()
+	check.Assert(err, IsNil)
+	check.Assert(vpcProfile, NotNil)
+	check.Assert(vpcProfile.ServiceEdgeClusterRef, NotNil)
+
+	// fetch parent Edge Cluster for the VPC profile
+	parentEdgeCluster, err := vcd.client.GetTmEdgeClusterById(vpcProfile.ServiceEdgeClusterRef.ID)
+	check.Assert(err, IsNil)
+	check.Assert(parentEdgeCluster, NotNil)
+
+	// By default, the VPC QoS Profile contains values from parent Edge Cluster
+	check.Assert(vpcProfile.QosConfig.EgressProfile.Type, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.Type)
+	check.Assert(vpcProfile.QosConfig.EgressProfile.BurstSizeBytes, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.BurstSizeBytes)
+	check.Assert(vpcProfile.QosConfig.EgressProfile.CommittedBandwidthMbps, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.CommittedBandwidthMbps)
+
+	check.Assert(vpcProfile.QosConfig.IngressProfile.Type, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.Type)
+	check.Assert(vpcProfile.QosConfig.IngressProfile.BurstSizeBytes, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.BurstSizeBytes)
+	check.Assert(vpcProfile.QosConfig.IngressProfile.CommittedBandwidthMbps, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.CommittedBandwidthMbps)
+
+	// Update VPC connectivity profile to custom values
+	newQosConfig := &types.VpcConnectivityProfileQosConfig{
+		IngressProfile: &types.VpcConnectivityProfileQosProfile{
+			Type:                   "CUSTOM",
+			CommittedBandwidthMbps: 8,
+			BurstSizeBytes:         8,
+		},
+		EgressProfile: &types.VpcConnectivityProfileQosProfile{
+			Type:                   "CUSTOM",
+			CommittedBandwidthMbps: 8,
+			BurstSizeBytes:         8,
+		},
+	}
+
+	vpcProfile.QosConfig = newQosConfig // Leave body of VPC Connectivity profile as is, but update values to custom
+	updatedVpcProfile, err := byName.UpdateDefaultVpcConnectivityProfile(vpcProfile)
+	check.Assert(err, IsNil)
+	check.Assert(updatedVpcProfile, NotNil)
+
+	// Check that the new values are in place
+	check.Assert(updatedVpcProfile.QosConfig.EgressProfile.Type, Equals, newQosConfig.EgressProfile.Type)
+	check.Assert(updatedVpcProfile.QosConfig.EgressProfile.BurstSizeBytes, Equals, newQosConfig.EgressProfile.BurstSizeBytes)
+	check.Assert(updatedVpcProfile.QosConfig.EgressProfile.CommittedBandwidthMbps, Equals, newQosConfig.EgressProfile.CommittedBandwidthMbps)
+	check.Assert(updatedVpcProfile.QosConfig.IngressProfile.Type, Equals, newQosConfig.IngressProfile.Type)
+	check.Assert(updatedVpcProfile.QosConfig.IngressProfile.BurstSizeBytes, Equals, newQosConfig.IngressProfile.BurstSizeBytes)
+	check.Assert(updatedVpcProfile.QosConfig.IngressProfile.CommittedBandwidthMbps, Equals, newQosConfig.IngressProfile.CommittedBandwidthMbps)
+
+	// Check that the parent Edge Cluster is not affected
+	parentEdgeCluster, err = vcd.client.GetTmEdgeClusterById(vpcProfile.ServiceEdgeClusterRef.ID)
+	check.Assert(err, IsNil)
+	check.Assert(parentEdgeCluster, NotNil)
+
+	check.Assert(updatedVpcProfile.QosConfig.EgressProfile.Type, Not(Equals), parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.Type)
+	check.Assert(updatedVpcProfile.QosConfig.EgressProfile.BurstSizeBytes, Not(Equals), parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.BurstSizeBytes)
+	check.Assert(updatedVpcProfile.QosConfig.EgressProfile.CommittedBandwidthMbps, Not(Equals), parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.CommittedBandwidthMbps)
+	check.Assert(updatedVpcProfile.QosConfig.IngressProfile.Type, Not(Equals), parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.Type)
+	check.Assert(updatedVpcProfile.QosConfig.IngressProfile.BurstSizeBytes, Not(Equals), parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.BurstSizeBytes)
+	check.Assert(updatedVpcProfile.QosConfig.IngressProfile.CommittedBandwidthMbps, Not(Equals), parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.CommittedBandwidthMbps)
+
+	// Update VPC QoS profile back to Edge Cluster defaults
+
+	updatedVpcProfile.QosConfig = &parentEdgeCluster.TmEdgeCluster.DefaultQosConfig
+	removedVpcQos, err := byName.UpdateDefaultVpcConnectivityProfile(updatedVpcProfile)
+	check.Assert(err, IsNil)
+	check.Assert(removedVpcQos, NotNil)
+
+	// Check that the values are equal between Edge Cluster Qos and VPC QoS profile
+	check.Assert(removedVpcQos.QosConfig.EgressProfile.Type, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.Type)
+	check.Assert(removedVpcQos.QosConfig.EgressProfile.BurstSizeBytes, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.BurstSizeBytes)
+	check.Assert(removedVpcQos.QosConfig.EgressProfile.CommittedBandwidthMbps, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.EgressProfile.CommittedBandwidthMbps)
+	check.Assert(removedVpcQos.QosConfig.IngressProfile.Type, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.Type)
+	check.Assert(removedVpcQos.QosConfig.IngressProfile.BurstSizeBytes, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.BurstSizeBytes)
+	check.Assert(removedVpcQos.QosConfig.IngressProfile.CommittedBandwidthMbps, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.CommittedBandwidthMbps)
 }
