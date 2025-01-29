@@ -39,6 +39,17 @@ func (vcd *TestVCD) Test_TmRegionalNetworkingSetting(check *C) {
 		ProviderGatewayRef: types.OpenApiReference{ID: pg.TmProviderGateway.ID},
 	}
 
+	rnsAsyncTask, err := vcd.client.CreateTmRegionalNetworkingSettingAsync(orgNetworkSettings)
+	check.Assert(err, IsNil)
+	check.Assert(rnsAsyncTask, NotNil)
+	err = rnsAsyncTask.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	byIdAsync, err := vcd.client.GetTmRegionalNetworkingSettingById(rnsAsyncTask.Task.Owner.ID)
+	check.Assert(err, IsNil)
+	err = byIdAsync.Delete()
+	check.Assert(err, IsNil)
+
 	rns, err := vcd.client.CreateTmRegionalNetworkingSetting(orgNetworkSettings)
 	check.Assert(err, IsNil)
 	check.Assert(rns, NotNil)

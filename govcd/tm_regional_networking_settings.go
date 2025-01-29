@@ -37,6 +37,16 @@ func (vcdClient *VCDClient) CreateTmRegionalNetworkingSetting(config *types.TmRe
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// CreateTmRegionalNetworkingSettingAsync creates a new Regional Networking Setting with a given configuration and returns tracking task
+func (vcdClient *VCDClient) CreateTmRegionalNetworkingSettingAsync(config *types.TmRegionalNetworkingSetting) (*Task, error) {
+	c := crudConfig{
+		entityLabel: labelTmRegionalNetworkingSetting,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettings,
+		requiresTm:  true,
+	}
+	return createInnerEntityAsync(&vcdClient.Client, c, config)
+}
+
 // GetAllTmRegionalNetworkingSettings retrieves all Regional Networking Settings with an optional filter
 func (vcdClient *VCDClient) GetAllTmRegionalNetworkingSettings(queryParameters url.Values) ([]*TmRegionalNetworkingSetting, error) {
 	c := crudConfig{
@@ -141,6 +151,7 @@ func getTmRegionalNetworkingSettingByNameAndRefId(vcdClient *VCDClient, name, re
 	return vcdClient.GetTmRegionalNetworkingSettingById(singleEntity.TmRegionalNetworkingSetting.ID)
 }
 
+// GetDefaultVpcConnectivityProfile retrieves default VPC Connectivity profile for Org Regional Networking
 func (o *TmRegionalNetworkingSetting) GetDefaultVpcConnectivityProfile() (*types.TmRegionalNetworkingVpcConnectivityProfile, error) {
 	c := crudConfig{
 		entityLabel:    labelTmRegionalNetworkingVpcConnectivityProfile,
@@ -151,6 +162,7 @@ func (o *TmRegionalNetworkingSetting) GetDefaultVpcConnectivityProfile() (*types
 	return getInnerEntity[types.TmRegionalNetworkingVpcConnectivityProfile](&o.vcdClient.Client, c)
 }
 
+// UpdateDefaultVpcConnectivityProfile changes default VPC Connectivity profile for Org Regional Networking
 func (o *TmRegionalNetworkingSetting) UpdateDefaultVpcConnectivityProfile(regNetVpcProfileConfig *types.TmRegionalNetworkingVpcConnectivityProfile) (*types.TmRegionalNetworkingVpcConnectivityProfile, error) {
 	c := crudConfig{
 		entityLabel:    labelTmRegionalNetworkingVpcConnectivityProfile,

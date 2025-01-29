@@ -598,15 +598,6 @@ type TmRegionalNetworkingSetting struct {
 	Status string `json:"status,omitempty"`
 }
 
-// type TmEdgeClusterDefaultQosConfig struct {
-// 	// Gateway QoS profile applicable to Ingress traffic. Setting this property to NULL results in
-// 	// no QoS being applied for traffic in ingress direction
-// 	IngressProfile *TmEdgeClusterQosProfile `json:"ingressProfile"`
-// 	// Gateway QoS profile applicable to Egress traffic. Setting this property to NULL results in no
-// 	// QoS being applied for traffic in egress direction
-// 	EgressProfile *TmEdgeClusterQosProfile `json:"egressProfile"`
-// }
-
 // VpcConnectivityProfileQosConfig is a type alias for TmEdgeClusterDefaultQosConfig
 //
 // Note. The structures are identical at the moment, but they are used in different endpoints and
