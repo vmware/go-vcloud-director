@@ -11,6 +11,7 @@ import (
 )
 
 const labelTmRegionalNetworkingSetting = "Regional Networking Setting"
+const labelTmRegionalNetworkingVpcConnectivityProfile = "Regional Networking VPC Connectivity Profile"
 
 type TmRegionalNetworkingSetting struct {
 	TmRegionalNetworkingSetting *types.TmRegionalNetworkingSetting
@@ -148,4 +149,26 @@ func getTmRegionalNetworkingSettingByNameAndRefId(vcdClient *VCDClient, name, re
 	}
 
 	return vcdClient.GetTmRegionalNetworkingSettingById(singleEntity.TmRegionalNetworkingSetting.ID)
+}
+
+// GetDefaultVpcConnectivityProfile retrieves default VPC Connectivity profile for Org Regional Networking
+func (o *TmRegionalNetworkingSetting) GetDefaultVpcConnectivityProfile() (*types.TmRegionalNetworkingVpcConnectivityProfile, error) {
+	c := crudConfig{
+		entityLabel:    labelTmRegionalNetworkingVpcConnectivityProfile,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile,
+		endpointParams: []string{o.TmRegionalNetworkingSetting.ID},
+		requiresTm:     true,
+	}
+	return getInnerEntity[types.TmRegionalNetworkingVpcConnectivityProfile](&o.vcdClient.Client, c)
+}
+
+// UpdateDefaultVpcConnectivityProfile changes default VPC Connectivity profile for Org Regional Networking
+func (o *TmRegionalNetworkingSetting) UpdateDefaultVpcConnectivityProfile(regNetVpcProfileConfig *types.TmRegionalNetworkingVpcConnectivityProfile) (*types.TmRegionalNetworkingVpcConnectivityProfile, error) {
+	c := crudConfig{
+		entityLabel:    labelTmRegionalNetworkingVpcConnectivityProfile,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile,
+		endpointParams: []string{o.TmRegionalNetworkingSetting.ID},
+		requiresTm:     true,
+	}
+	return updateInnerEntity(&o.vcdClient.Client, c, regNetVpcProfileConfig)
 }
