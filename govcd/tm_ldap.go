@@ -48,7 +48,8 @@ func (vcdClient *VCDClient) TmLdapDisable() error {
 
 // LdapDisable wraps LdapConfigure to disable LDAP configuration for the given organization
 func (org *TmOrg) LdapDisable() error {
-	_, err := ldapExecuteRequest(org.vcdClient, org.TmOrg.ID, http.MethodDelete, nil)
+	// For Orgs, deletion is PUT call with empty payload
+	_, err := ldapExecuteRequest(org.vcdClient, org.TmOrg.ID, http.MethodPut, &types.OrgLdapSettingsType{OrgLdapMode: types.LdapModeNone})
 	return err
 }
 
@@ -90,9 +91,9 @@ func ldapExecuteRequest(vcdClient *VCDClient, orgId, method string, payload inte
 		return nil, err
 	}
 
-	// If the call is different than DELETE, we prepare the body with the input settings
+	// If the call is PUT, we prepare the body with the input settings
 	var body io.Reader
-	if method != http.MethodDelete {
+	if method == http.MethodPut {
 		text := bytes.Buffer{}
 		encoder := json.NewEncoder(&text)
 		err = encoder.Encode(payload)
@@ -118,7 +119,9 @@ func ldapExecuteRequest(vcdClient *VCDClient, orgId, method string, payload inte
 	if err != nil {
 		return nil, fmt.Errorf("error getting LDAP settings: %s", err)
 	}
-	if method == http.MethodPut {
+
+	// Other than DELETE with get a body response
+	if method != http.MethodDelete {
 		// Organization result type is different from System type
 		if orgId != "" {
 			var result types.OrgLdapSettingsType

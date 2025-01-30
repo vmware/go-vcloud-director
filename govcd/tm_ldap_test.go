@@ -93,6 +93,13 @@ func (vcd *TestVCD) Test_TmLdapOrgWithVCenterLdap(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(org, NotNil)
 
+	defer func() {
+		err = org.Disable()
+		check.Assert(err, IsNil)
+		err = org.Delete()
+		check.Assert(err, IsNil)
+	}()
+
 	// Add to cleanup list
 	PrependToCleanupListOpenApi(org.TmOrg.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgs+org.TmOrg.ID)
 
@@ -155,10 +162,6 @@ func (vcd *TestVCD) Test_TmLdapOrgWithVCenterLdap(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(receivedSettings, DeepEquals, receivedSettings2)
 
-	defer func() {
-		err = org.Disable()
-		check.Assert(err, IsNil)
-		err = org.Delete()
-		check.Assert(err, IsNil)
-	}()
+	err = org.LdapDisable()
+	check.Assert(err, IsNil)
 }
