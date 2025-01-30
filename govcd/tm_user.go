@@ -109,21 +109,3 @@ func (o *TmUser) Delete() error {
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
-
-// ChangePassword of a user
-func (o *TmUser) ChangePassword(cfg *types.TmUserPasswordChange) error {
-	c := crudConfig{
-		endpoint:         types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmUsersPassword,
-		endpointParams:   []string{o.User.ID},
-		entityLabel:      labelDefinedEntityAccessControl,
-		additionalHeader: getTenantContextHeader(o.TenantContext),
-	}
-
-	_, err := createInnerEntity(&o.vcdClient.Client, c, cfg)
-
-	if err != nil {
-		return fmt.Errorf("error updating %s password: %s", labelTmUser, err)
-	}
-
-	return nil
-}

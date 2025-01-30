@@ -644,8 +644,3 @@ type TmUser struct {
 	Stranded                bool                `json:"stranded,omitempty"`
 	DeployedVMQuota         int                 `json:"deployedVmQuota,omitempty"`
 }
-
-type TmUserPasswordChange struct {
-	CurrentPassword string `json:"currentPassword"`
-	NewPassword     string `json:"newPassword"`
-}
