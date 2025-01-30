@@ -24,6 +24,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles:                               "31.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointGlobalRoles:                         "31.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointRoles + types.OpenApiEndpointRights: "31.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointUsers:                               "40.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointAuditTrail:                          "33.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers:              "32.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableDvpgs:                     "36.0",
@@ -180,7 +181,6 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmOrgNetworkingSettings:       "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettings:           "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile: "40.0",
-	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmUsers:                       "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
