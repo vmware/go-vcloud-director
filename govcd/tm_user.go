@@ -50,20 +50,20 @@ func (vcdClient *VCDClient) GetAllUsers(queryParameters url.Values, ctx *TenantC
 }
 
 // GetUserByName retrieves User by Name
-func (vcdClient *VCDClient) GetUserByName(name string, ctx *TenantContext) (*TmUser, error) {
-	if name == "" {
-		return nil, fmt.Errorf("%s lookup requires name", labelTmUser)
+func (vcdClient *VCDClient) GetUserByName(username string, ctx *TenantContext) (*TmUser, error) {
+	if username == "" {
+		return nil, fmt.Errorf("%s lookup requires username", labelTmUser)
 	}
 
 	queryParams := url.Values{}
-	queryParams.Add("filter", "name=="+name)
+	queryParams.Add("filter", "username=="+username)
 
 	filteredEntities, err := vcdClient.GetAllUsers(queryParams, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	singleEntity, err := oneOrError("name", name, filteredEntities)
+	singleEntity, err := oneOrError("username", username, filteredEntities)
 	if err != nil {
 		return nil, err
 	}
