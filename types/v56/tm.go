@@ -622,7 +622,7 @@ type TmRegionalNetworkingVpcConnectivityProfile struct {
 }
 
 type TmUser struct {
-	ID                      string              `json:"id"`
+	ID                      string              `json:"id,omitempty"`
 	Username                string              `json:"username"`
 	Password                string              `json:"password,omitempty"`
 	Enabled                 *bool               `json:"enabled,omitempty"`
@@ -635,7 +635,7 @@ type TmUser struct {
 	GivenName               string              `json:"givenName,omitempty"`
 	InheritGroupRoles       bool                `json:"inheritGroupRoles,omitempty"`
 	IsGroupRole             bool                `json:"isGroupRole,omitempty"`
-	Locked                  bool                `json:"locked,omitempty"`
+	Locked                  *bool               `json:"locked,omitempty"`
 	NameInSource            string              `json:"nameInSource,omitempty"`
 	OrgEntityRef            *OpenApiReference   `json:"orgEntityRef,omitempty"`
 	Phone                   string              `json:"phone,omitempty"`
@@ -643,4 +643,9 @@ type TmUser struct {
 	StoredVMQuota           int                 `json:"storedVmQuota,omitempty"`
 	Stranded                bool                `json:"stranded,omitempty"`
 	DeployedVMQuota         int                 `json:"deployedVmQuota,omitempty"`
+}
+
+type TmUserPasswordChange struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
 }
