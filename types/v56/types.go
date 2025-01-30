@@ -1112,13 +1112,13 @@ type VAppLeaseSettings struct {
 type OrgLdapSettingsType struct {
 	XMLName xml.Name `xml:"OrgLdapSettings"`
 	Xmlns   string   `xml:"xmlns,attr,omitempty"`
-	HREF    string   `xml:"href,attr,omitempty" json:"href,omitempty"` // The URI of the entity.
-	Type    string   `xml:"type,attr,omitempty" json:"type,omitempty"` // The MIME type of the entity.
-	Link    LinkList `xml:"Link,omitempty" json:"link,omitempty"`      // A reference to an entity or operation associated with this object.
+	HREF    string   `xml:"href,attr,omitempty"` // The URI of the entity.
+	Type    string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
+	Link    LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
-	OrgLdapMode           string                 `xml:"OrgLdapMode,omitempty" json:"orgLdapMode,omitempty"`                     // LDAP mode you want
-	CustomUsersOu         string                 `xml:"CustomUsersOu,omitempty" json:"customUsersOu,omitempty"`                 // If OrgLdapMode is SYSTEM, specifies an LDAP attribute=value pair to use for OU (organizational unit).
-	CustomOrgLdapSettings *CustomOrgLdapSettings `xml:"CustomOrgLdapSettings,omitempty" json:"customOrgLdapSettings,omitempty"` // Needs to be set if user chooses custom mode
+	OrgLdapMode           string                 `xml:"OrgLdapMode,omitempty"`           // LDAP mode you want
+	CustomUsersOu         string                 `xml:"CustomUsersOu,omitempty"`         // If OrgLdapMode is SYSTEM, specifies an LDAP attribute=value pair to use for OU (organizational unit).
+	CustomOrgLdapSettings *CustomOrgLdapSettings `xml:"CustomOrgLdapSettings,omitempty"` // Needs to be set if user chooses custom mode
 }
 
 // CustomOrgLdapSettings represents the custom ldap settings for a VMware Cloud Director organization.
@@ -1132,19 +1132,19 @@ type CustomOrgLdapSettings struct {
 	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
 	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
 
-	HostName                 string                  `xml:"HostName,omitempty" json:"hostName,omitempty"`
-	Port                     int                     `xml:"Port" json:"port,omitempty"`
-	IsSsl                    bool                    `xml:"IsSsl,omitempty" json:"isSsl,omitempty"`
-	IsSslAcceptAll           bool                    `xml:"IsSslAcceptAll,omitempty" json:"isSslAcceptAll,omitempty"`
-	SearchBase               string                  `xml:"SearchBase,omitempty" json:"searchBase,omitempty"`
-	Username                 string                  `xml:"UserName,omitempty" json:"userName,omitempty"`
-	Password                 string                  `xml:"Password,omitempty" json:"password,omitempty"`
-	AuthenticationMechanism  string                  `xml:"AuthenticationMechanism" json:"authenticationMechanism,omitempty"`
-	IsGroupSearchBaseEnabled bool                    `xml:"IsGroupSearchBaseEnabled" json:"isGroupSearchBaseEnabled,omitempty"`
-	GroupSearchBase          string                  `xml:"GroupSearchBase,omitempty" json:"groupSearchBase,omitempty"`
-	ConnectorType            string                  `xml:"ConnectorType" json:"connectorType,omitempty"`     // Defines LDAP service implementation type
-	UserAttributes           *OrgLdapUserAttributes  `xml:"UserAttributes" json:"userAttributes,omitempty"`   // Defines how LDAP attributes are used when importing a user.
-	GroupAttributes          *OrgLdapGroupAttributes `xml:"GroupAttributes" json:"groupAttributes,omitempty"` // Defines how LDAP attributes are used when importing a group.
+	HostName                 string                  `xml:"HostName,omitempty"`
+	Port                     int                     `xml:"Port"`
+	IsSsl                    bool                    `xml:"IsSsl,omitempty"`
+	IsSslAcceptAll           bool                    `xml:"IsSslAcceptAll,omitempty"`
+	SearchBase               string                  `xml:"SearchBase,omitempty"`
+	Username                 string                  `xml:"UserName,omitempty"`
+	Password                 string                  `xml:"Password,omitempty"`
+	AuthenticationMechanism  string                  `xml:"AuthenticationMechanism"`
+	IsGroupSearchBaseEnabled bool                    `xml:"IsGroupSearchBaseEnabled"`
+	GroupSearchBase          string                  `xml:"GroupSearchBase,omitempty"`
+	ConnectorType            string                  `xml:"ConnectorType"`   // Defines LDAP service implementation type
+	UserAttributes           *OrgLdapUserAttributes  `xml:"UserAttributes"`  // Defines how LDAP attributes are used when importing a user.
+	GroupAttributes          *OrgLdapGroupAttributes `xml:"GroupAttributes"` // Defines how LDAP attributes are used when importing a group.
 	UseExternalKerberos      bool                    `xml:"UseExternalKerberos"`
 
 	Realm string `xml:"Realm,omitempty"`
