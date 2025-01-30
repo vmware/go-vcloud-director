@@ -542,6 +542,7 @@ const (
 	OpenApiEndpointTmEdgeClusterTransportNodeStatus = "edgeClusters/%s/transportNodesStatus"
 	OpenApiEndpointTmEdgeClustersSync               = "edgeClusters/sync"
 	OpenApiEndpointTmRegionalNetworkingSettings     = "regionalNetworkingSettings/"
+	OpenApiEndpointTmUsers                          = "users/"
 )
 
 // Header keys to run operations in tenant context

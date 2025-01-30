@@ -597,3 +597,29 @@ type TmRegionalNetworkingSetting struct {
 	// * UNKNOWN - Current state of entity is unknown
 	Status string `json:"status,omitempty"`
 }
+
+// types.User
+
+type TmUser struct {
+	ID                      string              `json:"id"`
+	Description             string              `json:"description"`
+	EffectiveRoleEntityRefs []*OpenApiReference `json:"effectiveRoleEntityRefs"`
+	Email                   string              `json:"email"`
+	Enabled                 bool                `json:"enabled"`
+	FamilyName              string              `json:"familyName"`
+	FullName                string              `json:"fullName"`
+	GivenName               string              `json:"givenName"`
+	InheritGroupRoles       bool                `json:"inheritGroupRoles"`
+	IsGroupRole             bool                `json:"isGroupRole"`
+	Locked                  bool                `json:"locked"`
+	NameInSource            string              `json:"nameInSource"`
+	OrgEntityRef            *OpenApiReference   `json:"orgEntityRef"`
+	Password                string              `json:"password"`
+	Phone                   string              `json:"phone"`
+	ProviderType            string              `json:"providerType"`
+	RoleEntityRefs          []*OpenApiReference `json:"roleEntityRefs"`
+	StoredVMQuota           int                 `json:"storedVmQuota"`
+	Stranded                bool                `json:"stranded"`
+	Username                string              `json:"username"`
+	DeployedVMQuota         int                 `json:"deployedVmQuota"`
+}
