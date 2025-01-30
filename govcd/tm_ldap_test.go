@@ -61,6 +61,11 @@ func (vcd *TestVCD) Test_TmLdapSystemWithVCenterLdap(check *C) {
 	receivedSettings, err := vcd.client.TmLdapConfigure(&ldapSettings)
 	check.Assert(err, IsNil)
 	check.Assert(receivedSettings, NotNil)
+
+	receivedSettings2, err := vcd.client.TmGetLdapConfiguration()
+	check.Assert(err, IsNil)
+	check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+
 	defer func() {
 		fmt.Println("Unconfiguring LDAP")
 		// Clear LDAP configuration
@@ -126,17 +131,29 @@ func (vcd *TestVCD) Test_TmLdapOrgWithVCenterLdap(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(receivedSettings, NotNil)
 
+	receivedSettings2, err := org.GetLdapConfiguration()
+	check.Assert(err, IsNil)
+	check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+
 	ldapSettings.OrgLdapMode = types.LdapModeSystem
 	ldapSettings.CustomOrgLdapSettings = nil
 	receivedSettings, err = org.LdapConfigure(ldapSettings)
 	check.Assert(err, IsNil)
 	check.Assert(receivedSettings, NotNil)
 
+	receivedSettings2, err = org.GetLdapConfiguration()
+	check.Assert(err, IsNil)
+	check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+
 	// This is same to deletion
 	ldapSettings.OrgLdapMode = types.LdapModeNone
 	receivedSettings, err = org.LdapConfigure(ldapSettings)
 	check.Assert(err, IsNil)
 	check.Assert(receivedSettings, NotNil)
+
+	receivedSettings2, err = org.GetLdapConfiguration()
+	check.Assert(err, IsNil)
+	check.Assert(receivedSettings, DeepEquals, receivedSettings2)
 
 	defer func() {
 		err = org.Disable()

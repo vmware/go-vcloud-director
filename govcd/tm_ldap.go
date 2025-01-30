@@ -90,9 +90,9 @@ func ldapExecuteRequest(vcdClient *VCDClient, orgId, method string, payload inte
 		return nil, err
 	}
 
-	// If the call is a PUT, we prepare the body with the input settings
+	// If the call is different than DELETE, we prepare the body with the input settings
 	var body io.Reader
-	if method == http.MethodPut {
+	if method != http.MethodDelete {
 		text := bytes.Buffer{}
 		encoder := json.NewEncoder(&text)
 		err = encoder.Encode(payload)
