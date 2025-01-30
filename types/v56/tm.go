@@ -597,3 +597,26 @@ type TmRegionalNetworkingSetting struct {
 	// * UNKNOWN - Current state of entity is unknown
 	Status string `json:"status,omitempty"`
 }
+
+// VpcConnectivityProfileQosConfig is a type alias for TmEdgeClusterDefaultQosConfig
+//
+// Note. The structures are identical at the moment, but they are used in different endpoints and
+// might drift in future. Having a type alias will allow having different structures without breaking code.
+type VpcConnectivityProfileQosConfig = TmEdgeClusterDefaultQosConfig
+
+// VpcConnectivityProfileQosProfile is a type alias for TmEdgeClusterQosProfile
+//
+// Note. The structures are identical at the moment, but they are used in different endpoints and
+// might drift in future. Having a type alias will allow having different structures without breaking code.
+type VpcConnectivityProfileQosProfile = TmEdgeClusterQosProfile
+
+// TmRegionalNetworkingVpcConnectivityProfile represents default VPC connectivity profile for
+// networking workloads running within the region and Organization specified by Regional Networking
+// Setting
+type TmRegionalNetworkingVpcConnectivityProfile struct {
+	Name                  string                           `json:"name,omitempty"`
+	QosConfig             *VpcConnectivityProfileQosConfig `json:"qosConfig,omitempty"`
+	ServiceEdgeClusterRef *OpenApiReference                `json:"serviceEdgeClusterRef,omitempty"`
+	// ExternalCidrBlocks is a comma separated list of the external IP CIDRs which are available for use by the VPC.
+	ExternalCidrBlocks string `json:"externalCidrBlocks,omitempty"`
+}
