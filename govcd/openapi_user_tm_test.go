@@ -34,7 +34,7 @@ func (vcd *TestVCD) Test_TmOpenApiUserLocal(check *C) {
 	userConfig := &types.OpenApiUser{
 		Username:       "test-user",
 		Password:       "CHANGE-ME",
-		RoleEntityRefs: []*types.OpenApiReference{{ID: roleOrgAdmin.Role.ID}},
+		RoleEntityRefs: []types.OpenApiReference{{ID: roleOrgAdmin.Role.ID}},
 		ProviderType:   "LOCAL",
 		OrgEntityRef:   &types.OpenApiReference{ID: org.TmOrg.ID, Name: org.TmOrg.Name},
 	}
@@ -71,7 +71,7 @@ func (vcd *TestVCD) Test_TmOpenApiUserLocal(check *C) {
 		ID:             byId.User.ID,
 		Username:       "test-user-updated",
 		Password:       "CHANGE-ME-UPDATED",
-		RoleEntityRefs: []*types.OpenApiReference{{ID: roleOrgUser.Role.ID}},
+		RoleEntityRefs: []types.OpenApiReference{{ID: roleOrgUser.Role.ID}},
 		ProviderType:   "LOCAL",
 		NameInSource:   userConfig.Username, // previous username must be provided
 		OrgEntityRef:   &types.OpenApiReference{ID: org.TmOrg.ID, Name: org.TmOrg.Name},

@@ -892,7 +892,7 @@ type OpenApiUser struct {
 	// Full name (display name) of the user
 	FullName string `json:"fullName,omitempty"`
 	// The directly assigned role(s) of the user
-	RoleEntityRefs []*OpenApiReference `json:"roleEntityRefs,omitempty"`
+	RoleEntityRefs []OpenApiReference `json:"roleEntityRefs,omitempty"`
 	// Given name of the user (e.g. first name in most Western languages)
 	GivenName string `json:"givenName,omitempty"`
 	// Determines if this user can inherit roles from groups. Defaults to false
