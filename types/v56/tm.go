@@ -620,27 +620,3 @@ type TmRegionalNetworkingVpcConnectivityProfile struct {
 	// ExternalCidrBlocks is a comma separated list of the external IP CIDRs which are available for use by the VPC.
 	ExternalCidrBlocks string `json:"externalCidrBlocks,omitempty"`
 }
-
-type TmUser struct {
-	ID                      string              `json:"id,omitempty"`
-	Username                string              `json:"username"`
-	Password                string              `json:"password,omitempty"`
-	Enabled                 *bool               `json:"enabled,omitempty"`
-	Description             string              `json:"description,omitempty"`
-	EffectiveRoleEntityRefs []*OpenApiReference `json:"effectiveRoleEntityRefs,omitempty"`
-	Email                   string              `json:"email,omitempty"`
-	FamilyName              string              `json:"familyName,omitempty"`
-	FullName                string              `json:"fullName,omitempty"`
-	RoleEntityRefs          []*OpenApiReference `json:"roleEntityRefs,omitempty"`
-	GivenName               string              `json:"givenName,omitempty"`
-	InheritGroupRoles       bool                `json:"inheritGroupRoles,omitempty"`
-	IsGroupRole             bool                `json:"isGroupRole,omitempty"`
-	Locked                  *bool               `json:"locked,omitempty"`
-	NameInSource            string              `json:"nameInSource,omitempty"`
-	OrgEntityRef            *OpenApiReference   `json:"orgEntityRef,omitempty"`
-	Phone                   string              `json:"phone,omitempty"`
-	ProviderType            string              `json:"providerType,omitempty"`
-	StoredVMQuota           int                 `json:"storedVmQuota,omitempty"`
-	Stranded                bool                `json:"stranded,omitempty"`
-	DeployedVMQuota         int                 `json:"deployedVmQuota,omitempty"`
-}

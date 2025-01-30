@@ -11,7 +11,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_TmUserLocal(check *C) {
+func (vcd *TestVCD) Test_TmOpenApiUserLocal(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
@@ -31,10 +31,10 @@ func (vcd *TestVCD) Test_TmUserLocal(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(roleOrgUser, NotNil)
 
-	userConfig := &types.TmUser{
+	userConfig := &types.OpenApiUser{
 		Username:       "test-user",
 		Password:       "CHANGE-ME",
-		RoleEntityRefs: []*types.OpenApiReference{&types.OpenApiReference{ID: roleOrgAdmin.Role.ID}},
+		RoleEntityRefs: []*types.OpenApiReference{{ID: roleOrgAdmin.Role.ID}},
 		ProviderType:   "LOCAL",
 		OrgEntityRef:   &types.OpenApiReference{ID: org.TmOrg.ID, Name: org.TmOrg.Name},
 	}
@@ -67,11 +67,11 @@ func (vcd *TestVCD) Test_TmUserLocal(check *C) {
 	check.Assert(byId.User.ID, Equals, createdUser.User.ID)
 
 	// Update
-	updateConfig := &types.TmUser{
+	updateConfig := &types.OpenApiUser{
 		ID:             byId.User.ID,
 		Username:       "test-user-updated",
 		Password:       "CHANGE-ME-UPDATED",
-		RoleEntityRefs: []*types.OpenApiReference{&types.OpenApiReference{ID: roleOrgUser.Role.ID}},
+		RoleEntityRefs: []*types.OpenApiReference{{ID: roleOrgUser.Role.ID}},
 		ProviderType:   "LOCAL",
 		NameInSource:   userConfig.Username, // previous username must be provided
 		OrgEntityRef:   &types.OpenApiReference{ID: org.TmOrg.ID, Name: org.TmOrg.Name},
