@@ -20,6 +20,8 @@ func (vcd *TestVCD) Test_TmUserLocal(check *C) {
 
 	// TODO: TM: Change to vcdClient.GetTmOrgById(orgId), requires implementing Role support for that type
 	adminOrg, err := vcd.client.GetAdminOrgById(org.TmOrg.ID)
+	check.Assert(err, IsNil)
+	check.Assert(adminOrg, NotNil)
 
 	roleOrgAdmin, err := adminOrg.GetRoleByName("Organization Administrator")
 	check.Assert(err, IsNil)
