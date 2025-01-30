@@ -1727,7 +1727,7 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 			return
 		}
 
-		// This is done to avoid calling LdapDisable() if it has been unconfigured, due to bug with Org catalog publish settings
+		// This is done to avoid calling TmLdapDisable() if it has been unconfigured, due to bug with Org catalog publish settings
 		if ldapConfig.OrgLdapMode != types.LdapModeNone {
 			err = org.LdapDisable()
 			if err != nil {
