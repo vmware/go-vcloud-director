@@ -544,6 +544,7 @@ const (
 	OpenApiEndpointTmEdgeClustersSync                     = "edgeClusters/sync"
 	OpenApiEndpointTmRegionalNetworkingSettings           = "regionalNetworkingSettings/"
 	OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile = "regionalNetworkingSettings/%s/defaultVpcConnectivityProfile"
+	OpenApiEndpointUsers                                  = "users/"
 )
 
 // Header keys to run operations in tenant context

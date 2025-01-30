@@ -871,3 +871,48 @@ type NsxtManagerOpenApi struct {
 	// Status of NSX-T Manager
 	Status string `json:"status,omitempty"`
 }
+
+// OpenApiUser defines structure for User management using OpenAPI based endpoint
+type OpenApiUser struct {
+	ID string `json:"id,omitempty"`
+	// Username for the user
+	Username string `json:"username"`
+	// Password for the user. Must be null for external users
+	Password string `json:"password,omitempty"`
+	// Enabled state of the user. Defaults to true
+	Enabled *bool `json:"enabled,omitempty"`
+	// Description of the user
+	Description string `json:"description,omitempty"`
+	// A read-only list of all of a user's roles, both directly assigned and inherited from the user's groups
+	EffectiveRoleEntityRefs []*OpenApiReference `json:"effectiveRoleEntityRefs,omitempty"`
+	// A user's email address. Based on org email preferences, notifications can be sent to the user via email
+	Email string `json:"email,omitempty"`
+	// Family name of the user (e.g. last name in most Western languages)
+	FamilyName string `json:"familyName,omitempty"`
+	// Full name (display name) of the user
+	FullName string `json:"fullName,omitempty"`
+	// The directly assigned role(s) of the user
+	RoleEntityRefs []OpenApiReference `json:"roleEntityRefs,omitempty"`
+	// Given name of the user (e.g. first name in most Western languages)
+	GivenName string `json:"givenName,omitempty"`
+	// Determines if this user can inherit roles from groups. Defaults to false
+	InheritGroupRoles bool `json:"inheritGroupRoles,omitempty"`
+	// Determines if this user's role is inherited from a group. Defaults to false
+	IsGroupRole bool `json:"isGroupRole,omitempty"`
+	// True if the user account has been locked due to too many invalid login attempts. An
+	// administrator can unlock a locked user account by setting this flag to false. A user may not
+	// be explicitly locked. Instead, disable the user, if user's access must be revoked
+	// temporarily
+	Locked *bool `json:"locked,omitempty"`
+	// Name of the user in its source
+	NameInSource string `json:"nameInSource,omitempty"`
+	// orgEntityRefOptional
+	OrgEntityRef *OpenApiReference `json:"orgEntityRef,omitempty"`
+	// Phone number of the user.
+	Phone string `json:"phone,omitempty"`
+	// Provider type of the user. It must be one of: LOCAL, LDAP, SAML, OAUTH
+	ProviderType string `json:"providerType,omitempty"`
+	// True if the user account has been stranded, meaning it is unable to be accessed due to its
+	// original identity source being removed
+	Stranded bool `json:"stranded,omitempty"`
+}
