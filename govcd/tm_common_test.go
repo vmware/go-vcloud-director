@@ -1,12 +1,13 @@
 //go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || cse || slz || tm || ALL
 
-/*
- * Copyright 2024 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
+// © Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: MPL-2.0
 
 package govcd
 
 import (
+	"fmt"
 	"net/url"
 	"time"
 
@@ -52,8 +53,11 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	check.Assert(vc, NotNil)
 	PrependToCleanupList(vcCfg.Name, "OpenApiEntityVcenter", check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+vc.VSphereVCenter.VcId)
 
-	printVerbose("# Sleeping after vCenter creation\n")
-	time.Sleep(1 * time.Minute) // TODO: TM: Reevaluate need for sleep
+	printVerbose("# Waiting for listener status to become 'CONNECTED'\n")
+	err = waitForListenerStatusConnected(vc)
+	check.Assert(err, IsNil)
+	printVerbose("# Sleeping after vCenter is 'CONNECTED'\n")
+	time.Sleep(4 * time.Second) // TODO: TM: Re-evaluate need for sleep
 	// Refresh connected vCenter to be sure that all artifacts are loaded
 	printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
 	err = vc.RefreshVcenter()
@@ -64,7 +68,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	check.Assert(err, IsNil)
 
 	printVerbose("# Sleeping after vCenter refreshes\n")
-	time.Sleep(1 * time.Minute) // TODO: TM: Reevaluate need for sleep
+	time.Sleep(1 * time.Minute) // TODO: TM: Re-evaluate need for sleep
 	vCenterCreated := true
 
 	return vc, func() {
@@ -77,6 +81,26 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 		err = vc.Delete()
 		check.Assert(err, IsNil)
 	}
+}
+
+func waitForListenerStatusConnected(v *VCenter) error {
+	startTime := time.Now()
+	tryCount := 20
+	for c := 0; c < tryCount; c++ {
+		err := v.Refresh()
+		if err != nil {
+			return fmt.Errorf("error refreshing vCenter: %s", err)
+		}
+
+		if v.VSphereVCenter.ListenerState == "CONNECTED" {
+			return nil
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return fmt.Errorf("waiting for listener state to become 'CONNECTED' expired after %d tries (%d seconds), got '%s'",
+		tryCount, int(time.Since(startTime)/time.Second), v.VSphereVCenter.ListenerState)
 }
 
 // getOrCreateNsxtManager will check configuration file and create NSX-T Manager if
@@ -160,7 +184,6 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 			},
 		},
 		StoragePolicies: []string{vcd.config.Tm.VcenterStorageProfile},
-		IsEnabled:       true,
 	}
 
 	region, err = vcd.client.CreateRegion(r)
@@ -182,11 +205,11 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 
 // getOrCreateContentLibrary will check configuration file and create a Content Library if
 // not present in TM. Otherwise, it just retrieves it
-func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy, check *C) (*ContentLibrary, func()) {
+func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, check *C) (*ContentLibrary, func()) {
 	if vcd.config.Tm.ContentLibrary == "" {
 		check.Fatal("testing configuration property 'tm.contentLibrary' is required")
 	}
-	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary)
+	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary, nil)
 	if err == nil {
 		return cl, func() {}
 	}
@@ -197,13 +220,13 @@ func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy,
 	payload := types.ContentLibrary{
 		Name: vcd.config.Tm.ContentLibrary,
 		StorageClasses: types.OpenApiReferences{{
-			Name: storagePolicy.RegionStoragePolicy.Name,
-			ID:   storagePolicy.RegionStoragePolicy.ID,
+			Name: storageClass.StorageClass.Name,
+			ID:   storageClass.StorageClass.ID,
 		}},
 		Description: check.TestName(),
 	}
 
-	contentLibrary, err := vcd.client.CreateContentLibrary(&payload)
+	contentLibrary, err := vcd.client.CreateContentLibrary(&payload, nil)
 	check.Assert(err, IsNil)
 	check.Assert(contentLibrary, NotNil)
 	contentLibraryCreated := true
@@ -213,7 +236,7 @@ func getOrCreateContentLibrary(vcd *TestVCD, storagePolicy *RegionStoragePolicy,
 		if !contentLibraryCreated {
 			return
 		}
-		err = contentLibrary.Delete()
+		err = contentLibrary.Delete(true, true)
 		check.Assert(err, IsNil)
 	}
 }
@@ -223,6 +246,7 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 		Name:          check.TestName(),
 		DisplayName:   check.TestName(),
 		CanManageOrgs: canManageOrgs,
+		IsEnabled:     true,
 	}
 	tmOrg, err := vcd.client.CreateTmOrg(cfg)
 	check.Assert(err, IsNil)
@@ -231,7 +255,161 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 	PrependToCleanupListOpenApi(tmOrg.TmOrg.ID, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointOrgs+tmOrg.TmOrg.ID)
 
 	return tmOrg, func() {
+		if tmOrg.TmOrg.IsEnabled {
+			err = tmOrg.Disable()
+			check.Assert(err, IsNil)
+		}
 		err = tmOrg.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+// Creates a VDC (Region Quota) for testing in Tenant Manager and configures it with
+// the first found VM class and the configured Storage Class.
+func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*TmVdc, func()) {
+	if vcd.config.Tm.StorageClass == "" {
+		check.Fatal("testing configuration property 'tm.storageClass' is required")
+	}
+	if org == nil || org.TmOrg == nil {
+		check.Fatal("an Organization is required to create the Region Quota")
+	}
+	if region == nil || region.Region == nil {
+		check.Fatal("a Region is required to create the Region Quota")
+	}
+	regionZones, err := region.GetAllZones(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(regionZones) > 0, Equals, true)
+
+	vmClasses, err := region.GetAllVmClasses(nil)
+	check.Assert(err, IsNil)
+	check.Assert(len(vmClasses) > 0, Equals, true)
+
+	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.StorageClass)
+	check.Assert(err, IsNil)
+	check.Assert(sp, NotNil)
+
+	cfg := &types.TmVdc{
+		Name: fmt.Sprintf("%s_%s", org.TmOrg.Name, region.Region.Name),
+		Org: &types.OpenApiReference{
+			Name: org.TmOrg.Name,
+			ID:   org.TmOrg.ID,
+		},
+		Region: &types.OpenApiReference{
+			Name: region.Region.Name,
+			ID:   region.Region.ID,
+		},
+		Supervisors: region.Region.Supervisors,
+		ZoneResourceAllocation: []*types.TmVdcZoneResourceAllocation{{
+			Zone: &types.OpenApiReference{ID: regionZones[0].Zone.ID},
+			ResourceAllocation: types.TmVdcResourceAllocation{
+				CPUReservationMHz:    100,
+				CPULimitMHz:          500,
+				MemoryReservationMiB: 256,
+				MemoryLimitMiB:       512,
+			},
+		}},
+	}
+	vdc, err := vcd.client.CreateTmVdc(cfg)
+	check.Assert(err, IsNil)
+	check.Assert(vdc, NotNil)
+
+	PrependToCleanupListOpenApi(vdc.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+vdc.TmVdc.ID)
+
+	err = vdc.AssignVmClasses(&types.RegionVirtualMachineClasses{
+		Values: types.OpenApiReferences{{Name: vmClasses[0].Name, ID: vmClasses[0].ID}},
+	})
+	check.Assert(err, IsNil)
+	_, err = vdc.CreateStoragePolicies(&types.VirtualDatacenterStoragePolicies{
+		Values: []types.VirtualDatacenterStoragePolicy{
+			{
+				RegionStoragePolicy: types.OpenApiReference{
+					ID: sp.RegionStoragePolicy.ID,
+				},
+				StorageLimitMiB: 100,
+				VirtualDatacenter: types.OpenApiReference{
+					ID: vdc.TmVdc.ID,
+				},
+			},
+		},
+	})
+	check.Assert(err, IsNil)
+
+	return vdc, func() {
+		err = vdc.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+func createTmIpSpace(vcd *TestVCD, region *Region, check *C, nameSuffix, octet3 string) (*TmIpSpace, func()) {
+	ipSpaceType := &types.TmIpSpace{
+		Name:        check.TestName() + "-" + nameSuffix,
+		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
+		Description: check.TestName(),
+		DefaultQuota: types.TmIpSpaceDefaultQuota{
+			MaxCidrCount:  3,
+			MaxIPCount:    -1,
+			MaxSubnetSize: 24,
+		},
+		ExternalScopeCidr: fmt.Sprintf("12.12.%s.0/30", octet3),
+		InternalScopeCidrBlocks: []types.TmIpSpaceInternalScopeCidrBlocks{
+			{
+				Cidr: fmt.Sprintf("10.0.%s.0/24", octet3),
+			},
+		},
+	}
+
+	ipSpace, err := vcd.client.CreateTmIpSpace(ipSpaceType)
+	check.Assert(err, IsNil)
+	check.Assert(ipSpace, NotNil)
+	AddToCleanupListOpenApi(ipSpace.TmIpSpace.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmIpSpaces+ipSpace.TmIpSpace.ID)
+
+	return ipSpace, func() {
+		printVerbose("# Deleting IP Space %s\n", ipSpace.TmIpSpace.Name)
+		err = ipSpace.Delete()
+		check.Assert(err, IsNil)
+	}
+}
+
+func createTmProviderGateway(vcd *TestVCD, region *Region, check *C) (*TmProviderGateway, func()) {
+	ipSpace, ipSpaceCleanup1 := createTmIpSpace(vcd, region, check, "1", "0")
+
+	t0ByNameInRegion, err := vcd.client.GetTmTier0GatewayWithContextByName(vcd.config.Tm.NsxtTier0Gateway, region.Region.ID, false)
+	check.Assert(err, IsNil)
+	check.Assert(t0ByNameInRegion, NotNil)
+
+	t := &types.TmProviderGateway{
+		Name:        check.TestName(),
+		Description: check.TestName(),
+		BackingType: "NSX_TIER0",
+		BackingRef:  types.OpenApiReference{ID: t0ByNameInRegion.TmTier0Gateway.ID},
+		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
+		IPSpaceRefs: []types.OpenApiReference{{
+			ID: ipSpace.TmIpSpace.ID,
+		}},
+	}
+
+	pg, err := vcd.client.CreateTmProviderGateway(t)
+	check.Assert(err, IsNil)
+	check.Assert(pg, NotNil)
+	AddToCleanupListOpenApi(pg.TmProviderGateway.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmProviderGateways+pg.TmProviderGateway.ID)
+
+	return pg, func() {
+		printVerbose("# Deleting Provider Gateway %s\n", pg.TmProviderGateway.Name)
+		err = pg.Delete()
+		check.Assert(err, IsNil)
+
+		ipSpaceCleanup1()
+	}
+}
+
+func setOrgShortLogname(vcd *TestVCD, org *TmOrg, check *C) func() {
+	t := &types.TmOrgNetworkingSettings{OrgNameForLogs: "test"}
+	_, err := org.UpdateOrgNetworkingSettings(t)
+	check.Assert(err, IsNil)
+
+	return func() {
+		t := &types.TmOrgNetworkingSettings{OrgNameForLogs: ""}
+		_, err := org.UpdateOrgNetworkingSettings(t)
 		check.Assert(err, IsNil)
 	}
 }

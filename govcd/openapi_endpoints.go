@@ -157,18 +157,29 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNsxtTier0RouterInterfaces: "38.0",
 
 	// VCF
-	types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies:   "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointStorageClasses:          "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries:        "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems:     "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItemFiles: "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers:             "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointRegions:                 "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointSupervisors:             "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointSupervisorZones:         "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointZones:                   "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs:                  "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces:              "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies:                  "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointStorageClasses:                         "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries:                       "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems:                    "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItemFiles:                "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers:                            "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointRegions:                                "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointSupervisors:                            "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointSupervisorZones:                        "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointZones:                                  "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs:                                 "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVmClasses:                            "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses:                        "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies:                   "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces:                             "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways:                     "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations:                  "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClusters:                         "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClusterTransportNodeStatus:       "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClustersSync:                     "40.0",
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmOrgNetworkingSettings:       "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettings:           "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile: "40.0",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
@@ -257,6 +268,9 @@ var endpointElevatedApiVersions = map[string][]string{
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointOrgs: {
 		"40.0", // TM Orgs
+	},
+	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers: {
+		"40.0", // TM Tier 0 Gateways
 	},
 }
 

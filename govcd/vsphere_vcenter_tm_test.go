@@ -44,6 +44,10 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	// Add to cleanup list
 	PrependToCleanupListOpenApi(v.VSphereVCenter.VcId, check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+v.VSphereVCenter.VcId)
 
+	printVerbose("# Waiting for listener status to become 'CONNECTED'\n")
+	err = waitForListenerStatusConnected(v)
+	check.Assert(err, IsNil)
+
 	err = v.RefreshVcenter()
 	check.Assert(err, IsNil)
 
@@ -79,6 +83,24 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	notFoundByName, err := vcd.client.GetVCenterByName(cfg.Name)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
+
+	// Try to create async version
+	task, err := vcd.client.CreateVcenterAsync(cfg)
+	check.Assert(err, IsNil)
+	check.Assert(task, NotNil)
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	byIdAsync, err := vcd.client.GetVCenterById(task.Task.Owner.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byIdAsync.VSphereVCenter.Name, Equals, cfg.Name)
+	// Add to cleanup list
+	PrependToCleanupListOpenApi(byIdAsync.VSphereVCenter.VcId, check.TestName()+"-async", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+v.VSphereVCenter.VcId)
+
+	err = byIdAsync.Disable()
+	check.Assert(err, IsNil)
+	err = byIdAsync.Delete()
+	check.Assert(err, IsNil)
 
 	// Remove trusted cert if it was created
 	if trustedCert != nil {

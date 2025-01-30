@@ -108,7 +108,7 @@ func (vcdClient *VCDClient) GetTmVdcById(id string) (*TmVdc, error) {
 }
 
 // Update Tenant Manager VDC
-func (o *TmVdc) Update(TmVdcConfig *types.TmVdc) (*TmVdc, error) {
+func (o *TmVdc) Update(tmVdcConfig *types.TmVdc) (*TmVdc, error) {
 	c := crudConfig{
 		entityLabel:    labelTmOrgVdc,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
@@ -116,7 +116,7 @@ func (o *TmVdc) Update(TmVdcConfig *types.TmVdc) (*TmVdc, error) {
 		requiresTm:     true,
 	}
 	outerType := TmVdc{vcdClient: o.vcdClient}
-	return updateOuterEntity(&o.vcdClient.Client, outerType, c, TmVdcConfig)
+	return updateOuterEntity(&o.vcdClient.Client, outerType, c, tmVdcConfig)
 }
 
 // Delete Tenant Manager VDC
@@ -128,4 +128,20 @@ func (o *TmVdc) Delete() error {
 		requiresTm:     true,
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
+}
+
+// AssignVmClasses assigns VM Classes to the receiver VDC
+func (o *TmVdc) AssignVmClasses(vmClasses *types.RegionVirtualMachineClasses) error {
+	c := crudConfig{
+		entityLabel:    labelTmOrgVdc,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses,
+		endpointParams: []string{o.TmVdc.ID},
+		requiresTm:     true,
+	}
+	// It's a PUT call with OpenAPI references, so we reuse generic functions for simplicity
+	_, err := updateInnerEntity[types.RegionVirtualMachineClasses](&o.vcdClient.Client, c, vmClasses)
+	if err != nil {
+		return err
+	}
+	return nil
 }

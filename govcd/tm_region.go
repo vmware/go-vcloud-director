@@ -27,6 +27,7 @@ func (vcdClient *VCDClient) CreateRegion(config *types.Region) (*Region, error) 
 	c := crudConfig{
 		entityLabel: labelRegion,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointRegions,
+		requiresTm:  true,
 	}
 	outerType := Region{vcdClient: vcdClient}
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
@@ -38,6 +39,7 @@ func (vcdClient *VCDClient) GetAllRegions(queryParameters url.Values) ([]*Region
 		entityLabel:     labelRegion,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointRegions,
 		queryParameters: queryParameters,
+		requiresTm:      true,
 	}
 
 	outerType := Region{vcdClient: vcdClient}
@@ -72,6 +74,7 @@ func (vcdClient *VCDClient) GetRegionById(id string) (*Region, error) {
 		entityLabel:    labelRegion,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointRegions,
 		endpointParams: []string{id},
+		requiresTm:     true,
 	}
 
 	outerType := Region{vcdClient: vcdClient}
@@ -84,6 +87,7 @@ func (r *Region) Update(RegionConfig *types.Region) (*Region, error) {
 		entityLabel:    labelRegion,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointRegions,
 		endpointParams: []string{r.Region.ID},
+		requiresTm:     true,
 	}
 	outerType := Region{vcdClient: r.vcdClient}
 	return updateOuterEntity(&r.vcdClient.Client, outerType, c, RegionConfig)
@@ -95,6 +99,18 @@ func (r *Region) Delete() error {
 		entityLabel:    labelRegion,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointRegions,
 		endpointParams: []string{r.Region.ID},
+		requiresTm:     true,
 	}
 	return deleteEntityById(&r.vcdClient.Client, c)
+}
+
+// GetAllVmClasses retrieves all VM Classes within a particular Region
+func (r *Region) GetAllVmClasses(queryParameters url.Values) ([]*types.RegionVirtualMachineClass, error) {
+	c := crudConfig{
+		entityLabel:     labelRegion,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmVmClasses,
+		queryParameters: queryParameterFilterAnd("region.id=="+r.Region.ID, queryParameters),
+		requiresTm:      true,
+	}
+	return getAllInnerEntities[types.RegionVirtualMachineClass](&r.vcdClient.Client, c)
 }

@@ -37,10 +37,10 @@ func (vcd *TestVCD) Test_StorageClass(check *C) {
 	check.Assert(rspByName, NotNil)
 	check.Assert(*rspByName.StorageClass, DeepEquals, *rspById.StorageClass)
 
-	rspByName2, err := region.GetStorageClassByName(vcd.config.Tm.RegionStoragePolicy)
+	rspByName2, err := region.GetStorageClassByName(vcd.config.Tm.StorageClass)
 	check.Assert(err, IsNil)
 	check.Assert(rspByName2, NotNil)
-	check.Assert(rspByName2.StorageClass.Name, Equals, vcd.config.Tm.RegionStoragePolicy)
+	check.Assert(rspByName2.StorageClass.Name, Equals, vcd.config.Tm.StorageClass)
 
 	// Check ENF errors
 	_, err = vcd.client.GetStorageClassById("urn:vcloud:storageClass:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")

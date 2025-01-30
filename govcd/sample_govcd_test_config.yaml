@@ -303,10 +303,12 @@ tm:
   createRegion: true
   # An existing Region to create VDCs, Content Libraries...
   region: my-region
-  # An existing Region Storage Policy to create Content Libraries, Regions...
-  regionStoragePolicy: "vSAN Default Storage Policy"
+  # An existing Storage Class (belonging to the specified "region") to create Content Libraries, Regions...
+  storageClass: "vSAN Default Storage Policy"
   # An existing Content Library to create Content Library Items
   contentLibrary: "My Content Library"
+  # URL of a publisher Content Library (ie: from vCenter) to test Content library subscription
+  subscriptionContentLibraryUrl: "https://my-vcenter.com/cls/vcsp/lib/608ca073-7d94-4544-9d30-bbae455baa4d/lib.json"
   createVcenter: true # boolean value if the vCenter test should be executed
   vcenterUsername: username for vCenter auth
   vcenterPassword: password for vCenter auth
@@ -315,3 +317,4 @@ tm:
   nsxtManagerUsername: username for NSX-T Manager
   nsxtManagerPassword: password for NSX-T Manager
   nsxtManagerUrl: https://HOST
+  nsxtTier0Gateway: tier0gateway

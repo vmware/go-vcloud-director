@@ -9,7 +9,6 @@ package govcd
 import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
-	"strings"
 )
 
 // TODO: TM: Test upload failures:
@@ -31,11 +30,11 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
-	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.RegionStoragePolicy)
+	sc, err := region.GetStorageClassByName(vcd.config.Tm.StorageClass)
 	check.Assert(err, IsNil)
-	check.Assert(sp, NotNil)
+	check.Assert(sc, NotNil)
 
-	cl, clCleanup := getOrCreateContentLibrary(vcd, sp, check)
+	cl, clCleanup := getOrCreateContentLibrary(vcd, sc, check)
 	check.Assert(err, IsNil)
 	defer clCleanup()
 
@@ -49,6 +48,15 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cli, NotNil)
 	AddToCleanupListOpenApi(cli.ContentLibraryItem.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraryItems+cli.ContentLibraryItem.ID)
+	check.Assert(cli.ContentLibraryItem.ItemType, Equals, "TEMPLATE")
+	check.Assert(cli.ContentLibraryItem.Name, Equals, check.TestName())
+	check.Assert(cli.ContentLibraryItem.Description, Equals, check.TestName())
+	check.Assert(cli.ContentLibraryItem.Version, Equals, 1)
+	check.Assert(cli.ContentLibraryItem.CreationDate, Not(Equals), "")
+
+	// Content library deletion should fail with force=false and recursive=false
+	err = cl.Delete(false, false)
+	check.Assert(err, NotNil)
 
 	// Defer deletion for a correct cleanup
 	defer func() {
@@ -59,17 +67,20 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	allClis, err := cl.GetAllContentLibraryItems(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allClis) > 0, Equals, true)
-	found := false
-	for _, i := range allClis {
-		if i.ContentLibraryItem.ID == cli.ContentLibraryItem.ID {
-			found = true
+	found := -1
+	for i, k := range allClis {
+		if k.ContentLibraryItem.ID == cli.ContentLibraryItem.ID {
+			found = i
 		}
 	}
-	check.Assert(found, Equals, true)
+	check.Assert(found, Not(Equals), -1)
+	check.Assert(allClis[found], NotNil)
+	check.Assert(*allClis[found].ContentLibraryItem, DeepEquals, *cli.ContentLibraryItem)
 
 	obtainedCliByName, err := cl.GetContentLibraryItemByName(check.TestName())
 	check.Assert(err, IsNil)
 	check.Assert(obtainedCliByName, NotNil)
+	check.Assert(*obtainedCliByName.ContentLibraryItem, DeepEquals, *cli.ContentLibraryItem)
 
 	obtainedCliById, err := cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
 	check.Assert(err, IsNil)
@@ -86,14 +97,10 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 
 	_, err = cl.GetContentLibraryItemById("urn:vcloud:contentLibraryItem:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
-	// TODO: TM: Should return ENF, but throws a 500. The API will eventually be fixed
-	check.Assert(strings.Contains(err.Error(), "INTERNAL_SERVER_ERROR"), Equals, true)
-	// check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(ContainsNotFound(err), Equals, true)
 
 	_, err = vcd.client.GetContentLibraryItemById("urn:vcloud:contentLibraryItem:aaaaaaaa-1111-0000-cccc-bbbb1111dddd")
-	// TODO: TM: Should return ENF, but throws a 500. The API will eventually be fixed
-	check.Assert(strings.Contains(err.Error(), "INTERNAL_SERVER_ERROR"), Equals, true)
-	// check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(ContainsNotFound(err), Equals, true)
 }
 
 // Test_ContentLibraryItemIso tests CRUD operations for a Content Library Item when uploading an ISO file
@@ -112,11 +119,11 @@ func (vcd *TestVCD) Test_ContentLibraryItemIso(check *C) {
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
-	sp, err := region.GetStoragePolicyByName(vcd.config.Tm.RegionStoragePolicy)
+	sc, err := region.GetStorageClassByName(vcd.config.Tm.StorageClass)
 	check.Assert(err, IsNil)
-	check.Assert(sp, NotNil)
+	check.Assert(sc, NotNil)
 
-	cl, clCleanup := getOrCreateContentLibrary(vcd, sp, check)
+	cl, clCleanup := getOrCreateContentLibrary(vcd, sc, check)
 	check.Assert(err, IsNil)
 	defer clCleanup()
 

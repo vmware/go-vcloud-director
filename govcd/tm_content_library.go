@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/url"
-	"strings"
 )
 
 const labelContentLibrary = "Content Library"
@@ -27,53 +26,55 @@ func (g ContentLibrary) wrap(inner *types.ContentLibrary) *ContentLibrary {
 	return &g
 }
 
-// CreateContentLibrary creates a Content Library
-// TODO: TM: This one probably needs TenantContext, as can be created as Tenants
-func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary) (*ContentLibrary, error) {
-	if !vcdClient.Client.IsTm() {
-		return nil, fmt.Errorf("creating Content Libraries is only supported in TM")
-	}
+// CreateContentLibrary creates a Content Library with the given tenant context. If tenant context is nil,
+// it assumes that the Content Library to create is of Provider type.
+// TODO: TM: Subscribed catalogs create Tasks for every OVA from the publisher. These are ignored at the moment, so a better mechanism must be implemented (like CreateCatalogFromSubscription for VCD catalogs)
+func (vcdClient *VCDClient) CreateContentLibrary(config *types.ContentLibrary, ctx *TenantContext) (*ContentLibrary, error) {
 	c := crudConfig{
-		entityLabel: labelContentLibrary,
-		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
+		entityLabel:      labelContentLibrary,
+		endpoint:         types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
+		additionalHeader: getTenantContextHeader(ctx),
+		requiresTm:       true,
 	}
 	outerType := ContentLibrary{vcdClient: vcdClient}
-	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
-	//        - Problem: When creating a Content Library, it always throws an error 500: "Failed to validate Content Library UUID..."
-	//        - Solution: Retry fetching the entity again with the name provided
-	result, err := createOuterEntity(&vcdClient.Client, outerType, c, config)
-	if err != nil {
-		// The error we want is like:
-		// Failed to validate Content Library UUID f215ce12-08ac-488e-bbfb-e13c5bad461b, error: not found
-		if !strings.Contains(err.Error(), "Failed to validate Content Library UUID") {
-			return nil, err
-		}
-		result, err = vcdClient.GetContentLibraryByName(config.Name)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
+	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+}
+
+// CreateContentLibrary creates a Content Library that belongs to the receiver Organization.
+func (org *TmOrg) CreateContentLibrary(config *types.ContentLibrary) (*ContentLibrary, error) {
+	return org.vcdClient.CreateContentLibrary(config, &TenantContext{
+		OrgId:   org.TmOrg.ID,
+		OrgName: org.TmOrg.Name,
+	})
 }
 
 // GetAllContentLibraries retrieves all Content Libraries with the given query parameters, which allow setting filters
-// and other constraints
-func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values) ([]*ContentLibrary, error) {
-	if !vcdClient.Client.IsTm() {
-		return nil, fmt.Errorf("retrieving Content Libraries is only supported in TM")
-	}
+// and other constraints. Tenant context can be nil, or can be used to retrieve the Content Libraries as a tenant.
+func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values, ctx *TenantContext) ([]*ContentLibrary, error) {
 	c := crudConfig{
-		entityLabel:     labelContentLibrary,
-		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
-		queryParameters: queryParameters,
+		entityLabel:      labelContentLibrary,
+		endpoint:         types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
+		queryParameters:  queryParameters,
+		additionalHeader: getTenantContextHeader(ctx),
+		requiresTm:       true,
 	}
 
 	outerType := ContentLibrary{vcdClient: vcdClient}
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
-// GetContentLibraryByName retrieves a Content Library with the given name
-func (vcdClient *VCDClient) GetContentLibraryByName(name string) (*ContentLibrary, error) {
+// GetAllContentLibraries retrieves all Content Libraries that belong to the receiver Organization
+// and with the given query parameters, which allow setting filters and other constraints
+func (org *TmOrg) GetAllContentLibraries(queryParameters url.Values) ([]*ContentLibrary, error) {
+	return org.vcdClient.GetAllContentLibraries(queryParameters, &TenantContext{
+		OrgId:   org.TmOrg.ID,
+		OrgName: org.TmOrg.Name,
+	})
+}
+
+// GetContentLibraryByName retrieves a Content Library with the given name. Tenant context can be nil, or can be used to
+// retrieve the Content Library as a tenant.
+func (vcdClient *VCDClient) GetContentLibraryByName(name string, ctx *TenantContext) (*ContentLibrary, error) {
 	if !vcdClient.Client.IsTm() {
 		return nil, fmt.Errorf("retrieving Content Libraries is only supported in TM")
 	}
@@ -85,7 +86,7 @@ func (vcdClient *VCDClient) GetContentLibraryByName(name string) (*ContentLibrar
 	queryParams := url.Values{}
 	queryParams.Add("filter", "name=="+name)
 
-	filteredEntities, err := vcdClient.GetAllContentLibraries(queryParams)
+	filteredEntities, err := vcdClient.GetAllContentLibraries(queryParams, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -95,47 +96,65 @@ func (vcdClient *VCDClient) GetContentLibraryByName(name string) (*ContentLibrar
 		return nil, err
 	}
 
-	return vcdClient.GetContentLibraryById(singleEntity.ContentLibrary.ID)
+	return vcdClient.GetContentLibraryById(singleEntity.ContentLibrary.ID, ctx)
+}
+
+// GetContentLibraryByName retrieves a Content Library with the given name that belongs to the receiver Organization.
+func (org *TmOrg) GetContentLibraryByName(name string) (*ContentLibrary, error) {
+	return org.vcdClient.GetContentLibraryByName(name, &TenantContext{
+		OrgId:   org.TmOrg.ID,
+		OrgName: org.TmOrg.Name,
+	})
 }
 
 // GetContentLibraryById retrieves a Content Library with the given ID
-func (vcdClient *VCDClient) GetContentLibraryById(id string) (*ContentLibrary, error) {
-	if !vcdClient.Client.IsTm() {
-		return nil, fmt.Errorf("retrieving Content Libraries is only supported in TM")
-	}
-
+func (vcdClient *VCDClient) GetContentLibraryById(id string, ctx *TenantContext) (*ContentLibrary, error) {
 	c := crudConfig{
-		entityLabel:    labelContentLibrary,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
-		endpointParams: []string{id},
+		entityLabel:      labelContentLibrary,
+		endpoint:         types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
+		endpointParams:   []string{id},
+		additionalHeader: getTenantContextHeader(ctx),
+		requiresTm:       true,
 	}
 
 	outerType := ContentLibrary{vcdClient: vcdClient}
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
-// Update updates an existing Content Library with the given configuration
-// TODO: TM: Not supported in UI yet
-func (o *ContentLibrary) Update(contentLibraryConfig *types.ContentLibrary) (*ContentLibrary, error) {
-	return nil, fmt.Errorf("not supported")
+// GetContentLibraryById retrieves a Content Library with the given ID that belongs to the receiver Organization.
+func (org *TmOrg) GetContentLibraryById(id string) (*ContentLibrary, error) {
+	return org.vcdClient.GetContentLibraryById(id, &TenantContext{
+		OrgId:   org.TmOrg.ID,
+		OrgName: org.TmOrg.Name,
+	})
 }
 
-// Delete deletes the receiver Content Library
-func (o *ContentLibrary) Delete() error {
+// Update updates an existing Content Library with the given configuration
+func (o *ContentLibrary) Update(contentLibraryConfig *types.ContentLibrary) (*ContentLibrary, error) {
 	c := crudConfig{
 		entityLabel:    labelContentLibrary,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
 		endpointParams: []string{o.ContentLibrary.ID},
+		requiresTm:     true,
 	}
-	err := deleteEntityById(&o.vcdClient.Client, c)
-	// FIXME: TM: Workaround, this should be eventually refactored to match other OpenAPI endpoints.
-	//        - Problem: When deleting a Content Library, it always throws an error 500: "Failed to validate Content Library UUID..."
-	//        - Solution: Ignore this error, the Content Library is deleted correctly
-	if err != nil {
-		if strings.Contains(err.Error(), "Failed to validate Content Library UUID") {
-			return nil
-		}
-		return err
+	outerType := ContentLibrary{vcdClient: o.vcdClient}
+	return updateOuterEntity(&o.vcdClient.Client, outerType, c, contentLibraryConfig)
+}
+
+// Delete deletes the receiver Content Library.
+// The 'recursive' flag deletes the Content Library, including its content library items, in a single operation.
+// The 'force' flag forcefully deletes the Content Library and its items.
+func (o *ContentLibrary) Delete(force, recursive bool) error {
+	queryParams := url.Values{}
+	queryParams.Add("force", fmt.Sprintf("%t", force))
+	queryParams.Add("recursive", fmt.Sprintf("%t", recursive))
+
+	c := crudConfig{
+		entityLabel:     labelContentLibrary,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
+		endpointParams:  []string{o.ContentLibrary.ID},
+		queryParameters: queryParams,
+		requiresTm:      true,
 	}
-	return nil
+	return deleteEntityById(&o.vcdClient.Client, c)
 }
