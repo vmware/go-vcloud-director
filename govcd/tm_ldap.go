@@ -49,7 +49,7 @@ func (vcdClient *VCDClient) TmLdapConfigure(settings *types.TmLdapSettings, trus
 		// If SSL is configured and retrieved settings are empty, we need to check the certificate
 		needsCheckCert := settings.IsSsl && existing.HostName == ""
 		if needsCheckCert {
-			trustedCert, err = trustCertificate(vcdClient, settings.HostName, connResult.TargetProbe.CertificateChain)
+			trustedCert, err = trustCertificate(vcdClient, nil, settings.HostName, connResult.TargetProbe.CertificateChain)
 			if err != nil {
 				return nil, fmt.Errorf("could not trust certificate for %s, Connection result: '%s', SSL result: '%s': %s",
 					settings.HostName, connResult.TargetProbe.ConnectionResult, connResult.TargetProbe.SSLResult, err)
@@ -72,31 +72,40 @@ func (vcdClient *VCDClient) TmLdapConfigure(settings *types.TmLdapSettings, trus
 }
 
 // LdapConfigure configures LDAP for the given organization
-func (org *TmOrg) LdapConfigure(settings *types.OrgLdapSettingsType, autoTrustCertificate bool) (*types.OrgLdapSettingsType, error) {
+func (org *TmOrg) LdapConfigure(settings *types.OrgLdapSettingsType, trustSslCertificate bool) (*types.OrgLdapSettingsType, error) {
+	var trustedCert *TrustedCertificate
+
 	if settings == nil {
 		return nil, fmt.Errorf("LDAP settings cannot be nil")
 	}
 
-	// Validate against LDAP only if CUSTOM mode is selected (as it's the only one that configures an LDAP server)
+	// Validate the connection with LDAP only when types.LdapModeCustom mode is selected (as it's the only one that configures an LDAP server)
 	if settings.CustomOrgLdapSettings != nil && settings.OrgLdapMode == types.LdapModeCustom {
 		connResult, err := ldapValidateConnection(&org.vcdClient.Client, settings.CustomOrgLdapSettings.HostName, settings.CustomOrgLdapSettings.Port, settings.CustomOrgLdapSettings.IsSsl)
 		if err != nil {
 			return nil, err
 		}
 
-		// We retrieve LDAP configuration to check if the given settings are for a fresh connection, or to override
-		// an existing one
-		if autoTrustCertificate && connResult.TargetProbe.SSLResult == types.UntrustedCertificate {
+		if !trustSslCertificate && connResult.TargetProbe.SSLResult == types.UntrustedCertificate {
+			return nil, fmt.Errorf("cannot configure LDAP '%s:%d' over SSL without trusting the SSL certificate", settings.CustomOrgLdapSettings.HostName, settings.CustomOrgLdapSettings.Port)
+		}
+
+		if trustSslCertificate && connResult.TargetProbe.SSLResult == types.UntrustedCertificate {
+			// We retrieve existing LDAP configuration to check if the given input settings are for a fresh connection, or to override
+			// an existing one
 			existing, err := org.GetLdapConfiguration()
 			if err != nil {
 				return nil, fmt.Errorf("error retrieving existing LDAP configuration: %s", err)
 			}
 
-			// Settings are LDAP=CUSTOM and CustomOrgLdapSettings is not nil.
-			// If existing LDAP config is new (different from CUSTOM), we need to check certificate
-			needsCheckCert := settings.CustomOrgLdapSettings.IsSsl && existing.OrgLdapMode != types.LdapModeCustom && existing.CustomOrgLdapSettings != nil
+			// Pre-condition here: Settings are always LDAP=CUSTOM and CustomOrgLdapSettings is not nil.
+			// Just check if existing LDAP config is new (different from CUSTOM), as we need to check certificate
+			needsCheckCert := settings.CustomOrgLdapSettings.IsSsl && existing.OrgLdapMode != types.LdapModeCustom
 			if needsCheckCert {
-				_, err = trustCertificate(org.vcdClient, settings.CustomOrgLdapSettings.HostName, connResult.TargetProbe.CertificateChain)
+				trustedCert, err = trustCertificate(org.vcdClient, &TenantContext{
+					OrgId:   org.TmOrg.ID,
+					OrgName: org.TmOrg.Name,
+				}, settings.CustomOrgLdapSettings.HostName, connResult.TargetProbe.CertificateChain)
 				if err != nil {
 					return nil, fmt.Errorf("could not trust certificate for %s, Connection result: '%s', SSL result: '%s': %s",
 						settings.CustomOrgLdapSettings.HostName, connResult.TargetProbe.ConnectionResult, connResult.TargetProbe.SSLResult, err)
@@ -107,7 +116,13 @@ func (org *TmOrg) LdapConfigure(settings *types.OrgLdapSettingsType, autoTrustCe
 
 	result, err := ldapExecuteRequest(org.vcdClient, org.TmOrg.ID, http.MethodPut, settings)
 	if err != nil {
-		return nil, err
+		// An error happened, so we must clean the trusted certificate
+		if trustedCert != nil {
+			innerErr := trustedCert.Delete()
+			if innerErr != nil {
+				return nil, fmt.Errorf("%s - Also, cleanup of SSL certificate '%s' failed: %s", err, trustedCert.TrustedCertificate.ID, innerErr)
+			}
+		}
 	}
 	return result.(*types.OrgLdapSettingsType), nil
 }
@@ -118,6 +133,7 @@ func (vcdClient *VCDClient) TmLdapDisable() error {
 	if !vcdClient.Client.IsTm() {
 		return fmt.Errorf("this method is only supported in TM")
 	}
+	// It is a different endpoint, so we don't need to check certificates.
 	_, err := ldapExecuteRequest(vcdClient, "", http.MethodDelete, nil)
 	return err
 }
@@ -125,7 +141,7 @@ func (vcdClient *VCDClient) TmLdapDisable() error {
 // LdapDisable wraps LdapConfigure to disable LDAP configuration for the given organization
 // Disabling LDAP does not remove any trusted certificate.
 func (org *TmOrg) LdapDisable() error {
-	// For Orgs, deletion is PUT call with empty payload
+	// For Orgs, deletion is PUT call with empty payload. We don't need to check certificates.
 	_, err := ldapExecuteRequest(org.vcdClient, org.TmOrg.ID, http.MethodPut, &types.OrgLdapSettingsType{OrgLdapMode: types.LdapModeNone})
 	return err
 }

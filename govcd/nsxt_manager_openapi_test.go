@@ -27,7 +27,7 @@ func (vcd *TestVCD) Test_NsxtManagerOpenApi(check *C) {
 	// Certificate must be trusted before adding NSX-T Manager
 	url, err := url.Parse(cfg.Url)
 	check.Assert(err, IsNil)
-	trustedCert, err := vcd.client.AutoTrustHttpsCertificate(url)
+	trustedCert, err := vcd.client.AutoTrustHttpsCertificate(url, nil)
 	check.Assert(err, IsNil)
 	if trustedCert != nil {
 		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
