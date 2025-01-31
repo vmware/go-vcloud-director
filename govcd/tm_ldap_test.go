@@ -88,7 +88,15 @@ func (vcd *TestVCD) Test_TmLdapSystem(check *C) {
 
 		receivedSettings2, err := vcd.client.TmGetLdapConfiguration()
 		check.Assert(err, IsNil)
-		check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+		check.Assert(receivedSettings2, NotNil)
+		check.Assert(receivedSettings2, DeepEquals, receivedSettings)
+
+		// Update LDAP configuration. It should not trust any new certificate unless the host is changed
+		ldapSettings.MaxUserGroups = ldapSettings.MaxUserGroups + 1
+		receivedSettings2, err = vcd.client.TmLdapConfigure(&ldapSettings, t.isSsl)
+		check.Assert(err, IsNil)
+		check.Assert(receivedSettings2, NotNil)
+		check.Assert(receivedSettings2.MaxUserGroups, Equals, receivedSettings.MaxUserGroups+1)
 
 		// Clear LDAP configuration
 		err = vcd.client.TmLdapDisable()
@@ -100,7 +108,7 @@ func (vcd *TestVCD) Test_TmLdapSystem(check *C) {
 				"filter": []string{fmt.Sprintf("alias==*%s*", vcd.config.Tm.Ldap.Host)},
 			}, nil)
 			check.Assert(err, IsNil)
-			check.Assert(len(certs), Equals, 1)
+			check.Assert(len(certs), Equals, 1) // Important to check that only one certificate was added
 			err = certs[0].Delete()
 			check.Assert(err, IsNil)
 		}
@@ -190,7 +198,15 @@ func (vcd *TestVCD) Test_TmLdapOrg(check *C) {
 
 		receivedSettings2, err := org.GetLdapConfiguration()
 		check.Assert(err, IsNil)
-		check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+		check.Assert(receivedSettings2, NotNil)
+		check.Assert(receivedSettings2, DeepEquals, receivedSettings)
+
+		// Update LDAP configuration. It should not trust any new certificate unless the host is changed
+		ldapSettings.CustomOrgLdapSettings.SearchBase = vcd.config.Tm.Ldap.BaseDistinguishedName + ",DC=foo"
+		receivedSettings2, err = org.LdapConfigure(ldapSettings, t.isSsl)
+		check.Assert(err, IsNil)
+		check.Assert(receivedSettings2, NotNil)
+		check.Assert(receivedSettings2.CustomOrgLdapSettings.SearchBase, Equals, receivedSettings.CustomOrgLdapSettings.SearchBase+",DC=foo")
 
 		ldapSettings.OrgLdapMode = types.LdapModeSystem
 		ldapSettings.CustomOrgLdapSettings = nil
@@ -218,7 +234,7 @@ func (vcd *TestVCD) Test_TmLdapOrg(check *C) {
 				"filter": []string{fmt.Sprintf("alias==*%s*", vcd.config.Tm.Ldap.Host)},
 			})
 			check.Assert(err, IsNil)
-			check.Assert(len(certs), Equals, 1)
+			check.Assert(len(certs), Equals, 1) // Important to check that only one certificate was added
 			err = certs[0].Delete()
 			check.Assert(err, IsNil)
 		}
