@@ -27,9 +27,9 @@ func (g TrustedCertificate) wrap(inner *types.TrustedCertificate) *TrustedCertif
 	return &g
 }
 
-// AutoTrustCertificate will automatically trust certificate for a given endpoint
+// AutoTrustHttpsCertificate will automatically trust certificate for a given HTTPS endpoint
 // Note. The URL must be accessible
-func (vcdClient *VCDClient) AutoTrustCertificate(endpoint *url.URL) (*TrustedCertificate, error) {
+func (vcdClient *VCDClient) AutoTrustHttpsCertificate(endpoint *url.URL) (*TrustedCertificate, error) {
 	port, err := getEndpointPort(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("error getting port number for host '%s': %s", endpoint.Hostname(), err)
@@ -50,47 +50,53 @@ func (vcdClient *VCDClient) AutoTrustCertificate(endpoint *url.URL) (*TrustedCer
 
 	var trustedCert *TrustedCertificate
 	if res != nil && res.TargetProbe != nil && res.TargetProbe.SSLResult != "SUCCESS" {
-		if res.TargetProbe.SSLResult == "ERROR_UNTRUSTED_CERTIFICATE" {
-			// Need to trust certificate
-			cert := res.TargetProbe.CertificateChain
-			if cert == "" {
-				return nil, fmt.Errorf("error - certificate chain is empty. Connection result: '%s', SSL result: '%s'",
-					res.TargetProbe.ConnectionResult, res.TargetProbe.SSLResult)
-			}
-
-			// The CertificateChain may contain a single certificate or a chain of certificates.
-			// In case of a single certificate - only it should be submitted.
-			// In case of a chain - the last certificate is submitted to trust.
-			certCount := strings.Count(cert, "-----END CERTIFICATE-----")
-			var trust *types.TrustedCertificate
-
-			if certCount == 1 {
-				// Certificate
-				trust = &types.TrustedCertificate{
-					Alias:       fmt.Sprintf("%s_%s", endpoint.Hostname(), time.Now().UTC().Format(time.RFC3339)),
-					Certificate: cert,
-				}
-			} else {
-				splitCerts := strings.SplitAfter(cert, "-----END CERTIFICATE-----")
-				trust = &types.TrustedCertificate{
-					Alias:       fmt.Sprintf("ca_%s", time.Now().UTC().Format(time.RFC3339)),
-					Certificate: splitCerts[len(splitCerts)-2],
-				}
-			}
-
-			trustedCert, err = vcdClient.CreateTrustedCertificate(trust)
+		if res.TargetProbe.SSLResult == types.UntrustedCertificate {
+			trustedCert, err = trustCertificate(vcdClient, endpoint.Hostname(), res.TargetProbe.CertificateChain)
 			if err != nil {
-				return nil, fmt.Errorf("error trusting Certificate %s: %s", trust.Alias, err)
+				return nil, fmt.Errorf("could not trust certificate for %s, Connection result: '%s', SSL result: '%s': %s",
+					endpoint.Hostname(), res.TargetProbe.ConnectionResult, res.TargetProbe.SSLResult, err)
 			}
-
-			util.Logger.Printf("[DEBUG] Certificate trust established ID - %s, Alias - %s",
-				trustedCert.TrustedCertificate.ID, trustedCert.TrustedCertificate.Alias)
-
 		} else {
 			return nil, fmt.Errorf("SSL verification result - %s", res.TargetProbe.SSLResult)
 		}
-
 	}
+	return trustedCert, nil
+}
+
+// trustCertificate trusts the given certificate for the given endpoint
+func trustCertificate(vcdClient *VCDClient, hostname string, certificateChain string) (*TrustedCertificate, error) {
+	if certificateChain == "" {
+		return nil, fmt.Errorf("certificate chain is empty")
+	}
+
+	// The CertificateChain may contain a single certificate or a chain of certificates.
+	// In case of a single certificate - only it should be submitted.
+	// In case of a chain - the last certificate is submitted to trust.
+	certCount := strings.Count(certificateChain, "-----END CERTIFICATE-----")
+	var trust *types.TrustedCertificate
+
+	if certCount == 1 {
+		// Certificate
+		trust = &types.TrustedCertificate{
+			Alias:       fmt.Sprintf("%s_%s", hostname, time.Now().UTC().Format(time.RFC3339)),
+			Certificate: certificateChain,
+		}
+	} else {
+		splitCerts := strings.SplitAfter(certificateChain, "-----END CERTIFICATE-----")
+		trust = &types.TrustedCertificate{
+			Alias:       fmt.Sprintf("ca_%s", time.Now().UTC().Format(time.RFC3339)),
+			Certificate: splitCerts[len(splitCerts)-2],
+		}
+	}
+
+	trustedCert, err := vcdClient.CreateTrustedCertificate(trust)
+	if err != nil {
+		return nil, fmt.Errorf("error trusting Certificate %s: %s", trust.Alias, err)
+	}
+
+	util.Logger.Printf("[DEBUG] Certificate trust established ID - %s, Alias - %s",
+		trustedCert.TrustedCertificate.ID, trustedCert.TrustedCertificate.Alias)
+
 	return trustedCert, nil
 }
 

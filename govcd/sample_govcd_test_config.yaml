@@ -318,3 +318,12 @@ tm:
   nsxtManagerPassword: password for NSX-T Manager
   nsxtManagerUrl: https://HOST
   nsxtTier0Gateway: tier0gateway
+
+  ldap:
+    host: my.ldap.server.net
+    port: 636
+    isSsl: true
+    username: admin
+    password: StrongPassword
+    baseDistinguishedName: OU=demo,DC=foo,DC=bar,DC=test,DC=net
+    type: ACTIVE_DIRECTORY
