@@ -15,8 +15,9 @@ import (
 	"strings"
 )
 
-// TmLdapConfigure configures LDAP for the Tenant Manager "System" organization. If autoTrustCertificate=true,
-// it will automatically trust the certificate of LDAP server, only if needed (specified IsSsl=true in settings)
+// TmLdapConfigure configures LDAP for the Tenant Manager "System" organization. If trustSslCertificate=true,
+// it will automatically trust the certificate of LDAP server, only if settings.IsSsl=true.
+// If settings.IsSsl=true and trustSslCertificate=false this method returns an error
 func (vcdClient *VCDClient) TmLdapConfigure(settings *types.TmLdapSettings, trustSslCertificate bool) (*types.TmLdapSettings, error) {
 	var trustedCert *TrustedCertificate
 
@@ -71,7 +72,9 @@ func (vcdClient *VCDClient) TmLdapConfigure(settings *types.TmLdapSettings, trus
 	return result.(*types.TmLdapSettings), nil
 }
 
-// LdapConfigure configures LDAP for the given organization
+// LdapConfigure configures LDAP for the receiver Organization. If trustSslCertificate=true,
+// it will automatically trust the certificate of LDAP server, only if settings.IsSsl=true.
+// If settings.IsSsl=true and trustSslCertificate=false this method returns an error
 func (org *TmOrg) LdapConfigure(settings *types.OrgLdapSettingsType, trustSslCertificate bool) (*types.OrgLdapSettingsType, error) {
 	var trustedCert *TrustedCertificate
 
