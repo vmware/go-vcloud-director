@@ -47,8 +47,8 @@ func (vcdClient *VCDClient) TmLdapConfigure(settings *types.TmLdapSettings, trus
 			return nil, fmt.Errorf("error retrieving existing LDAP configuration: %s", err)
 		}
 
-		// If SSL is configured and retrieved settings are empty, we need to check the certificate
-		needsCheckCert := settings.IsSsl && existing.HostName == ""
+		// If SSL is configured and retrieved settings are empty, or the hostname changed, we need to trust the certificate
+		needsCheckCert := settings.IsSsl && (existing.HostName == "" || existing.HostName != settings.HostName)
 		if needsCheckCert {
 			trustedCert, err = trustCertificate(vcdClient, nil, settings.HostName, connResult.TargetProbe.CertificateChain)
 			if err != nil {
@@ -102,8 +102,10 @@ func (org *TmOrg) LdapConfigure(settings *types.OrgLdapSettingsType, trustSslCer
 			}
 
 			// Pre-condition here: Settings are always LDAP=CUSTOM and CustomOrgLdapSettings is not nil.
-			// Just check if existing LDAP config is new (different from CUSTOM), as we need to check certificate
-			needsCheckCert := settings.CustomOrgLdapSettings.IsSsl && existing.OrgLdapMode != types.LdapModeCustom
+			// Just check if existing LDAP config is new (different from CUSTOM), or if the host changed, as we need to trust certificate
+			// in that case
+			needsCheckCert := settings.CustomOrgLdapSettings.IsSsl && (existing.OrgLdapMode != types.LdapModeCustom ||
+				(existing.CustomOrgLdapSettings != nil && existing.CustomOrgLdapSettings.HostName != settings.CustomOrgLdapSettings.HostName))
 			if needsCheckCert {
 				trustedCert, err = trustCertificate(org.vcdClient, &TenantContext{
 					OrgId:   org.TmOrg.ID,
