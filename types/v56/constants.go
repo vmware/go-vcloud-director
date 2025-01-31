@@ -23,7 +23,8 @@ const (
 	// SoapXML mime type
 	SoapXML = "application/soap+xml"
 	// JSONMime
-	JSONMime = "application/json"
+	JSONMime    = "application/json"
+	JSONAllMime = "application/*+json"
 )
 
 const (

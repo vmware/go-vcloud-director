@@ -620,3 +620,50 @@ type TmRegionalNetworkingVpcConnectivityProfile struct {
 	// ExternalCidrBlocks is a comma separated list of the external IP CIDRs which are available for use by the VPC.
 	ExternalCidrBlocks string `json:"externalCidrBlocks,omitempty"`
 }
+
+// TmLdapSettings is the type that defines LDAP settings in Tenant Manager
+type TmLdapSettings struct {
+	AuthenticationMechanism  string                   `json:"authenticationMechanism"` // Can be "SIMPLE", "KERBEROS", "MD5DIGEST", "NTLM"
+	ConnectorType            string                   `json:"connectorType"`           // Can be "ACTIVE_DIRECTORY", "OPENLDAP"
+	CustomTruststore         *string                  `json:"customTruststore,omitempty"`
+	CustomUiButtonLabel      *string                  `json:"customUiButtonLabel,omitempty"`
+	GroupAttributes          *LdapGroupAttributesType `json:"groupAttributes"`
+	GroupSearchBase          string                   `json:"groupSearchBase,omitempty"`
+	HostName                 string                   `json:"hostName,omitempty"`
+	IsGroupSearchBaseEnabled bool                     `json:"isGroupSearchBaseEnabled"`
+	IsSsl                    bool                     `json:"isSsl"`
+	IsSslAcceptAll           bool                     `json:"isSslAcceptAll,omitempty"`
+	MaxResults               int                      `json:"maxResults,omitempty"`
+	MaxUserGroups            int                      `json:"maxUserGroups,omitempty"`
+	PageSize                 int                      `json:"pageSize,omitempty"`
+	PagedSearchDisabled      bool                     `json:"pagedSearchDisabled"`
+	Password                 string                   `json:"password,omitempty"`
+	Port                     int                      `json:"port"`
+	Realm                    *string                  `json:"realm,omitempty"`
+	SearchBase               string                   `json:"searchBase,omitempty"`
+	UseExternalKerberos      bool                     `json:"useExternalKerberos,omitempty"`
+	UserAttributes           *LdapUserAttributesType  `json:"userAttributes"`
+	UserName                 string                   `json:"userName,omitempty"`
+}
+
+type LdapGroupAttributesType struct {
+	BackLinkIdentifier   string `json:"backLinkIdentifier,omitempty"`
+	GroupName            string `json:"groupName"`
+	Membership           string `json:"membership"`
+	MembershipIdentifier string `json:"membershipIdentifier"`
+	ObjectClass          string `json:"objectClass"`
+	ObjectIdentifier     string `json:"objectIdentifier"`
+}
+
+type LdapUserAttributesType struct {
+	Email                     string `json:"email"`
+	FullName                  string `json:"fullName"`
+	GivenName                 string `json:"givenName"`
+	GroupBackLinkIdentifier   string `json:"groupBackLinkIdentifier,omitempty"`
+	GroupMembershipIdentifier string `json:"groupMembershipIdentifier"`
+	ObjectClass               string `json:"objectClass"`
+	ObjectIdentifier          string `json:"objectIdentifier"`
+	Surname                   string `json:"surname"`
+	Telephone                 string `json:"telephone"`
+	UserName                  string `json:"userName"`
+}
