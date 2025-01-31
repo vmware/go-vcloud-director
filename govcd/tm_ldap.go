@@ -29,7 +29,7 @@ func (vcdClient *VCDClient) TmLdapConfigure(settings *types.TmLdapSettings, trus
 	}
 
 	// Always test connection, because this method always changes LDAP. There's no NONE mode like in
-	// types.OrgLdapSettingsType
+	// the TmOrg receiver methods (that consume types.OrgLdapSettingsType)
 	connResult, err := ldapValidateConnection(&vcdClient.Client, settings.HostName, settings.Port, settings.IsSsl)
 	if err != nil {
 		return nil, err
