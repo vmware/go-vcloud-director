@@ -15,70 +15,9 @@ import (
 	"strings"
 )
 
-// Test_TmLdapSystemWithNoSslLdap tests LDAP configuration in Provider (System) org by using
-// vCenter as LDAP (no SSL)
-func (vcd *TestVCD) Test_TmLdapSystemWithNoSslLdap(check *C) {
-	skipNonTm(vcd, check)
-	if vcd.skipAdminTests {
-		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
-	}
-	vcd.checkSkipWhenApiToken(check)
-
-	ldapSettings := types.TmLdapSettings{
-		AuthenticationMechanism: "SIMPLE",
-		ConnectorType:           "ACTIVE_DIRECTORY",
-		CustomUiButtonLabel:     addrOf("Hello there"),
-		GroupAttributes: &types.LdapGroupAttributesType{
-			BackLinkIdentifier:   "objectSid",
-			GroupName:            "cn",
-			Membership:           "member",
-			MembershipIdentifier: "dn",
-			ObjectClass:          "group",
-			ObjectIdentifier:     "objectGuid",
-		},
-		HostName:            regexp.MustCompile(`https?://`).ReplaceAllString(vcd.config.Tm.VcenterUrl, ""),
-		IsSsl:               false,
-		MaxResults:          200,
-		MaxUserGroups:       1015,
-		PageSize:            200,
-		PagedSearchDisabled: false,
-		Password:            vcd.config.Tm.VcenterPassword,
-		Port:                389,
-		SearchBase:          "dc=vsphere,dc=local",
-		UserAttributes: &types.LdapUserAttributesType{
-			Email:                     "mail",
-			FullName:                  "displayName",
-			GivenName:                 "givenName",
-			GroupBackLinkIdentifier:   "tokenGroups",
-			GroupMembershipIdentifier: "dn",
-			ObjectClass:               "user",
-			ObjectIdentifier:          "objectGuid",
-			Surname:                   "sn",
-			Telephone:                 "telephoneNumber",
-			UserName:                  "sAMAccountName",
-		},
-		UserName: "cn=Administrator,cn=Users,dc=vsphere,dc=local",
-	}
-
-	receivedSettings, err := vcd.client.TmLdapConfigure(&ldapSettings, false)
-	check.Assert(err, IsNil)
-	check.Assert(receivedSettings, NotNil)
-
-	receivedSettings2, err := vcd.client.TmGetLdapConfiguration()
-	check.Assert(err, IsNil)
-	check.Assert(receivedSettings, DeepEquals, receivedSettings2)
-
-	defer func() {
-		fmt.Println("Unconfiguring LDAP")
-		// Clear LDAP configuration
-		err = vcd.client.TmLdapDisable()
-		check.Assert(err, IsNil)
-	}()
-}
-
-// Test_TmLdapSystemWithNoSslLdap tests LDAP configuration in Provider (System) org by using
-// a configured LDAP that uses SSL
-func (vcd *TestVCD) Test_TmLdapSystemWithSslLdap(check *C) {
+// Test_TmLdapSystem tests LDAP configuration in Provider (System) org. This test
+// checks LDAP connection with SSL and without SSL
+func (vcd *TestVCD) Test_TmLdapSystem(check *C) {
 	skipNonTm(vcd, check)
 	if vcd.skipAdminTests {
 		check.Skip(fmt.Sprintf(TestRequiresSysAdminPrivileges, check.TestName()))
@@ -90,69 +29,83 @@ func (vcd *TestVCD) Test_TmLdapSystemWithSslLdap(check *C) {
 		check.Skip("LDAP testing configuration is required")
 	}
 
-	ldapSettings := types.TmLdapSettings{
-		AuthenticationMechanism: "SIMPLE",
-		ConnectorType:           vcd.config.Tm.Ldap.Type,
-		CustomUiButtonLabel:     addrOf("Hello there"),
-		GroupAttributes: &types.LdapGroupAttributesType{
-			BackLinkIdentifier:   "objectSid",
-			GroupName:            "cn",
-			Membership:           "member",
-			MembershipIdentifier: "dn",
-			ObjectClass:          "group",
-			ObjectIdentifier:     "objectGuid",
-		},
-		HostName:            vcd.config.Tm.Ldap.Host,
-		IsSsl:               true,
-		MaxResults:          200,
-		MaxUserGroups:       1015,
-		PageSize:            200,
-		PagedSearchDisabled: false,
-		Password:            vcd.config.Tm.Ldap.Password,
-		Port:                vcd.config.Tm.Ldap.Port,
-		SearchBase:          vcd.config.Tm.Ldap.BaseDistinguishedName,
-		UserAttributes: &types.LdapUserAttributesType{
-			Email:                     "mail",
-			FullName:                  "displayName",
-			GivenName:                 "givenName",
-			GroupBackLinkIdentifier:   "tokenGroups",
-			GroupMembershipIdentifier: "dn",
-			ObjectClass:               "user",
-			ObjectIdentifier:          "objectGuid",
-			Surname:                   "sn",
-			Telephone:                 "telephoneNumber",
-			UserName:                  "sAMAccountName",
-		},
-		UserName: vcd.config.Tm.Ldap.Username,
+	// Definition of the different use cases for LDAP configuration
+	type testCase struct {
+		isSsl bool
+	}
+	testCases := []testCase{
+		{isSsl: false},
+		{isSsl: true},
 	}
 
-	_, err := vcd.client.TmLdapConfigure(&ldapSettings, false)
-	check.Assert(err, NotNil)
-	check.Assert(strings.Contains(err.Error(), "cannot configure LDAP"), Equals, true)
+	for _, t := range testCases {
+		fmt.Printf("%s - %#v\n", check.TestName(), t)
 
-	receivedSettings, err := vcd.client.TmLdapConfigure(&ldapSettings, true)
-	check.Assert(err, IsNil)
-	check.Assert(receivedSettings, NotNil)
+		ldapSettings := types.TmLdapSettings{
+			AuthenticationMechanism: "SIMPLE",
+			ConnectorType:           vcd.config.Tm.Ldap.Type,
+			CustomUiButtonLabel:     addrOf("Hello there"),
+			GroupAttributes: &types.LdapGroupAttributesType{
+				BackLinkIdentifier:   "objectSid",
+				GroupName:            "cn",
+				Membership:           "member",
+				MembershipIdentifier: "dn",
+				ObjectClass:          "group",
+				ObjectIdentifier:     "objectGuid",
+			},
+			HostName:            vcd.config.Tm.Ldap.Host,
+			IsSsl:               t.isSsl,
+			MaxResults:          200,
+			MaxUserGroups:       1015,
+			PageSize:            200,
+			PagedSearchDisabled: false,
+			Password:            vcd.config.Tm.Ldap.Password,
+			Port:                vcd.config.Tm.Ldap.Port,
+			SearchBase:          vcd.config.Tm.Ldap.BaseDistinguishedName,
+			UserAttributes: &types.LdapUserAttributesType{
+				Email:                     "mail",
+				FullName:                  "displayName",
+				GivenName:                 "givenName",
+				GroupBackLinkIdentifier:   "tokenGroups",
+				GroupMembershipIdentifier: "dn",
+				ObjectClass:               "user",
+				ObjectIdentifier:          "objectGuid",
+				Surname:                   "sn",
+				Telephone:                 "telephoneNumber",
+				UserName:                  "sAMAccountName",
+			},
+			UserName: vcd.config.Tm.Ldap.Username,
+		}
 
-	receivedSettings2, err := vcd.client.TmGetLdapConfiguration()
-	check.Assert(err, IsNil)
-	check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+		if t.isSsl {
+			_, err := vcd.client.TmLdapConfigure(&ldapSettings, false)
+			check.Assert(err, NotNil)
+			check.Assert(strings.Contains(err.Error(), "cannot configure LDAP"), Equals, true)
+		}
 
-	defer func() {
-		fmt.Println("Unconfiguring LDAP")
+		receivedSettings, err := vcd.client.TmLdapConfigure(&ldapSettings, t.isSsl)
+		check.Assert(err, IsNil)
+		check.Assert(receivedSettings, NotNil)
+
+		receivedSettings2, err := vcd.client.TmGetLdapConfiguration()
+		check.Assert(err, IsNil)
+		check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+
 		// Clear LDAP configuration
 		err = vcd.client.TmLdapDisable()
 		check.Assert(err, IsNil)
 
-		// Clean up trusted certificate
-		certs, err := vcd.client.GetAllTrustedCertificates(url.Values{
-			"filter": []string{fmt.Sprintf("alias==*%s*", vcd.config.Tm.Ldap.Host)},
-		})
-		check.Assert(err, IsNil)
-		check.Assert(len(certs), Equals, 1)
-		err = certs[0].Delete()
-		check.Assert(err, IsNil)
-	}()
+		if t.isSsl {
+			// Clean up trusted certificate
+			certs, err := vcd.client.GetAllTrustedCertificates(url.Values{
+				"filter": []string{fmt.Sprintf("alias==*%s*", vcd.config.Tm.Ldap.Host)},
+			})
+			check.Assert(err, IsNil)
+			check.Assert(len(certs), Equals, 1)
+			err = certs[0].Delete()
+			check.Assert(err, IsNil)
+		}
+	}
 }
 
 // Test_TmLdapOrgWithVCenterLdap tests LDAP configuration in a regular Organization by using
