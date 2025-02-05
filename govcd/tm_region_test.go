@@ -24,7 +24,7 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	check.Assert(err, IsNil)
 
 	r := &types.Region{
-		Name: check.TestName(),
+		Name: "testtmregion",
 		NsxManager: &types.OpenApiReference{
 			ID: nsxtManager.NsxtManagerOpenApi.ID,
 		},
