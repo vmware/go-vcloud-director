@@ -7,19 +7,21 @@
 package govcd
 
 import (
+	"net/url"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
-	"net/url"
 )
 
 func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
-	vc, vcCleanup := getOrCreateVCenter(vcd, check)
-	defer vcCleanup()
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
 	defer nsxtManagerCleanup()
+	vc, vcCleanup := getOrCreateVCenter(vcd, check)
+	defer vcCleanup()
+
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)

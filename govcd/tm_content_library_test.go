@@ -18,13 +18,13 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
 
-	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
-	defer nsxtManagerCleanup()
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
@@ -116,13 +116,13 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check) // As it creates testing resources first
 
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
 
-	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
-	defer nsxtManagerCleanup()
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
@@ -233,13 +233,13 @@ func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
 	}
 
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
 
-	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
-	defer nsxtManagerCleanup()
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 

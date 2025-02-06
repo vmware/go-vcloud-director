@@ -20,13 +20,14 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	sysadminOnly(vcd, check)
 
 	// Pre-requisites
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
+
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
 
-	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
-	defer nsxtManagerCleanup()
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
@@ -109,13 +110,14 @@ func (vcd *TestVCD) Test_ContentLibraryItemIso(check *C) {
 	sysadminOnly(vcd, check)
 
 	// Pre-requisites
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
+
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
 
-	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
-	defer nsxtManagerCleanup()
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
