@@ -14,12 +14,13 @@ func (vcd *TestVCD) Test_StorageClass(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
 	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
 	check.Assert(err, IsNil)
-	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
-	defer nsxtManagerCleanup()
+
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
