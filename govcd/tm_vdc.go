@@ -130,18 +130,39 @@ func (o *TmVdc) Delete() error {
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
 
-// AssignVmClasses assigns VM Classes to the receiver VDC
-func (o *TmVdc) AssignVmClasses(vmClasses *types.RegionVirtualMachineClasses) error {
+// AssignVmClassesToRegionQuota assigns VM Classes to the receiver VDC
+func (o *VCDClient) AssignVmClassesToRegionQuota(regionQuotaId string, vmClasses *types.RegionVirtualMachineClasses) error {
 	c := crudConfig{
 		entityLabel:    labelTmOrgVdc,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses,
-		endpointParams: []string{o.TmVdc.ID},
+		endpointParams: []string{regionQuotaId},
 		requiresTm:     true,
 	}
 	// It's a PUT call with OpenAPI references, so we reuse generic functions for simplicity
-	_, err := updateInnerEntity[types.RegionVirtualMachineClasses](&o.vcdClient.Client, c, vmClasses)
+	_, err := updateInnerEntity[types.RegionVirtualMachineClasses](&o.Client, c, vmClasses)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// AssignVmClasses assigns VM Classes to the receiver VDC
+func (o *TmVdc) AssignVmClasses(vmClasses *types.RegionVirtualMachineClasses) error {
+	return o.vcdClient.AssignVmClassesToRegionQuota(o.TmVdc.ID, vmClasses)
+}
+
+// GetVmClassesFromRegionQuota returns all VM Classes of the given Region Quota
+func (o *VCDClient) GetVmClassesFromRegionQuota(regionQuotaId string) (*types.RegionVirtualMachineClasses, error) {
+	c := crudConfig{
+		entityLabel:    labelTmOrgVdc,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses,
+		endpointParams: []string{regionQuotaId},
+		requiresTm:     true,
+	}
+	// It's a GET call with OpenAPI references, so we reuse generic functions for simplicity
+	result, err := getInnerEntity[types.RegionVirtualMachineClasses](&o.Client, c)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
