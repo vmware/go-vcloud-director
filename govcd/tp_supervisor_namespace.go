@@ -16,7 +16,7 @@ type SupervisorNamespace struct {
 	SupervisorNamespaceName string
 }
 
-func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervisorNamespace tpTypes.SupervisorNamespace) (*SupervisorNamespace, error) {
+func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervisorNamespace *tpTypes.SupervisorNamespace) (*SupervisorNamespace, error) {
 	if projectName == "" {
 		return nil, fmt.Errorf("project name must be specified")
 	}
@@ -27,10 +27,10 @@ func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervis
 		return nil, fmt.Errorf("error getting URL for creating supervisor namespace")
 	}
 
-	// Expected final entity URL is different and creation does not return any Location header
-	// so it must be computed manually
+	// Expected final entity URL is different and creation does not return any Location header to
+	// detect it automatically so it must be computed manually
 	resultUrlRef := copyUrlRef(urlRef)
-	resultUrlRef.Path = resultUrlRef.Path + supervisorNamespace.GetName()
+	resultUrlRef.Path = fmt.Sprintf("%s/%s", resultUrlRef.Path, supervisorNamespace.GetName())
 
 	returnObject := &SupervisorNamespace{
 		TpClient:            tpClient,
@@ -41,9 +41,7 @@ func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervis
 		return nil, fmt.Errorf("error creating %s in Project %s: %s", labelSupervisorNamespace, projectName, err)
 	}
 
-	// TODO  Need to wait until it is finalized
-
-	return nil, nil
+	return returnObject, nil
 }
 
 func (tpClient *TpClient) GetSupervisorNamespaceByName(projectName, supervisorNamespaceName string) (*SupervisorNamespace, error) {
@@ -83,27 +81,3 @@ func (sn *SupervisorNamespace) Delete() error {
 
 	return nil
 }
-
-// stateChangeFunc := retry.StateChangeConf{
-// 	Pending: []string{"CREATING", "WAITING"},
-// 	Target:  []string{"CREATED"},
-// 	Refresh: func() (any, string, error) {
-// 		supervisorNamespace, err := readSupervisorNamespace(tmClient, projectName.(string), supervisorNamespaceOut.GetName())
-// 		if err != nil {
-// 			return nil, "", err
-// 		}
-
-// 		log.Printf("[DEBUG] %s %s current phase is %s", labelSupervisorNamespace, supervisorNamespaceOut.GetName(), supervisorNamespace.Status.Phase)
-// 		if strings.ToUpper(supervisorNamespace.Status.Phase) == "ERROR" {
-// 			return nil, "", fmt.Errorf("%s %s is in an ERROR state", labelSupervisorNamespace, supervisorNamespaceOut.GetName())
-// 		}
-
-// 		return supervisorNamespace, strings.ToUpper(supervisorNamespace.Status.Phase), nil
-// 	},
-// 	Timeout:    d.Timeout(schema.TimeoutDelete),
-// 	Delay:      5 * time.Second,
-// 	MinTimeout: 5 * time.Second,
-// }
-// if _, err = stateChangeFunc.WaitForStateContext(ctx); err != nil {
-// 	return diag.Errorf("error waiting for %s %s in Project %s to be created: %s", labelSupervisorNamespace, supervisorNamespaceOut.GetName(), projectName, err)
-// }

@@ -19,9 +19,12 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
-const stateWaitTimeout = 1 * time.Hour
-const stateWaitDelay = 5 * time.Second
-const stateWaitMinTimeout = 5 * time.Second
+// constants that are used for tracking entity state after it is being created
+const (
+	stateWaitTimeout    = 1 * time.Hour
+	stateWaitDelay      = 5 * time.Second
+	stateWaitMinTimeout = 5 * time.Second
+)
 
 type TpClient struct {
 	VCDClient *VCDClient
@@ -72,7 +75,7 @@ func (tpClient *TpClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, par
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	// WAIT for entity to transition to CREATED
+	// WAIT for entity to transition from "CREATING" or "WAITING" to "CREATED"
 	_, err = tpClient.waitForState(context.TODO(), "label", responseUrlRef, []string{"CREATING", "WAITING"}, []string{"CREATED"})
 	if err != nil {
 		return fmt.Errorf("error waiting for CCI entity state: %s", err)
@@ -168,7 +171,7 @@ func (tpClient *TpClient) DeleteItem(urlRef *url.URL, params url.Values, additio
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	/// TODO Track deletion
+	/// TODO Track deletion ?????
 
 	return nil
 }
