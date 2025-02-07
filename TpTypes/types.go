@@ -1,4 +1,4 @@
-package tpTypes
+package tptypes
 
 import (
 	"fmt"

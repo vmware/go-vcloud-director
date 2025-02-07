@@ -1,7 +1,6 @@
-package tpTypes
+package tptypes
 
 const (
-	labelSupervisorNamespace   = "Supervisor Namespace"
 	SupervisorNamespaceKind    = "SupervisorNamespace"
 	SupervisorNamespaceAPI     = "infrastructure.cci.vmware.com"
 	SupervisorNamespaceVersion = "v1alpha"

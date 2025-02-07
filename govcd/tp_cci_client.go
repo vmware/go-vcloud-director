@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/vmware/go-vcloud-director/v3/tpTypes"
+	"github.com/vmware/go-vcloud-director/v3/tptypes"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
 )
@@ -110,13 +110,13 @@ func (tpClient *TpClient) GetItem(urlRef *url.URL, params url.Values, outType in
 	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
 	// HTTP 403: Forbidden - is returned if the user is not authorized or the entity does not exist.
 	if resp.StatusCode == http.StatusForbidden {
-		err := ParseErr(types.BodyTypeJSON, resp, &tpTypes.CciApiError{})
+		err := ParseErr(types.BodyTypeJSON, resp, &tptypes.CciApiError{})
 		closeErr := resp.Body.Close()
 		return fmt.Errorf("%s: %s [body close error: %s]", ErrorEntityNotFound, err, closeErr)
 	}
 
 	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tpTypes.CciApiError{})
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tptypes.CciApiError{})
 
 	// Any other error occurred
 	if err != nil {
@@ -161,7 +161,7 @@ func (tpClient *TpClient) DeleteItem(urlRef *url.URL, params url.Values, additio
 	debugShowResponse(resp, bodyBytes)
 
 	// resp is ignored below because it would be the same as above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tpTypes.CciApiError{})
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tptypes.CciApiError{})
 	if err != nil {
 		return fmt.Errorf("error in HTTP DELETE request: %s", err)
 	}
@@ -207,8 +207,8 @@ func (tpClient *TpClient) waitForState(ctx context.Context, entityLabel string, 
 	return result, nil
 }
 
-func (tpClient *TpClient) getAnyCciState(urlRef *url.URL) (*tpTypes.CciEntityStatus, error) {
-	entityStatus := tpTypes.CciEntityStatus{}
+func (tpClient *TpClient) getAnyCciState(urlRef *url.URL) (*tptypes.CciEntityStatus, error) {
+	entityStatus := tptypes.CciEntityStatus{}
 
 	err := tpClient.GetItem(urlRef, nil, &entityStatus, nil)
 	if err != nil {
@@ -235,7 +235,7 @@ func (tpClient *TpClient) cciPerformPostPut(httpMethod string, urlRef *url.URL, 
 	}
 
 	// resp is ignored below because it is the same the one above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tpTypes.CciApiError{})
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tptypes.CciApiError{})
 	if err != nil {
 		return nil, fmt.Errorf("error in HTTP %s request: %s", httpMethod, err)
 	}
