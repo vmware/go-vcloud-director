@@ -46,8 +46,8 @@ func (cciApiError CciApiError) Error() string {
 type SupervisorNamespace struct {
 	v1.TypeMeta   `json:",inline"`
 	v1.ObjectMeta `json:"metadata,omitempty"`
-	Spec          SupervisorNamespaceSpec   `json:"spec,omitempty"`
-	Status        SupervisorNamespaceStatus `json:"status,omitempty"`
+	Spec          SupervisorNamespaceSpec    `json:"spec,omitempty"`
+	Status        *SupervisorNamespaceStatus `json:"status,omitempty"`
 }
 
 type SupervisorNamespaceSpec struct {

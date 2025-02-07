@@ -22,7 +22,7 @@ func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervis
 	}
 
 	urlSuffix := fmt.Sprintf(tptypes.SupervisorNamespacesURL, projectName)
-	urlRef, err := tpClient.GetServerUrl(urlSuffix)
+	urlRef, err := tpClient.GetCciUrl(urlSuffix)
 	if err != nil {
 		return nil, fmt.Errorf("error getting URL for creating supervisor namespace")
 	}
@@ -46,7 +46,7 @@ func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervis
 
 func (tpClient *TpClient) GetSupervisorNamespaceByName(projectName, supervisorNamespaceName string) (*SupervisorNamespace, error) {
 	urlSuffix := fmt.Sprintf(tptypes.SupervisorNamespacesURL, projectName)
-	addr, err := tpClient.GetServerUrl(urlSuffix, "/", supervisorNamespaceName)
+	addr, err := tpClient.GetCciUrl(urlSuffix, "/", supervisorNamespaceName)
 	if err != nil {
 		return nil, fmt.Errorf("error getting URL for creating supervisor namespace")
 	}
@@ -70,7 +70,7 @@ func (tpClient *TpClient) GetSupervisorNamespaceByName(projectName, supervisorNa
 
 func (sn *SupervisorNamespace) Delete() error {
 	urlSuffix := fmt.Sprintf(tptypes.SupervisorNamespacesURL, sn.ProjectName)
-	addr, err := sn.TpClient.GetServerUrl(urlSuffix, "/", sn.SupervisorNamespaceName)
+	addr, err := sn.TpClient.GetCciUrl(urlSuffix, "/", sn.SupervisorNamespaceName)
 	if err != nil {
 		return fmt.Errorf("error getting URL for creating supervisor namespace")
 	}

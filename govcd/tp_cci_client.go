@@ -37,8 +37,8 @@ func (tpClient *TpClient) IsSupported() bool {
 	return tpClient.VCDClient.Client.APIVCDMaxVersionIs(">= 40")
 }
 
-func (tpClient *TpClient) GetServerUrl(endpoint ...string) (*url.URL, error) {
-	path := fmt.Sprintf("%s://%s", tpClient.VCDClient.Client.VCDHREF.Scheme, tpClient.VCDClient.Client.VCDHREF.Host)
+func (tpClient *TpClient) GetCciUrl(endpoint ...string) (*url.URL, error) {
+	path := fmt.Sprintf(tptypes.CciKubernetesSubpath, tpClient.VCDClient.Client.VCDHREF.Scheme, tpClient.VCDClient.Client.VCDHREF.Host)
 	path = path + strings.Join(endpoint, "")
 
 	return url.ParseRequestURI(path)
@@ -176,6 +176,7 @@ func (tpClient *TpClient) DeleteItem(urlRef *url.URL, params url.Values, additio
 	return nil
 }
 
+// TODO - can we do this quite cheap without needing to pull in Hashicorp package at SDK level
 func (tpClient *TpClient) waitForState(ctx context.Context, entityLabel string, addr *url.URL, pendingStates, targetStates []string) (any, error) {
 	stateChangeFunc := retry.StateChangeConf{
 		Pending: pendingStates,

@@ -866,8 +866,6 @@ type NsxtManagerOpenApi struct {
 	Password string `json:"password"`
 	// Url for authenticating to NSX-T Manager
 	Url string `json:"url"`
-	// NetworkProviderScope
-	NetworkProviderScope string `json:"networkProviderScope"`
 	// Status of NSX-T Manager
 	Status string `json:"status,omitempty"`
 }
