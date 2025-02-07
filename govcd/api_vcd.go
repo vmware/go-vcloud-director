@@ -41,6 +41,12 @@ type VCDClient struct {
 	QueryHREF   url.URL // HREF for the query API
 }
 
+func (vcdClient *VCDClient) GetTpClient() *TpClient {
+	return &TpClient{
+		VCDClient: vcdClient,
+	}
+}
+
 func (vcdClient *VCDClient) vcdloginurl() error {
 	if err := vcdClient.Client.validateAPIVersion(); err != nil {
 		return fmt.Errorf("could not find valid version for login: %s", err)
