@@ -11,9 +11,9 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-const labelRegionVirtualMachineClass = "VM Class"
+const labelRegionVirtualMachineClass = "Region VM Class"
 
-// RegionVirtualMachineClass defines a VM Class in VCFA
+// RegionVirtualMachineClass defines a Region VM Class in VCFA
 type RegionVirtualMachineClass struct {
 	RegionVirtualMachineClass *types.RegionVirtualMachineClass
 	vcdClient                 *VCDClient
@@ -27,7 +27,7 @@ func (g RegionVirtualMachineClass) wrap(inner *types.RegionVirtualMachineClass) 
 	return &g
 }
 
-// GetAllRegionVirtualMachineClasses retrieves all Tenant Manager VM Classes
+// GetAllRegionVirtualMachineClasses retrieves all Region VM Classes
 func (vcdClient *VCDClient) GetAllRegionVirtualMachineClasses(queryParameters url.Values) ([]*RegionVirtualMachineClass, error) {
 	c := crudConfig{
 		entityLabel:     labelRegionVirtualMachineClass,
@@ -40,7 +40,7 @@ func (vcdClient *VCDClient) GetAllRegionVirtualMachineClasses(queryParameters ur
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
-// GetRegionVirtualMachineClassByNameAndRegionId retrieves a VM Class by a given name and Region ID
+// GetRegionVirtualMachineClassByNameAndRegionId retrieves a Region VM Class by a given name and Region ID
 func (vcdClient *VCDClient) GetRegionVirtualMachineClassByNameAndRegionId(name, regionId string) (*RegionVirtualMachineClass, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name", labelTmOrgVdc)
@@ -61,7 +61,7 @@ func (vcdClient *VCDClient) GetRegionVirtualMachineClassByNameAndRegionId(name, 
 	return singleResult, nil
 }
 
-// GetRegionVirtualMachineClassById retrieves a VM Class by a given ID
+// GetRegionVirtualMachineClassById retrieves a Region VM Class by a given ID
 func (vcdClient *VCDClient) GetRegionVirtualMachineClassById(id string) (*RegionVirtualMachineClass, error) {
 	c := crudConfig{
 		entityLabel:    labelRegionVirtualMachineClass,

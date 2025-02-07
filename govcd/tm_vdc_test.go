@@ -97,9 +97,8 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 	check.Assert(byIdInvalid, IsNil)
 
 	// Update
-	// TODO: TM: It fails
-	/*	createdVdc.TmVdc.Name = check.TestName() + "-update"
-		updatedVdc, err := createdVdc.Update(createdVdc.TmVdc)
-		check.Assert(err, IsNil)
-		check.Assert(updatedVdc.TmVdc, DeepEquals, createdVdc.TmVdc)*/
+	createdVdc.TmVdc.Name = check.TestName() + "-update"
+	updatedVdc, err := createdVdc.Update(createdVdc.TmVdc)
+	check.Assert(err, IsNil)
+	check.Assert(updatedVdc.TmVdc, DeepEquals, createdVdc.TmVdc)
 }

@@ -859,16 +859,27 @@ type NsxtManagerOpenApi struct {
 	// Name of NSX-T Manager
 	Name string `json:"name"`
 	// Description of NSX-T Manager
-	Description string `json:"description"`
+	Description string `json:"description,omitempty"`
 	// Username for authenticating to NSX-T Manager
 	Username string `json:"username"`
 	// Password for authenticating to NSX-T Manager
-	Password string `json:"password"`
+	Password string `json:"password,omitempty"`
 	// Url for authenticating to NSX-T Manager
 	Url string `json:"url"`
-	// NetworkProviderScope
-	NetworkProviderScope string `json:"networkProviderScope"`
-	// Status of NSX-T Manager
+	// Active indicates whether the NSX Manager can or cannot be used to manage networking constructs within Tenant Manager
+	Active bool `json:"active,omitempty"`
+	// ClusterId of the NSX Manager. Each NSX installation has a single cluster. This is not a Tenant Manager URN
+	ClusterId string `json:"clusterId,omitempty"`
+	// IsDedicatedForClassicTenants whether this NSX Manager is dedicated for legacy VRA-style tenants only and unable to
+	// participate in modern constructs such as Regions and Zones. Legacy VRA-style is deprecated and this field exists for
+	// the purpose of VRA backwards compatibility only
+	IsDedicatedForClassicTenants bool `json:"isDedicatedForClassicTenants,omitempty"`
+	// Status of NSX-T Manager. Possible values are:
+	// PENDING - Desired entity configuration has been received by system and is pending realization.
+	// CONFIGURING - The system is in process of realizing the entity.
+	// REALIZED - The entity is successfully realized in the system.
+	// REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
+	// UNKNOWN - Current state of entity is unknown.
 	Status string `json:"status,omitempty"`
 }
 

@@ -18,10 +18,11 @@ func (vcd *TestVCD) Test_NsxtManagerOpenApi(check *C) {
 	}
 
 	cfg := &types.NsxtManagerOpenApi{
-		Name:     check.TestName(),
-		Username: vcd.config.Tm.NsxtManagerUsername,
-		Password: vcd.config.Tm.NsxtManagerPassword,
-		Url:      vcd.config.Tm.NsxtManagerUrl,
+		Name:        check.TestName(),
+		Username:    vcd.config.Tm.NsxtManagerUsername,
+		Password:    vcd.config.Tm.NsxtManagerPassword,
+		Url:         vcd.config.Tm.NsxtManagerUrl,
+		Description: check.TestName(), // TODO: TM: Latest build throws error if not populated
 	}
 
 	// Certificate must be trusted before adding NSX-T Manager
