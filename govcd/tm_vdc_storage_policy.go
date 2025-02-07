@@ -30,7 +30,7 @@ func (g TmVdcStoragePolicy) wrap(inner *types.VirtualDatacenterStoragePolicy) *T
 // CreateStoragePolicies creates new VDC Storage Policies in a VDC.
 // The request will fail if the list of VDC Storage Policies is empty.
 // It returns the list of all VCD Storage Policies that are available in the VDC after creation.
-func (o *TmVdc) CreateStoragePolicies(regionStoragePolicies *types.VirtualDatacenterStoragePolicies) ([]*TmVdcStoragePolicy, error) {
+func (o *OrgRegionQuota) CreateStoragePolicies(regionStoragePolicies *types.VirtualDatacenterStoragePolicies) ([]*TmVdcStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel: labelTmOrgVdcStoragePolicies,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
@@ -68,12 +68,34 @@ func (vcdClient *VCDClient) GetAllTmVdcStoragePolicies(queryParameters url.Value
 }
 
 // GetAllStoragePolicies retrieves all VDC Storage Policies from the given VDC
-func (vdc *TmVdc) GetAllStoragePolicies(queryParameters url.Values) ([]*TmVdcStoragePolicy, error) {
-	params := queryParameterFilterAnd("virtualDatacenter.id=="+vdc.TmVdc.ID, queryParameters)
+func (vdc *OrgRegionQuota) GetAllStoragePolicies(queryParameters url.Values) ([]*TmVdcStoragePolicy, error) {
+	params := queryParameterFilterAnd("virtualDatacenter.id=="+vdc.OrgRegionQuota.ID, queryParameters)
 	return vdc.vcdClient.GetAllTmVdcStoragePolicies(params)
 }
 
-// GetTmVdcStoragePolicyById retrieves a Tenant Manager VDC Storage Policy by a given ID
+// GetTmVdcStoragePolicyByName retrieves a VDC Storage Policy by the given name
+func (vdc *OrgRegionQuota) GetTmVdcStoragePolicyByName(name string) (*TmVdcStoragePolicy, error) {
+	if name == "" {
+		return nil, fmt.Errorf("%s lookup requires name to be present", labelTmOrgVdcStoragePolicies)
+	}
+
+	queryParams := url.Values{}
+	queryParams.Add("filter", fmt.Sprintf("virtualDatacenter.id==%s;name==%s", vdc.OrgRegionQuota.ID, name))
+
+	filteredEntities, err := vdc.vcdClient.GetAllTmVdcStoragePolicies(queryParams)
+	if err != nil {
+		return nil, err
+	}
+
+	singleResult, err := oneOrError("name", name, filteredEntities)
+	if err != nil {
+		return nil, err
+	}
+
+	return singleResult, nil
+}
+
+// GetTmVdcStoragePolicyById retrieves a VDC Storage Policy by a given ID
 func (vcdClient *VCDClient) GetTmVdcStoragePolicyById(id string) (*TmVdcStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:    labelTmOrgVdcStoragePolicies,
@@ -88,13 +110,13 @@ func (vcdClient *VCDClient) GetTmVdcStoragePolicyById(id string) (*TmVdcStorageP
 
 // GetStoragePolicyById retrieves a Tenant Manager VDC Storage Policy by a given ID that must belong
 // to the receiver VDC
-func (vdc *TmVdc) GetStoragePolicyById(id string) (*TmVdcStoragePolicy, error) {
+func (vdc *OrgRegionQuota) GetStoragePolicyById(id string) (*TmVdcStoragePolicy, error) {
 	policy, err := vdc.vcdClient.GetTmVdcStoragePolicyById(id)
 	if err != nil {
 		return nil, err
 	}
-	if policy.VirtualDatacenterStoragePolicy.VirtualDatacenter.ID != vdc.TmVdc.ID {
-		return nil, fmt.Errorf("no VDC Storage Policy with ID '%s' found in VDC '%s': %s", id, vdc.TmVdc.ID, ErrorEntityNotFound)
+	if policy.VirtualDatacenterStoragePolicy.VirtualDatacenter.ID != vdc.OrgRegionQuota.ID {
+		return nil, fmt.Errorf("no VDC Storage Policy with ID '%s' found in VDC '%s': %s", id, vdc.OrgRegionQuota.ID, ErrorEntityNotFound)
 	}
 	return policy, err
 }

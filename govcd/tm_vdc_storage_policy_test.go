@@ -58,11 +58,11 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 		}},
 	}
 
-	createdVdc, err := vcd.client.CreateTmVdc(vdcType)
+	createdVdc, err := vcd.client.CreateOrgRegionQuota(vdcType)
 	check.Assert(err, IsNil)
 	check.Assert(createdVdc, NotNil)
 	// Add to cleanup list
-	PrependToCleanupListOpenApi(createdVdc.TmVdc.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+createdVdc.TmVdc.ID)
+	PrependToCleanupListOpenApi(createdVdc.OrgRegionQuota.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+createdVdc.OrgRegionQuota.ID)
 	defer func() {
 		err = createdVdc.Delete()
 		check.Assert(err, IsNil)
@@ -77,7 +77,7 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 				},
 				StorageLimitMiB: 100,
 				VirtualDatacenter: types.OpenApiReference{
-					ID: createdVdc.TmVdc.ID,
+					ID: createdVdc.OrgRegionQuota.ID,
 				},
 			},
 		},
@@ -106,7 +106,7 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 
 	// Getting policies with general client
 	params := url.Values{}
-	params.Add("filter", "virtualDatacenter.id=="+createdVdc.TmVdc.ID)
+	params.Add("filter", "virtualDatacenter.id=="+createdVdc.OrgRegionQuota.ID)
 	filteredPolicies, err := vcd.client.GetAllTmVdcStoragePolicies(params)
 	check.Assert(err, IsNil)
 	check.Assert(len(filteredPolicies), Equals, len(vdcPolicies))

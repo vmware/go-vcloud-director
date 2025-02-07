@@ -40,10 +40,18 @@ type VirtualDatacenterStoragePolicies struct {
 
 // VirtualDatacenterStoragePolicy describes a Virtual Datacenter Storage Policy
 type VirtualDatacenterStoragePolicy struct {
-	ID                  string           `json:"id,omitempty"`
+	// The identifier of the VDC Storage Policy in URN format
+	ID string `json:"id,omitempty"`
+	// The parent Region Storage Policy for this VDC Storage Policy
 	RegionStoragePolicy OpenApiReference `json:"regionStoragePolicy"`
-	StorageLimitMiB     int64            `json:"storageLimitMiB"`
-	VirtualDatacenter   OpenApiReference `json:"virtualDatacenter"`
+	// The name of the VDC Storage Policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
+	Name string `json:"name,omitempty"`
+	// Maximum allowed storage allocation in mebibytes. Minimum Value: 0
+	StorageLimitMiB int64 `json:"storageLimitMiB"`
+	// Amount of storage used in mebibytes. Minimum Value: 0
+	StorageUsedMiB int64 `json:"storageUsedMiB,omitempty"`
+	// A reference to the VDC that the policy applies to
+	VirtualDatacenter OpenApiReference `json:"virtualDatacenter"`
 }
 
 // ContentLibrary is an object representing a VCF Content Library

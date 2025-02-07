@@ -43,7 +43,7 @@ func (vcdClient *VCDClient) GetAllRegionVirtualMachineClasses(queryParameters ur
 // GetRegionVirtualMachineClassByNameAndRegionId retrieves a Region VM Class by a given name and Region ID
 func (vcdClient *VCDClient) GetRegionVirtualMachineClassByNameAndRegionId(name, regionId string) (*RegionVirtualMachineClass, error) {
 	if name == "" {
-		return nil, fmt.Errorf("%s lookup requires name", labelTmOrgVdc)
+		return nil, fmt.Errorf("%s lookup requires name", labelTmOrgRegionQuota)
 	}
 
 	queryParams := url.Values{}
