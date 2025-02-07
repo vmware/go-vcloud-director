@@ -13,7 +13,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
+func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 

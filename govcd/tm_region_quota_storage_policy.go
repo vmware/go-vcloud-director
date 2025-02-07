@@ -13,8 +13,8 @@ import (
 
 const labelRegionQuotaStoragePolicies = "Region Quota Storage Policies"
 
-// OrgRegionQuotaStoragePolicy defines Tenant Manager Virtual Datacenter Storage Policy structure
-type OrgRegionQuotaStoragePolicy struct {
+// RegionQuotaStoragePolicy defines Tenant Manager Virtual Datacenter Storage Policy structure
+type RegionQuotaStoragePolicy struct {
 	VirtualDatacenterStoragePolicy *types.VirtualDatacenterStoragePolicy
 	vcdClient                      *VCDClient
 }
@@ -22,7 +22,7 @@ type OrgRegionQuotaStoragePolicy struct {
 // wrap is a hidden helper that facilitates the usage of a generic CRUD function
 //
 //lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
-func (g OrgRegionQuotaStoragePolicy) wrap(inner *types.VirtualDatacenterStoragePolicy) *OrgRegionQuotaStoragePolicy {
+func (g RegionQuotaStoragePolicy) wrap(inner *types.VirtualDatacenterStoragePolicy) *RegionQuotaStoragePolicy {
 	g.VirtualDatacenterStoragePolicy = inner
 	return &g
 }
@@ -30,7 +30,7 @@ func (g OrgRegionQuotaStoragePolicy) wrap(inner *types.VirtualDatacenterStorageP
 // CreateStoragePolicies creates new Region Quota Storage Policies in a Region Quota.
 // The request will fail if the list of Storage Policies is empty.
 // It returns the list of all Storage Policies that are available in the Region Quota after creation.
-func (o *RegionQuota) CreateStoragePolicies(regionStoragePolicies *types.VirtualDatacenterStoragePolicies) ([]*OrgRegionQuotaStoragePolicy, error) {
+func (o *RegionQuota) CreateStoragePolicies(regionStoragePolicies *types.VirtualDatacenterStoragePolicies) ([]*RegionQuotaStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel: labelRegionQuotaStoragePolicies,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
@@ -55,7 +55,7 @@ func (o *RegionQuota) CreateStoragePolicies(regionStoragePolicies *types.Virtual
 }
 
 // GetAllRegionQuotaStoragePolicies retrieves all Region Quota Storage Policies
-func (vcdClient *VCDClient) GetAllRegionQuotaStoragePolicies(queryParameters url.Values) ([]*OrgRegionQuotaStoragePolicy, error) {
+func (vcdClient *VCDClient) GetAllRegionQuotaStoragePolicies(queryParameters url.Values) ([]*RegionQuotaStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:     labelRegionQuotaStoragePolicies,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
@@ -63,18 +63,18 @@ func (vcdClient *VCDClient) GetAllRegionQuotaStoragePolicies(queryParameters url
 		requiresTm:      true,
 	}
 
-	outerType := OrgRegionQuotaStoragePolicy{vcdClient: vcdClient}
+	outerType := RegionQuotaStoragePolicy{vcdClient: vcdClient}
 	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
 // GetAllStoragePolicies retrieves all Region Quota Storage Policies from the given Region Quota
-func (vdc *RegionQuota) GetAllStoragePolicies(queryParameters url.Values) ([]*OrgRegionQuotaStoragePolicy, error) {
+func (vdc *RegionQuota) GetAllStoragePolicies(queryParameters url.Values) ([]*RegionQuotaStoragePolicy, error) {
 	params := queryParameterFilterAnd("virtualDatacenter.id=="+vdc.TmVdc.ID, queryParameters)
 	return vdc.vcdClient.GetAllRegionQuotaStoragePolicies(params)
 }
 
 // GetStoragePolicyByName retrieves a Region Quota Storage Policy by the given name
-func (vdc *RegionQuota) GetStoragePolicyByName(name string) (*OrgRegionQuotaStoragePolicy, error) {
+func (vdc *RegionQuota) GetStoragePolicyByName(name string) (*RegionQuotaStoragePolicy, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name to be present", labelRegionQuotaStoragePolicies)
 	}
@@ -96,7 +96,7 @@ func (vdc *RegionQuota) GetStoragePolicyByName(name string) (*OrgRegionQuotaStor
 }
 
 // GetRegionQuotaStoragePolicyById retrieves a Region Quota Storage Policy by a given ID
-func (vcdClient *VCDClient) GetRegionQuotaStoragePolicyById(id string) (*OrgRegionQuotaStoragePolicy, error) {
+func (vcdClient *VCDClient) GetRegionQuotaStoragePolicyById(id string) (*RegionQuotaStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:    labelRegionQuotaStoragePolicies,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
@@ -104,13 +104,13 @@ func (vcdClient *VCDClient) GetRegionQuotaStoragePolicyById(id string) (*OrgRegi
 		requiresTm:     true,
 	}
 
-	outerType := OrgRegionQuotaStoragePolicy{vcdClient: vcdClient}
+	outerType := RegionQuotaStoragePolicy{vcdClient: vcdClient}
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
 
 // GetStoragePolicyById retrieves a Region Quota Storage Policy by a given ID that must belong
 // to the receiver Region Quota
-func (rq *RegionQuota) GetStoragePolicyById(id string) (*OrgRegionQuotaStoragePolicy, error) {
+func (rq *RegionQuota) GetStoragePolicyById(id string) (*RegionQuotaStoragePolicy, error) {
 	policy, err := rq.vcdClient.GetRegionQuotaStoragePolicyById(id)
 	if err != nil {
 		return nil, err
@@ -122,19 +122,19 @@ func (rq *RegionQuota) GetStoragePolicyById(id string) (*OrgRegionQuotaStoragePo
 }
 
 // Update updates the receiver Region Quota Storage Policy
-func (sp *OrgRegionQuotaStoragePolicy) Update(tmVdcConfig *types.VirtualDatacenterStoragePolicy) (*OrgRegionQuotaStoragePolicy, error) {
+func (sp *RegionQuotaStoragePolicy) Update(tmVdcConfig *types.VirtualDatacenterStoragePolicy) (*RegionQuotaStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:    labelRegionQuotaStoragePolicies,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
 		endpointParams: []string{sp.VirtualDatacenterStoragePolicy.ID},
 		requiresTm:     true,
 	}
-	outerType := OrgRegionQuotaStoragePolicy{vcdClient: sp.vcdClient}
+	outerType := RegionQuotaStoragePolicy{vcdClient: sp.vcdClient}
 	return updateOuterEntity(&sp.vcdClient.Client, outerType, c, tmVdcConfig)
 }
 
 // Delete deletes a Region Quota Storage Policy
-func (sp *OrgRegionQuotaStoragePolicy) Delete() error {
+func (sp *RegionQuotaStoragePolicy) Delete() error {
 	c := crudConfig{
 		entityLabel:    labelRegionQuotaStoragePolicies,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,

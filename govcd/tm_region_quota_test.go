@@ -11,7 +11,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_TmVdc(check *C) {
+func (vcd *TestVCD) Test_TmRegionQuota(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
