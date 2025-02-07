@@ -58,11 +58,11 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 		}},
 	}
 
-	createdVdc, err := vcd.client.CreateOrgRegionQuota(vdcType)
+	createdVdc, err := vcd.client.CreateRegionQuota(vdcType)
 	check.Assert(err, IsNil)
 	check.Assert(createdVdc, NotNil)
 	// Add to cleanup list
-	PrependToCleanupListOpenApi(createdVdc.OrgRegionQuota.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+createdVdc.OrgRegionQuota.ID)
+	PrependToCleanupListOpenApi(createdVdc.TmVdc.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+createdVdc.TmVdc.ID)
 	defer func() {
 		err = createdVdc.Delete()
 		check.Assert(err, IsNil)
@@ -77,7 +77,7 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 				},
 				StorageLimitMiB: 100,
 				VirtualDatacenter: types.OpenApiReference{
-					ID: createdVdc.OrgRegionQuota.ID,
+					ID: createdVdc.TmVdc.ID,
 				},
 			},
 		},
@@ -106,8 +106,8 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 
 	// Getting policies with general client
 	params := url.Values{}
-	params.Add("filter", "virtualDatacenter.id=="+createdVdc.OrgRegionQuota.ID)
-	filteredPolicies, err := vcd.client.GetAllTmVdcStoragePolicies(params)
+	params.Add("filter", "virtualDatacenter.id=="+createdVdc.TmVdc.ID)
+	filteredPolicies, err := vcd.client.GetAllRegionQuotaStoragePolicies(params)
 	check.Assert(err, IsNil)
 	check.Assert(len(filteredPolicies), Equals, len(vdcPolicies))
 	check.Assert(filteredPolicies[0].VirtualDatacenterStoragePolicy, NotNil)
@@ -126,13 +126,13 @@ func (vcd *TestVCD) Test_TmVdcStoragePolicy(check *C) {
 		check.Assert(updatedPolicy.VirtualDatacenterStoragePolicy.StorageLimitMiB, Equals, int64(200))
 
 
-			policy, err = vcd.client.GetTmVdcStoragePolicyById(vdcPolicies[0].VirtualDatacenterStoragePolicy.ID)
+			policy, err = vcd.client.GetRegionQuotaStoragePolicyById(vdcPolicies[0].VirtualDatacenterStoragePolicy.ID)
 				check.Assert(err, IsNil)
 				check.Assert(policy.VirtualDatacenterStoragePolicy, NotNil)
 				check.Assert(*policy.VirtualDatacenterStoragePolicy, DeepEquals, *vdcPolicies[0].VirtualDatacenterStoragePolicy)
 
 			// Not Found tests
-			byNameInvalid, err := vcd.client.GetTmVdcStoragePolicyById("urn:vcloud:virtualDatacenterStoragePolicy:5344b964-0000-0000-0000-d554913db643")
+			byNameInvalid, err := vcd.client.GetRegionQuotaStoragePolicyById("urn:vcloud:virtualDatacenterStoragePolicy:5344b964-0000-0000-0000-d554913db643")
 			check.Assert(ContainsNotFound(err), Equals, true)
 			check.Assert(byNameInvalid, IsNil)
 

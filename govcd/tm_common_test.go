@@ -267,7 +267,7 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 
 // Creates a VDC (Region Quota) for testing in Tenant Manager and configures it with
 // the first found VM class and the configured Storage Class.
-func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*OrgRegionQuota, func()) {
+func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*RegionQuota, func()) {
 	if vcd.config.Tm.StorageClass == "" {
 		check.Fatal("testing configuration property 'tm.storageClass' is required")
 	}
@@ -310,11 +310,11 @@ func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*OrgRegionQu
 			},
 		}},
 	}
-	vdc, err := vcd.client.CreateOrgRegionQuota(cfg)
+	vdc, err := vcd.client.CreateRegionQuota(cfg)
 	check.Assert(err, IsNil)
 	check.Assert(vdc, NotNil)
 
-	PrependToCleanupListOpenApi(vdc.OrgRegionQuota.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+vdc.OrgRegionQuota.ID)
+	PrependToCleanupListOpenApi(vdc.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+vdc.TmVdc.ID)
 
 	err = vdc.AssignVmClasses(&types.RegionVirtualMachineClasses{
 		Values: types.OpenApiReferences{{Name: vmClasses[0].Name, ID: vmClasses[0].ID}},
@@ -328,7 +328,7 @@ func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*OrgRegionQu
 				},
 				StorageLimitMiB: 100,
 				VirtualDatacenter: types.OpenApiReference{
-					ID: vdc.OrgRegionQuota.ID,
+					ID: vdc.TmVdc.ID,
 				},
 			},
 		},
