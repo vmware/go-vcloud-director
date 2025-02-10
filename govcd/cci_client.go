@@ -44,7 +44,9 @@ func (tpClient *CciClient) GetCciUrl(endpoint ...string) (*url.URL, error) {
 	return url.ParseRequestURI(path)
 }
 
-func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, params url.Values, payload, outType interface{}) error {
+type urlRetriever func(interface{}) (*url.URL, error)
+
+func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlFunc urlRetriever, params url.Values, payload, outType interface{}) error {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
@@ -74,14 +76,19 @@ func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, p
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
+	responseUrl, err := responseUrlFunc(outType)
+	if err != nil {
+		return fmt.Errorf("error getting CCI entity URL after creation: %s", err)
+	}
+
 	// WAIT for entity to transition from "CREATING" or "WAITING" to "CREATED"
-	_, err = cciClient.waitForState(context.TODO(), "label", responseUrlRef, []string{"CREATING", "WAITING"}, []string{"CREATED"})
+	_, err = cciClient.waitForState(context.TODO(), "label", responseUrl, []string{"CREATING", "WAITING"}, []string{"CREATED"})
 	if err != nil {
 		return fmt.Errorf("error waiting for CCI entity state: %s", err)
 	}
 
 	// Retrieve the final state of original entity
-	err = cciClient.GetItem(responseUrlRef, nil, outType, nil)
+	err = cciClient.GetItem(responseUrl, nil, outType, nil)
 	if err != nil {
 		return fmt.Errorf("error retrieving final CCI entity after creation: %s", err)
 	}
@@ -185,6 +192,9 @@ func (cciClient *CciClient) waitForState(ctx context.Context, entityLabel string
 		Refresh: func() (any, string, error) {
 			cciEntity, err := cciClient.getAnyCciState(addr)
 			if err != nil {
+				if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "404") {
+					return "", "DELETED", nil
+				}
 				return nil, "", err
 			}
 

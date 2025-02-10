@@ -2,6 +2,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v3/ccitypes"
 )
@@ -12,8 +13,8 @@ type SupervisorNamespace struct {
 	TpClient            *CciClient
 	SupervisorNamespace *ccitypes.SupervisorNamespace
 
-	ProjectName             string
-	SupervisorNamespaceName string
+	// ProjectName string
+	// SupervisorNamespaceName string
 }
 
 func (tpClient *CciClient) CreateSupervisorNamespace(projectName string, supervisorNamespace *ccitypes.SupervisorNamespace) (*SupervisorNamespace, error) {
@@ -29,15 +30,20 @@ func (tpClient *CciClient) CreateSupervisorNamespace(projectName string, supervi
 
 	// Expected final entity URL is different and creation does not return any Location header to
 	// detect it automatically so it must be computed manually
-	resultUrlRef := copyUrlRef(urlRef)
-	resultUrlRef.Path = fmt.Sprintf("%s/%s", resultUrlRef.Path, supervisorNamespace.GetName())
+	// resultUrlRef := copyUrlRef(urlRef)
+	// resultUrlRef.Path = fmt.Sprintf("%s/%s", resultUrlRef.Path, supervisorNamespace.GetName())
 
 	returnObject := &SupervisorNamespace{
 		TpClient:            tpClient,
 		SupervisorNamespace: &ccitypes.SupervisorNamespace{},
 	}
 
-	if err := tpClient.PostItem(urlRef, resultUrlRef, nil, &supervisorNamespace, &returnObject.SupervisorNamespace); err != nil {
+	resultUrl := func(t interface{}) (*url.URL, error) {
+		ttype := t.(*ccitypes.SupervisorNamespace)
+		return tpClient.GetCciUrl(urlSuffix, "/", ttype.GetName())
+	}
+
+	if err := tpClient.PostItem(urlRef, resultUrl, nil, &supervisorNamespace, returnObject.SupervisorNamespace); err != nil {
 		return nil, fmt.Errorf("error creating %s in Project %s: %s", labelSupervisorNamespace, projectName, err)
 	}
 
@@ -56,7 +62,7 @@ func (tpClient *CciClient) GetSupervisorNamespaceByName(projectName, supervisorN
 		SupervisorNamespace: &ccitypes.SupervisorNamespace{},
 	}
 
-	if err := tpClient.VCDClient.Client.OpenApiGetItem("", addr, nil, returnObject.SupervisorNamespace, nil); err != nil {
+	if err := tpClient.GetItem(addr, nil, returnObject.SupervisorNamespace, nil); err != nil {
 		return nil, fmt.Errorf("error reading %s %s in Project %s: %s", labelSupervisorNamespace, supervisorNamespaceName, projectName, err)
 	}
 	return returnObject, nil
@@ -69,14 +75,16 @@ func (tpClient *CciClient) GetSupervisorNamespaceByName(projectName, supervisorN
 // }
 
 func (sn *SupervisorNamespace) Delete() error {
-	urlSuffix := fmt.Sprintf(ccitypes.SupervisorNamespacesURL, sn.ProjectName)
-	addr, err := sn.TpClient.GetCciUrl(urlSuffix, "/", sn.SupervisorNamespaceName)
+	projectName := sn.SupervisorNamespace.Namespace
+	namespaceName := sn.SupervisorNamespace.GetName()
+	urlSuffix := fmt.Sprintf(ccitypes.SupervisorNamespacesURL, projectName)
+	addr, err := sn.TpClient.GetCciUrl(urlSuffix, "/", namespaceName)
 	if err != nil {
 		return fmt.Errorf("error getting URL for creating supervisor namespace")
 	}
 
 	if err := sn.TpClient.DeleteItem(addr, nil, nil); err != nil {
-		return fmt.Errorf("error deleting %s %s in Project %s: %s", labelSupervisorNamespace, sn.SupervisorNamespaceName, sn.ProjectName, err)
+		return fmt.Errorf("error deleting %s %s in Project %s: %s", labelSupervisorNamespace, namespaceName, projectName, err)
 	}
 
 	return nil
