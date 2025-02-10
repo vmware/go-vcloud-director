@@ -48,11 +48,11 @@ func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, p
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
-	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
+	util.Logger.Printf("[TRACE] Posting %s item to CCI endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRefCopy.String(), reflect.TypeOf(outType))
 
 	if !cciClient.IsSupported() {
-		return fmt.Errorf("TP Client is not supported on this version")
+		return fmt.Errorf("CCI Client is not supported on this version")
 	}
 
 	resp, err := cciClient.cciPerformPostPut(http.MethodPost, urlRefCopy, params, payload, nil)
@@ -63,11 +63,10 @@ func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, p
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
 		return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
-
 	}
 
 	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
-		return fmt.Errorf("error decoding JSON response after POST: %s", err)
+		return fmt.Errorf("error decoding CCI JSON response after POST: %s", err)
 	}
 
 	err = resp.Body.Close()
@@ -84,7 +83,7 @@ func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, p
 	// Retrieve the final state of original entity
 	err = cciClient.GetItem(responseUrlRef, nil, outType, nil)
 	if err != nil {
-		return fmt.Errorf("error retrieving final entity after creation: %s", err)
+		return fmt.Errorf("error retrieving final CCI entity after creation: %s", err)
 	}
 
 	return nil
@@ -94,17 +93,17 @@ func (cciClient *CciClient) GetItem(urlRef *url.URL, params url.Values, outType 
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
-	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s",
+	util.Logger.Printf("[TRACE] Getting item from CCI endpoint %s with expected response of type %s",
 		urlRefCopy.String(), reflect.TypeOf(outType))
 
 	if !cciClient.IsSupported() {
-		return fmt.Errorf("TP Client is not supported on this version")
+		return fmt.Errorf("CCI Client is not supported on this version")
 	}
 
 	req := cciClient.newCciRequest(params, http.MethodGet, urlRefCopy, nil, additionalHeader)
 	resp, err := cciClient.VCDClient.Client.Http.Do(req)
 	if err != nil {
-		return fmt.Errorf("error performing GET request to %s: %s", urlRefCopy.String(), err)
+		return fmt.Errorf("error performing GET request to CCI %s: %s", urlRefCopy.String(), err)
 	}
 
 	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
@@ -120,7 +119,7 @@ func (cciClient *CciClient) GetItem(urlRef *url.URL, params url.Values, outType 
 
 	// Any other error occurred
 	if err != nil {
-		return fmt.Errorf("error in HTTP GET request: %s", err)
+		return fmt.Errorf("error in HTTP GET request for CCI: %s", err)
 	}
 
 	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
@@ -139,15 +138,14 @@ func (cciClient *CciClient) DeleteItem(urlRef *url.URL, params url.Values, addit
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
-	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRefCopy.String())
+	util.Logger.Printf("[TRACE] Deleting item at CCI endpoint %s", urlRefCopy.String())
 
 	if !cciClient.IsSupported() {
-		return fmt.Errorf("TP Client is not supported on this version")
+		return fmt.Errorf("CCI Client is not supported on this version")
 	}
 
 	// Perform request
 	req := cciClient.newCciRequest(params, http.MethodDelete, urlRefCopy, nil, additionalHeader)
-
 	resp, err := cciClient.VCDClient.Client.Http.Do(req)
 	if err != nil {
 		return err
@@ -163,7 +161,7 @@ func (cciClient *CciClient) DeleteItem(urlRef *url.URL, params url.Values, addit
 	// resp is ignored below because it would be the same as above
 	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &ccitypes.CciApiError{})
 	if err != nil {
-		return fmt.Errorf("error in HTTP DELETE request: %s", err)
+		return fmt.Errorf("error in HTTP DELETE request for CCI: %s", err)
 	}
 
 	err = resp.Body.Close()
@@ -171,7 +169,10 @@ func (cciClient *CciClient) DeleteItem(urlRef *url.URL, params url.Values, addit
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	/// TODO Track deletion ?????
+	_, err = cciClient.waitForState(context.TODO(), "label", urlRefCopy, []string{"DELETING", "WAITING"}, []string{"DELETED"})
+	if err != nil {
+		return fmt.Errorf("error waiting for CCI entity state: %s", err)
+	}
 
 	return nil
 }
@@ -213,7 +214,7 @@ func (cciClient *CciClient) getAnyCciState(urlRef *url.URL) (*ccitypes.CciEntity
 
 	err := cciClient.GetItem(urlRef, nil, &entityStatus, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error getting entity status from URL '%s': %s", urlRef.String(), err)
+		return nil, fmt.Errorf("error getting CCI entity status from URL '%s': %s", urlRef.String(), err)
 	}
 	return &entityStatus, nil
 }
@@ -224,7 +225,7 @@ func (cciClient *CciClient) cciPerformPostPut(httpMethod string, urlRef *url.URL
 	if payload != nil {
 		marshaledJson, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {
-			return nil, fmt.Errorf("error marshalling JSON data for %s request %s", httpMethod, err)
+			return nil, fmt.Errorf("error marshalling CCI JSON data for %s request %s", httpMethod, err)
 		}
 		body = bytes.NewBuffer(marshaledJson)
 	}
@@ -238,7 +239,7 @@ func (cciClient *CciClient) cciPerformPostPut(httpMethod string, urlRef *url.URL
 	// resp is ignored below because it is the same the one above
 	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &ccitypes.CciApiError{})
 	if err != nil {
-		return nil, fmt.Errorf("error in HTTP %s request: %s", httpMethod, err)
+		return nil, fmt.Errorf("error in HTTP %s CCI request: %s", httpMethod, err)
 	}
 	return resp, nil
 }
