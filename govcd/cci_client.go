@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
-	"github.com/vmware/go-vcloud-director/v3/tptypes"
+	"github.com/vmware/go-vcloud-director/v3/ccitypes"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
 )
@@ -26,36 +26,36 @@ const (
 	stateWaitMinTimeout = 5 * time.Second
 )
 
-type TpClient struct {
+type CciClient struct {
 	VCDClient *VCDClient
 	// Client      Client  // Client for the underlying VCD instance
 	// sessionHREF url.URL // HREF for the session API
 	// QueryHREF   url.URL // HREF for the query API
 }
 
-func (tpClient *TpClient) IsSupported() bool {
-	return tpClient.VCDClient.Client.APIVCDMaxVersionIs(">= 40")
+func (cciClient *CciClient) IsSupported() bool {
+	return cciClient.VCDClient.Client.APIVCDMaxVersionIs(">= 40")
 }
 
-func (tpClient *TpClient) GetCciUrl(endpoint ...string) (*url.URL, error) {
-	path := fmt.Sprintf(tptypes.CciKubernetesSubpath, tpClient.VCDClient.Client.VCDHREF.Scheme, tpClient.VCDClient.Client.VCDHREF.Host)
+func (tpClient *CciClient) GetCciUrl(endpoint ...string) (*url.URL, error) {
+	path := fmt.Sprintf(ccitypes.CciKubernetesSubpath, tpClient.VCDClient.Client.VCDHREF.Scheme, tpClient.VCDClient.Client.VCDHREF.Host)
 	path = path + strings.Join(endpoint, "")
 
 	return url.ParseRequestURI(path)
 }
 
-func (tpClient *TpClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, params url.Values, payload, outType interface{}) error {
+func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, params url.Values, payload, outType interface{}) error {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
 	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRefCopy.String(), reflect.TypeOf(outType))
 
-	if !tpClient.IsSupported() {
+	if !cciClient.IsSupported() {
 		return fmt.Errorf("TP Client is not supported on this version")
 	}
 
-	resp, err := tpClient.cciPerformPostPut(http.MethodPost, urlRefCopy, params, payload, nil)
+	resp, err := cciClient.cciPerformPostPut(http.MethodPost, urlRefCopy, params, payload, nil)
 	if err != nil {
 		return err
 	}
@@ -76,13 +76,13 @@ func (tpClient *TpClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, par
 	}
 
 	// WAIT for entity to transition from "CREATING" or "WAITING" to "CREATED"
-	_, err = tpClient.waitForState(context.TODO(), "label", responseUrlRef, []string{"CREATING", "WAITING"}, []string{"CREATED"})
+	_, err = cciClient.waitForState(context.TODO(), "label", responseUrlRef, []string{"CREATING", "WAITING"}, []string{"CREATED"})
 	if err != nil {
 		return fmt.Errorf("error waiting for CCI entity state: %s", err)
 	}
 
 	// Retrieve the final state of original entity
-	err = tpClient.GetItem(responseUrlRef, nil, outType, nil)
+	err = cciClient.GetItem(responseUrlRef, nil, outType, nil)
 	if err != nil {
 		return fmt.Errorf("error retrieving final entity after creation: %s", err)
 	}
@@ -90,19 +90,19 @@ func (tpClient *TpClient) PostItem(urlRef *url.URL, responseUrlRef *url.URL, par
 	return nil
 }
 
-func (tpClient *TpClient) GetItem(urlRef *url.URL, params url.Values, outType interface{}, additionalHeader map[string]string) error {
+func (cciClient *CciClient) GetItem(urlRef *url.URL, params url.Values, outType interface{}, additionalHeader map[string]string) error {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
 	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s",
 		urlRefCopy.String(), reflect.TypeOf(outType))
 
-	if !tpClient.IsSupported() {
+	if !cciClient.IsSupported() {
 		return fmt.Errorf("TP Client is not supported on this version")
 	}
 
-	req := tpClient.newCciRequest(params, http.MethodGet, urlRefCopy, nil, additionalHeader)
-	resp, err := tpClient.VCDClient.Client.Http.Do(req)
+	req := cciClient.newCciRequest(params, http.MethodGet, urlRefCopy, nil, additionalHeader)
+	resp, err := cciClient.VCDClient.Client.Http.Do(req)
 	if err != nil {
 		return fmt.Errorf("error performing GET request to %s: %s", urlRefCopy.String(), err)
 	}
@@ -110,13 +110,13 @@ func (tpClient *TpClient) GetItem(urlRef *url.URL, params url.Values, outType in
 	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
 	// HTTP 403: Forbidden - is returned if the user is not authorized or the entity does not exist.
 	if resp.StatusCode == http.StatusForbidden {
-		err := ParseErr(types.BodyTypeJSON, resp, &tptypes.CciApiError{})
+		err := ParseErr(types.BodyTypeJSON, resp, &ccitypes.CciApiError{})
 		closeErr := resp.Body.Close()
 		return fmt.Errorf("%s: %s [body close error: %s]", ErrorEntityNotFound, err, closeErr)
 	}
 
 	// resp is ignored below because it is the same as above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tptypes.CciApiError{})
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &ccitypes.CciApiError{})
 
 	// Any other error occurred
 	if err != nil {
@@ -135,20 +135,20 @@ func (tpClient *TpClient) GetItem(urlRef *url.URL, params url.Values, outType in
 	return nil
 }
 
-func (tpClient *TpClient) DeleteItem(urlRef *url.URL, params url.Values, additionalHeader map[string]string) error {
+func (cciClient *CciClient) DeleteItem(urlRef *url.URL, params url.Values, additionalHeader map[string]string) error {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
 	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRefCopy.String())
 
-	if !tpClient.IsSupported() {
+	if !cciClient.IsSupported() {
 		return fmt.Errorf("TP Client is not supported on this version")
 	}
 
 	// Perform request
-	req := tpClient.newCciRequest(params, http.MethodDelete, urlRefCopy, nil, additionalHeader)
+	req := cciClient.newCciRequest(params, http.MethodDelete, urlRefCopy, nil, additionalHeader)
 
-	resp, err := tpClient.VCDClient.Client.Http.Do(req)
+	resp, err := cciClient.VCDClient.Client.Http.Do(req)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (tpClient *TpClient) DeleteItem(urlRef *url.URL, params url.Values, additio
 	debugShowResponse(resp, bodyBytes)
 
 	// resp is ignored below because it would be the same as above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tptypes.CciApiError{})
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &ccitypes.CciApiError{})
 	if err != nil {
 		return fmt.Errorf("error in HTTP DELETE request: %s", err)
 	}
@@ -177,12 +177,12 @@ func (tpClient *TpClient) DeleteItem(urlRef *url.URL, params url.Values, additio
 }
 
 // TODO - can we do this quite cheap without needing to pull in Hashicorp package at SDK level
-func (tpClient *TpClient) waitForState(ctx context.Context, entityLabel string, addr *url.URL, pendingStates, targetStates []string) (any, error) {
+func (cciClient *CciClient) waitForState(ctx context.Context, entityLabel string, addr *url.URL, pendingStates, targetStates []string) (any, error) {
 	stateChangeFunc := retry.StateChangeConf{
 		Pending: pendingStates,
 		Target:  targetStates,
 		Refresh: func() (any, string, error) {
-			cciEntity, err := tpClient.getAnyCciState(addr)
+			cciEntity, err := cciClient.getAnyCciState(addr)
 			if err != nil {
 				return nil, "", err
 			}
@@ -208,17 +208,17 @@ func (tpClient *TpClient) waitForState(ctx context.Context, entityLabel string, 
 	return result, nil
 }
 
-func (tpClient *TpClient) getAnyCciState(urlRef *url.URL) (*tptypes.CciEntityStatus, error) {
-	entityStatus := tptypes.CciEntityStatus{}
+func (cciClient *CciClient) getAnyCciState(urlRef *url.URL) (*ccitypes.CciEntityStatus, error) {
+	entityStatus := ccitypes.CciEntityStatus{}
 
-	err := tpClient.GetItem(urlRef, nil, &entityStatus, nil)
+	err := cciClient.GetItem(urlRef, nil, &entityStatus, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error getting entity status from URL '%s': %s", urlRef.String(), err)
 	}
 	return &entityStatus, nil
 }
 
-func (tpClient *TpClient) cciPerformPostPut(httpMethod string, urlRef *url.URL, params url.Values, payload interface{}, additionalHeader map[string]string) (*http.Response, error) {
+func (cciClient *CciClient) cciPerformPostPut(httpMethod string, urlRef *url.URL, params url.Values, payload interface{}, additionalHeader map[string]string) (*http.Response, error) {
 	// Marshal payload if we have one
 	body := new(bytes.Buffer)
 	if payload != nil {
@@ -229,22 +229,22 @@ func (tpClient *TpClient) cciPerformPostPut(httpMethod string, urlRef *url.URL, 
 		body = bytes.NewBuffer(marshaledJson)
 	}
 
-	req := tpClient.newCciRequest(params, httpMethod, urlRef, body, additionalHeader)
-	resp, err := tpClient.VCDClient.Client.Http.Do(req)
+	req := cciClient.newCciRequest(params, httpMethod, urlRef, body, additionalHeader)
+	resp, err := cciClient.VCDClient.Client.Http.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	// resp is ignored below because it is the same the one above
-	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &tptypes.CciApiError{})
+	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &ccitypes.CciApiError{})
 	if err != nil {
 		return nil, fmt.Errorf("error in HTTP %s request: %s", httpMethod, err)
 	}
 	return resp, nil
 }
 
-func (tpClient *TpClient) newCciRequest(params url.Values, method string, reqUrl *url.URL, body io.Reader, additionalHeader map[string]string) *http.Request {
-	client := tpClient.VCDClient.Client
+func (cciClient *CciClient) newCciRequest(params url.Values, method string, reqUrl *url.URL, body io.Reader, additionalHeader map[string]string) *http.Request {
+	client := cciClient.VCDClient.Client
 
 	// copy passed in URL ref so that it is not mutated
 	reqUrlCopy := copyUrlRef(reqUrl)

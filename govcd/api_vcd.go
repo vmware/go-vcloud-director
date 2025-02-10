@@ -41,8 +41,8 @@ type VCDClient struct {
 	QueryHREF   url.URL // HREF for the query API
 }
 
-func (vcdClient *VCDClient) GetTpClient() *TpClient {
-	return &TpClient{
+func (vcdClient *VCDClient) GetCciClient() *CciClient {
+	return &CciClient{
 		VCDClient: vcdClient,
 	}
 }

@@ -3,25 +3,25 @@ package govcd
 import (
 	"fmt"
 
-	"github.com/vmware/go-vcloud-director/v3/tptypes"
+	"github.com/vmware/go-vcloud-director/v3/ccitypes"
 )
 
 const labelSupervisorNamespace = "Supervisor Namespace"
 
 type SupervisorNamespace struct {
-	TpClient            *TpClient
-	SupervisorNamespace *tptypes.SupervisorNamespace
+	TpClient            *CciClient
+	SupervisorNamespace *ccitypes.SupervisorNamespace
 
 	ProjectName             string
 	SupervisorNamespaceName string
 }
 
-func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervisorNamespace *tptypes.SupervisorNamespace) (*SupervisorNamespace, error) {
+func (tpClient *CciClient) CreateSupervisorNamespace(projectName string, supervisorNamespace *ccitypes.SupervisorNamespace) (*SupervisorNamespace, error) {
 	if projectName == "" {
 		return nil, fmt.Errorf("project name must be specified")
 	}
 
-	urlSuffix := fmt.Sprintf(tptypes.SupervisorNamespacesURL, projectName)
+	urlSuffix := fmt.Sprintf(ccitypes.SupervisorNamespacesURL, projectName)
 	urlRef, err := tpClient.GetCciUrl(urlSuffix)
 	if err != nil {
 		return nil, fmt.Errorf("error getting URL for creating supervisor namespace")
@@ -34,7 +34,7 @@ func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervis
 
 	returnObject := &SupervisorNamespace{
 		TpClient:            tpClient,
-		SupervisorNamespace: &tptypes.SupervisorNamespace{},
+		SupervisorNamespace: &ccitypes.SupervisorNamespace{},
 	}
 
 	if err := tpClient.PostItem(urlRef, resultUrlRef, nil, &supervisorNamespace, &returnObject.SupervisorNamespace); err != nil {
@@ -44,8 +44,8 @@ func (tpClient *TpClient) CreateSupervisorNamespace(projectName string, supervis
 	return returnObject, nil
 }
 
-func (tpClient *TpClient) GetSupervisorNamespaceByName(projectName, supervisorNamespaceName string) (*SupervisorNamespace, error) {
-	urlSuffix := fmt.Sprintf(tptypes.SupervisorNamespacesURL, projectName)
+func (tpClient *CciClient) GetSupervisorNamespaceByName(projectName, supervisorNamespaceName string) (*SupervisorNamespace, error) {
+	urlSuffix := fmt.Sprintf(ccitypes.SupervisorNamespacesURL, projectName)
 	addr, err := tpClient.GetCciUrl(urlSuffix, "/", supervisorNamespaceName)
 	if err != nil {
 		return nil, fmt.Errorf("error getting URL for creating supervisor namespace")
@@ -53,7 +53,7 @@ func (tpClient *TpClient) GetSupervisorNamespaceByName(projectName, supervisorNa
 
 	returnObject := &SupervisorNamespace{
 		TpClient:            tpClient,
-		SupervisorNamespace: &tptypes.SupervisorNamespace{},
+		SupervisorNamespace: &ccitypes.SupervisorNamespace{},
 	}
 
 	if err := tpClient.VCDClient.Client.OpenApiGetItem("", addr, nil, returnObject.SupervisorNamespace, nil); err != nil {
@@ -69,7 +69,7 @@ func (tpClient *TpClient) GetSupervisorNamespaceByName(projectName, supervisorNa
 // }
 
 func (sn *SupervisorNamespace) Delete() error {
-	urlSuffix := fmt.Sprintf(tptypes.SupervisorNamespacesURL, sn.ProjectName)
+	urlSuffix := fmt.Sprintf(ccitypes.SupervisorNamespacesURL, sn.ProjectName)
 	addr, err := sn.TpClient.GetCciUrl(urlSuffix, "/", sn.SupervisorNamespaceName)
 	if err != nil {
 		return fmt.Errorf("error getting URL for creating supervisor namespace")
