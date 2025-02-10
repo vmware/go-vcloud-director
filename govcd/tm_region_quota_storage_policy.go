@@ -27,17 +27,17 @@ func (g RegionQuotaStoragePolicy) wrap(inner *types.VirtualDatacenterStoragePoli
 	return &g
 }
 
-// CreateStoragePolicies creates new Region Quota Storage Policies in a Region Quota.
+// CreateRegionQuotaStoragePolicies creates new Region Quota Storage Policies in a Region Quota.
 // The request will fail if the list of Storage Policies is empty.
 // It returns the list of all Storage Policies that are available in the Region Quota after creation.
-func (o *RegionQuota) CreateStoragePolicies(regionStoragePolicies *types.VirtualDatacenterStoragePolicies) ([]*RegionQuotaStoragePolicy, error) {
+func (vcdClient *VCDClient) CreateRegionQuotaStoragePolicies(regionQuotaId string, regionStoragePolicies *types.VirtualDatacenterStoragePolicies) ([]*RegionQuotaStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel: labelRegionQuotaStoragePolicies,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
 		requiresTm:  true,
 	}
 
-	_, err := createInnerEntity[types.VirtualDatacenterStoragePolicies](&o.vcdClient.Client, c, regionStoragePolicies)
+	_, err := createInnerEntity[types.VirtualDatacenterStoragePolicies](&vcdClient.Client, c, regionStoragePolicies)
 	if err != nil {
 		// TODO: TM: The returned task contains a wrong URN in the "Owner" field, so the VDC can't be retrieved.
 		//           We don't really need it either, so we ignore this error.
@@ -47,11 +47,18 @@ func (o *RegionQuota) CreateStoragePolicies(regionStoragePolicies *types.Virtual
 	}
 
 	// Get all the storage policies from the Region Quota and return them
-	allPolicies, err := o.GetAllStoragePolicies(nil)
+	allPolicies, err := vcdClient.GetAllRegionQuotaStoragePolicies(nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve all the %s after creation: %s", labelRegionQuotaStoragePolicies, err)
 	}
 	return allPolicies, nil
+}
+
+// CreateStoragePolicies creates new Region Quota Storage Policies in a Region Quota.
+// The request will fail if the list of Storage Policies is empty.
+// It returns the list of all Storage Policies that are available in the Region Quota after creation.
+func (o *RegionQuota) CreateStoragePolicies(regionStoragePolicies *types.VirtualDatacenterStoragePolicies) ([]*RegionQuotaStoragePolicy, error) {
+	return o.vcdClient.CreateRegionQuotaStoragePolicies(o.TmVdc.ID, regionStoragePolicies)
 }
 
 // GetAllRegionQuotaStoragePolicies retrieves all Region Quota Storage Policies
@@ -80,7 +87,7 @@ func (vdc *RegionQuota) GetStoragePolicyByName(name string) (*RegionQuotaStorage
 	}
 
 	queryParams := url.Values{}
-	queryParams.Add("filter", fmt.Sprintf("virtualDatacenter.id==%s;name==%s", vdc.TmVdc.ID, name))
+	queryParams.Add("filter", fmt.Sprintf("virtualDatacenter.id==%s;name==%s", vdc.TmVdc.ID, "*"))
 
 	filteredEntities, err := vdc.vcdClient.GetAllRegionQuotaStoragePolicies(queryParams)
 	if err != nil {
@@ -121,25 +128,35 @@ func (rq *RegionQuota) GetStoragePolicyById(id string) (*RegionQuotaStoragePolic
 	return policy, err
 }
 
-// Update updates the receiver Region Quota Storage Policy
-func (sp *RegionQuotaStoragePolicy) Update(tmVdcConfig *types.VirtualDatacenterStoragePolicy) (*RegionQuotaStoragePolicy, error) {
+// UpdateRegionQuotaStoragePolicy updates the Region Quota Storage Policy with given ID
+func (vcdClient *VCDClient) UpdateRegionQuotaStoragePolicy(regionQuotaStoragePolicyId string, tmVdcConfig *types.VirtualDatacenterStoragePolicy) (*RegionQuotaStoragePolicy, error) {
 	c := crudConfig{
 		entityLabel:    labelRegionQuotaStoragePolicies,
 		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
-		endpointParams: []string{sp.VirtualDatacenterStoragePolicy.ID},
+		endpointParams: []string{regionQuotaStoragePolicyId},
 		requiresTm:     true,
 	}
-	outerType := RegionQuotaStoragePolicy{vcdClient: sp.vcdClient}
-	return updateOuterEntity(&sp.vcdClient.Client, outerType, c, tmVdcConfig)
+	outerType := RegionQuotaStoragePolicy{vcdClient: vcdClient}
+	return updateOuterEntity(&vcdClient.Client, outerType, c, tmVdcConfig)
+}
+
+// Update updates the receiver Region Quota Storage Policy
+func (sp *RegionQuotaStoragePolicy) Update(spConfig *types.VirtualDatacenterStoragePolicy) (*RegionQuotaStoragePolicy, error) {
+	return sp.vcdClient.UpdateRegionQuotaStoragePolicy(sp.VirtualDatacenterStoragePolicy.ID, spConfig)
+}
+
+// DeleteRegionQuotaStoragePolicy deletes a Region Quota Storage Policy with given ID
+func (vcdClient *VCDClient) DeleteRegionQuotaStoragePolicy(regionQuotaStoragePolicyId string) error {
+	c := crudConfig{
+		entityLabel:    labelRegionQuotaStoragePolicies,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
+		endpointParams: []string{regionQuotaStoragePolicyId},
+		requiresTm:     true,
+	}
+	return deleteEntityById(&vcdClient.Client, c)
 }
 
 // Delete deletes a Region Quota Storage Policy
 func (sp *RegionQuotaStoragePolicy) Delete() error {
-	c := crudConfig{
-		entityLabel:    labelRegionQuotaStoragePolicies,
-		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
-		endpointParams: []string{sp.VirtualDatacenterStoragePolicy.ID},
-		requiresTm:     true,
-	}
-	return deleteEntityById(&sp.vcdClient.Client, c)
+	return sp.vcdClient.DeleteRegionQuotaStoragePolicy(sp.VirtualDatacenterStoragePolicy.ID)
 }
