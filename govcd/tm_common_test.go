@@ -265,9 +265,9 @@ func createOrg(vcd *TestVCD, check *C, canManageOrgs bool) (*TmOrg, func()) {
 	}
 }
 
-// Creates a VDC (Region Quota) for testing in Tenant Manager and configures it with
+// Creates a Region Quota for testing in Tenant Manager and configures it with
 // the first found VM class and the configured Storage Class.
-func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*RegionQuota, func()) {
+func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*RegionQuota, func()) {
 	if vcd.config.Tm.StorageClass == "" {
 		check.Fatal("testing configuration property 'tm.storageClass' is required")
 	}
@@ -310,17 +310,17 @@ func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*RegionQuota
 			},
 		}},
 	}
-	vdc, err := vcd.client.CreateRegionQuota(cfg)
+	rq, err := vcd.client.CreateRegionQuota(cfg)
 	check.Assert(err, IsNil)
-	check.Assert(vdc, NotNil)
+	check.Assert(rq, NotNil)
 
-	PrependToCleanupListOpenApi(vdc.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+vdc.TmVdc.ID)
+	PrependToCleanupListOpenApi(rq.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+rq.TmVdc.ID)
 
-	err = vdc.AssignVmClasses(&types.RegionVirtualMachineClasses{
+	err = rq.AssignVmClasses(&types.RegionVirtualMachineClasses{
 		Values: types.OpenApiReferences{{Name: vmClasses[0].Name, ID: vmClasses[0].ID}},
 	})
 	check.Assert(err, IsNil)
-	_, err = vdc.CreateStoragePolicies(&types.VirtualDatacenterStoragePolicies{
+	_, err = rq.CreateStoragePolicies(&types.VirtualDatacenterStoragePolicies{
 		Values: []types.VirtualDatacenterStoragePolicy{
 			{
 				RegionStoragePolicy: types.OpenApiReference{
@@ -328,15 +328,15 @@ func createVdc(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*RegionQuota
 				},
 				StorageLimitMiB: 100,
 				VirtualDatacenter: types.OpenApiReference{
-					ID: vdc.TmVdc.ID,
+					ID: rq.TmVdc.ID,
 				},
 			},
 		},
 	})
 	check.Assert(err, IsNil)
 
-	return vdc, func() {
-		err = vdc.Delete()
+	return rq, func() {
+		err = rq.Delete()
 		check.Assert(err, IsNil)
 	}
 }
