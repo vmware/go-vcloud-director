@@ -12,26 +12,18 @@ const labelSupervisorNamespace = "Supervisor Namespace"
 type SupervisorNamespace struct {
 	TpClient            *CciClient
 	SupervisorNamespace *ccitypes.SupervisorNamespace
-
-	// ProjectName string
-	// SupervisorNamespaceName string
 }
 
 func (tpClient *CciClient) CreateSupervisorNamespace(projectName string, supervisorNamespace *ccitypes.SupervisorNamespace) (*SupervisorNamespace, error) {
 	if projectName == "" {
-		return nil, fmt.Errorf("project name must be specified")
+		return nil, fmt.Errorf("%s name must be specified", labelProject)
 	}
 
 	urlSuffix := fmt.Sprintf(ccitypes.SupervisorNamespacesURL, projectName)
 	urlRef, err := tpClient.GetCciUrl(urlSuffix)
 	if err != nil {
-		return nil, fmt.Errorf("error getting URL for creating supervisor namespace")
+		return nil, fmt.Errorf("error getting URL for creating %s", labelSupervisorNamespace)
 	}
-
-	// Expected final entity URL is different and creation does not return any Location header to
-	// detect it automatically so it must be computed manually
-	// resultUrlRef := copyUrlRef(urlRef)
-	// resultUrlRef.Path = fmt.Sprintf("%s/%s", resultUrlRef.Path, supervisorNamespace.GetName())
 
 	returnObject := &SupervisorNamespace{
 		TpClient:            tpClient,
@@ -39,11 +31,11 @@ func (tpClient *CciClient) CreateSupervisorNamespace(projectName string, supervi
 	}
 
 	resultUrl := func(t interface{}) (*url.URL, error) {
-		ttype := t.(*ccitypes.SupervisorNamespace)
-		return tpClient.GetCciUrl(urlSuffix, "/", ttype.GetName())
+		entity := t.(*ccitypes.SupervisorNamespace)
+		return tpClient.GetCciUrl(urlSuffix, "/", entity.GetName())
 	}
 
-	if err := tpClient.PostItem(urlRef, resultUrl, nil, &supervisorNamespace, returnObject.SupervisorNamespace); err != nil {
+	if err := tpClient.PostItemAsync(urlRef, resultUrl, nil, &supervisorNamespace, returnObject.SupervisorNamespace); err != nil {
 		return nil, fmt.Errorf("error creating %s in Project %s: %s", labelSupervisorNamespace, projectName, err)
 	}
 
@@ -68,11 +60,6 @@ func (tpClient *CciClient) GetSupervisorNamespaceByName(projectName, supervisorN
 	return returnObject, nil
 
 }
-
-// TODO - not supported?
-// func (sn *SupervisorNamespace) Update() error {
-// 	return nil
-// }
 
 func (sn *SupervisorNamespace) Delete() error {
 	projectName := sn.SupervisorNamespace.Namespace

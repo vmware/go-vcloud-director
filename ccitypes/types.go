@@ -10,17 +10,16 @@ type CciEntityStatus struct {
 	v1.TypeMeta   `json:",inline"`
 	v1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   any                                      `json:"spec,omitempty"`
-	Status CciEntityStatusSupervisorNamespaceStatus `json:"status,omitempty"`
+	Spec   any       `json:"spec,omitempty"`
+	Status CciStatus `json:"status,omitempty"`
 }
 
-type CciEntityStatusSupervisorNamespaceStatus struct {
-	// NamespaceEndpointURL string                                    `json:"namespaceEndpointURL,omitempty"`
-	Phase      string                                   `json:"phase,omitempty"`
-	Conditions []CciSupervisorNamespaceStatusConditions `json:"conditions,omitempty"`
+type CciStatus struct {
+	Phase      string                `json:"phase,omitempty"`
+	Conditions []CciStatusConditions `json:"conditions,omitempty"`
 }
 
-type CciSupervisorNamespaceStatusConditions struct {
+type CciStatusConditions struct {
 	Message  string `json:"message,omitempty"`
 	Reason   string `json:"reason,omitempty"`
 	Severity string `json:"severity,omitempty"`
@@ -28,6 +27,7 @@ type CciSupervisorNamespaceStatusConditions struct {
 	Type     string `json:"type,omitempty"`
 }
 
+// CciApiError is a structure that matches error interface and is able to const
 type CciApiError struct {
 	APIVersion    string `json:"apiVersion"`
 	Code          int    `json:"code"`
@@ -38,6 +38,7 @@ type CciApiError struct {
 	Status        string `json:"status"`
 }
 
+// Error unwraps the CciApiError to human readable error message
 func (cciApiError CciApiError) Error() string {
 	return fmt.Sprintf("error %d: reason: %s, message: %s, status: %s",
 		cciApiError.Code, cciApiError.Reason, cciApiError.Message, cciApiError.Status)
@@ -107,4 +108,15 @@ type SupervisorNamespaceStatusZones struct {
 	MemoryLimitMiB       int64  `json:"memoryLimitMiB,omitempty"`
 	MemoryReservationMiB int64  `json:"memoryReservationMiB,omitempty"`
 	Name                 string `json:"name,omitempty"`
+}
+
+type Project struct {
+	v1.TypeMeta   `json:",inline"`
+	v1.ObjectMeta `json:"metadata,omitempty"`
+	Spec          ProjectSpec `json:"spec,omitempty"`
+	Status        *CciStatus  `json:"status,omitempty"`
+}
+
+type ProjectSpec struct {
+	Description string `json:"description,omitempty"`
 }

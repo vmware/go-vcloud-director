@@ -46,7 +46,7 @@ func (tpClient *CciClient) GetCciUrl(endpoint ...string) (*url.URL, error) {
 
 type urlRetriever func(interface{}) (*url.URL, error)
 
-func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlFunc urlRetriever, params url.Values, payload, outType interface{}) error {
+func (cciClient *CciClient) PostItemAsync(urlRef *url.URL, responseUrlFunc urlRetriever, params url.Values, payload, outType interface{}) error {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
@@ -92,6 +92,50 @@ func (cciClient *CciClient) PostItem(urlRef *url.URL, responseUrlFunc urlRetriev
 	if err != nil {
 		return fmt.Errorf("error retrieving final CCI entity after creation: %s", err)
 	}
+
+	return nil
+}
+
+func (cciClient *CciClient) PostItemSync(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+	// copy passed in URL ref so that it is not mutated
+	urlRefCopy := copyUrlRef(urlRef)
+
+	util.Logger.Printf("[TRACE] Posting %s item to CCI endpoint %s with expected response of type %s",
+		reflect.TypeOf(payload), urlRefCopy.String(), reflect.TypeOf(outType))
+
+	if !cciClient.IsSupported() {
+		return fmt.Errorf("CCI Client is not supported on this version")
+	}
+
+	resp, err := cciClient.cciPerformPostPut(http.MethodPost, urlRefCopy, params, payload, nil)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
+		return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
+	}
+
+	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
+		return fmt.Errorf("error decoding CCI JSON response after POST: %s", err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error closing response body: %s", err)
+	}
+
+	// responseUrl, err := responseUrlFunc(outType)
+	// if err != nil {
+	// 	return fmt.Errorf("error getting CCI entity URL after creation: %s", err)
+	// }
+
+	// // Retrieve the final state of original entity
+	// err = cciClient.GetItem(responseUrl, nil, outType, nil)
+	// if err != nil {
+	// 	return fmt.Errorf("error retrieving final CCI entity after creation: %s", err)
+	// }
 
 	return nil
 }
