@@ -75,31 +75,28 @@ func (vcdClient *VCDClient) GetAllRegionQuotaStoragePolicies(queryParameters url
 }
 
 // GetAllStoragePolicies retrieves all Region Quota Storage Policies from the given Region Quota
-func (vdc *RegionQuota) GetAllStoragePolicies(queryParameters url.Values) ([]*RegionQuotaStoragePolicy, error) {
-	params := queryParameterFilterAnd("virtualDatacenter.id=="+vdc.TmVdc.ID, queryParameters)
-	return vdc.vcdClient.GetAllRegionQuotaStoragePolicies(params)
+func (regionQuota *RegionQuota) GetAllStoragePolicies(queryParameters url.Values) ([]*RegionQuotaStoragePolicy, error) {
+	params := queryParameterFilterAnd("virtualDatacenter.id=="+regionQuota.TmVdc.ID, queryParameters)
+	return regionQuota.vcdClient.GetAllRegionQuotaStoragePolicies(params)
 }
 
-// GetStoragePolicyByName retrieves a Region Quota Storage Policy by the given name
-func (vdc *RegionQuota) GetStoragePolicyByName(name string) (*RegionQuotaStoragePolicy, error) {
+// GetStoragePolicyByName retrieves a Region Quota Storage Policy by the given name. This method runs in O(n)
+// where n is the number of Storage Policies in the receiver Region Quota, as the endpoint does not support filtering.
+func (regionQuota *RegionQuota) GetStoragePolicyByName(name string) (*RegionQuotaStoragePolicy, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%s lookup requires name to be present", labelRegionQuotaStoragePolicies)
 	}
 
-	queryParams := url.Values{}
-	queryParams.Add("filter", fmt.Sprintf("virtualDatacenter.id==%s;name==%s", vdc.TmVdc.ID, "*"))
-
-	filteredEntities, err := vdc.vcdClient.GetAllRegionQuotaStoragePolicies(queryParams)
+	allSps, err := regionQuota.GetAllStoragePolicies(nil)
 	if err != nil {
 		return nil, err
 	}
-
-	singleResult, err := oneOrError("name", name, filteredEntities)
-	if err != nil {
-		return nil, err
+	for _, sp := range allSps {
+		if sp.VirtualDatacenterStoragePolicy.Name == name {
+			return sp, nil
+		}
 	}
-
-	return singleResult, nil
+	return nil, fmt.Errorf("unable to find storage policy with name '%s' after lookup: %s", name, ErrorEntityNotFound)
 }
 
 // GetRegionQuotaStoragePolicyById retrieves a Region Quota Storage Policy by a given ID

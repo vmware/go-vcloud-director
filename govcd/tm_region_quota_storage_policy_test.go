@@ -7,7 +7,6 @@
 package govcd
 
 import (
-	"net/url"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
@@ -87,7 +86,7 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 	check.Assert(len(rqPolicies), Equals, 1)
 	check.Assert(rqPolicies[0].VirtualDatacenterStoragePolicy, NotNil)
 
-	// Getting policies by Region Quota (the parent)
+	// Getting policies
 	allPolicies, err := createdRegionQuota.GetAllStoragePolicies(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allPolicies), Equals, len(rqPolicies))
@@ -103,15 +102,6 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(policy.VirtualDatacenterStoragePolicy, NotNil)
 	check.Assert(*policy.VirtualDatacenterStoragePolicy, DeepEquals, *rqPolicies[0].VirtualDatacenterStoragePolicy)
-
-	// Getting policies with general client
-	params := url.Values{}
-	params.Add("filter", "virtualDatacenter.id=="+createdRegionQuota.TmVdc.ID)
-	filteredPolicies, err := vcd.client.GetAllRegionQuotaStoragePolicies(params)
-	check.Assert(err, IsNil)
-	check.Assert(len(filteredPolicies), Equals, len(rqPolicies))
-	check.Assert(filteredPolicies[0].VirtualDatacenterStoragePolicy, NotNil)
-	check.Assert(*filteredPolicies[0].VirtualDatacenterStoragePolicy, DeepEquals, *rqPolicies[0].VirtualDatacenterStoragePolicy)
 
 	// Update policy
 	updatedPolicy, err := rqPolicies[0].Update(&types.VirtualDatacenterStoragePolicy{
