@@ -10,29 +10,6 @@ import (
 
 const cciLabelKubeConfig = "Kube Config"
 
-// type Project struct {
-// 	TpClient *CciClient
-// 	Project  *ccitypes.Project
-// }
-
-// func (tpClient *CciClient) GetKubeConfig(project *ccitypes.Project) (*Project, error) {
-// 	urlRef, err := tpClient.GetCciUrl(ccitypes.SupervisorProjectsURL)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("error getting URL for creating supervisor namespace")
-// 	}
-
-// 	returnObject := &Project{
-// 		TpClient: tpClient,
-// 		Project:  &ccitypes.Project{},
-// 	}
-
-// 	if err := tpClient.PostItemSync(urlRef, nil, &project, returnObject.Project); err != nil {
-// 		return nil, fmt.Errorf("error creating %s in Project %s: %s", cciLabelKubeConfig, project.GetName(), err)
-// 	}
-
-// 	return returnObject, nil
-// }
-
 type KubeConfigValues struct {
 	ContextName   string
 	ClusterName   string
