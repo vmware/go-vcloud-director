@@ -121,11 +121,10 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 
 	printVerbose("# Will create NSX-T Manager %s\n", vcd.config.Tm.NsxtManagerUrl)
 	nsxtCfg := &types.NsxtManagerOpenApi{
-		Name:        check.TestName(),
-		Username:    vcd.config.Tm.NsxtManagerUsername,
-		Description: check.TestName(), // TODO: TM: Latest build throws SQL error if not populated
-		Password:    vcd.config.Tm.NsxtManagerPassword,
-		Url:         vcd.config.Tm.NsxtManagerUrl,
+		Name:     check.TestName(),
+		Username: vcd.config.Tm.NsxtManagerUsername,
+		Password: vcd.config.Tm.NsxtManagerPassword,
+		Url:      vcd.config.Tm.NsxtManagerUrl,
 	}
 	// Certificate must be trusted before adding NSX-T Manager
 	url, err := url.Parse(nsxtCfg.Url)

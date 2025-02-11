@@ -859,7 +859,7 @@ type NsxtManagerOpenApi struct {
 	// Name of NSX-T Manager
 	Name string `json:"name"`
 	// Description of NSX-T Manager
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"` // This one is documented as optional (omitempty), but it is mandatory (it fails if not sent)
 	// Username for authenticating to NSX-T Manager
 	Username string `json:"username"`
 	// Password for authenticating to NSX-T Manager
