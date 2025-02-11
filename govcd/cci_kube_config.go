@@ -121,6 +121,10 @@ func (tpClient *CciClient) GetKubeConfig(orgName, projectName, supervisorNamespa
 		CurrentContext: contextName,
 	}
 
+	if projectName != "" && supervisorNamespaceName != "" {
+		kubeconfig.Contexts[contextName].Namespace = supervisorNamespaceName
+	}
+
 	r := &KubeConfigValues{
 		ContextName:   contextName,
 		ClusterName:   clusterName,
