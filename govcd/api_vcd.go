@@ -30,6 +30,7 @@ func init() {
 }
 
 var minVcdApiVersion = "37.0" // supported by 10.4+
+var minVcfaApiVersion = "40.0"
 
 // VCDClientOption defines signature for customizing VCDClient using
 // functional options pattern.
