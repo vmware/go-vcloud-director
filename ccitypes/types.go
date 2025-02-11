@@ -6,6 +6,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// CciEntityStatus is a container with empty interface to track status of entity
 type CciEntityStatus struct {
 	v1.TypeMeta   `json:",inline"`
 	v1.ObjectMeta `json:"metadata,omitempty"`
@@ -44,6 +45,7 @@ func (cciApiError CciApiError) Error() string {
 		cciApiError.Code, cciApiError.Reason, cciApiError.Message, cciApiError.Status)
 }
 
+// SupervisorNamespace definition
 type SupervisorNamespace struct {
 	v1.TypeMeta   `json:",inline"`
 	v1.ObjectMeta `json:"metadata,omitempty"`

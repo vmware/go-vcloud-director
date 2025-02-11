@@ -7,7 +7,7 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/ccitypes"
 )
 
-const labelSupervisorNamespace = "Supervisor Namespace"
+const cciLabelSupervisorNamespace = "Supervisor Namespace"
 
 type SupervisorNamespace struct {
 	TpClient            *CciClient
@@ -16,13 +16,13 @@ type SupervisorNamespace struct {
 
 func (tpClient *CciClient) CreateSupervisorNamespace(projectName string, supervisorNamespace *ccitypes.SupervisorNamespace) (*SupervisorNamespace, error) {
 	if projectName == "" {
-		return nil, fmt.Errorf("%s name must be specified", labelProject)
+		return nil, fmt.Errorf("%s name must be specified", cciLabelProject)
 	}
 
 	urlSuffix := fmt.Sprintf(ccitypes.SupervisorNamespacesURL, projectName)
 	urlRef, err := tpClient.GetCciUrl(urlSuffix)
 	if err != nil {
-		return nil, fmt.Errorf("error getting URL for creating %s", labelSupervisorNamespace)
+		return nil, fmt.Errorf("error getting URL for creating %s", cciLabelSupervisorNamespace)
 	}
 
 	returnObject := &SupervisorNamespace{
@@ -36,7 +36,7 @@ func (tpClient *CciClient) CreateSupervisorNamespace(projectName string, supervi
 	}
 
 	if err := tpClient.PostItemAsync(urlRef, resultUrl, nil, &supervisorNamespace, returnObject.SupervisorNamespace); err != nil {
-		return nil, fmt.Errorf("error creating %s in Project %s: %s", labelSupervisorNamespace, projectName, err)
+		return nil, fmt.Errorf("error creating %s in Project %s: %s", cciLabelSupervisorNamespace, projectName, err)
 	}
 
 	return returnObject, nil
@@ -55,7 +55,7 @@ func (tpClient *CciClient) GetSupervisorNamespaceByName(projectName, supervisorN
 	}
 
 	if err := tpClient.GetItem(addr, nil, returnObject.SupervisorNamespace, nil); err != nil {
-		return nil, fmt.Errorf("error reading %s %s in Project %s: %s", labelSupervisorNamespace, supervisorNamespaceName, projectName, err)
+		return nil, fmt.Errorf("error reading %s %s in Project %s: %s", cciLabelSupervisorNamespace, supervisorNamespaceName, projectName, err)
 	}
 	return returnObject, nil
 
@@ -71,7 +71,7 @@ func (sn *SupervisorNamespace) Delete() error {
 	}
 
 	if err := sn.TpClient.DeleteItem(addr, nil, nil); err != nil {
-		return fmt.Errorf("error deleting %s %s in Project %s: %s", labelSupervisorNamespace, namespaceName, projectName, err)
+		return fmt.Errorf("error deleting %s %s in Project %s: %s", cciLabelSupervisorNamespace, namespaceName, projectName, err)
 	}
 
 	return nil

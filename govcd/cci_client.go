@@ -26,11 +26,9 @@ const (
 	stateWaitMinTimeout = 5 * time.Second
 )
 
+// CciClient
 type CciClient struct {
 	VCDClient *VCDClient
-	// Client      Client  // Client for the underlying VCD instance
-	// sessionHREF url.URL // HREF for the session API
-	// QueryHREF   url.URL // HREF for the query API
 }
 
 func (cciClient *CciClient) IsSupported() bool {
@@ -125,17 +123,6 @@ func (cciClient *CciClient) PostItemSync(urlRef *url.URL, params url.Values, pay
 	if err != nil {
 		return fmt.Errorf("error closing response body: %s", err)
 	}
-
-	// responseUrl, err := responseUrlFunc(outType)
-	// if err != nil {
-	// 	return fmt.Errorf("error getting CCI entity URL after creation: %s", err)
-	// }
-
-	// // Retrieve the final state of original entity
-	// err = cciClient.GetItem(responseUrl, nil, outType, nil)
-	// if err != nil {
-	// 	return fmt.Errorf("error retrieving final CCI entity after creation: %s", err)
-	// }
 
 	return nil
 }

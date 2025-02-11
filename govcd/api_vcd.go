@@ -164,8 +164,9 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 			APIVersion: minVcdApiVersion,
 			// UserAgent cannot embed exact version by default because this is source code and is supposed to be used by programs,
 			// but any client can customize or disable it at all using WithHttpUserAgent() configuration options function.
-			UserAgent: "go-vcloud-director",
-			VCDHREF:   vcdEndpoint,
+			UserAgent:          "go-vcloud-director",
+			InsecureSkipVerify: insecure,
+			VCDHREF:            vcdEndpoint,
 			Http: http.Client{
 				Transport: &http.Transport{
 					TLSClientConfig: &tls.Config{
