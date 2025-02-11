@@ -120,6 +120,7 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 
 	// Delete the policy
 	err = policy.Delete()
+	// TODO: TM: Test with more storage policies when possible, right now the Region Quota always has 1
 	if len(rqPolicies) == 1 {
 		// If there's only one policy, expect an error. There must be always one Storage Policy
 		check.Assert(err, NotNil)
