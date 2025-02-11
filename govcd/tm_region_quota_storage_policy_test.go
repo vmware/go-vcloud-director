@@ -86,7 +86,7 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 	check.Assert(len(rqPolicies), Equals, 1)
 	check.Assert(rqPolicies[0].VirtualDatacenterStoragePolicy, NotNil)
 
-	// Getting policies
+	// Getting policies. We just test methods with RegionQuota receiver as these wrap the generic ones.
 	allPolicies, err := createdRegionQuota.GetAllStoragePolicies(nil)
 	check.Assert(err, IsNil)
 	check.Assert(len(allPolicies), Equals, len(rqPolicies))
