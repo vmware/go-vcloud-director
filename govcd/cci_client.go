@@ -60,10 +60,10 @@ func (cciClient *CciClient) PostItemAsync(urlRef *url.URL, responseUrlFunc urlRe
 		return err
 	}
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
-		return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
-	}
+	// if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+	// 	util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
+	// 	return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
+	// }
 
 	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
 		return fmt.Errorf("error decoding CCI JSON response after POST: %s", err)
@@ -110,10 +110,10 @@ func (cciClient *CciClient) PostItemSync(urlRef *url.URL, params url.Values, pay
 		return err
 	}
 
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
-		return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
-	}
+	// if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+	// 	util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
+	// 	return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
+	// }
 
 	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
 		return fmt.Errorf("error decoding CCI JSON response after POST: %s", err)
@@ -144,9 +144,10 @@ func (cciClient *CciClient) GetItem(urlRef *url.URL, params url.Values, outType 
 		return fmt.Errorf("error performing GET request to CCI %s: %s", urlRefCopy.String(), err)
 	}
 
-	// Bypassing the regular path using function checkRespWithErrType and returning parsed error directly
-	// HTTP 403: Forbidden - is returned if the user is not authorized or the entity does not exist.
-	if resp.StatusCode == http.StatusForbidden {
+	// HTTP 404: Not Found - include sentinel log message ErrorEntityNotFound so that errors can be
+	// checked with ContainsNotFound() and IsNotFound()
+
+	if resp.StatusCode == http.StatusNotFound {
 		err := ParseErr(types.BodyTypeJSON, resp, &ccitypes.CciApiError{})
 		closeErr := resp.Body.Close()
 		return fmt.Errorf("%s: %s [body close error: %s]", ErrorEntityNotFound, err, closeErr)
