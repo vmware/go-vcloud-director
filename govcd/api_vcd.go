@@ -29,8 +29,8 @@ func init() {
 	requestCounter = &counter
 }
 
-var minVcdApiVersion = "37.0" // supported by 10.4+
-var minVcfaApiVersion = "40.0"
+var minApiVersion = "37.0"       // supported by 10.4+
+const minVcfaApiVersion = "40.0" // Minimum version for VCFA
 
 // VCDClientOption defines signature for customizing VCDClient using
 // functional options pattern.
@@ -147,7 +147,7 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 	// #nosec G402 -- InsecureSkipVerify: insecure - This allows connecting to VCDs with self-signed certificates
 	vcdClient := &VCDClient{
 		Client: Client{
-			APIVersion: minVcdApiVersion,
+			APIVersion: minApiVersion,
 			// UserAgent cannot embed exact version by default because this is source code and is supposed to be used by programs,
 			// but any client can customize or disable it at all using WithHttpUserAgent() configuration options function.
 			UserAgent: "go-vcloud-director",
@@ -193,8 +193,7 @@ func overrideApiVersion() {
 			// To avoid breaking API the only thing we can do is panic.
 			panic(fmt.Sprintf("unable to initialize VCD client from environment variable GOVCD_API_VERSION. Version '%s' is not valid: %s", userDefinedApiVersion, err))
 		}
-		minVcdApiVersion = userDefinedApiVersion
-		minVcfaApiVersion = userDefinedApiVersion
+		minApiVersion = userDefinedApiVersion
 	}
 }
 
