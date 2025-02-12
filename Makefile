@@ -59,6 +59,9 @@ testnsxv:
 testtm:
 	cd govcd && go test -tags "tm" -timeout 0  -check.vv
 
+testcci:
+	cd govcd && GOVCD_API_VERSION=40.0 go test -vcd-test-org-user -tags cci -check.vv -timeout=0
+
 testtm-coverage:
 	cd govcd && go test --coverprofile tm.cover -tags "tm" -timeout 0  -check.vv
 # vet runs the Go source code static analysis tool `vet` to find
