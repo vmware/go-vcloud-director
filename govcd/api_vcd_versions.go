@@ -197,8 +197,8 @@ func (client *Client) checkSupportedVersionConstraint(versionConstraint string) 
 			isVcfa = true
 		}
 	}
-	// TODO: TM: Improve this as does not respect GOVCD_API_VERSION
 	if isVcfa {
+		overrideApiVersion()
 		client.APIVersion = minVcfaApiVersion
 		return nil
 	}
