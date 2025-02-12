@@ -49,10 +49,12 @@ func (vcdClient *VCDClient) CreateTmRegionalNetworkingSettingAsync(config *types
 
 // GetAllTmRegionalNetworkingSettings retrieves all Regional Networking Settings with an optional filter
 func (vcdClient *VCDClient) GetAllTmRegionalNetworkingSettings(queryParameters url.Values) ([]*TmRegionalNetworkingSetting, error) {
+	queryparams := copyOrNewUrlValues(queryParameters)
+	queryparams.Set("pageSize", "32")
 	c := crudConfig{
 		entityLabel:     labelTmRegionalNetworkingSetting,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettings,
-		queryParameters: queryParameters,
+		queryParameters: queryparams,
 		requiresTm:      true,
 	}
 

@@ -18,9 +18,9 @@ import (
 // * Automatically generated tests where available VCD version does not satisfy it
 // * Automatically generated tests to check if each elevated API version is returned for endpoints that have it defined
 func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
-	semverMinVcdApiVersion, err := semver.NewSemver(minVcdApiVersion)
+	semverMinVcdApiVersion, err := semver.NewSemver(minApiVersion)
 	if err != nil {
-		t.Fatalf("error parsing 'minVcdApiVersion': %s", err)
+		t.Fatalf("error parsing 'minApiVersion': %s", err)
 	}
 
 	type testCase struct {
@@ -30,7 +30,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 		wantVersion       string
 		wantErr           bool
 		// overrideClientMinApiVersion is an option to override default expected version that is
-		// defined in global variable`minVcdApiVersion`
+		// defined in global variable`minApiVersion`
 		overrideClientMinApiVersion string
 	}
 
@@ -64,7 +64,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 			name:              "VCD_version_higher_than_elevated_version_entries",
 			supportedVersions: renderSupportedVersions([]string{"37.0", "37.1", "37.2", "37.3", "38.0", "38.1", "39.0"}),
 			endpoint:          types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFirewallGroups,
-			wantVersion:       minVcdApiVersion,
+			wantVersion:       minApiVersion,
 			wantErr:           false,
 		},
 	}
@@ -165,7 +165,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client := &Client{
 				supportedVersions: tt.supportedVersions,
-				APIVersion:        minVcdApiVersion,
+				APIVersion:        minApiVersion,
 			}
 
 			if tt.overrideClientMinApiVersion != "" {
