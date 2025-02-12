@@ -79,7 +79,7 @@ func (cciClient *CciClient) PostItemAsync(urlRef *url.URL, responseUrlFunc urlRe
 	}
 
 	// WAIT for entity to transition from "CREATING" or "WAITING" to "CREATED"
-	_, err = waitForCciEntityState(cciClient, "label", responseUrl, []string{"CREATING", "WAITING"}, []string{"CREATED"})
+	_, err = waitForCciEntityState(cciClient, responseUrl, []string{"CREATING", "WAITING"}, []string{"CREATED"})
 	if err != nil {
 		return fmt.Errorf("error waiting for CCI entity state: %s", err)
 	}
@@ -208,7 +208,7 @@ func (cciClient *CciClient) DeleteItem(urlRef *url.URL, params url.Values, addit
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	_, err = waitForCciEntityState(cciClient, "label", urlRefCopy, []string{"DELETING", "WAITING"}, []string{"DELETED"})
+	_, err = waitForCciEntityState(cciClient, urlRefCopy, []string{"DELETING", "WAITING"}, []string{"DELETED"})
 	if err != nil {
 		return fmt.Errorf("error waiting for CCI entity state: %s", err)
 	}
@@ -216,27 +216,27 @@ func (cciClient *CciClient) DeleteItem(urlRef *url.URL, params url.Values, addit
 	return nil
 }
 
-func waitForCciEntityState(cciClient *CciClient, entityLabel string, addr *url.URL, pendingStates, targetStates []string) (any, error) {
+func waitForCciEntityState(cciClient *CciClient, addr *url.URL, pendingStates, targetStates []string) (any, error) {
 	startTime := time.Now()
 	endTime := startTime.Add(stateWaitTimeout)
 
-	util.Logger.Printf("[DEBUG] waitForState - expecting states %s for entity %s", strings.Join(targetStates, ","), entityLabel)
-	util.Logger.Printf("[DEBUG] waitForState - sleeping %s before checking state of %s at %s", stateWaitDelay, entityLabel, addr.String())
+	util.Logger.Printf("[DEBUG] waitForState - expecting states %s for endpoint %s", strings.Join(targetStates, ","), addr.String())
+	util.Logger.Printf("[DEBUG] waitForState - sleeping %s before checking state at %s", stateWaitDelay, addr.String())
 	time.Sleep(stateWaitDelay)
 
 	stepCount := 0
 	for {
 		stepCount++
 		if time.Now().After(endTime) {
-			util.Logger.Printf("[DEBUG] waitForState - timeout reached for entity %s", entityLabel)
-			return nil, fmt.Errorf("waitForState - exceeded waiting for entity %s to reach %s time after attempt %d", entityLabel, strings.Join(targetStates, ","), stepCount)
+			util.Logger.Printf("[DEBUG] waitForState - timeout reached for entity %s", addr.String())
+			return nil, fmt.Errorf("waitForState - exceeded waiting for entity %s to reach %s time after attempt %d", addr.String(), strings.Join(targetStates, ","), stepCount)
 		}
 
 		var entityState string
 		cciEntity, err := cciClient.getAnyCciState(addr)
 
 		if err != nil && !strings.Contains(err.Error(), "404") {
-			return nil, fmt.Errorf("error retrieving CCI entity %s state: %s", entityLabel, err)
+			return nil, fmt.Errorf("error retrieving CCI entity %s state: %s", addr.String(), err)
 		}
 
 		if err != nil && strings.Contains(err.Error(), "404") {
@@ -245,23 +245,23 @@ func waitForCciEntityState(cciClient *CciClient, entityLabel string, addr *url.U
 			entityState = cciEntity.Status.Phase
 		}
 
-		if strings.EqualFold(cciEntity.Status.Phase, "ERROR") {
-			return nil, fmt.Errorf("waitForState %s %s is in an ERROR state", entityLabel, cciEntity.GetName())
+		if strings.EqualFold(entityState, "ERROR") {
+			return nil, fmt.Errorf("waitForState %s is in an ERROR state", addr.String())
 		}
 
-		util.Logger.Printf("[DEBUG] waitForState - %s %s current phase at step %d is %s", entityLabel, cciEntity.GetName(), stepCount, cciEntity.Status.Phase)
+		util.Logger.Printf("[DEBUG] waitForState - %s current phase at step %d is %s", addr.String(), stepCount, entityState)
 
 		// pending states
 		if slices.Contains(pendingStates, entityState) {
 
-			util.Logger.Printf("[DEBUG] waitForState - sleeping %s before next attempt to retrieve %s state", statePollInterval, entityLabel)
+			util.Logger.Printf("[DEBUG] waitForState - sleeping %s before next attempt to retrieve %s state", statePollInterval, addr.String())
 			time.Sleep(statePollInterval)
 			continue
 		}
 
 		// target states
 		if slices.Contains(targetStates, entityState) {
-			util.Logger.Printf("[DEBUG] waitForState - %s reached %s at step %d", entityLabel, entityState, stepCount)
+			util.Logger.Printf("[DEBUG] waitForState - %s reached %s at step %d", addr.String(), entityState, stepCount)
 			return cciEntity, nil
 		}
 

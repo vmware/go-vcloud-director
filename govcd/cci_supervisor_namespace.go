@@ -9,7 +9,6 @@ import (
 
 const cciLabelSupervisorNamespace = "Supervisor Namespace"
 
-// SupervisorNamespace represents structure for handling operations
 type SupervisorNamespace struct {
 	CciClient           *CciClient
 	SupervisorNamespace *ccitypes.SupervisorNamespace

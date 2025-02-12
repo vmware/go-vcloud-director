@@ -18,13 +18,14 @@ type KubeConfigValues struct {
 	Token         *jwt.Token
 }
 
-// GetKubeConfig
-func (tpClient *CciClient) GetKubeConfig(orgName, projectName, supervisorNamespaceName string) (*clientcmdapi.Config, *KubeConfigValues, error) {
+// GetKubeConfig retrieves a representation of KubeConfig.
+// Org name is mandatory. Project and Supervisor Namespace names are optional
+func (cciClient *CciClient) GetKubeConfig(orgName, projectName, supervisorNamespaceName string) (*clientcmdapi.Config, *KubeConfigValues, error) {
 	if orgName == "" {
 		return nil, nil, fmt.Errorf("Org name is mandatory")
 	}
 
-	clusterServerUrl, err := tpClient.GetCciUrl()
+	clusterServerUrl, err := cciClient.GetCciUrl()
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting CCI Url: %s", err)
 	}
@@ -36,7 +37,7 @@ func (tpClient *CciClient) GetKubeConfig(orgName, projectName, supervisorNamespa
 
 	// if Project Name and Supervisor Namespace were specified - set the context for it
 	if projectName != "" && supervisorNamespaceName != "" {
-		supervisorNamespace, err := tpClient.GetSupervisorNamespaceByName(projectName, supervisorNamespaceName)
+		supervisorNamespace, err := cciClient.GetSupervisorNamespaceByName(projectName, supervisorNamespaceName)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error reading %s: %s", cciLabelSupervisorNamespace, err)
 		}
@@ -60,7 +61,7 @@ func (tpClient *CciClient) GetKubeConfig(orgName, projectName, supervisorNamespa
 		contextName = fmt.Sprintf("%s:%s:%s", orgName, supervisorNamespaceName, projectName)
 	}
 
-	token, _, err := new(jwt.Parser).ParseUnverified(tpClient.VCDClient.Client.VCDToken, jwt.MapClaims{})
+	token, _, err := new(jwt.Parser).ParseUnverified(cciClient.VCDClient.Client.VCDToken, jwt.MapClaims{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing JWT token: %s", err)
 	}
@@ -80,7 +81,7 @@ func (tpClient *CciClient) GetKubeConfig(orgName, projectName, supervisorNamespa
 		APIVersion: clientcmdapi.SchemeGroupVersion.Version,
 		Clusters: map[string]*clientcmdapi.Cluster{
 			clusterName: {
-				InsecureSkipTLSVerify: tpClient.VCDClient.Client.InsecureSkipVerify,
+				InsecureSkipTLSVerify: cciClient.VCDClient.Client.InsecureSkipVerify,
 				Server:                clusterServer,
 			},
 		},
