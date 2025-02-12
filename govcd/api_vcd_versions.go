@@ -197,6 +197,7 @@ func (client *Client) checkSupportedVersionConstraint(versionConstraint string) 
 			isVcfa = true
 		}
 	}
+	// TODO: TM: Improve this as feels odd and out of place
 	if isVcfa {
 		overrideApiVersion()
 		client.APIVersion = minVcfaApiVersion
