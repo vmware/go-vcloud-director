@@ -193,8 +193,9 @@ func (client *Client) checkSupportedVersionConstraint(versionConstraint string) 
 			return nil
 		}
 
-		if versionInfo.Version == minVcfaApiVersion {
-			isVcfa = true
+		isVcfa, err = client.apiVersionMatchesConstraint(versionInfo.Version, ">= 40.0")
+		if err != nil {
+			return fmt.Errorf("cannot match VCFA version: %s", err)
 		}
 	}
 	// TODO: TM: Improve this as feels odd and out of place
