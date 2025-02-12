@@ -193,16 +193,16 @@ func (client *Client) checkSupportedVersionConstraint(versionConstraint string) 
 			return nil
 		}
 
+		// TODO: TM: Improve this as feels odd and out of place
 		isVcfa, err = client.apiVersionMatchesConstraint(versionInfo.Version, ">= 40.0")
 		if err != nil {
 			return fmt.Errorf("cannot match VCFA version: %s", err)
 		}
-	}
-	// TODO: TM: Improve this as feels odd and out of place
-	if isVcfa {
-		overrideApiVersion()
-		client.APIVersion = minVcfaApiVersion
-		return nil
+		if isVcfa {
+			overrideApiVersion()
+			client.APIVersion = minVcfaApiVersion
+			return nil
+		}
 	}
 	return fmt.Errorf("version %s is not supported", versionConstraint)
 }
