@@ -2,18 +2,16 @@ package govcd
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/vmware/go-vcloud-director/v3/ccitypes"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
@@ -21,9 +19,9 @@ import (
 
 // constants that are used for tracking entity state after it is being created
 const (
-	stateWaitTimeout    = 1 * time.Hour
-	stateWaitDelay      = 5 * time.Second
-	stateWaitMinTimeout = 5 * time.Second
+	stateWaitTimeout  = 20 * time.Minute
+	stateWaitDelay    = 5 * time.Second
+	statePollInterval = 10 * time.Second
 )
 
 // CciClient
@@ -60,6 +58,7 @@ func (cciClient *CciClient) PostItemAsync(urlRef *url.URL, responseUrlFunc urlRe
 		return err
 	}
 
+	// TODO - double check on if we need this check at all
 	// if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 	// 	util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
 	// 	return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
@@ -80,7 +79,7 @@ func (cciClient *CciClient) PostItemAsync(urlRef *url.URL, responseUrlFunc urlRe
 	}
 
 	// WAIT for entity to transition from "CREATING" or "WAITING" to "CREATED"
-	_, err = cciClient.waitForState(context.TODO(), "label", responseUrl, []string{"CREATING", "WAITING"}, []string{"CREATED"})
+	_, err = waitForCciEntityState(cciClient, "label", responseUrl, []string{"CREATING", "WAITING"}, []string{"CREATED"})
 	if err != nil {
 		return fmt.Errorf("error waiting for CCI entity state: %s", err)
 	}
@@ -110,6 +109,7 @@ func (cciClient *CciClient) PostItemSync(urlRef *url.URL, params url.Values, pay
 		return err
 	}
 
+	// TODO - double check on if we need this check at all
 	// if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 	// 	util.Logger.Printf("[TRACE] Synchronous task expected (HTTP status code 200 or 201). Got %d", resp.StatusCode)
 	// 	return fmt.Errorf("POST request expected sync task (HTTP response 200 or 201), got %d", resp.StatusCode)
@@ -208,7 +208,7 @@ func (cciClient *CciClient) DeleteItem(urlRef *url.URL, params url.Values, addit
 		return fmt.Errorf("error closing response body: %s", err)
 	}
 
-	_, err = cciClient.waitForState(context.TODO(), "label", urlRefCopy, []string{"DELETING", "WAITING"}, []string{"DELETED"})
+	_, err = waitForCciEntityState(cciClient, "label", urlRefCopy, []string{"DELETING", "WAITING"}, []string{"DELETED"})
 	if err != nil {
 		return fmt.Errorf("error waiting for CCI entity state: %s", err)
 	}
@@ -216,39 +216,56 @@ func (cciClient *CciClient) DeleteItem(urlRef *url.URL, params url.Values, addit
 	return nil
 }
 
-// TODO - can we do this quite cheap without needing to pull in Hashicorp package at SDK level
-func (cciClient *CciClient) waitForState(ctx context.Context, entityLabel string, addr *url.URL, pendingStates, targetStates []string) (any, error) {
-	stateChangeFunc := retry.StateChangeConf{
-		Pending: pendingStates,
-		Target:  targetStates,
-		Refresh: func() (any, string, error) {
-			cciEntity, err := cciClient.getAnyCciState(addr)
-			if err != nil {
-				if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "404") {
-					return "", "DELETED", nil
-				}
-				return nil, "", err
-			}
+func waitForCciEntityState(cciClient *CciClient, entityLabel string, addr *url.URL, pendingStates, targetStates []string) (any, error) {
+	startTime := time.Now()
+	endTime := startTime.Add(stateWaitTimeout)
 
-			log.Printf("[DEBUG] %s %s current phase is %s", entityLabel, cciEntity.GetName(), cciEntity.Status.Phase)
-			if strings.EqualFold(cciEntity.Status.Phase, "ERROR") {
-				return nil, "", fmt.Errorf("%s %s is in an ERROR state", entityLabel, cciEntity.GetName())
-			}
+	util.Logger.Printf("[DEBUG] waitForState - expecting states %s for entity %s", strings.Join(targetStates, ","), entityLabel)
+	util.Logger.Printf("[DEBUG] waitForState - sleeping %s before checking state of %s at %s", stateWaitDelay, entityLabel, addr.String())
+	time.Sleep(stateWaitDelay)
 
-			return cciEntity, strings.ToUpper(cciEntity.Status.Phase), nil
-		},
-		Timeout:    stateWaitTimeout,
-		Delay:      stateWaitDelay,
-		MinTimeout: stateWaitMinTimeout,
+	stepCount := 0
+	for {
+		stepCount++
+		if time.Now().After(endTime) {
+			util.Logger.Printf("[DEBUG] waitForState - timeout reached for entity %s", entityLabel)
+			return nil, fmt.Errorf("waitForState - exceeded waiting for entity %s to reach %s time after attempt %d", entityLabel, strings.Join(targetStates, ","), stepCount)
+		}
+
+		var entityState string
+		cciEntity, err := cciClient.getAnyCciState(addr)
+
+		if err != nil && !strings.Contains(err.Error(), "404") {
+			return nil, fmt.Errorf("error retrieving CCI entity %s state: %s", entityLabel, err)
+		}
+
+		if err != nil && strings.Contains(err.Error(), "404") {
+			entityState = "DELETED"
+		} else {
+			entityState = cciEntity.Status.Phase
+		}
+
+		if strings.EqualFold(cciEntity.Status.Phase, "ERROR") {
+			return nil, fmt.Errorf("waitForState %s %s is in an ERROR state", entityLabel, cciEntity.GetName())
+		}
+
+		util.Logger.Printf("[DEBUG] waitForState - %s %s current phase at step %d is %s", entityLabel, cciEntity.GetName(), stepCount, cciEntity.Status.Phase)
+
+		// pending states
+		if slices.Contains(pendingStates, entityState) {
+
+			util.Logger.Printf("[DEBUG] waitForState - sleeping %s before next attempt to retrieve %s state", statePollInterval, entityLabel)
+			time.Sleep(statePollInterval)
+			continue
+		}
+
+		// target states
+		if slices.Contains(targetStates, entityState) {
+			util.Logger.Printf("[DEBUG] waitForState - %s reached %s at step %d", entityLabel, entityState, stepCount)
+			return cciEntity, nil
+		}
+
 	}
-
-	result, err := stateChangeFunc.WaitForStateContext(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("error waiting entity %s state to transition from '%s' to '%s': %s",
-			entityLabel, strings.Join(pendingStates, ","), strings.Join(targetStates, ","), err)
-	}
-
-	return result, nil
 }
 
 func (cciClient *CciClient) getAnyCciState(urlRef *url.URL) (*ccitypes.CciEntityStatus, error) {
