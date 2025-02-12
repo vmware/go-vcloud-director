@@ -24,17 +24,19 @@ const (
 	statePollInterval = 10 * time.Second
 )
 
-// CciClient
+// CciClient exposes methods for operation on CCI endpoints
 type CciClient struct {
 	VCDClient *VCDClient
 }
 
+// IsSupported checks if CCI is Supported on this system
 func (cciClient *CciClient) IsSupported() bool {
 	return cciClient.VCDClient.Client.APIVCDMaxVersionIs(">= 40")
 }
 
-func (tpClient *CciClient) GetCciUrl(endpoint ...string) (*url.URL, error) {
-	path := fmt.Sprintf(ccitypes.CciKubernetesSubpath, tpClient.VCDClient.Client.VCDHREF.Scheme, tpClient.VCDClient.Client.VCDHREF.Host)
+// GetCciUrl builds up CCI endpoints
+func (cciClient *CciClient) GetCciUrl(endpoint ...string) (*url.URL, error) {
+	path := fmt.Sprintf(ccitypes.CciKubernetesSubpath, cciClient.VCDClient.Client.VCDHREF.Scheme, cciClient.VCDClient.Client.VCDHREF.Host)
 	path = path + strings.Join(endpoint, "")
 
 	return url.ParseRequestURI(path)
@@ -146,7 +148,6 @@ func (cciClient *CciClient) GetItem(urlRef *url.URL, params url.Values, outType 
 
 	// HTTP 404: Not Found - include sentinel log message ErrorEntityNotFound so that errors can be
 	// checked with ContainsNotFound() and IsNotFound()
-
 	if resp.StatusCode == http.StatusNotFound {
 		err := ParseErr(types.BodyTypeJSON, resp, &ccitypes.CciApiError{})
 		closeErr := resp.Body.Close()
@@ -338,8 +339,6 @@ func (cciClient *CciClient) newCciRequest(params url.Values, method string, reqU
 			req.Header.Add("Authorization", "bearer "+client.VCDToken)
 			req.Header.Add("X-Vmware-Vcloud-Token-Type", "Bearer")
 		}
-		// Add the Accept header if apiVersion is specified
-
 	}
 
 	for k, v := range client.customHeader {
