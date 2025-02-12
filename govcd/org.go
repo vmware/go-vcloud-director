@@ -204,7 +204,7 @@ func validateVdcConfiguration(vdcDefinition *types.VdcConfiguration) error {
 	if vdcDefinition.ComputeCapacity[0].Memory.Units == "" {
 		return errors.New("VdcConfiguration missing required field: ComputeCapacity[0].Memory.Units")
 	}
-	if vdcDefinition.VdcStorageProfile == nil || len(vdcDefinition.VdcStorageProfile) == 0 {
+	if len(vdcDefinition.VdcStorageProfile) == 0 {
 		return errors.New("VdcConfiguration missing required field: VdcStorageProfile")
 	}
 	if vdcDefinition.VdcStorageProfile[0].Units == "" {
@@ -458,7 +458,7 @@ func (client *Client) queryOrgByName(orgName string) (*types.QueryResultOrgRecor
 		return nil, err
 	}
 
-	if allOrgs == nil || len(allOrgs) < 1 {
+	if len(allOrgs) < 1 {
 		return nil, ErrorEntityNotFound
 	}
 
@@ -504,7 +504,7 @@ func (org *Org) queryOrgVdcByName(vdcName string) (*types.QueryResultOrgVdcRecor
 		return nil, err
 	}
 
-	if allVdcs == nil || len(allVdcs) < 1 {
+	if len(allVdcs) < 1 {
 		return nil, ErrorEntityNotFound
 	}
 
@@ -549,7 +549,7 @@ func (org *Org) queryCatalogByName(catalogName string) (*types.CatalogRecord, er
 		return nil, err
 	}
 
-	if allCatalogs == nil || len(allCatalogs) < 1 {
+	if len(allCatalogs) < 1 {
 		return nil, ErrorEntityNotFound
 	}
 

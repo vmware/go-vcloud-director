@@ -133,7 +133,7 @@ func (rdeType *DefinedEntityType) Update(rdeTypeToUpdate types.DefinedEntityType
 	if rdeTypeToUpdate.Name == "" {
 		rdeTypeToUpdate.Name = rdeType.DefinedEntityType.Name
 	}
-	if rdeTypeToUpdate.Schema == nil || len(rdeTypeToUpdate.Schema) == 0 {
+	if len(rdeTypeToUpdate.Schema) == 0 {
 		rdeTypeToUpdate.Schema = rdeType.DefinedEntityType.Schema
 	}
 	rdeTypeToUpdate.Version = rdeType.DefinedEntityType.Version
@@ -409,7 +409,7 @@ func createRde(client *Client, entity types.DefinedEntity, tenantContext *Tenant
 		return nil, fmt.Errorf("ID of the Runtime Defined Entity type is empty")
 	}
 
-	if entity.Entity == nil || len(entity.Entity) == 0 {
+	if len(entity.Entity) == 0 {
 		return nil, fmt.Errorf("the entity JSON is empty")
 	}
 

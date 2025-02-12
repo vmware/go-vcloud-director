@@ -89,7 +89,7 @@ func (vdc *Vdc) CreateDisk(diskCreateParams *types.DiskCreateParams) (Task, erro
 		return Task{}, err
 	}
 	// Obtain disk task
-	if disk.Disk.Tasks.Task == nil || len(disk.Disk.Tasks.Task) == 0 {
+	if len(disk.Disk.Tasks.Task) == 0 {
 		return Task{}, errors.New("error cannot find disk creation task in API response")
 	}
 	task := NewTask(vdc.client)
@@ -276,7 +276,7 @@ func (disk *Disk) AttachedVM() (*types.Reference, error) {
 	}
 
 	// If disk is not attached to any VM
-	if vms.VmReference == nil || len(vms.VmReference) == 0 {
+	if len(vms.VmReference) == 0 {
 		return nil, nil
 	}
 
@@ -471,7 +471,7 @@ func (disk *Disk) GetAttachedVmsHrefs() ([]string, error) {
 	}
 
 	// If disk is not attached to any VM
-	if vms.VmReference == nil || len(vms.VmReference) == 0 {
+	if len(vms.VmReference) == 0 {
 		return nil, nil
 	}
 
