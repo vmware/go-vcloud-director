@@ -680,7 +680,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	env := "VCD"
 	isTm := vcd.client.Client.IsTm()
 	if isTm {
-		env = "TM"
+		env = "VCFA"
 	}
 
 	fmt.Printf("Running on %s %s (%s)\nas user %s@%s (using %s)\n", env, vcd.config.Provider.Url, versionInfo,

@@ -22,7 +22,7 @@ type KubeConfigValues struct {
 // Org name is mandatory. Project and Supervisor Namespace names are optional
 func (cciClient *CciClient) GetKubeConfig(orgName, projectName, supervisorNamespaceName string) (*clientcmdapi.Config, *KubeConfigValues, error) {
 	if orgName == "" {
-		return nil, nil, fmt.Errorf("Org name is mandatory")
+		return nil, nil, fmt.Errorf("Org name is mandatory for %s", cciLabelKubeConfig)
 	}
 
 	clusterServerUrl, err := cciClient.GetCciUrl()
