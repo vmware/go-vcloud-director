@@ -17,6 +17,10 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	storagePolicy := vcd.config.Cci.StoragePolicy
 	supervisorZoneName := vcd.config.Cci.SupervisorZone
 
+	if regionName == "" || vpcName == "" || storagePolicy == "" || supervisorZoneName == "" {
+		check.Skip("missing parameters in 'cci' test config")
+	}
+
 	cciClient := vcd.client.GetCciClient()
 
 	projectCfg := &ccitypes.Project{
