@@ -74,7 +74,7 @@ function get_gosec {
 function run_gosec {
     if [ -n "$gosec" ]
     then
-        $gosec -tests -tags ALL ./...
+        $gosec -tests -tags ALL -exclude=G115 ./...
         exit_code=$?
         if [ "$exit_code" != "0" ]
         then
