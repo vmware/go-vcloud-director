@@ -63,7 +63,7 @@ go test -tags "query extension" -check.vv -timeout=5m .
 go test -tags functional -check.vv -check.f Test_AddNewVM  -timeout=15m .
 go test -v -tags unit .
 `
-	t.Logf(helpText)
+	t.Log(helpText)
 }
 
 // Tells indirectly if a tag has been set

@@ -132,7 +132,7 @@ func (vcd *TestVCD) Test_GetFilteredTokensOrg(check *C) {
 		check.Skip("This test requires VCD 10.3.1 or greater")
 	}
 
-	if vcd.config.Tenants == nil || len(vcd.config.Tenants) < 2 {
+	if len(vcd.config.Tenants) < 2 {
 		check.Skip("no tenants found in configuration")
 	}
 
