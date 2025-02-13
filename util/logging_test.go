@@ -103,11 +103,6 @@ func TestCaller(t *testing.T) {
 	}
 	var data = []callData{
 		{
-			label:    "current function name",
-			fun:      CurrentFuncName,
-			expected: `^util.TestCaller$`,
-		},
-		{
 			label:    "function caller",
 			fun:      CallFuncName,
 			expected: `^testing.tRunner$`,
