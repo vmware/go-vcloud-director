@@ -1150,7 +1150,7 @@ func (vcd *TestVCD) Test_GetAdminCatalogById(check *C) {
 }
 
 func (vcd *TestVCD) Test_CatalogAccessAsOrgUsers(check *C) {
-	if vcd.config.Tenants == nil || len(vcd.config.Tenants) < 2 {
+	if len(vcd.config.Tenants) < 2 {
 		check.Skip("no tenants found in configuration")
 	}
 
@@ -1307,7 +1307,7 @@ func (vcd *TestVCD) Test_CatalogAccessAsOrgUsers(check *C) {
 }
 
 func (vcd *TestVCD) Test_CatalogAccessAsOrgUsersReadOnly(check *C) {
-	if vcd.config.Tenants == nil || len(vcd.config.Tenants) < 2 {
+	if len(vcd.config.Tenants) < 2 {
 		check.Skip("no tenants found in configuration")
 	}
 

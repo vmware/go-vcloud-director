@@ -9,12 +9,13 @@ import (
 	"cmp"
 	"encoding/xml"
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // GetOpenIdConnectSettings retrieves the current OpenID Connect settings for a given Organization
@@ -55,7 +56,7 @@ func (adminOrg *AdminOrg) SetOpenIdConnectSettings(settings types.OrgOAuthSettin
 		settings.UserAuthorizationEndpoint = cmp.Or(settings.UserAuthorizationEndpoint, wellKnownSettings.UserAuthorizationEndpoint)
 		settings.ScimEndpoint = cmp.Or(settings.ScimEndpoint, wellKnownSettings.ScimEndpoint)
 
-		if settings.Scope == nil || len(settings.Scope) == 0 {
+		if len(settings.Scope) == 0 {
 			settings.Scope = wellKnownSettings.Scope
 		}
 

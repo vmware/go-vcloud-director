@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -93,7 +94,7 @@ const ApiTokenHeader = "API-token"
 //	   // do what is needed in case of not found
 //	}
 var errorEntityNotFoundMessage = "[ENF] entity not found"
-var ErrorEntityNotFound = fmt.Errorf(errorEntityNotFoundMessage)
+var ErrorEntityNotFound = errors.New(errorEntityNotFoundMessage)
 
 // Triggers for debugging functions that show requests and responses
 var debugShowRequestEnabled = os.Getenv("GOVCD_SHOW_REQ") != ""
