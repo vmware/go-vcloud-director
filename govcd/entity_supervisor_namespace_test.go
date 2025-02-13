@@ -61,7 +61,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	defer func() {
 		p := &ccitypes.Project{}
 		err = vcd.client.Client.GetEntity(projectAddr, nil, p, nil)
-		if !strings.Contains(err.Error(), "404") {
+		if err != nil && !strings.Contains(err.Error(), "404") {
 			err := vcd.client.Client.DeleteEntity(projectAddr, nil, nil)
 			check.Assert(err, IsNil)
 		}
@@ -131,7 +131,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	defer func() {
 		p := &ccitypes.SupervisorNamespace{}
 		err = vcd.client.Client.GetEntity(nsAddr, nil, p, nil)
-		if !strings.Contains(err.Error(), "404") {
+		if err != nil && !strings.Contains(err.Error(), "404") {
 			err := vcd.client.Client.DeleteEntity(nsAddr, nil, nil)
 			check.Assert(err, IsNil)
 			_, err = waitForEntityState(&vcd.client.Client, nsAddr, []string{"DELETING", "WAITING"}, []string{"DELETED"})
