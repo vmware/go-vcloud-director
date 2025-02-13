@@ -217,18 +217,17 @@ func waitForEntityState(client *Client, addr *url.URL, pendingStates, targetStat
 
 		util.Logger.Printf("[DEBUG] waitForEntityState - %s current phase at step %d is %s", addr.String(), stepCount, entityState)
 
-		// pending states
-		if slices.Contains(pendingStates, entityState) {
-
-			util.Logger.Printf("[DEBUG] waitForEntityState - sleeping %s before next attempt to retrieve %s state", statePollInterval, addr.String())
-			time.Sleep(statePollInterval)
-			continue
-		}
-
-		// target states
+		// Check if the entity is in a target state
 		if slices.Contains(targetStates, entityState) {
 			util.Logger.Printf("[DEBUG] waitForEntityState - %s reached %s at step %d", addr.String(), entityState, stepCount)
 			return cciEntity, nil
+		}
+
+		// Check if the entity is in a pending state, and if so, wait and continue
+		if slices.Contains(pendingStates, entityState) {
+			util.Logger.Printf("[DEBUG] waitForEntityState - sleeping %s before next attempt to retrieve %s state", statePollInterval, addr.String())
+			time.Sleep(statePollInterval)
+			continue // Only continue if in a pending state
 		}
 	}
 }
