@@ -153,6 +153,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 
 	// Check it is deleted
 	err = vcd.client.Client.GetEntity(nsAddr, nil, getProject, nil)
+	check.Assert(err, NotNil)
 	check.Assert(strings.Contains(err.Error(), "404"), Equals, true)
 
 	// Delete project
