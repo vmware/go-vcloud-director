@@ -22,24 +22,24 @@ func (client *Client) GetEntityUrl(endpoint ...string) (*url.URL, error) {
 	return url.ParseRequestURI(path)
 }
 
-func (client *Client) PostEntity(urlRef *url.URL, params url.Values, payload, outType interface{}) error {
+func (client *Client) PostEntity(urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string) error {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
-	util.Logger.Printf("[TRACE] Posting %s item to CCI endpoint %s with expected response of type %s",
+	util.Logger.Printf("[TRACE] Posting %s item to endpoint %s with expected response of type %s",
 		reflect.TypeOf(payload), urlRefCopy.String(), reflect.TypeOf(outType))
 
 	if !client.IsTm() {
-		return fmt.Errorf("CCI Client is not supported on this version")
+		return fmt.Errorf("Client is not supported on this version")
 	}
 
-	resp, err := client.performEntityPostPut(http.MethodPost, urlRefCopy, params, payload, nil)
+	resp, err := client.performEntityPostPut(http.MethodPost, urlRefCopy, params, payload, additionalHeader)
 	if err != nil {
 		return err
 	}
 
 	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
-		return fmt.Errorf("error decoding CCI JSON response after POST: %s", err)
+		return fmt.Errorf("error decoding JSON response after POST: %s", err)
 	}
 
 	err = resp.Body.Close()
@@ -54,17 +54,17 @@ func (client *Client) GetEntity(urlRef *url.URL, params url.Values, outType inte
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
-	util.Logger.Printf("[TRACE] Getting item from CCI endpoint %s with expected response of type %s",
+	util.Logger.Printf("[TRACE] Getting item from endpoint %s with expected response of type %s",
 		urlRefCopy.String(), reflect.TypeOf(outType))
 
 	if !client.IsTm() {
-		return fmt.Errorf("CCI Client is not supported on this version")
+		return fmt.Errorf("Client is not supported on this version")
 	}
 
 	req := client.newEntityRequest(params, http.MethodGet, urlRefCopy, nil, additionalHeader)
 	resp, err := client.Http.Do(req)
 	if err != nil {
-		return fmt.Errorf("error performing GET request to CCI %s: %s", urlRefCopy.String(), err)
+		return fmt.Errorf("error performing GET request to %s: %s", urlRefCopy.String(), err)
 	}
 
 	// HTTP 404: Not Found - include sentinel log message ErrorEntityNotFound so that errors can be
@@ -80,7 +80,7 @@ func (client *Client) GetEntity(urlRef *url.URL, params url.Values, outType inte
 
 	// Any other error occurred
 	if err != nil {
-		return fmt.Errorf("error in HTTP GET request for CCI: %s", err)
+		return fmt.Errorf("error in HTTP GET request for: %s", err)
 	}
 
 	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
@@ -99,10 +99,10 @@ func (client *Client) DeleteEntity(urlRef *url.URL, params url.Values, additiona
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)
 
-	util.Logger.Printf("[TRACE] Deleting item at CCI endpoint %s", urlRefCopy.String())
+	util.Logger.Printf("[TRACE] Deleting item at endpoint %s", urlRefCopy.String())
 
 	if !client.IsTm() {
-		return fmt.Errorf("CCI Client is not supported on this version")
+		return fmt.Errorf("Client is not supported on this version")
 	}
 
 	// Perform request
@@ -122,7 +122,7 @@ func (client *Client) DeleteEntity(urlRef *url.URL, params url.Values, additiona
 	// resp is ignored below because it would be the same as above
 	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &ccitypes.ApiError{})
 	if err != nil {
-		return fmt.Errorf("error in HTTP DELETE request for CCI: %s", err)
+		return fmt.Errorf("error in HTTP DELETE request: %s", err)
 	}
 
 	err = resp.Body.Close()
@@ -139,7 +139,7 @@ func (client *Client) performEntityPostPut(httpMethod string, urlRef *url.URL, p
 	if payload != nil {
 		marshaledJson, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {
-			return nil, fmt.Errorf("error marshalling CCI JSON data for %s request %s", httpMethod, err)
+			return nil, fmt.Errorf("error marshalling JSON data for %s request %s", httpMethod, err)
 		}
 		body = bytes.NewBuffer(marshaledJson)
 	}
@@ -153,7 +153,7 @@ func (client *Client) performEntityPostPut(httpMethod string, urlRef *url.URL, p
 	// resp is ignored below because it is the same the one above
 	_, err = checkRespWithErrType(types.BodyTypeJSON, resp, err, &ccitypes.ApiError{})
 	if err != nil {
-		return nil, fmt.Errorf("error in HTTP %s CCI request: %s", httpMethod, err)
+		return nil, fmt.Errorf("error in HTTP %s request: %s", httpMethod, err)
 	}
 	return resp, nil
 }
@@ -172,14 +172,14 @@ func (client *Client) newEntityRequest(params url.Values, method string, reqUrl 
 	if body != nil {
 		readBody, err = io.ReadAll(body)
 		if err != nil {
-			util.Logger.Printf("[DEBUG - newCciRequest] error reading body: %s", err)
+			util.Logger.Printf("[DEBUG - newEntityRequest] error reading body: %s", err)
 		}
 		body = bytes.NewReader(readBody)
 	}
 
 	req, err := http.NewRequest(method, reqUrlCopy.String(), body)
 	if err != nil {
-		util.Logger.Printf("[DEBUG - newCciRequest] error getting new request: %s", err)
+		util.Logger.Printf("[DEBUG - newEntityRequest] error getting new request: %s", err)
 	}
 
 	if client.VCDAuthHeader != "" && client.VCDToken != "" {

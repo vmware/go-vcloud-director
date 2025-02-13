@@ -47,7 +47,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 
 	newProject := &ccitypes.Project{}
 	// Create
-	err = vcd.client.Client.PostEntity(newProjectAddr, nil, projectCfg, newProject)
+	err = vcd.client.Client.PostEntity(newProjectAddr, nil, projectCfg, newProject, nil)
 	check.Assert(err, IsNil)
 	check.Assert(newProject, NotNil)
 	check.Assert(newProject.Name, Equals, projectCfg.Name)
@@ -113,7 +113,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 
 	newNs := &ccitypes.SupervisorNamespace{}
 	// Create
-	err = vcd.client.Client.PostEntity(newNsAddr, nil, nsCfg, newNs)
+	err = vcd.client.Client.PostEntity(newNsAddr, nil, nsCfg, newNs, nil)
 	check.Assert(err, IsNil)
 	check.Assert(newNs, NotNil)
 	check.Assert(newNs.GenerateName, Equals, nsCfg.GenerateName)
