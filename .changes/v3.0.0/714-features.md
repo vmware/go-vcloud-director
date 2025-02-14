@@ -12,4 +12,4 @@
   `VCDClient.GetNsxtManagerOpenApiById`, `VCDClient.GetNsxtManagerOpenApiByName`,
   `TmNsxtManager.Update`, `TmNsxtManager.Delete` [GH-714, GH-722, GH-747]
 * Added async vCenter creation function `VCDClient.CreateVcenterAsync` that exposes the creation
-  task of as it is needed in some cases to retrieve ID of incomplete vCenter creation [GH-736, GH-753]
+  task of as it is needed in some cases to retrieve ID of incomplete vCenter creation [GH-736]
