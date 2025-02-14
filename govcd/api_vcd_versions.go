@@ -182,6 +182,7 @@ func (client *Client) vcdCheckSupportedVersion(version string) error {
 // Checks if there is at least one specified version matching the list returned by vCD.
 // Constraint format can be in format ">= 27.0, < 32",">= 30" ,"= 27.0".
 func (client *Client) checkSupportedVersionConstraint(versionConstraint string) error {
+	isVcfa := false
 	for _, versionInfo := range client.supportedVersions.VersionInfos {
 		versionMatch, err := client.apiVersionMatchesConstraint(versionInfo.Version, versionConstraint)
 		if err != nil {
@@ -189,6 +190,17 @@ func (client *Client) checkSupportedVersionConstraint(versionConstraint string) 
 		}
 
 		if versionMatch {
+			return nil
+		}
+
+		// TODO: TM: Improve this as feels odd and out of place
+		isVcfa, err = client.apiVersionMatchesConstraint(versionInfo.Version, fmt.Sprintf(">= %s", minVcfaApiVersion))
+		if err != nil {
+			return fmt.Errorf("cannot match VCFA version: %s", err)
+		}
+		if isVcfa {
+			client.APIVersion = minVcfaApiVersion
+			overrideApiVersion()
 			return nil
 		}
 	}

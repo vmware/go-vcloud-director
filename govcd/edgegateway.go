@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -1012,12 +1013,12 @@ func (egw *EdgeGateway) Delete(force bool, recursive bool) error {
 		return err
 	}
 	if task.Task.Status == "error" {
-		return fmt.Errorf(combinedTaskErrorMessage(task.Task, fmt.Errorf("edge gateway not properly destroyed")))
+		return errors.New(combinedTaskErrorMessage(task.Task, fmt.Errorf("edge gateway not properly destroyed")))
 	}
 
 	err = task.WaitTaskCompletion()
 	if err != nil {
-		return fmt.Errorf(combinedTaskErrorMessage(task.Task, err))
+		return errors.New(combinedTaskErrorMessage(task.Task, err))
 	}
 
 	return nil

@@ -29,7 +29,8 @@ func init() {
 	requestCounter = &counter
 }
 
-var minVcdApiVersion = "37.0" // supported by 10.4+
+var minApiVersion = "37.0"       // supported by 10.4+
+const minVcfaApiVersion = "40.0" // Minimum version for VCFA
 
 // VCDClientOption defines signature for customizing VCDClient using
 // functional options pattern.
@@ -140,22 +141,13 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 // NewVCDClient initializes VMware VMware Cloud Director client with reasonable defaults.
 // It accepts functions of type VCDClientOption for adjusting defaults.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
-	userDefinedApiVersion := os.Getenv("GOVCD_API_VERSION")
-	if userDefinedApiVersion != "" {
-		_, err := semver.NewVersion(userDefinedApiVersion)
-		if err != nil {
-			// We do not have error in return of this function signature.
-			// To avoid breaking API the only thing we can do is panic.
-			panic(fmt.Sprintf("unable to initialize VCD client from environment variable GOVCD_API_VERSION. Version '%s' is not valid: %s", userDefinedApiVersion, err))
-		}
-		minVcdApiVersion = userDefinedApiVersion
-	}
+	overrideApiVersion()
 
 	// Setting defaults
 	// #nosec G402 -- InsecureSkipVerify: insecure - This allows connecting to VCDs with self-signed certificates
 	vcdClient := &VCDClient{
 		Client: Client{
-			APIVersion: minVcdApiVersion,
+			APIVersion: minApiVersion,
 			// UserAgent cannot embed exact version by default because this is source code and is supposed to be used by programs,
 			// but any client can customize or disable it at all using WithHttpUserAgent() configuration options function.
 			UserAgent: "go-vcloud-director",
@@ -190,6 +182,19 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 		}
 	}
 	return vcdClient
+}
+
+func overrideApiVersion() {
+	userDefinedApiVersion := os.Getenv("GOVCD_API_VERSION")
+	if userDefinedApiVersion != "" {
+		_, err := semver.NewVersion(userDefinedApiVersion)
+		if err != nil {
+			// We do not have error in return of this function signature.
+			// To avoid breaking API the only thing we can do is panic.
+			panic(fmt.Sprintf("unable to initialize VCD client from environment variable GOVCD_API_VERSION. Version '%s' is not valid: %s", userDefinedApiVersion, err))
+		}
+		minApiVersion = userDefinedApiVersion
+	}
 }
 
 // Authenticate is a helper function that performs a login in VMware Cloud Director.

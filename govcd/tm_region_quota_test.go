@@ -11,7 +11,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (vcd *TestVCD) Test_TmVdc(check *C) {
+func (vcd *TestVCD) Test_TmRegionQuota(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
@@ -52,7 +52,7 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 		}},
 	}
 
-	createdVdc, err := vcd.client.CreateTmVdc(vdcType)
+	createdVdc, err := vcd.client.CreateRegionQuota(vdcType)
 	check.Assert(err, IsNil)
 	check.Assert(createdVdc, NotNil)
 	// Add to cleanup list
@@ -68,38 +68,37 @@ func (vcd *TestVCD) Test_TmVdc(check *C) {
 	})
 
 	// Get TM VDC By Name
-	byName, err := vcd.client.GetTmVdcByName(vdcType.Name)
+	byName, err := vcd.client.GetRegionQuotaByName(vdcType.Name)
 	check.Assert(err, IsNil)
 	check.Assert(byName.TmVdc, DeepEquals, createdVdc.TmVdc)
 
 	// Get TM VDC By Id
-	byId, err := vcd.client.GetTmVdcById(createdVdc.TmVdc.ID)
+	byId, err := vcd.client.GetRegionQuotaById(createdVdc.TmVdc.ID)
 	check.Assert(err, IsNil)
 	check.Assert(byId.TmVdc, DeepEquals, createdVdc.TmVdc)
 
 	// Get By Name and Org ID
-	byNameAndOrgId, err := vcd.client.GetTmVdcByNameAndOrgId(createdVdc.TmVdc.Name, org.TmOrg.ID)
+	byNameAndOrgId, err := vcd.client.GetRegionQuotaByNameAndOrgId(createdVdc.TmVdc.Name, org.TmOrg.ID)
 	check.Assert(err, IsNil)
 	check.Assert(byNameAndOrgId.TmVdc, DeepEquals, createdVdc.TmVdc)
 
 	// Get By Name and Org ID in non existent Org
-	byNameAndInvalidOrgId, err := vcd.client.GetTmVdcByNameAndOrgId(createdVdc.TmVdc.Name, "urn:vcloud:org:a93c9db9-0000-0000-0000-a8f7eeda85f9")
+	byNameAndInvalidOrgId, err := vcd.client.GetRegionQuotaByNameAndOrgId(createdVdc.TmVdc.Name, "urn:vcloud:org:a93c9db9-0000-0000-0000-a8f7eeda85f9")
 	check.Assert(err, NotNil)
 	check.Assert(byNameAndInvalidOrgId, IsNil)
 
 	// Not Found tests
-	byNameInvalid, err := vcd.client.GetTmVdcByName("fake-name")
+	byNameInvalid, err := vcd.client.GetRegionQuotaByName("fake-name")
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(byNameInvalid, IsNil)
 
-	byIdInvalid, err := vcd.client.GetTmVdcById("urn:vcloud:virtualDatacenter:5344b964-0000-0000-0000-d554913db643")
+	byIdInvalid, err := vcd.client.GetRegionQuotaById("urn:vcloud:virtualDatacenter:5344b964-0000-0000-0000-d554913db643")
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(byIdInvalid, IsNil)
 
 	// Update
-	// TODO: TM: It fails
-	/*	createdVdc.TmVdc.Name = check.TestName() + "-update"
-		updatedVdc, err := createdVdc.Update(createdVdc.TmVdc)
-		check.Assert(err, IsNil)
-		check.Assert(updatedVdc.TmVdc, DeepEquals, createdVdc.TmVdc)*/
+	createdVdc.TmVdc.Name = check.TestName() + "-update"
+	updatedVdc, err := createdVdc.Update(createdVdc.TmVdc)
+	check.Assert(err, IsNil)
+	check.Assert(updatedVdc.TmVdc, DeepEquals, createdVdc.TmVdc)
 }
