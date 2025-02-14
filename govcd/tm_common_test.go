@@ -22,6 +22,12 @@ import (
 func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	vc, err := vcd.client.GetVCenterByUrl(vcd.config.Tm.VcenterUrl)
 	if err == nil {
+		if !vc.VSphereVCenter.IsEnabled {
+			vc.VSphereVCenter.IsEnabled = true
+			vc, err = vc.Update(vc.VSphereVCenter)
+			check.Assert(err, IsNil)
+		}
+
 		return vc, func() {}
 	}
 	if !ContainsNotFound(err) {
@@ -110,6 +116,11 @@ func waitForListenerStatusConnected(v *VCenter) error {
 func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()) {
 	nsxtManager, err := vcd.client.GetNsxtManagerOpenApiByUrl(vcd.config.Tm.NsxtManagerUrl)
 	if err == nil {
+		if !nsxtManager.NsxtManagerOpenApi.Active {
+			nsxtManager.NsxtManagerOpenApi.Active = true
+			nsxtManager, err = nsxtManager.Update(nsxtManager.NsxtManagerOpenApi)
+			check.Assert(err, IsNil)
+		}
 		return nsxtManager, func() {}
 	}
 	if !ContainsNotFound(err) {
