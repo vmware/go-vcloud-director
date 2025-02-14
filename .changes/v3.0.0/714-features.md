@@ -6,7 +6,7 @@
 * vCenter management types `VCenter` and `types.VSphereVirtualCenter` adds Create, Update and Delete
  methods: `VCDClient.CreateVcenter`, `VCDClient.GetAllVCenters`, `VCDClient.GetVCenterByName`,
  `VCDClient.GetVCenterById`, `VCenter.Update`, `VCenter.Delete`, `VCenter.RefreshVcenter`,
- `VCenter.Refresh` [GH-714, GH-724, GH-747]
+ `VCenter.Refresh` [GH-714, GH-724, GH-747, GH-753]
 * Add NSX-T Manager management types `NsxtManagerOpenApi`, `types.NsxtManagerOpenApi` and methods
   `VCDClient.CreateNsxtManagerOpenApi`, `VCDClient.GetAllNsxtManagersOpenApi`,
   `VCDClient.GetNsxtManagerOpenApiById`, `VCDClient.GetNsxtManagerOpenApiByName`,
