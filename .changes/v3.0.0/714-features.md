@@ -1,8 +1,9 @@
 * Add trusted certificate management types `TrustedCertificate` and `types.TrustedCertificate`
   together with `VCDClient.AutoTrustCertificate`, `VCDClient.CreateTrustedCertificate`,
-  `VCDClient.GetAllTrustedCertificates`, `GetTrustedCertificateByName`,
-  `VCDClient.GetTrustedCertificateById`, `TrustedCertificate.Update`, `TrustedCertificate.Delete`
-  [GH-714]
+  `TmOrg.CreateTrustedCertificate`, `VCDClient.GetAllTrustedCertificates`, `TmOrg.GetAllTrustedCertificates`,
+  `VCDClient.GetTrustedCertificateByName`, `TmOrg.GetTrustedCertificateByName`,
+  `VCDClient.GetTrustedCertificateById`, `TmOrg.GetTrustedCertificateById`, `TrustedCertificate.Update`, `TrustedCertificate.Delete`
+  [GH-714, GH-746]
 * vCenter management types `VCenter` and `types.VSphereVirtualCenter` adds Create, Update and Delete
  methods: `VCDClient.CreateVcenter`, `VCDClient.GetAllVCenters`, `VCDClient.GetVCenterByName`,
  `VCDClient.GetVCenterById`, `VCenter.Update`, `VCenter.Delete`, `VCenter.RefreshVcenter`,

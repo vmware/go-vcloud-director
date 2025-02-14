@@ -12,7 +12,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
@@ -225,19 +224,12 @@ func oidcValidateConnection(client *Client, endpoint string) error {
 	if err != nil {
 		return err
 	}
-	isSecure := strings.ToLower(uri.Scheme) == "https"
-
-	rawPort := uri.Port()
-	if rawPort == "" {
-		rawPort = "80"
-		if isSecure {
-			rawPort = "443"
-		}
-	}
-	port, err := strconv.Atoi(rawPort)
+	port, err := getEndpointPort(uri)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting port number for host '%s': %s", uri.Hostname(), err)
 	}
+
+	isSecure := port == 443
 
 	result, err := client.TestConnection(types.TestConnection{
 		Host:   uri.Hostname(),
