@@ -59,18 +59,6 @@ func (task *Task) Refresh() error {
 		return fmt.Errorf("cannot refresh, Object is empty")
 	}
 
-	// TODO: TM: There's a bug where VCFA returns local K8s service hostname instead of public VCFA url,
-	// like https://xxxxxxx.svc.cluster.local/api/task/1f344a7a-cdb0-435c-82f6-c47fb4847798
-	if strings.Contains(task.Task.HREF, "svc.cluster.local") {
-		util.Logger.Printf("[WARN] Caught task with malformed HREF: %s", task.Task.HREF)
-		fixedTaskUrl, err := url.ParseRequestURI(task.Task.HREF)
-		if err != nil {
-			return fmt.Errorf("error parsing task href: %s", err)
-		}
-		fixedTaskUrl.Host = task.client.VCDHREF.Host
-		task.Task.HREF = fixedTaskUrl.String()
-	}
-
 	refreshUrl := urlParseRequestURI(task.Task.HREF)
 
 	req := task.client.NewRequest(map[string]string{}, http.MethodGet, *refreshUrl, nil)
