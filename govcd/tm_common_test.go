@@ -22,6 +22,13 @@ import (
 func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	vc, err := vcd.client.GetVCenterByUrl(vcd.config.Tm.VcenterUrl)
 	if err == nil {
+		if !vc.VSphereVCenter.IsEnabled {
+			printVerbose("# vCenter with %s found. Enabling it.\n", vcd.config.Tm.VcenterUrl)
+			vc.VSphereVCenter.IsEnabled = true
+			vc, err = vc.Update(vc.VSphereVCenter)
+			check.Assert(err, IsNil)
+		}
+
 		return vc, func() {}
 	}
 	if !ContainsNotFound(err) {
