@@ -31,7 +31,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	projectCfg := &ccitypes.Project{
 		TypeMeta: v1.TypeMeta{
 			Kind:       ccitypes.ProjectKind,
-			APIVersion: ccitypes.ProjectCciAPI + "/" + ccitypes.ApiVersion,
+			APIVersion: ccitypes.ProjectAPI + "/" + ccitypes.ProjectVersion,
 		},
 		ObjectMeta: v1.ObjectMeta{
 			Name: "test-supervisornamespace",
@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 		},
 	}
 
-	newProjectAddr, err := vcd.client.Client.GetEntityUrl(ccitypes.SupervisorProjectsURL)
+	newProjectAddr, err := vcd.client.Client.GetEntityUrl(ccitypes.ProjectsURL)
 	check.Assert(err, IsNil)
 	check.Assert(newProjectAddr, NotNil)
 
@@ -53,7 +53,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	check.Assert(newProject.Name, Equals, projectCfg.Name)
 
 	// Get
-	projectAddr, err := vcd.client.Client.GetEntityUrl(ccitypes.SupervisorProjectsURL, "/", newProject.Name)
+	projectAddr, err := vcd.client.Client.GetEntityUrl(ccitypes.ProjectsURL, "/", newProject.Name)
 	check.Assert(err, IsNil)
 	check.Assert(projectAddr, NotNil)
 
@@ -76,7 +76,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	nsCfg := &ccitypes.SupervisorNamespace{
 		TypeMeta: v1.TypeMeta{
 			Kind:       ccitypes.SupervisorNamespaceKind,
-			APIVersion: ccitypes.InfrastructureCciAPI + "/" + ccitypes.ApiVersion,
+			APIVersion: ccitypes.SupervisorNamespaceAPI + "/" + ccitypes.SupervisorNamespaceVersion,
 		},
 		ObjectMeta: v1.ObjectMeta{
 			GenerateName: "govcd-test-ns",
@@ -165,12 +165,12 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	check.Assert(strings.Contains(err.Error(), "404"), Equals, true)
 }
 
-func getAnyEntityState(client *Client, urlRef *url.URL) (*AnyEntityStatus, error) {
-	entityStatus := AnyEntityStatus{}
+func getSupervisorNamespaceState(client *Client, urlRef *url.URL) (*ccitypes.SupervisorNamespace, error) {
+	entityStatus := ccitypes.SupervisorNamespace{}
 
 	err := client.GetEntity(urlRef, nil, &entityStatus, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error getting CCI entity status from URL '%s': %s", urlRef.String(), err)
+		return nil, fmt.Errorf("error getting entity status from URL '%s': %s", urlRef.String(), err)
 	}
 	return &entityStatus, nil
 }
@@ -199,7 +199,7 @@ func waitForEntityState(client *Client, addr *url.URL, pendingStates, targetStat
 		}
 
 		var entityState string
-		cciEntity, err := getAnyEntityState(client, addr)
+		cciEntity, err := getSupervisorNamespaceState(client, addr)
 
 		if err != nil && !strings.Contains(err.Error(), "404") {
 			return nil, fmt.Errorf("error retrieving CCI entity %s state: %s", addr.String(), err)
@@ -230,25 +230,4 @@ func waitForEntityState(client *Client, addr *url.URL, pendingStates, targetStat
 			continue // Only continue if in a pending state
 		}
 	}
-}
-
-type AnyEntityStatus struct {
-	v1.TypeMeta   `json:",inline"`
-	v1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   any          `json:"spec,omitempty"`
-	Status EntityStatus `json:"status,omitempty"`
-}
-
-type EntityStatus struct {
-	Phase      string                   `json:"phase,omitempty"`
-	Conditions []EntityStatusConditions `json:"conditions,omitempty"`
-}
-
-type EntityStatusConditions struct {
-	Message  string `json:"message,omitempty"`
-	Reason   string `json:"reason,omitempty"`
-	Severity string `json:"severity,omitempty"`
-	Status   string `json:"status,omitempty"`
-	Type     string `json:"type,omitempty"`
 }

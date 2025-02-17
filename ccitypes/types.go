@@ -8,19 +8,13 @@ import (
 
 // ApiError is a structure that matches error interface and is able to const
 type ApiError struct {
-	APIVersion    string `json:"apiVersion"`
-	Code          int    `json:"code"`
-	Kind          string `json:"kind"`
-	Message       string `json:"message"`
-	v1.ObjectMeta `json:"metadata,omitempty"`
-	Reason        string `json:"reason"`
-	Status        string `json:"status"`
+	v1.Status
 }
 
 // Error unwraps the error message to human readable one
 func (apiError ApiError) Error() string {
-	return fmt.Sprintf("error %d: reason: %s, message: %s, status: %s",
-		apiError.Code, apiError.Reason, apiError.Message, apiError.Status)
+	return fmt.Sprintf("apiVersion: %s code: %d kind %s: reason: %s, message: %s status: %s",
+		apiError.APIVersion, apiError.Code, apiError.Kind, apiError.Reason, apiError.Message, apiError.Status.Status)
 }
 
 // SupervisorNamespace definition
@@ -43,6 +37,7 @@ type SupervisorNamespaceSpecInitialClassConfigOverrides struct {
 	StorageClasses []SupervisorNamespaceSpecInitialClassConfigOverridesStorageClass `json:"storageClasses,omitempty"`
 	Zones          []SupervisorNamespaceSpecInitialClassConfigOverridesZone         `json:"zones,omitempty"`
 }
+
 type SupervisorNamespaceSpecInitialClassConfigOverridesStorageClass struct {
 	LimitMiB int64  `json:"limitMiB"`
 	Name     string `json:"name"`
@@ -93,8 +88,7 @@ type SupervisorNamespaceStatusZones struct {
 type Project struct {
 	v1.TypeMeta   `json:",inline"`
 	v1.ObjectMeta `json:"metadata,omitempty"`
-	Spec          ProjectSpec    `json:"spec,omitempty"`
-	Status        *ProjectStatus `json:"status,omitempty"`
+	Spec          ProjectSpec `json:"spec,omitempty"`
 }
 
 type ProjectStatus struct {
