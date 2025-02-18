@@ -8,11 +8,19 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 const labelVirtualCenter = "vCenter Server"
+
+// vCenter task is sometimes unreliable and trying to refresh it immediately after it becomes
+// connected causes a "BUSY_ENTITY" error (which has a few different messages)
+var maximumVcenterRetryTime = 120 * time.Second                                         // The maximum time a single operation will be retried before giving up
+var vCenterEntityBusyRegexp = regexp.MustCompile(`(is currently busy|400|BUSY_ENTITY)`) // Regexp to match entity busy error
 
 type VCenter struct {
 	VSphereVCenter *types.VSphereVirtualCenter
@@ -133,6 +141,10 @@ func (v *VCenter) Update(TmNsxtManagerConfig *types.VSphereVirtualCenter) (*VCen
 
 // Delete vCenter configuration
 func (v *VCenter) Delete() error {
+	return runWithRetry(v.delete, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) delete() error {
 	c := crudConfig{
 		entityLabel:    labelVirtualCenter,
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
@@ -143,6 +155,10 @@ func (v *VCenter) Delete() error {
 
 // Disable is an update shortcut for disabling vCenter
 func (v *VCenter) Disable() error {
+	return runWithRetry(v.disable, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) disable() error {
 	v.VSphereVCenter.IsEnabled = false
 	_, err := v.Update(v.VSphereVCenter)
 	return err
@@ -172,6 +188,10 @@ func (v *VCenter) Refresh() error {
 // supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
 func (v *VCenter) RefreshVcenter() error {
+	return runWithRetry(v.refreshVcenter, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) refreshVcenter() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refresh")
 	if err != nil {
 		return fmt.Errorf("error building refresh path: %s", err)
@@ -199,6 +219,10 @@ func (v *VCenter) RefreshVcenter() error {
 // such as supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
 func (v *VCenter) RefreshStorageProfiles() error {
+	return runWithRetry(v.refreshStorageProfiles, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) refreshStorageProfiles() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refreshStorageProfiles")
 	if err != nil {
 		return fmt.Errorf("error building storage policy refresh path: %s", err)
@@ -220,4 +244,37 @@ func (v *VCenter) RefreshStorageProfiles() error {
 	}
 
 	return nil
+}
+
+func runWithRetry(runOperation func() error, errRegexp *regexp.Regexp, duration time.Duration) error {
+	startTime := time.Now()
+	endTime := startTime.Add(duration)
+	util.Logger.Printf("[DEBUG] runWithRetry - running with retry for %f seconds if error contains '%s' ", duration.Seconds(), errRegexp)
+	count := 1
+	for {
+		err := runOperation()
+		util.Logger.Printf("[DEBUG] runWithRetry - ran attempt %d, got error: %s ", count, err)
+		// Operation had no error - it succeeded
+		if err == nil {
+			util.Logger.Printf("[DEBUG] runWithRetry - no error occurred after attempt %d, got error: %s ", count, err)
+			return nil
+		}
+		// If there is an error, but it doesn't contain the retryIfErrContains value - exit it
+		if !errRegexp.MatchString(err.Error()) {
+			util.Logger.Printf("[DEBUG] runWithRetry - returning error after attempt %d, got error: %s ", count, err)
+			return err
+		}
+
+		// If time limit is exceeded - return error containing statistics and original error
+		if time.Now().After(endTime) {
+			util.Logger.Printf("[DEBUG] runWithRetry - exceeded time after attempt %d, got error: %s ", count, err)
+			return fmt.Errorf("error attempting to wait until error does not contain '%s' after %f seconds: %s", errRegexp, duration.Seconds(), err)
+		}
+
+		// Sleep and continue
+		util.Logger.Printf("[DEBUG] runWithRetry - sleeping after attempt %d, will retry", count)
+		// Sleep 2 seconds and attempt once more if the timeout is not excdeeded
+		time.Sleep(2 * time.Second)
+		count++
+	}
 }
