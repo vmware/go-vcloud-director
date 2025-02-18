@@ -65,7 +65,7 @@ type ContentLibrary struct {
 	// creation then this field will default to true. If a value of false is supplied, then this Tenant Content Library will
 	// only be attached to namespaces that explicitly request it. For Provider Content Libraries this field is not needed for
 	// creation and will always be returned as true. This field cannot be updated after Content Library creation
-	AutoAttach bool `json:"autoAttach,omitempty"`
+	AutoAttach bool `json:"autoAttach"`
 	// The ISO-8601 timestamp representing when this Content Library was created
 	CreationDate string `json:"creationDate,omitempty"`
 	// The description of the Content Library

@@ -144,7 +144,7 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 	clDefinition := &types.ContentLibrary{
 		Name:           check.TestName(),
 		StorageClasses: []types.OpenApiReference{{ID: sc.StorageClass.ID}},
-		AutoAttach:     true,
+		AutoAttach:     false,
 		Description:    check.TestName(),
 	}
 
