@@ -141,6 +141,10 @@ func (v *VCenter) Update(TmNsxtManagerConfig *types.VSphereVirtualCenter) (*VCen
 
 // Delete vCenter configuration
 func (v *VCenter) Delete() error {
+	return runWithRetry(v.delete, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) delete() error {
 	c := crudConfig{
 		entityLabel:    labelVirtualCenter,
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
@@ -151,6 +155,10 @@ func (v *VCenter) Delete() error {
 
 // Disable is an update shortcut for disabling vCenter
 func (v *VCenter) Disable() error {
+	return runWithRetry(v.disable, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) disable() error {
 	v.VSphereVCenter.IsEnabled = false
 	_, err := v.Update(v.VSphereVCenter)
 	return err
