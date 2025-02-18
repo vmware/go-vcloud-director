@@ -26,6 +26,12 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 			printVerbose("# vCenter with %s found. Enabling it.\n", vcd.config.Tm.VcenterUrl)
 			vc.VSphereVCenter.IsEnabled = true
 			vc, err = vc.Update(vc.VSphereVCenter)
+			err = waitForListenerStatusConnected(vc)
+			check.Assert(err, IsNil)
+			check.Assert(err, IsNil)
+			err = vc.Refresh()
+			check.Assert(err, IsNil)
+			err = vc.RefreshStorageProfiles()
 			check.Assert(err, IsNil)
 		}
 
