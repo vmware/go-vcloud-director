@@ -34,7 +34,7 @@ func (vcd *TestVCD) Test_TmRegionalNetworkingSetting(check *C) {
 	defer shortLogNamecleanup()
 
 	orgNetworkSettings := &types.TmRegionalNetworkingSetting{
-		Name:               "terraform-test",
+		Name:               "test-terraform",
 		OrgRef:             types.OpenApiReference{ID: org.TmOrg.ID},
 		RegionRef:          types.OpenApiReference{ID: region.Region.ID},
 		ProviderGatewayRef: types.OpenApiReference{ID: pg.TmProviderGateway.ID},
