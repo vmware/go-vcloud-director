@@ -120,16 +120,18 @@ func (org *TmOrg) LdapConfigure(settings *types.OrgLdapSettingsType, trustSslCer
 	}
 
 	result, err := ldapExecuteRequest(org.vcdClient, org.TmOrg.ID, http.MethodPut, settings)
-	if err != nil {
-		// An error happened, so we must clean the trusted certificate
-		if trustedCert != nil {
-			innerErr := trustedCert.Delete()
-			if innerErr != nil {
-				return nil, fmt.Errorf("%s - Also, cleanup of SSL certificate '%s' failed: %s", err, trustedCert.TrustedCertificate.ID, innerErr)
-			}
+	if err == nil {
+		return result.(*types.OrgLdapSettingsType), nil
+	}
+
+	// An error happened, so we must clean the trusted certificate
+	if trustedCert != nil {
+		innerErr := trustedCert.Delete()
+		if innerErr != nil {
+			return nil, fmt.Errorf("%s - Also, cleanup of SSL certificate '%s' failed: %s", err, trustedCert.TrustedCertificate.ID, innerErr)
 		}
 	}
-	return result.(*types.OrgLdapSettingsType), nil
+	return nil, err
 }
 
 // TmLdapDisable wraps LdapConfigure to disable LDAP configuration for the "System" organization.
@@ -237,7 +239,7 @@ func ldapExecuteRequest(vcdClient *VCDClient, orgId, method string, payload inte
 
 	// Perform the HTTP call with the obtained endpoint and method
 	req := vcdClient.Client.newRequest(nil, nil, method, *endpoint, body, "", headers)
-	resp, err := checkResp(vcdClient.Client.Http.Do(req))
+	resp, err := checkJsonResp(vcdClient.Client.Http.Do(req))
 	if err != nil {
 		return nil, fmt.Errorf("error getting LDAP settings: %s", err)
 	}
