@@ -638,34 +638,8 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 	vcd.client = vcdClient
-	token := os.Getenv("VCD_TOKEN")
-	if token == "" {
-		token = config.Provider.Token
-	}
+	authenticationMode := testingAuthenticate(vcd.client, vcd.config)
 
-	apiToken := os.Getenv("VCD_API_TOKEN")
-	if apiToken == "" {
-		apiToken = config.Provider.ApiToken
-	}
-
-	authenticationMode := "password"
-	if apiToken != "" {
-		authenticationMode = "API-token"
-		err = vcd.client.SetToken(config.Provider.SysOrg, ApiTokenHeader, apiToken)
-	} else {
-		if token != "" {
-			authenticationMode = "token"
-			err = vcd.client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
-		} else {
-			err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
-		}
-	}
-	if config.Provider.UseSamlAdfs {
-		authenticationMode = "SAML password"
-	}
-	if err != nil {
-		panic(err)
-	}
 	versionInfo := ""
 	version, versionTime, err := vcd.client.Client.GetVcdVersion()
 	if err == nil {
@@ -754,6 +728,47 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		vcd.skipVappTests = true
 		fmt.Println("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
 	}
+}
+
+// SetUpTest is a fixture that is triggered before each test
+func (vcd *TestVCD) SetUpTest(check *C) {
+	authmode := testingAuthenticate(vcd.client, vcd.config)
+
+	printVerbose("# Refreshed session using '%s'\n", authmode)
+}
+
+func testingAuthenticate(vcdClient *VCDClient, config TestConfig) string {
+	var err error
+	token := os.Getenv("VCD_TOKEN")
+	if token == "" {
+		token = config.Provider.Token
+	}
+
+	apiToken := os.Getenv("VCD_API_TOKEN")
+	if apiToken == "" {
+		apiToken = config.Provider.ApiToken
+	}
+
+	authenticationMode := "password"
+	if apiToken != "" {
+		authenticationMode = "API-token"
+		err = vcdClient.SetToken(config.Provider.SysOrg, ApiTokenHeader, apiToken)
+	} else {
+		if token != "" {
+			authenticationMode = "token"
+			err = vcdClient.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
+		} else {
+			err = vcdClient.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+		}
+	}
+	if config.Provider.UseSamlAdfs {
+		authenticationMode = "SAML password"
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	return authenticationMode
 }
 
 // Shows the detail of cleanup operations only if the relevant verbosity
