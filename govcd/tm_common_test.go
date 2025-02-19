@@ -27,6 +27,12 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 			vc.VSphereVCenter.IsEnabled = true
 			vc, err = vc.Update(vc.VSphereVCenter)
 			check.Assert(err, IsNil)
+			err = waitForListenerStatusConnected(vc)
+			check.Assert(err, IsNil)
+			err = vc.Refresh()
+			check.Assert(err, IsNil)
+			err = vc.RefreshStorageProfiles()
+			check.Assert(err, IsNil)
 		}
 
 		return vc, func() {}
