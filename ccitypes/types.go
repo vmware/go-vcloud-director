@@ -91,19 +91,6 @@ type Project struct {
 	Spec          ProjectSpec `json:"spec,omitempty"`
 }
 
-type ProjectStatus struct {
-	Phase      string                    `json:"phase,omitempty"`
-	Conditions []ProjectStatusConditions `json:"conditions,omitempty"`
-}
-
-type ProjectStatusConditions struct {
-	Message  string `json:"message,omitempty"`
-	Reason   string `json:"reason,omitempty"`
-	Severity string `json:"severity,omitempty"`
-	Status   string `json:"status,omitempty"`
-	Type     string `json:"type,omitempty"`
-}
-
 type ProjectSpec struct {
 	Description string `json:"description,omitempty"`
 }

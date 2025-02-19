@@ -66,6 +66,7 @@ func (client *Client) GetEntity(urlRef *url.URL, params url.Values, outType inte
 	if err != nil {
 		return fmt.Errorf("error performing GET request to %s: %s", urlRefCopy.String(), err)
 	}
+	defer resp.Body.Close()
 
 	// HTTP 404: Not Found - include sentinel log message ErrorEntityNotFound so that errors can be
 	// checked with ContainsNotFound() and IsNotFound()
@@ -87,7 +88,6 @@ func (client *Client) GetEntity(urlRef *url.URL, params url.Values, outType inte
 		return fmt.Errorf("error decoding JSON response after GET: %s", err)
 	}
 
-	err = resp.Body.Close()
 	if err != nil {
 		return fmt.Errorf("error closing response body: %s", err)
 	}
@@ -208,8 +208,7 @@ func (client *Client) newEntityRequest(params url.Values, method string, reqUrl 
 	}
 
 	setHttpUserAgent(client.UserAgent, req)
-	// TODO - can we send a traceable request ID somewhere so that responses contain it for better log tracing
-	// setVcloudClientRequestId(client.RequestIdFunc, req)
+	setVcloudClientRequestId(client.RequestIdFunc, req)
 
 	// Avoids passing data if the logging of requests is disabled
 	if util.LogHttpRequest {
