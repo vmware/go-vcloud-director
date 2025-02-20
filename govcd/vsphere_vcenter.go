@@ -54,7 +54,7 @@ func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*
 		if err != nil && vCenterEntityBusyRegexp.MatchString(err.Error()) {
 			originalError := errors.New(err.Error()) // storing original error for runWithRetry mechanism
 
-			util.Logger.Printf("[DEBUG] entity '%s' task with ID '%s' failed. Attempting to recover ID for cleanup", labelVirtualCenter, task.Task.ID)
+			util.Logger.Printf("[DEBUG] entity '%s' task failed. Attempting to recover ID for cleanup", labelVirtualCenter)
 			if task != nil && task.Task != nil && task.Task.Owner != nil && task.Task.Owner.ID != "" {
 				util.Logger.Printf("[DEBUG] entity '%s' task with ID '%s' failed. Found owner ID %s for cleanup", labelVirtualCenter, task.Task.ID, task.Task.Owner.ID)
 
