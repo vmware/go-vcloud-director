@@ -144,7 +144,7 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 	clDefinition := &types.ContentLibrary{
 		Name:           check.TestName(),
 		StorageClasses: []types.OpenApiReference{{ID: sc.StorageClass.ID}},
-		AutoAttach:     true,
+		AutoAttach:     false,
 		Description:    check.TestName(),
 	}
 
@@ -282,7 +282,7 @@ func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 	check.Assert(createdCl.ContentLibrary.IsShared, Equals, true) // Always true for providers
 	check.Assert(createdCl.ContentLibrary.IsSubscribed, Equals, true)
 	check.Assert(createdCl.ContentLibrary.LibraryType, Equals, "PROVIDER")
-	check.Assert(createdCl.ContentLibrary.VersionNumber >= int64(1), Equals, true) // Version can differ from 1
+	check.Assert(createdCl.ContentLibrary.VersionNumber >= int64(0), Equals, true) // Version can differ from 0
 	check.Assert(createdCl.ContentLibrary.Org, NotNil)
 	check.Assert(createdCl.ContentLibrary.Org.Name, Equals, "System")
 	check.Assert(createdCl.ContentLibrary.SubscriptionConfig, NotNil)

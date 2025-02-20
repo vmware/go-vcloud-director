@@ -5,6 +5,7 @@
 package govcd
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -37,13 +38,81 @@ func (v VCenter) wrap(inner *types.VSphereVirtualCenter) *VCenter {
 
 // CreateVcenter adds new vCenter connection
 func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*VCenter, error) {
-	c := crudConfig{
-		entityLabel: labelVirtualCenter,
-		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+
+	var resultVc *VCenter
+	createVc := func() error {
+		task, err := vcdClient.CreateVcenterAsync(config)
+		if err != nil {
+			return fmt.Errorf("error triggering %s creation task: %s", labelVirtualCenter, err)
+		}
+
+		err = task.WaitTaskCompletion()
+		// If the creation task failed with a known error - ensure there is no stale vCenter remaining,
+		//
+		// error creating entity of type 'vCenter Server': error waiting completion of task (https://HOST/api/task/0bbf2ab5-e0d2-4c3f-bb59-428c50d3d285):
+		// task did not complete successfully: [500:INTERNAL_SERVER_ERROR] - [ XXXX ] The object you selected is currently busy. Try again in a few minutes.")
+		if err != nil && vCenterEntityBusyRegexp.MatchString(err.Error()) {
+			originalError := errors.New(err.Error()) // storing original error for runWithRetry mechanism
+
+			util.Logger.Printf("[DEBUG] entity '%s' task failed. Attempting to recover ID for cleanup", labelVirtualCenter)
+			if task != nil && task.Task != nil && task.Task.Owner != nil && task.Task.Owner.ID != "" {
+				util.Logger.Printf("[DEBUG] entity '%s' task with ID '%s' failed. Found owner ID %s for cleanup", labelVirtualCenter, task.Task.ID, task.Task.Owner.ID)
+
+				recoveredVc, err := vcdClient.GetVCenterById(task.Task.Owner.ID)
+				if err != nil && ContainsNotFound(err) {
+					return originalError
+				}
+
+				if err != nil {
+					return fmt.Errorf("error retrieving %s by ID after a failed task: %s", labelVirtualCenter, err)
+				}
+				// ensure the vCenter is disabled and is ready for deletion
+				if recoveredVc.VSphereVCenter.IsEnabled {
+					recoveredVc.VSphereVCenter.IsEnabled = true
+					_, err = recoveredVc.Update(recoveredVc.VSphereVCenter)
+					if err != nil {
+						return fmt.Errorf("error disabling %s after recovery: %s", labelVirtualCenter, err)
+					}
+				}
+				err = recoveredVc.Delete()
+				if err != nil {
+					return fmt.Errorf("error deleting %s after recovery: %s", labelVirtualCenter, err)
+				}
+				// vCenter cleanup worked, returning original error so that `runWithRetry` acts accordingly
+				return originalError
+			}
+		}
+
+		if err != nil {
+			return fmt.Errorf("unable to create %s: %s", labelVirtualCenter, err)
+		}
+
+		// vCenter creation succeeded - fetch it and store
+		util.Logger.Printf("[DEBUG] retrieve '%s' after successful creation", labelVirtualCenter)
+		if task != nil && task.Task != nil && task.Task.Owner != nil && task.Task.Owner.ID != "" {
+			resultVc, err = vcdClient.GetVCenterById(task.Task.Owner.ID)
+			if err != nil {
+				return fmt.Errorf("error retrieving %s after creation: %s", labelVirtualCenter, err)
+			}
+			return nil // This is a signal that no errors occurred and the 'resultVc' is populated with correct value
+		}
+
+		return fmt.Errorf("something went wrong in %s creation and recovery", labelVirtualCenter)
 	}
-	outerType := VCenter{client: vcdClient}
-	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+
+	err := runWithRetry(createVc, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+	return resultVc, err
 }
+
+// TODO: TM: this function should be used instead of above one
+// func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*VCenter, error) {
+// 	c := crudConfig{
+// 		entityLabel: labelVirtualCenter,
+// 		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+// 	}
+// 	outerType := VCenter{client: vcdClient}
+// 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+// }
 
 // CreateVcenterAsync adds new vCenter and returns its task for tracking
 func (vcdClient *VCDClient) CreateVcenterAsync(config *types.VSphereVirtualCenter) (*Task, error) {
