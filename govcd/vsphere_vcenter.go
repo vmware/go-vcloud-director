@@ -59,6 +59,10 @@ func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*
 				util.Logger.Printf("[DEBUG] entity '%s' task with ID '%s' failed. Found owner ID %s for cleanup", labelVirtualCenter, task.Task.ID, task.Task.Owner.ID)
 
 				recoveredVc, err := vcdClient.GetVCenterById(task.Task.Owner.ID)
+				if err != nil && ContainsNotFound(err) {
+					return originalError
+				}
+
 				if err != nil {
 					return fmt.Errorf("error retrieving %s by ID after a failed task: %s", labelVirtualCenter, err)
 				}
