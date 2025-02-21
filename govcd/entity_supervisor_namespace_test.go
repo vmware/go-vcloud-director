@@ -179,7 +179,7 @@ func waitForEntityState(client *Client, addr *url.URL, pendingStates, targetStat
 	// constants that are used for tracking entity state after it is being created
 	const (
 		stateWaitTimeout  = 20 * time.Minute
-		stateWaitDelay    = 5 * time.Second
+		stateWaitDelay    = 10 * time.Second
 		statePollInterval = 10 * time.Second
 	)
 
