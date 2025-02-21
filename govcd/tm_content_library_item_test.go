@@ -55,19 +55,6 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(cli.ContentLibraryItem.Version, Equals, 1)
 	check.Assert(cli.ContentLibraryItem.CreationDate, Not(Equals), "")
 
-	updatedCli, err := cli.Update(&types.ContentLibraryItem{
-		Name:        check.TestName() + "Updated",
-		Description: check.TestName() + "Updated",
-		ItemType:    cli.ContentLibraryItem.ItemType, // We need to send the type, otherwise it fails
-	})
-	check.Assert(err, IsNil)
-	check.Assert(updatedCli, NotNil)
-	check.Assert(updatedCli.ContentLibraryItem.Name, Equals, check.TestName()+"Updated")
-	check.Assert(updatedCli.ContentLibraryItem.Description, Equals, check.TestName()+"Updated")
-	check.Assert(updatedCli.ContentLibraryItem.Version, Equals, cli.ContentLibraryItem.Version)
-	check.Assert(updatedCli.ContentLibraryItem.CreationDate, Equals, cli.ContentLibraryItem.CreationDate)
-	check.Assert(updatedCli.ContentLibraryItem.ItemType, Equals, cli.ContentLibraryItem.ItemType)
-
 	// Content library deletion should fail with force=false and recursive=false
 	err = cl.Delete(false, false)
 	check.Assert(err, NotNil)
@@ -105,6 +92,19 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(obtainedCliById, NotNil)
 	check.Assert(*obtainedCliById.ContentLibraryItem, DeepEquals, *obtainedCliByName.ContentLibraryItem)
+
+	updatedCli, err := cli.Update(&types.ContentLibraryItem{
+		Name:        obtainedCliById.ContentLibraryItem.Name + "Updated",
+		Description: obtainedCliById.ContentLibraryItem.Description + "Updated",
+		ItemType:    obtainedCliById.ContentLibraryItem.ItemType, // We need to send the type, otherwise it fails
+	})
+	check.Assert(err, IsNil)
+	check.Assert(updatedCli, NotNil)
+	check.Assert(updatedCli.ContentLibraryItem.Name, Equals, obtainedCliById.ContentLibraryItem.Name+"Updated")
+	check.Assert(updatedCli.ContentLibraryItem.Description, Equals, obtainedCliById.ContentLibraryItem.Description+"Updated")
+	check.Assert(updatedCli.ContentLibraryItem.Version, Equals, obtainedCliById.ContentLibraryItem.Version)
+	check.Assert(updatedCli.ContentLibraryItem.CreationDate, Equals, obtainedCliById.ContentLibraryItem.CreationDate)
+	check.Assert(updatedCli.ContentLibraryItem.ItemType, Equals, obtainedCliById.ContentLibraryItem.ItemType)
 
 	// Not found errors
 	_, err = cl.GetContentLibraryItemByName("notexist")
