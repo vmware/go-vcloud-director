@@ -56,8 +56,8 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(cli.ContentLibraryItem.CreationDate, Not(Equals), "")
 
 	updatedCli, err := cli.Update(&types.ContentLibraryItem{
-		Name:        check.TestName() + "Updated",    // Only name can be updated
-		Description: check.TestName() + "Updated",    // Only name can be updated
+		Name:        check.TestName() + "Updated",
+		Description: check.TestName() + "Updated",
 		ItemType:    cli.ContentLibraryItem.ItemType, // We need to send the type, otherwise it fails
 	})
 	check.Assert(err, IsNil)
