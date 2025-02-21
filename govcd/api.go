@@ -378,6 +378,10 @@ func checkResp(resp *http.Response, err error) (*http.Response, error) {
 	return checkRespWithErrType(types.BodyTypeXML, resp, err, &types.Error{})
 }
 
+func checkJsonResp(resp *http.Response, err error) (*http.Response, error) {
+	return checkRespWithErrType(types.BodyTypeJSON, resp, err, &types.Error{})
+}
+
 // checkRespWithErrType allows to specify custom error errType for checkResp unmarshaling
 // the error.
 func checkRespWithErrType(bodyType types.BodyType, resp *http.Response, err, errType error) (*http.Response, error) {
