@@ -361,9 +361,18 @@ func (vcdClient *VCDClient) GetContentLibraryItemById(id string) (*ContentLibrar
 }
 
 // Update updates an existing Content Library Item with the given configuration
-// TODO: TM: Not supported in UI yet
 func (o *ContentLibraryItem) Update(contentLibraryItemConfig *types.ContentLibraryItem) (*ContentLibraryItem, error) {
-	return nil, fmt.Errorf("not supported")
+	c := crudConfig{
+		entityLabel:    labelContentLibraryItem,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
+		endpointParams: []string{o.ContentLibraryItem.ID},
+		requiresTm:     true,
+	}
+	outerType := ContentLibraryItem{vcdClient: o.vcdClient}
+	return updateOuterEntity(&o.vcdClient.Client, outerType, c, &types.ContentLibraryItem{
+		Name:     contentLibraryItemConfig.Name,
+		ItemType: o.ContentLibraryItem.ItemType, // We need to send the type, otherwise it fails
+	})
 }
 
 // Delete deletes the receiver Content Library Item
