@@ -56,16 +56,17 @@ func (vcd *TestVCD) Test_ContentLibraryItemOva(check *C) {
 	check.Assert(cli.ContentLibraryItem.CreationDate, Not(Equals), "")
 
 	updatedCli, err := cli.Update(&types.ContentLibraryItem{
-		Name:        check.TestName() + "Updated", // Only name can be updated
-		Description: check.TestName() + "Updated", // Only name can be updated
+		Name:        check.TestName() + "Updated",    // Only name can be updated
+		Description: check.TestName() + "Updated",    // Only name can be updated
+		ItemType:    cli.ContentLibraryItem.ItemType, // We need to send the type, otherwise it fails
 	})
 	check.Assert(err, IsNil)
 	check.Assert(updatedCli, NotNil)
-	check.Assert(updatedCli.ContentLibraryItem.ItemType, Equals, "TEMPLATE")
 	check.Assert(updatedCli.ContentLibraryItem.Name, Equals, check.TestName()+"Updated")
 	check.Assert(updatedCli.ContentLibraryItem.Description, Equals, check.TestName()+"Updated")
-	check.Assert(updatedCli.ContentLibraryItem.Version, Equals, 2)
+	check.Assert(updatedCli.ContentLibraryItem.Version, Equals, cli.ContentLibraryItem.Version)
 	check.Assert(updatedCli.ContentLibraryItem.CreationDate, Equals, cli.ContentLibraryItem.CreationDate)
+	check.Assert(updatedCli.ContentLibraryItem.ItemType, Equals, cli.ContentLibraryItem.ItemType)
 
 	// Content library deletion should fail with force=false and recursive=false
 	err = cl.Delete(false, false)

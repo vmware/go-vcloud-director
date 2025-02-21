@@ -369,10 +369,7 @@ func (o *ContentLibraryItem) Update(contentLibraryItemConfig *types.ContentLibra
 		requiresTm:     true,
 	}
 	outerType := ContentLibraryItem{vcdClient: o.vcdClient}
-	return updateOuterEntity(&o.vcdClient.Client, outerType, c, &types.ContentLibraryItem{
-		Name:     contentLibraryItemConfig.Name,
-		ItemType: o.ContentLibraryItem.ItemType, // We need to send the type, otherwise it fails
-	})
+	return updateOuterEntity(&o.vcdClient.Client, outerType, c, contentLibraryItemConfig)
 }
 
 // Delete deletes the receiver Content Library Item
