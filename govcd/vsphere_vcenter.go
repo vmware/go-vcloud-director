@@ -5,14 +5,23 @@
 package govcd
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
+	"time"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"github.com/vmware/go-vcloud-director/v3/util"
 )
 
 const labelVirtualCenter = "vCenter Server"
+
+// vCenter task is sometimes unreliable and trying to refresh it immediately after it becomes
+// connected causes a "BUSY_ENTITY" error (which has a few different messages)
+var maximumVcenterRetryTime = 120 * time.Second                                                             // The maximum time a single operation will be retried before giving up
+var vCenterEntityBusyRegexp = regexp.MustCompile(`(is currently busy|400|BUSY_ENTITY|another transaction)`) // Regexp to match entity busy error
 
 type VCenter struct {
 	VSphereVCenter *types.VSphereVirtualCenter
@@ -29,13 +38,81 @@ func (v VCenter) wrap(inner *types.VSphereVirtualCenter) *VCenter {
 
 // CreateVcenter adds new vCenter connection
 func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*VCenter, error) {
-	c := crudConfig{
-		entityLabel: labelVirtualCenter,
-		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+
+	var resultVc *VCenter
+	createVc := func() error {
+		task, err := vcdClient.CreateVcenterAsync(config)
+		if err != nil {
+			return fmt.Errorf("error triggering %s creation task: %s", labelVirtualCenter, err)
+		}
+
+		err = task.WaitTaskCompletion()
+		// If the creation task failed with a known error - ensure there is no stale vCenter remaining,
+		//
+		// error creating entity of type 'vCenter Server': error waiting completion of task (https://HOST/api/task/0bbf2ab5-e0d2-4c3f-bb59-428c50d3d285):
+		// task did not complete successfully: [500:INTERNAL_SERVER_ERROR] - [ XXXX ] The object you selected is currently busy. Try again in a few minutes.")
+		if err != nil && vCenterEntityBusyRegexp.MatchString(err.Error()) {
+			originalError := errors.New(err.Error()) // storing original error for runWithRetry mechanism
+
+			util.Logger.Printf("[DEBUG] entity '%s' task failed. Attempting to recover ID for cleanup", labelVirtualCenter)
+			if task != nil && task.Task != nil && task.Task.Owner != nil && task.Task.Owner.ID != "" {
+				util.Logger.Printf("[DEBUG] entity '%s' task with ID '%s' failed. Found owner ID %s for cleanup", labelVirtualCenter, task.Task.ID, task.Task.Owner.ID)
+
+				recoveredVc, err := vcdClient.GetVCenterById(task.Task.Owner.ID)
+				if err != nil && ContainsNotFound(err) {
+					return originalError
+				}
+
+				if err != nil {
+					return fmt.Errorf("error retrieving %s by ID after a failed task: %s", labelVirtualCenter, err)
+				}
+				// ensure the vCenter is disabled and is ready for deletion
+				if recoveredVc.VSphereVCenter.IsEnabled {
+					recoveredVc.VSphereVCenter.IsEnabled = true
+					_, err = recoveredVc.Update(recoveredVc.VSphereVCenter)
+					if err != nil {
+						return fmt.Errorf("error disabling %s after recovery: %s", labelVirtualCenter, err)
+					}
+				}
+				err = recoveredVc.Delete()
+				if err != nil {
+					return fmt.Errorf("error deleting %s after recovery: %s", labelVirtualCenter, err)
+				}
+				// vCenter cleanup worked, returning original error so that `runWithRetry` acts accordingly
+				return originalError
+			}
+		}
+
+		if err != nil {
+			return fmt.Errorf("unable to create %s: %s", labelVirtualCenter, err)
+		}
+
+		// vCenter creation succeeded - fetch it and store
+		util.Logger.Printf("[DEBUG] retrieve '%s' after successful creation", labelVirtualCenter)
+		if task != nil && task.Task != nil && task.Task.Owner != nil && task.Task.Owner.ID != "" {
+			resultVc, err = vcdClient.GetVCenterById(task.Task.Owner.ID)
+			if err != nil {
+				return fmt.Errorf("error retrieving %s after creation: %s", labelVirtualCenter, err)
+			}
+			return nil // This is a signal that no errors occurred and the 'resultVc' is populated with correct value
+		}
+
+		return fmt.Errorf("something went wrong in %s creation and recovery", labelVirtualCenter)
 	}
-	outerType := VCenter{client: vcdClient}
-	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+
+	err := runWithRetry(createVc, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+	return resultVc, err
 }
+
+// TODO: TM: this function should be used instead of above one
+// func (vcdClient *VCDClient) CreateVcenter(config *types.VSphereVirtualCenter) (*VCenter, error) {
+// 	c := crudConfig{
+// 		entityLabel: labelVirtualCenter,
+// 		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
+// 	}
+// 	outerType := VCenter{client: vcdClient}
+// 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+// }
 
 // CreateVcenterAsync adds new vCenter and returns its task for tracking
 func (vcdClient *VCDClient) CreateVcenterAsync(config *types.VSphereVirtualCenter) (*Task, error) {
@@ -133,6 +210,10 @@ func (v *VCenter) Update(TmNsxtManagerConfig *types.VSphereVirtualCenter) (*VCen
 
 // Delete vCenter configuration
 func (v *VCenter) Delete() error {
+	return runWithRetry(v.delete, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) delete() error {
 	c := crudConfig{
 		entityLabel:    labelVirtualCenter,
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
@@ -143,6 +224,10 @@ func (v *VCenter) Delete() error {
 
 // Disable is an update shortcut for disabling vCenter
 func (v *VCenter) Disable() error {
+	return runWithRetry(v.disable, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) disable() error {
 	v.VSphereVCenter.IsEnabled = false
 	_, err := v.Update(v.VSphereVCenter)
 	return err
@@ -172,6 +257,10 @@ func (v *VCenter) Refresh() error {
 // supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
 func (v *VCenter) RefreshVcenter() error {
+	return runWithRetry(v.refreshVcenter, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) refreshVcenter() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refresh")
 	if err != nil {
 		return fmt.Errorf("error building refresh path: %s", err)
@@ -199,6 +288,10 @@ func (v *VCenter) RefreshVcenter() error {
 // such as supervisors
 // It uses legacy endpoint as there is no OpenAPI endpoint for this operation
 func (v *VCenter) RefreshStorageProfiles() error {
+	return runWithRetry(v.refreshStorageProfiles, vCenterEntityBusyRegexp, maximumVcenterRetryTime)
+}
+
+func (v *VCenter) refreshStorageProfiles() error {
 	refreshUrl, err := url.JoinPath(v.client.Client.rootVcdHref(), "api", "admin", "extension", "vimServer", extractUuid(v.VSphereVCenter.VcId), "action", "refreshStorageProfiles")
 	if err != nil {
 		return fmt.Errorf("error building storage policy refresh path: %s", err)
@@ -220,4 +313,37 @@ func (v *VCenter) RefreshStorageProfiles() error {
 	}
 
 	return nil
+}
+
+func runWithRetry(runOperation func() error, errRegexp *regexp.Regexp, duration time.Duration) error {
+	startTime := time.Now()
+	endTime := startTime.Add(duration)
+	util.Logger.Printf("[DEBUG] runWithRetry - running with retry for %f seconds if error contains '%s' ", duration.Seconds(), errRegexp)
+	count := 1
+	for {
+		err := runOperation()
+		util.Logger.Printf("[DEBUG] runWithRetry - ran attempt %d, got error: %s ", count, err)
+		// Operation had no error - it succeeded
+		if err == nil {
+			util.Logger.Printf("[DEBUG] runWithRetry - no error occurred after attempt %d, got error: %s ", count, err)
+			return nil
+		}
+		// If there is an error, but it doesn't contain the retryIfErrContains value - exit it
+		if !errRegexp.MatchString(err.Error()) {
+			util.Logger.Printf("[DEBUG] runWithRetry - returning error after attempt %d, got error: %s ", count, err)
+			return err
+		}
+
+		// If time limit is exceeded - return error containing statistics and original error
+		if time.Now().After(endTime) {
+			util.Logger.Printf("[DEBUG] runWithRetry - exceeded time after attempt %d, got error: %s ", count, err)
+			return fmt.Errorf("error attempting to wait until error does not contain '%s' after %f seconds: %s", errRegexp, duration.Seconds(), err)
+		}
+
+		// Sleep and continue
+		util.Logger.Printf("[DEBUG] runWithRetry - sleeping after attempt %d, will retry", count)
+		// Sleep 2 seconds and attempt once more if the timeout is not excdeeded
+		time.Sleep(2 * time.Second)
+		count++
+	}
 }

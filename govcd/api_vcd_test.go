@@ -1,4 +1,4 @@
-//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || cse || slz || tm || ALL
+//go:build api || openapi || functional || catalog || vapp || gateway || network || org || query || extnetwork || task || vm || vdc || system || disk || lb || lbAppRule || lbAppProfile || lbServerPool || lbServiceMonitor || lbVirtualServer || user || search || nsxv || nsxt || auth || affinity || role || alb || certificate || vdcGroup || metadata || providervdc || rde || vsphere || uiPlugin || cse || slz || tm || cci || ALL
 
 /*
  * Copyright 2022 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
@@ -140,7 +140,13 @@ type TestConfig struct {
 		HttpTimeout     int64  `yaml:"httpTimeout,omitempty"`
 	}
 	Tenants []Tenant `yaml:"tenants,omitempty"`
-	Tm      struct {
+	Cci     struct {
+		Region         string `yaml:"region"`
+		Vpc            string `yaml:"vpc"`
+		StoragePolicy  string `yaml:"storagePolicy"`
+		SupervisorZone string `yaml:"supervisorZone"`
+	} `yaml:"cci,omitempty"`
+	Tm struct {
 		CreateRegion bool   `yaml:"createRegion"`
 		Region       string `yaml:"region"`
 		StorageClass string `yaml:"storageClass"`
@@ -648,34 +654,8 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		panic(err)
 	}
 	vcd.client = vcdClient
-	token := os.Getenv("VCD_TOKEN")
-	if token == "" {
-		token = config.Provider.Token
-	}
+	authenticationMode := testingAuthenticate(vcd.client, vcd.config)
 
-	apiToken := os.Getenv("VCD_API_TOKEN")
-	if apiToken == "" {
-		apiToken = config.Provider.ApiToken
-	}
-
-	authenticationMode := "password"
-	if apiToken != "" {
-		authenticationMode = "API-token"
-		err = vcd.client.SetToken(config.Provider.SysOrg, ApiTokenHeader, apiToken)
-	} else {
-		if token != "" {
-			authenticationMode = "token"
-			err = vcd.client.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
-		} else {
-			err = vcd.client.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
-		}
-	}
-	if config.Provider.UseSamlAdfs {
-		authenticationMode = "SAML password"
-	}
-	if err != nil {
-		panic(err)
-	}
 	versionInfo := ""
 	version, versionTime, err := vcd.client.Client.GetVcdVersion()
 	if err == nil {
@@ -684,7 +664,7 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 	env := "VCD"
 	isTm := vcd.client.Client.IsTm()
 	if isTm {
-		env = "TM"
+		env = "VCFA"
 	}
 
 	fmt.Printf("Running on %s %s (%s)\nas user %s@%s (using %s)\n", env, vcd.config.Provider.Url, versionInfo,
@@ -764,6 +744,47 @@ func (vcd *TestVCD) SetUpSuite(check *C) {
 		vcd.skipVappTests = true
 		fmt.Println("Skipping all vapp tests because one of the following wasn't given: Network, StorageProfile, Catalog, Catalogitem")
 	}
+}
+
+// SetUpTest is a fixture that is triggered before each test
+func (vcd *TestVCD) SetUpTest(check *C) {
+	authmode := testingAuthenticate(vcd.client, vcd.config)
+
+	printVerbose("# Refreshed session using '%s'\n", authmode)
+}
+
+func testingAuthenticate(vcdClient *VCDClient, config TestConfig) string {
+	var err error
+	token := os.Getenv("VCD_TOKEN")
+	if token == "" {
+		token = config.Provider.Token
+	}
+
+	apiToken := os.Getenv("VCD_API_TOKEN")
+	if apiToken == "" {
+		apiToken = config.Provider.ApiToken
+	}
+
+	authenticationMode := "password"
+	if apiToken != "" {
+		authenticationMode = "API-token"
+		err = vcdClient.SetToken(config.Provider.SysOrg, ApiTokenHeader, apiToken)
+	} else {
+		if token != "" {
+			authenticationMode = "token"
+			err = vcdClient.SetToken(config.Provider.SysOrg, AuthorizationHeader, token)
+		} else {
+			err = vcdClient.Authenticate(config.Provider.User, config.Provider.Password, config.Provider.SysOrg)
+		}
+	}
+	if config.Provider.UseSamlAdfs {
+		authenticationMode = "SAML password"
+	}
+	if err != nil {
+		panic(err)
+	}
+
+	return authenticationMode
 }
 
 // Shows the detail of cleanup operations only if the relevant verbosity
@@ -1055,7 +1076,6 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 		}
 		vcd.infoCleanup(removedMsg, entity.EntityType, entity.Name, entity.CreatedBy)
 		return
-
 	case "org":
 		org, err := vcd.client.GetAdminOrgByName(entity.Name)
 		if err != nil {
@@ -2173,6 +2193,12 @@ func newOrgUserConnection(adminOrg *AdminOrg, userName, password, href string, i
 func (vcd *TestVCD) skipIfNotSysAdmin(check *C) {
 	if !vcd.client.Client.IsSysAdmin {
 		check.Skip(fmt.Sprintf("Skipping %s: requires system administrator privileges", check.TestName()))
+	}
+}
+
+func (vcd *TestVCD) skipIfSysAdmin(check *C) {
+	if vcd.client.Client.IsSysAdmin {
+		check.Skip(fmt.Sprintf("Skipping %s: requires org user", check.TestName()))
 	}
 }
 
