@@ -142,13 +142,18 @@ func (vcd *TestVCD) Test_ContentLibraryItemIso(check *C) {
 	check.Assert(err, IsNil)
 	defer clCleanup()
 
-	// TODO: TM: ISO upload is not supported in TM yet, we just check that it fails gracefully
-	_, err = cl.CreateContentLibraryItem(&types.ContentLibraryItem{
+	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
 		Name:        check.TestName(),
 		Description: check.TestName(),
 	}, ContentLibraryItemUploadArguments{
 		FilePath: "../test-resources/test.iso",
 	})
-	check.Assert(err, NotNil)
-	check.Assert(err.Error(), Equals, "ISO uploads not supported")
+	check.Assert(err, IsNil)
+	check.Assert(cli, NotNil)
+	AddToCleanupListOpenApi(cli.ContentLibraryItem.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraryItems+cli.ContentLibraryItem.ID)
+	check.Assert(cli.ContentLibraryItem.ItemType, Equals, "ISO")
+	check.Assert(cli.ContentLibraryItem.Name, Equals, check.TestName())
+	check.Assert(cli.ContentLibraryItem.Description, Equals, check.TestName())
+	check.Assert(cli.ContentLibraryItem.Version, Equals, 1)
+	check.Assert(cli.ContentLibraryItem.CreationDate, Not(Equals), "")
 }

@@ -30,8 +30,9 @@ type ContentLibraryItem struct {
 
 // ContentLibraryItemUploadArguments defines the required arguments for Content Library Item uploads
 type ContentLibraryItemUploadArguments struct {
-	FilePath        string // Path to the file to upload
-	UploadPieceSize int64  // When uploading big files, the payloads are divided into chunks of this size in bytes. Defaults to 'defaultPieceSize'
+	FilePath        string   // Path to the main file to upload
+	OvfFilesPaths   []string // OVF only: Path to the files referenced by the OVF
+	UploadPieceSize int64    // When uploading big files, the payloads are divided into chunks of this size in bytes. Defaults to 'defaultPieceSize'
 }
 
 // wrap is a hidden helper that facilitates the usage of a generic CRUD function
@@ -42,8 +43,8 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 	return &g
 }
 
-// CreateContentLibraryItem creates a Content Library Item with the given file located in 'filePath' parameter, which must
-// be an OVA or ISO file.
+// CreateContentLibraryItem creates a Content Library Item with the given file located in 'FilePath' parameter, which must
+// be an OVA, OVF or ISO file. If OVF is uploaded, 'OvfFilesPaths' must be also set with the path of the referenced files.
 func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, args ContentLibraryItemUploadArguments) (*ContentLibraryItem, error) {
 	if _, err := os.Stat(args.FilePath); errors.Is(err, os.ErrNotExist) {
 		return nil, err
@@ -91,9 +92,15 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 				return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 			}
 		}
-	} else {
-		// TODO: TM: ISO upload
+	} else if cli.ContentLibraryItem.ItemType == "ISO" {
+		// ISO files
+		err = uploadContentLibraryItemFile(files[0].Name, cli, files, args)
+		if err != nil {
+			return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
+		}
 		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, fmt.Errorf("ISO upload not supported"))
+	} else {
+		return nil, fmt.Errorf("not supported %s type '%s'", labelContentLibraryItem, cli.ContentLibraryItem.ItemType)
 	}
 
 	err = getContentLibraryItemUploadTask(cli, func(task *Task) error {
@@ -148,19 +155,32 @@ func createContentLibraryItem(cl *ContentLibrary, config *types.ContentLibraryIt
 	c := crudConfig{
 		entityLabel: labelContentLibraryItem,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
+		additionalHeader: getTenantContextHeader(&TenantContext{
+			OrgId:   cl.ContentLibrary.Org.ID,
+			OrgName: cl.ContentLibrary.Org.Name,
+		}),
 	}
 	outerType := ContentLibraryItem{vcdClient: cl.vcdClient}
+
+	// If some config data is missing, we re-use the info from the target Content Library
 	if config != nil && config.ContentLibrary.Name == "" {
 		config.ContentLibrary.Name = cl.ContentLibrary.Name
 	}
 	if config != nil && config.ContentLibrary.ID == "" {
 		config.ContentLibrary.ID = cl.ContentLibrary.ID
 	}
-	if filepath.Ext(filePath) == ".iso" {
-		// TODO: TM: Early exit for ISO uploads as they are not supported yet in TM
-		return nil, fmt.Errorf("ISO uploads not supported")
-		// config.ItemType = "ISO"
+
+	cleanPath := filepath.Clean(filePath)
+	if filepath.Ext(cleanPath) == ".iso" {
+		config.ItemType = "ISO"
+		// ISO files need to send the file size during creation
+		fileInfo, err := os.Stat(cleanPath)
+		if err != nil {
+			return nil, err
+		}
+		config.FileUploadSizeBytes = fileInfo.Size()
 	} else {
+		// OVF/OVA files must not send its size during creation
 		config.ItemType = "TEMPLATE"
 	}
 	return createOuterEntity(&cl.vcdClient.Client, outerType, c, config)
@@ -223,16 +243,22 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 	if fileToUpload == nil {
 		return fmt.Errorf("'%s' not found among the Content Library Item '%s' files", name, cli.ContentLibraryItem.Name)
 	}
-	filesAbsPaths, tmpDir, err := util.Unpack(args.FilePath)
-	if err != nil {
-		return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
-	}
-	defer func() {
-		err = os.RemoveAll(tmpDir)
+
+	cleanPath := filepath.Clean(args.FilePath)
+	if filepath.Ext(cleanPath) == ".ova" {
+		// OVAs have all the files packed inside, we need to get them
+		filesAbsPaths, tmpDir, err := util.Unpack(args.FilePath)
 		if err != nil {
-			util.Logger.Printf("[DEBUG] could not clean up tmp directory %s", tmpDir)
+			return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
 		}
-	}()
+		defer func() {
+			err = os.RemoveAll(tmpDir)
+			if err != nil {
+				util.Logger.Printf("[DEBUG] could not clean up tmp directory %s", tmpDir)
+			}
+		}()
+		args.OvfFilesPaths = filesAbsPaths
+	}
 
 	ud := uploadDetails{
 		uploadLink:               fileToUpload.TransferUrl,
@@ -251,7 +277,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 	// it is not named like that. We search for an .ovf file in this case and we use it
 	foundName := name
 	if name == "descriptor.ovf" {
-		for _, f := range filesAbsPaths {
+		for _, f := range args.OvfFilesPaths {
 			if filepath.Ext(f) == ".ovf" {
 				_, foundName = filepath.Split(f)
 				break
@@ -259,7 +285,7 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 		}
 	}
 
-	_, err = uploadFile(&cli.vcdClient.Client, findFilePath(filesAbsPaths, foundName), ud)
+	_, err := uploadFile(&cli.vcdClient.Client, findFilePath(args.OvfFilesPaths, foundName), ud)
 	if err != nil {
 		return fmt.Errorf("could not upload the file: %s", err)
 	}
@@ -313,7 +339,11 @@ func (cl *ContentLibrary) GetAllContentLibraryItems(queryParameters url.Values) 
 		entityLabel:     labelContentLibraryItem,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
 		queryParameters: queryParameters,
-		requiresTm:      true,
+		additionalHeader: getTenantContextHeader(&TenantContext{
+			OrgId:   cl.ContentLibrary.Org.ID,
+			OrgName: cl.ContentLibrary.Org.Name,
+		}),
+		requiresTm: true,
 	}
 
 	outerType := ContentLibraryItem{vcdClient: cl.vcdClient}
