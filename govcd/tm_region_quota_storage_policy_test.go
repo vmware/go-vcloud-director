@@ -124,7 +124,7 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 	if len(rqPolicies) == 1 {
 		// If there's only one policy, expect an error. There must be always one Storage Policy
 		check.Assert(err, NotNil)
-		check.Assert(strings.Contains(err.Error(), "Storage policy is not set for the entity in VDC"), Equals, true)
+		check.Assert(strings.Contains(err.Error(), "At least one storage class must be assigned for the region quota to remain functional"), Equals, true)
 	} else {
 		check.Assert(err, IsNil)
 	}
