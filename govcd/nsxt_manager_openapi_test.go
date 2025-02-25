@@ -27,7 +27,7 @@ func (vcd *TestVCD) Test_NsxtManagerOpenApi(check *C) {
 	// Certificate must be trusted before adding NSX-T Manager
 	url, err := url.Parse(cfg.Url)
 	check.Assert(err, IsNil)
-	trustedCert, err := vcd.client.AutoTrustCertificate(url)
+	_, err = vcd.client.AutoTrustCertificate(url)
 	check.Assert(err, IsNil)
 	v, err := vcd.client.CreateNsxtManagerOpenApi(cfg)
 	check.Assert(err, IsNil)
@@ -66,9 +66,4 @@ func (vcd *TestVCD) Test_NsxtManagerOpenApi(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
 
-	// Remove trusted cert
-	if trustedCert != nil {
-		err = trustedCert.Delete()
-		check.Assert(err, IsNil)
-	}
 }
