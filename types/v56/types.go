@@ -1146,8 +1146,8 @@ type CustomOrgLdapSettings struct {
 	UserAttributes           *OrgLdapUserAttributes  `xml:"UserAttributes" json:"userAttributes,omitempty"`   // Defines how LDAP attributes are used when importing a user.
 	GroupAttributes          *OrgLdapGroupAttributes `xml:"GroupAttributes" json:"groupAttributes,omitempty"` // Defines how LDAP attributes are used when importing a group.
 	UseExternalKerberos      bool                    `xml:"UseExternalKerberos"`
-
-	Realm string `xml:"Realm,omitempty"`
+	CustomUiButtonLabel      *string                 `xml:"CustomUiButtonLabel,omitempty" json:"customUiButtonLabel,omitempty"`
+	Realm                    string                  `xml:"Realm,omitempty"`
 }
 
 // OrgLdapGroupAttributes	 represents the ldap group attribute settings for a VMware Cloud Director organization.

@@ -352,11 +352,17 @@ func (qf VmQueryFilter) String() string {
 	}[qf]
 }
 
+// Test connection results
+const (
+	UntrustedCertificate = "ERROR_UNTRUSTED_CERTIFICATE"
+)
+
 // LDAP modes for Organization
 const (
-	LdapModeNone   = "NONE"
-	LdapModeSystem = "SYSTEM"
-	LdapModeCustom = "CUSTOM"
+	LdapModeNone    = "NONE"
+	LdapModeSystem  = "SYSTEM"
+	LdapModeCustom  = "CUSTOM"
+	LdapDefaultPort = 389
 )
 
 // Access control modes

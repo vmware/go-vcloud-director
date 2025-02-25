@@ -168,6 +168,16 @@ type TestConfig struct {
 		NsxtManagerUrl      string `yaml:"nsxtManagerUrl"`
 		NsxtEdgeCluster     string `yaml:"nsxtEdgeCluster"`
 		NsxtTier0Gateway    string `yaml:"nsxtTier0Gateway"`
+
+		Ldap struct {
+			Host                  string `yaml:"host"`
+			Port                  int    `yaml:"port"`
+			IsSsl                 bool   `yaml:"isSsl"`
+			Username              string `yaml:"username"`
+			Password              string `yaml:"password"`
+			BaseDistinguishedName string `yaml:"baseDistinguishedName"`
+			Type                  string `yaml:"type"`
+		} `yaml:"ldap,omitempty"`
 	} `yaml:"tm,omitempty"`
 	VCD struct {
 		Org         string `yaml:"org"`

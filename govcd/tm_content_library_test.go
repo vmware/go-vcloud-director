@@ -227,7 +227,7 @@ func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 	// Certificate must be trusted before adding subscribed content library
 	url, err := url.Parse(vcd.config.Tm.SubscriptionContentLibraryUrl)
 	check.Assert(err, IsNil)
-	_, err = vcd.client.AutoTrustCertificate(url)
+	_, err = vcd.client.AutoTrustHttpsCertificate(url, nil)
 	check.Assert(err, IsNil)
 
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
