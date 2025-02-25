@@ -28,7 +28,7 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 	// Certificate must be trusted before adding vCenter
 	url, err := url.Parse(cfg.Url)
 	check.Assert(err, IsNil)
-	_, err = vcd.client.AutoTrustCertificate(url)
+	_, err = vcd.client.AutoTrustHttpsCertificate(url, nil)
 	check.Assert(err, IsNil)
 
 	v, err := vcd.client.CreateVcenter(cfg)

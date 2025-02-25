@@ -54,7 +54,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	// Certificate must be trusted before adding vCenter
 	url, err := url.Parse(vcCfg.Url)
 	check.Assert(err, IsNil)
-	_, err = vcd.client.AutoTrustCertificate(url)
+	_, err = vcd.client.AutoTrustHttpsCertificate(url, nil)
 	check.Assert(err, IsNil)
 
 	vc, err = vcd.client.CreateVcenter(vcCfg)
@@ -138,7 +138,7 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 	// Certificate must be trusted before adding NSX-T Manager
 	url, err := url.Parse(nsxtCfg.Url)
 	check.Assert(err, IsNil)
-	_, err = vcd.client.AutoTrustCertificate(url)
+	_, err = vcd.client.AutoTrustHttpsCertificate(url, nil)
 	check.Assert(err, IsNil)
 	nsxtManager, err = vcd.client.CreateNsxtManagerOpenApi(nsxtCfg)
 	check.Assert(err, IsNil)
