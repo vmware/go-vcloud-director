@@ -54,12 +54,8 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	// Certificate must be trusted before adding vCenter
 	url, err := url.Parse(vcCfg.Url)
 	check.Assert(err, IsNil)
-	trustedCert, err := vcd.client.AutoTrustCertificate(url)
+	_, err = vcd.client.AutoTrustCertificate(url)
 	check.Assert(err, IsNil)
-	if trustedCert != nil {
-		printVerbose("# Certificate for vCenter is trusted %s\n", trustedCert.TrustedCertificate.ID)
-		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
-	}
 
 	vc, err = vcd.client.CreateVcenter(vcCfg)
 	check.Assert(err, IsNil)
@@ -142,12 +138,8 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 	// Certificate must be trusted before adding NSX-T Manager
 	url, err := url.Parse(nsxtCfg.Url)
 	check.Assert(err, IsNil)
-	trustedCert, err := vcd.client.AutoTrustCertificate(url)
+	_, err = vcd.client.AutoTrustCertificate(url)
 	check.Assert(err, IsNil)
-	if trustedCert != nil {
-		printVerbose("# Certificate for NSX-T Manager is trusted %s\n", trustedCert.TrustedCertificate.ID)
-		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
-	}
 	nsxtManager, err = vcd.client.CreateNsxtManagerOpenApi(nsxtCfg)
 	check.Assert(err, IsNil)
 	check.Assert(nsxtManager, NotNil)

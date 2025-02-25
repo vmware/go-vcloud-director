@@ -227,11 +227,8 @@ func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 	// Certificate must be trusted before adding subscribed content library
 	url, err := url.Parse(vcd.config.Tm.SubscriptionContentLibraryUrl)
 	check.Assert(err, IsNil)
-	trustedCert, err := vcd.client.AutoTrustCertificate(url)
+	_, err = vcd.client.AutoTrustCertificate(url)
 	check.Assert(err, IsNil)
-	if trustedCert != nil {
-		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
-	}
 
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
 	defer nsxtManagerCleanup()
