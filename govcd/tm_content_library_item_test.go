@@ -157,3 +157,47 @@ func (vcd *TestVCD) Test_ContentLibraryItemIso(check *C) {
 	check.Assert(cli.ContentLibraryItem.Version, Equals, 1)
 	check.Assert(cli.ContentLibraryItem.CreationDate, Not(Equals), "")
 }
+
+// Test_ContentLibraryItemIso tests CRUD operations for a Content Library Item when uploading an OVF file
+func (vcd *TestVCD) Test_ContentLibraryItemOvf(check *C) {
+	skipNonTm(vcd, check)
+	sysadminOnly(vcd, check)
+
+	// Pre-requisites
+	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
+	defer nsxtManagerCleanup()
+
+	vc, vcCleanup := getOrCreateVCenter(vcd, check)
+	defer vcCleanup()
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
+	check.Assert(err, IsNil)
+
+	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
+	defer regionCleanup()
+
+	sc, err := region.GetStorageClassByName(vcd.config.Tm.StorageClass)
+	check.Assert(err, IsNil)
+	check.Assert(sc, NotNil)
+
+	cl, clCleanup := getOrCreateContentLibrary(vcd, sc, check)
+	check.Assert(err, IsNil)
+	defer clCleanup()
+
+	cli, err := cl.CreateContentLibraryItem(&types.ContentLibraryItem{
+		Name:        check.TestName(),
+		Description: check.TestName(),
+	}, ContentLibraryItemUploadArguments{
+		FilePath: "../test-resources/test_vapp_template_ovf/descriptor.ovf",
+		OvfFilesPaths: []string{
+			"../test-resources/test_vapp_template_ovf/yVMFromVcd-disk1.vmdk",
+		},
+	})
+	check.Assert(err, IsNil)
+	check.Assert(cli, NotNil)
+	AddToCleanupListOpenApi(cli.ContentLibraryItem.Name, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointContentLibraryItems+cli.ContentLibraryItem.ID)
+	check.Assert(cli.ContentLibraryItem.ItemType, Equals, "TEMPLATE")
+	check.Assert(cli.ContentLibraryItem.Name, Equals, check.TestName())
+	check.Assert(cli.ContentLibraryItem.Description, Equals, check.TestName())
+	check.Assert(cli.ContentLibraryItem.Version, Equals, 1)
+	check.Assert(cli.ContentLibraryItem.CreationDate, Not(Equals), "")
+}

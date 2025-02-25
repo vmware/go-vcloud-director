@@ -94,11 +94,23 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		}
 	} else if cli.ContentLibraryItem.ItemType == "ISO" {
 		// ISO files
-		err = uploadContentLibraryItemFile(files[0].Name, cli, files, args)
+		ud := uploadDetails{
+			uploadLink:               files[0].TransferUrl,
+			uploadedBytes:            0,
+			fileSizeToUpload:         files[0].ExpectedSizeBytes,
+			uploadPieceSize:          args.UploadPieceSize,
+			uploadedBytesForCallback: 0,
+			allFilesSize:             files[0].ExpectedSizeBytes,
+			callBack: func(bytesUpload, totalSize int64) {
+				util.Logger.Printf("[DEBUG] Uploaded Content Library Item file '%s': %d/%d", files[0].Name, bytesUpload, totalSize)
+			},
+			uploadError: addrOf(fmt.Errorf("error uploading Content Library Item file '%s'", files[0].Name)),
+		}
+
+		_, err := uploadFile(&cli.vcdClient.Client, args.FilePath, ud)
 		if err != nil {
 			return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 		}
-		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, fmt.Errorf("ISO upload not supported"))
 	} else {
 		return nil, fmt.Errorf("not supported %s type '%s'", labelContentLibraryItem, cli.ContentLibraryItem.ItemType)
 	}
@@ -244,6 +256,18 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 		return fmt.Errorf("'%s' not found among the Content Library Item '%s' files", name, cli.ContentLibraryItem.Name)
 	}
 
+	// When TM asks for a file called 'descriptor.ovf', it can be that inside the OVA
+	// it is not named like that. We search for an .ovf file in this case and we use it
+	foundName := name
+	if name == "descriptor.ovf" {
+		for _, f := range args.OvfFilesPaths {
+			if filepath.Ext(f) == ".ovf" {
+				_, foundName = filepath.Split(f)
+				break
+			}
+		}
+	}
+
 	cleanPath := filepath.Clean(args.FilePath)
 	if filepath.Ext(cleanPath) == ".ova" {
 		// OVAs have all the files packed inside, we need to get them
@@ -271,18 +295,6 @@ func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToU
 			util.Logger.Printf("[DEBUG] Uploaded Content Library Item file '%s': %d/%d", name, bytesUpload, totalSize)
 		},
 		uploadError: addrOf(fmt.Errorf("error uploading Content Library Item file '%s'", name)),
-	}
-
-	// When TM asks for a file called 'descriptor.ovf', it can be that inside the OVA
-	// it is not named like that. We search for an .ovf file in this case and we use it
-	foundName := name
-	if name == "descriptor.ovf" {
-		for _, f := range args.OvfFilesPaths {
-			if filepath.Ext(f) == ".ovf" {
-				_, foundName = filepath.Split(f)
-				break
-			}
-		}
 	}
 
 	_, err := uploadFile(&cli.vcdClient.Client, findFilePath(args.OvfFilesPaths, foundName), ud)
