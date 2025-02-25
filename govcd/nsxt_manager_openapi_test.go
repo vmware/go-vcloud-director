@@ -29,9 +29,6 @@ func (vcd *TestVCD) Test_NsxtManagerOpenApi(check *C) {
 	check.Assert(err, IsNil)
 	trustedCert, err := vcd.client.AutoTrustCertificate(url)
 	check.Assert(err, IsNil)
-	if trustedCert != nil {
-		AddToCleanupListOpenApi(trustedCert.TrustedCertificate.ID, check.TestName()+"trusted-cert", types.OpenApiPathVersion1_0_0+types.OpenApiEndpointTrustedCertificates+trustedCert.TrustedCertificate.ID)
-	}
 	v, err := vcd.client.CreateNsxtManagerOpenApi(cfg)
 	check.Assert(err, IsNil)
 	check.Assert(v, NotNil)
