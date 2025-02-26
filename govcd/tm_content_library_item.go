@@ -46,9 +46,48 @@ func (g ContentLibraryItem) wrap(inner *types.ContentLibraryItem) *ContentLibrar
 // CreateContentLibraryItem creates a Content Library Item with the given file located in 'FilePath' parameter, which must
 // be an OVA, OVF or ISO file. If OVF is uploaded, 'OvfFilesPaths' must be also set with the path of the referenced files.
 func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryItem, args ContentLibraryItemUploadArguments) (*ContentLibraryItem, error) {
-	if _, err := os.Stat(args.FilePath); errors.Is(err, os.ErrNotExist) {
+	// Clean up given paths
+	cleanFilePath := filepath.Clean(args.FilePath)
+	if _, err := os.Stat(cleanFilePath); errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
+	cleanOvfFilesPaths := make([]string, len(args.OvfFilesPaths))
+	for i := range args.OvfFilesPaths {
+		cleanOvfFilesPaths[i] = filepath.Clean(args.FilePath)
+		if _, err := os.Stat(cleanOvfFilesPaths[i]); errors.Is(err, os.ErrNotExist) {
+			return nil, err
+		}
+	}
+
+	// Only OVA files have all the required files packed inside, so we need to extract and process them
+	if filepath.Ext(cleanFilePath) == ".ova" {
+		ovaInnerFilesPaths, tmpDir, err := util.Unpack(args.FilePath)
+		if err != nil {
+			return nil, fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
+		}
+		defer func() {
+			err = os.RemoveAll(tmpDir)
+			if err != nil {
+				util.Logger.Printf("[DEBUG] could not clean up tmp directory %s", tmpDir)
+			}
+		}()
+		// For convenience, use the args structure to hold the result. This way, the processing is the same as
+		// for OVF uploads
+		for _, p := range ovaInnerFilesPaths {
+			if filepath.Ext(p) == ".ovf" {
+				args.FilePath = p
+			} else {
+				args.OvfFilesPaths = append(args.OvfFilesPaths, p)
+			}
+		}
+	}
+
+	fileExt := filepath.Ext(args.FilePath)
+	if fileExt != ".iso" && fileExt != ".ovf" {
+		return nil, fmt.Errorf("%s is not a valid ISO/OVF file", args.FilePath)
+	}
+
+	// Create the "skeleton" of the Content Library Item. This is empty, we need to send the files afterward
 	cli, err := createContentLibraryItem(cl, config, args.FilePath)
 	if err != nil {
 		if cli == nil || cli.ContentLibraryItem == nil {
@@ -57,64 +96,45 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		// We use Name for cleanup because ID may or may not be available
 		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.Name, err)
 	}
-	files, err := getContentLibraryItemPendingFilesToUpload(cli, 1, retriesForPollingContentLibraryItemFilesToUpload)
+
+	// Get the files that need to be uploaded after creation, this should always return 1: Either the ISO file or the "descriptor.ovf"
+	filesToUpload, err := getContentLibraryItemPendingFilesToUpload(cli, 1, retriesForPollingContentLibraryItemFilesToUpload)
 	if err != nil {
 		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 	}
+	if len(filesToUpload) != 1 {
+		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, fmt.Errorf("expected 1 %s File to upload, got %d", labelContentLibraryItem, len(filesToUpload)))
+	}
 
-	// TODO: TM: We do a refresh as POST response does not populate ItemType. This should be fixed in TM
-	//       at some point
-	cli, err = cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
+	// Upload either the requested ISO file or the "descriptor.ovf"
+	err = uploadContentLibraryItemFile(&cl.vcdClient.Client, filesToUpload[0], []string{args.FilePath}, args.UploadPieceSize)
 	if err != nil {
 		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 	}
 
 	if cli.ContentLibraryItem.ItemType == "TEMPLATE" {
-		// The descriptor must be uploaded first
-		err = uploadContentLibraryItemFile("descriptor.ovf", cli, files, args)
-		if err != nil {
-			return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
-		}
 		// When descriptor.ovf is uploaded, the links for the remaining files will be present in the file list.
 		// Refresh the file list and upload each one of them.
-		files, err = getContentLibraryItemPendingFilesToUpload(cli, 2, retriesForPollingContentLibraryItemFilesToUpload)
+		filesToUpload, err = getContentLibraryItemPendingFilesToUpload(cli, 2, retriesForPollingContentLibraryItemFilesToUpload)
 		if err != nil {
 			return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 		}
+		if len(filesToUpload) < 1 {
+			return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, fmt.Errorf("expected at least 1 file to upload during OVA processing, got %d", len(filesToUpload)))
+		}
 
-		for _, f := range files {
-			if f.Name == "descriptor.ovf" {
-				// Already uploaded
+		for _, fileToUpload := range filesToUpload {
+			if fileToUpload.BytesTransferred != 0 && fileToUpload.ExpectedSizeBytes == fileToUpload.BytesTransferred {
 				continue
 			}
-			err = uploadContentLibraryItemFile(f.Name, cli, files, args)
+			err = uploadContentLibraryItemFile(&cl.vcdClient.Client, fileToUpload, args.OvfFilesPaths, args.UploadPieceSize)
 			if err != nil {
 				return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 			}
 		}
-	} else if cli.ContentLibraryItem.ItemType == "ISO" {
-		// ISO files
-		ud := uploadDetails{
-			uploadLink:               files[0].TransferUrl,
-			uploadedBytes:            0,
-			fileSizeToUpload:         files[0].ExpectedSizeBytes,
-			uploadPieceSize:          args.UploadPieceSize,
-			uploadedBytesForCallback: 0,
-			allFilesSize:             files[0].ExpectedSizeBytes,
-			callBack: func(bytesUpload, totalSize int64) {
-				util.Logger.Printf("[DEBUG] Uploaded Content Library Item file '%s': %d/%d", files[0].Name, bytesUpload, totalSize)
-			},
-			uploadError: addrOf(fmt.Errorf("error uploading Content Library Item file '%s'", files[0].Name)),
-		}
-
-		_, err := uploadFile(&cli.vcdClient.Client, args.FilePath, ud)
-		if err != nil {
-			return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
-		}
-	} else {
-		return nil, fmt.Errorf("not supported %s type '%s'", labelContentLibraryItem, cli.ContentLibraryItem.ItemType)
 	}
 
+	// Track the upload task to see whether it is finished
 	err = getContentLibraryItemUploadTask(cli, func(task *Task) error {
 		if task == nil {
 			// The task does not exist, so upload has finished already
@@ -130,11 +150,54 @@ func (cl *ContentLibrary) CreateContentLibraryItem(config *types.ContentLibraryI
 		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 	}
 
+	// Return the created Content Library Item
 	cli, err = cl.GetContentLibraryItemById(cli.ContentLibraryItem.ID)
 	if err != nil {
 		return nil, cleanupContentLibraryItemOnUploadError(cl, cli.ContentLibraryItem.ID, err)
 	}
 	return cli, nil
+}
+
+// uploadContentLibraryItemFile uploads a single Content Library Item File that must be present in one of the given paths and is
+// requested by VCFA.
+func uploadContentLibraryItemFile(client *Client, fileToUpload *types.ContentLibraryItemFile, filePaths []string, uploadPieceSize int64) error {
+	if fileToUpload == nil || len(filePaths) == 0 {
+		return fmt.Errorf("the Content Library Item or its files cannot be nil / empty")
+	}
+	if fileToUpload.BytesTransferred != 0 && fileToUpload.ExpectedSizeBytes == fileToUpload.BytesTransferred {
+		return fmt.Errorf("the file %s is already uploaded", fileToUpload.Name)
+	}
+
+	for _, filePath := range filePaths {
+		isIso := strings.HasSuffix(fileToUpload.Name, ".iso")
+		isOvf := strings.HasSuffix(fileToUpload.Name, ".ovf")
+		if !isIso && !isOvf && filepath.Base(filePath) != fileToUpload.Name {
+			continue
+		}
+		if isIso && filepath.Ext(filePath) != ".iso" {
+			continue
+		}
+		if isOvf && filepath.Ext(filePath) != ".ovf" {
+			continue
+		}
+		_, err := uploadFile(client, filePath, uploadDetails{
+			uploadLink:               fileToUpload.TransferUrl,
+			uploadedBytes:            0,
+			fileSizeToUpload:         fileToUpload.ExpectedSizeBytes,
+			uploadPieceSize:          uploadPieceSize,
+			uploadedBytesForCallback: 0,
+			allFilesSize:             fileToUpload.ExpectedSizeBytes,
+			callBack: func(bytesUpload, totalSize int64) {
+				util.Logger.Printf("[DEBUG] Uploaded Content Library Item file '%s': %d/%d", fileToUpload.Name, bytesUpload, totalSize)
+			},
+			uploadError: addrOf(fmt.Errorf("error uploading Content Library Item file '%s'", fileToUpload.Name)),
+		})
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("'%s' not found among the local file paths: %v", fileToUpload.Name, filePaths)
 }
 
 // getContentLibraryItemPendingFilesToUpload polls the Content Library Item until a minimum amount of expected files is obtained for
@@ -181,19 +244,17 @@ func createContentLibraryItem(cl *ContentLibrary, config *types.ContentLibraryIt
 	if config != nil && config.ContentLibrary.ID == "" {
 		config.ContentLibrary.ID = cl.ContentLibrary.ID
 	}
+	config.ItemType = "TEMPLATE"
 
+	// If the file is an ISO file, it is required to send its size during creation
 	cleanPath := filepath.Clean(filePath)
 	if filepath.Ext(cleanPath) == ".iso" {
 		config.ItemType = "ISO"
-		// ISO files need to send the file size during creation
 		fileInfo, err := os.Stat(cleanPath)
 		if err != nil {
 			return nil, err
 		}
 		config.FileUploadSizeBytes = fileInfo.Size()
-	} else {
-		// OVF/OVA files must not send its size during creation
-		config.ItemType = "TEMPLATE"
 	}
 	return createOuterEntity(&cl.vcdClient.Client, outerType, c, config)
 }
@@ -236,72 +297,6 @@ func cleanupContentLibraryItemOnUploadError(cl *ContentLibrary, identifier strin
 		return fmt.Errorf("the Content Library Item creation failed with error: %s\nCleanup of stranded Content Library Item also failed: %s", originalError, err)
 	}
 	return originalError
-}
-
-// uploadContentLibraryItemFile uploads a Content Library Item file from the given slice with the given file present on disk
-func uploadContentLibraryItemFile(name string, cli *ContentLibraryItem, filesToUpload []*types.ContentLibraryItemFile, args ContentLibraryItemUploadArguments) error {
-	if cli == nil || len(filesToUpload) == 0 {
-		return fmt.Errorf("the Content Library Item or its files cannot be nil / empty")
-	}
-
-	// We just want to upload the selected file (named after the 'name' input parameter)
-	var fileToUpload *types.ContentLibraryItemFile
-	for _, f := range filesToUpload {
-		if f.Name == name {
-			fileToUpload = f
-			break
-		}
-	}
-	if fileToUpload == nil {
-		return fmt.Errorf("'%s' not found among the Content Library Item '%s' files", name, cli.ContentLibraryItem.Name)
-	}
-
-	// When TM asks for a file called 'descriptor.ovf', it can be that inside the OVA
-	// it is not named like that. We search for an .ovf file in this case and we use it
-	foundName := name
-	if name == "descriptor.ovf" {
-		for _, f := range args.OvfFilesPaths {
-			if filepath.Ext(f) == ".ovf" {
-				_, foundName = filepath.Split(f)
-				break
-			}
-		}
-	}
-
-	cleanPath := filepath.Clean(args.FilePath)
-	if filepath.Ext(cleanPath) == ".ova" {
-		// OVAs have all the files packed inside, we need to get them
-		filesAbsPaths, tmpDir, err := util.Unpack(args.FilePath)
-		if err != nil {
-			return fmt.Errorf("%s. Unpacked files for checking are accessible in: %s", err, tmpDir)
-		}
-		defer func() {
-			err = os.RemoveAll(tmpDir)
-			if err != nil {
-				util.Logger.Printf("[DEBUG] could not clean up tmp directory %s", tmpDir)
-			}
-		}()
-		args.OvfFilesPaths = filesAbsPaths
-	}
-
-	ud := uploadDetails{
-		uploadLink:               fileToUpload.TransferUrl,
-		uploadedBytes:            0,
-		fileSizeToUpload:         fileToUpload.ExpectedSizeBytes,
-		uploadPieceSize:          args.UploadPieceSize,
-		uploadedBytesForCallback: 0,
-		allFilesSize:             fileToUpload.ExpectedSizeBytes,
-		callBack: func(bytesUpload, totalSize int64) {
-			util.Logger.Printf("[DEBUG] Uploaded Content Library Item file '%s': %d/%d", name, bytesUpload, totalSize)
-		},
-		uploadError: addrOf(fmt.Errorf("error uploading Content Library Item file '%s'", name)),
-	}
-
-	_, err := uploadFile(&cli.vcdClient.Client, findFilePath(args.OvfFilesPaths, foundName), ud)
-	if err != nil {
-		return fmt.Errorf("could not upload the file: %s", err)
-	}
-	return nil
 }
 
 // getContentLibraryItemUploadTask searches for the task associated to the given Content Library Item upload and runs the input
