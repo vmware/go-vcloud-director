@@ -41,7 +41,7 @@ func (vcd *TestVCD) Test_TmRegionalNetworkingSetting(check *C) {
 	}
 
 	// TODO: TM: This one "conflicts" with the CreateTmRegionalNetworkingSetting below, as there is work done in background
-	// in NSX while the task in VCFA is finished, so it fails. This will be fixed at some point.
+	// in NSX while the task in VCFA is finished, so it fails
 	//rnsAsyncTask, err := vcd.client.CreateTmRegionalNetworkingSettingAsync(orgNetworkSettings)
 	//check.Assert(err, IsNil)
 	//check.Assert(rnsAsyncTask, NotNil)
