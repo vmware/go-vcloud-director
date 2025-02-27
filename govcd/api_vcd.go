@@ -143,8 +143,8 @@ func (vcdClient *VCDClient) vcdCloudApiAuthorize(user, pass, org string) (*http.
 func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption) *VCDClient {
 	overrideApiVersion()
 
-	// ensure vcdEndpoint is set to https://HOST/api internally
-	if !strings.Contains(vcdEndpoint.Path, "/api") {
+	// ensure vcdEndpoint is set to contain /api suffix for internal usage
+	if !strings.HasSuffix(vcdEndpoint.Path, "/api") {
 		vcdEndpoint.Path += "/api"
 	}
 
