@@ -127,6 +127,9 @@ type ContentLibraryItem struct {
 	Status string `json:"status,omitempty"`
 	// The version of this item. For a subscribed library, this version is same as in publisher library
 	Version int `json:"version,omitempty"`
+	// The size of the content library item file to upload in bytes.
+	// This field is only required for ISO content library items and will be NULL for Template based content library items
+	FileUploadSizeBytes int64 `json:"fileUploadSizeBytes,omitempty"`
 }
 
 // ContentLibraryItemFile specifies a Content Library Item file for uploads
