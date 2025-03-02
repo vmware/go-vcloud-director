@@ -20,7 +20,7 @@ const labelVirtualCenter = "vCenter Server"
 
 // vCenter task is sometimes unreliable and trying to refresh it immediately after it becomes
 // connected causes a "BUSY_ENTITY" error (which has a few different messages)
-var maximumVcenterRetryTime = 120 * time.Second                                                                          // The maximum time a single operation will be retried before giving up
+var maximumVcenterRetryTime = 240 * time.Second                                                                          // The maximum time a single operation will be retried before giving up
 var vCenterEntityBusyRegexp = regexp.MustCompile(`(is currently busy|400|BUSY_ENTITY|another transaction|408:TIMEDOUT)`) // Regexp to match entity busy error
 
 type VCenter struct {
