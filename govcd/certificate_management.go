@@ -56,15 +56,7 @@ func getCertificateFromLibraryById(client *Client, id string, additionalHeader m
 
 func getEndpointByVersion(client *Client) (string, error) {
 	endpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibrary
-	newerApiVersion, err := client.VersionEqualOrGreater("10.3", 3)
-	if err != nil {
-		return "", err
-	}
-	if !newerApiVersion {
-		// in previous version exist only API with mistype in name
-		endpoint = types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointSSLCertificateLibraryOld
-	}
-	return endpoint, err
+	return endpoint, nil
 }
 
 // GetCertificateFromLibraryById Returns certificate from library of certificates from System Context
