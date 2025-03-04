@@ -205,6 +205,15 @@ type TmOrgNetworkingSettings struct {
 	OrgNameForLogs string `json:"orgNameForLogs"`
 }
 
+// TmOrgSettings defines structure for managing Org Setttings
+type TmOrgSettings struct {
+	// Whether the organization can create content libraries that are subscribed to external sources.
+	CanCreateSubscribedLibraries *bool `json:"canCreateSubscribedLibraries,omitempty"`
+
+	// Whether to quarantine new content library items for file inspection.
+	QuarantineContentLibraryItems *bool `json:"quarantineContentLibraryItems,omitempty"`
+}
+
 // Region represents a collection of supervisor clusters across different VCs
 type Region struct {
 	ID string `json:"id,omitempty"`
