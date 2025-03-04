@@ -52,13 +52,13 @@ func (vcd *TestVCD) Test_TmOrg(check *C) {
 	check.Assert(updated, NotNil)
 
 	// Settings
-	settings, err := updated.GetOrgSettings()
+	settings, err := updated.GetSettings()
 	check.Assert(err, IsNil)
 	check.Assert(settings, NotNil)
 	check.Assert(settings.CanCreateSubscribedLibraries, NotNil)
 	check.Assert(settings.QuarantineContentLibraryItems, NotNil)
 
-	settingsUpdated, err := updated.UpdateOrgSettings(&types.TmOrgSettings{
+	settingsUpdated, err := updated.UpdateSettings(&types.TmOrgSettings{
 		CanCreateSubscribedLibraries:  addrOf(!(*settings.CanCreateSubscribedLibraries)),
 		QuarantineContentLibraryItems: addrOf(!(*settings.QuarantineContentLibraryItems)),
 	})

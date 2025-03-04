@@ -140,8 +140,8 @@ func (o *TmOrg) UpdateOrgNetworkingSettings(tmOrgNetConfig *types.TmOrgNetworkin
 	return updateInnerEntity(&o.vcdClient.Client, c, tmOrgNetConfig)
 }
 
-// GetOrgSettings retrieves Organization settings
-func (o *TmOrg) GetOrgSettings() (*types.TmOrgSettings, error) {
+// GetSettings retrieves Organization settings
+func (o *TmOrg) GetSettings() (*types.TmOrgSettings, error) {
 	c := crudConfig{
 		entityLabel: labelOrganizationSettings,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmOrgSettings,
@@ -154,8 +154,8 @@ func (o *TmOrg) GetOrgSettings() (*types.TmOrgSettings, error) {
 	return getInnerEntity[types.TmOrgSettings](&o.vcdClient.Client, c)
 }
 
-// UpdateOrgSettings changes Organization settings
-func (o *TmOrg) UpdateOrgSettings(tmOrgNetConfig *types.TmOrgSettings) (*types.TmOrgSettings, error) {
+// UpdateSettings changes Organization settings
+func (o *TmOrg) UpdateSettings(tmOrgNetConfig *types.TmOrgSettings) (*types.TmOrgSettings, error) {
 	c := crudConfig{
 		entityLabel: labelOrganizationSettings,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmOrgSettings,
