@@ -179,6 +179,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClusterTransportNodeStatus:       "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClustersSync:                     "40.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmOrgNetworkingSettings:       "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmOrgSettings:                          "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettings:           "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile: "40.0",
 }

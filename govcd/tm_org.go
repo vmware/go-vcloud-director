@@ -13,6 +13,7 @@ import (
 
 const labelOrganization = "Organization"
 const labelOrganizationNetworkingSettings = "Organization Networking Settings"
+const labelOrganizationSettings = "Organization Settings"
 
 type TmOrg struct {
 	TmOrg     *types.TmOrg
@@ -134,6 +135,35 @@ func (o *TmOrg) UpdateOrgNetworkingSettings(tmOrgNetConfig *types.TmOrgNetworkin
 		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointTmOrgNetworkingSettings,
 		endpointParams: []string{o.TmOrg.ID},
 		requiresTm:     true,
+	}
+
+	return updateInnerEntity(&o.vcdClient.Client, c, tmOrgNetConfig)
+}
+
+// GetOrgSettings retrieves Organization settings
+func (o *TmOrg) GetOrgSettings() (*types.TmOrgSettings, error) {
+	c := crudConfig{
+		entityLabel: labelOrganizationSettings,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmOrgSettings,
+		additionalHeader: getTenantContextHeader(&TenantContext{
+			OrgId:   o.TmOrg.ID,
+			OrgName: o.TmOrg.Name,
+		}),
+		requiresTm: true,
+	}
+	return getInnerEntity[types.TmOrgSettings](&o.vcdClient.Client, c)
+}
+
+// UpdateOrgSettings changes Organization settings
+func (o *TmOrg) UpdateOrgSettings(tmOrgNetConfig *types.TmOrgSettings) (*types.TmOrgSettings, error) {
+	c := crudConfig{
+		entityLabel: labelOrganizationSettings,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmOrgSettings,
+		additionalHeader: getTenantContextHeader(&TenantContext{
+			OrgId:   o.TmOrg.ID,
+			OrgName: o.TmOrg.Name,
+		}),
+		requiresTm: true,
 	}
 
 	return updateInnerEntity(&o.vcdClient.Client, c, tmOrgNetConfig)

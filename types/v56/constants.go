@@ -527,6 +527,7 @@ const (
 	// OpenAPI Org
 	OpenApiEndpointOrgs                    = "orgs/"
 	OpenApiEndpointTmOrgNetworkingSettings = "orgs/%s/networkingSettings"
+	OpenApiEndpointTmOrgSettings           = "orgSettings"
 
 	OpenApiEndpointRegionStoragePolicies                  = "regionStoragePolicies/"
 	OpenApiEndpointStorageClasses                         = "storageClasses/"
