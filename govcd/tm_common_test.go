@@ -210,11 +210,20 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 
 // getOrCreateContentLibrary will check configuration file and create a Content Library if
 // not present in TM. Otherwise, it just retrieves it
-func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, check *C) (*ContentLibrary, func()) {
+func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, org *TmOrg, check *C) (*ContentLibrary, func()) {
 	if vcd.config.Tm.ContentLibrary == "" {
 		check.Fatal("testing configuration property 'tm.contentLibrary' is required")
 	}
-	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary, nil)
+
+	var tenantContext *TenantContext
+	if org != nil {
+		tenantContext = &TenantContext{
+			OrgId:   org.TmOrg.ID,
+			OrgName: org.TmOrg.Name,
+		}
+	}
+
+	cl, err := vcd.client.GetContentLibraryByName(vcd.config.Tm.ContentLibrary, tenantContext)
 	if err == nil {
 		return cl, func() {}
 	}
@@ -231,7 +240,7 @@ func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, check *
 		Description: check.TestName(),
 	}
 
-	contentLibrary, err := vcd.client.CreateContentLibrary(&payload, nil)
+	contentLibrary, err := vcd.client.CreateContentLibrary(&payload, tenantContext)
 	check.Assert(err, IsNil)
 	check.Assert(contentLibrary, NotNil)
 	contentLibraryCreated := true
@@ -241,7 +250,7 @@ func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, check *
 		if !contentLibraryCreated {
 			return
 		}
-		err = contentLibrary.Delete(true, true)
+		err = contentLibrary.Delete(false, true)
 		check.Assert(err, IsNil)
 	}
 }
@@ -330,7 +339,7 @@ func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*Reg
 				RegionStoragePolicy: types.OpenApiReference{
 					ID: sp.RegionStoragePolicy.ID,
 				},
-				StorageLimitMiB: 100,
+				StorageLimitMiB: 500,
 				VirtualDatacenter: types.OpenApiReference{
 					ID: rq.TmVdc.ID,
 				},
