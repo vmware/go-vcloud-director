@@ -47,10 +47,6 @@ func (vcd *TestVCD) Test_TmIpSpace(check *C) {
 	check.Assert(createdIpSpace, NotNil)
 	// Add to cleanup list
 	PrependToCleanupListOpenApi(createdIpSpace.TmIpSpace.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmIpSpaces+createdIpSpace.TmIpSpace.ID)
-	defer func() {
-		err = createdIpSpace.Delete()
-		check.Assert(err, IsNil)
-	}()
 
 	// Get TM VDC By Name
 	byName, err := vcd.client.GetTmIpSpaceByName(ipSpaceType.Name)
@@ -86,4 +82,28 @@ func (vcd *TestVCD) Test_TmIpSpace(check *C) {
 	updatedVdc, err := createdIpSpace.Update(createdIpSpace.TmIpSpace)
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc.TmIpSpace, DeepEquals, createdIpSpace.TmIpSpace)
+
+	// Delete
+	err = createdIpSpace.Delete()
+	check.Assert(err, IsNil)
+
+	notFoundByName, err := vcd.client.GetTmIpSpaceByName(createdIpSpace.TmIpSpace.Name)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(notFoundByName, IsNil)
+
+	// Create async
+	task, err := vcd.client.CreateTmIpSpaceAsync(ipSpaceType)
+	check.Assert(err, IsNil)
+	check.Assert(task, NotNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	byIdAsync, err := vcd.client.GetTmIpSpaceById(task.Task.Owner.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byIdAsync, NotNil)
+	PrependToCleanupListOpenApi(byIdAsync.TmIpSpace.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmIpSpaces+createdIpSpace.TmIpSpace.ID)
+
+	err = byIdAsync.Delete()
+	check.Assert(err, IsNil)
 }
