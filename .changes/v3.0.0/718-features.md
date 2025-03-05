@@ -5,8 +5,9 @@
 * Added `VCenter.RefreshStorageProfiles` to refresh storage profiles available in vCenter server
   [GH-718]
 * Added `Region` and `types.Region` structures for OpenAPI management of Regions with methods
-  `VCDClient.CreateRegion`, `VCDClient.GetAllRegions`, `VCDClient.GetRegionByName`,
-  `VCDClient.GetRegionById`, `Region.Update`, `Region.Delete` [GH-718, GH-737]
+  `VCDClient.CreateRegion`,`VCDClient.CreateRegionAsync`, `VCDClient.GetAllRegions`,
+  `VCDClient.GetRegionByName`, `VCDClient.GetRegionById`, `Region.Update`, `Region.Delete` [GH-718,
+  GH-737, GH-769]
 * Added `Supervisor` and `types.Supervisor` structure for reading available Supervisors
   `VCDClient.GetAllSupervisors`, `VCDClient.GetSupervisorById`, `VCDClient.GetSupervisorByName`,
   `VCDClient.GetSupervisorByNameAndVcenterId`, `Vcenter.GetAllSupervisors`,
