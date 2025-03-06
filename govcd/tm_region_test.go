@@ -76,4 +76,20 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	notFoundByName, err := vcd.client.GetRegionByName(createdRegion.Region.Name)
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
+
+	// Create async
+	task, err := vcd.client.CreateRegionAsync(r)
+	check.Assert(err, IsNil)
+	check.Assert(task, NotNil)
+
+	err = task.WaitTaskCompletion()
+	check.Assert(err, IsNil)
+
+	byIdAsync, err := vcd.client.GetRegionById(task.Task.Owner.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byIdAsync, NotNil)
+	AddToCleanupListOpenApi(createdRegion.Region.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointRegions+createdRegion.Region.ID)
+
+	err = byIdAsync.Delete()
+	check.Assert(err, IsNil)
 }

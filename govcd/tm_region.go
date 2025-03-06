@@ -33,6 +33,16 @@ func (vcdClient *VCDClient) CreateRegion(config *types.Region) (*Region, error) 
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// CreateRegionAsync creates a new region and returns its tracking task
+func (vcdClient *VCDClient) CreateRegionAsync(config *types.Region) (*Task, error) {
+	c := crudConfig{
+		entityLabel: labelRegion,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointRegions,
+		requiresTm:  true,
+	}
+	return createInnerEntityAsync(&vcdClient.Client, c, config)
+}
+
 // GetAllRegions retrieves all Regions with an optional query filter
 func (vcdClient *VCDClient) GetAllRegions(queryParameters url.Values) ([]*Region, error) {
 	c := crudConfig{

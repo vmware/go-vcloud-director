@@ -35,6 +35,16 @@ func (vcdClient *VCDClient) CreateTmIpSpace(config *types.TmIpSpace) (*TmIpSpace
 	return createOuterEntity(&vcdClient.Client, outerType, c, config)
 }
 
+// CreateTmIpSpaceAsync creates a new TM IP Space and returns its tracking task
+func (vcdClient *VCDClient) CreateTmIpSpaceAsync(config *types.TmIpSpace) (*Task, error) {
+	c := crudConfig{
+		entityLabel: labelTmIpSpace,
+		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces,
+		requiresTm:  true,
+	}
+	return createInnerEntityAsync(&vcdClient.Client, c, config)
+}
+
 // GetAllTmIpSpaces fetches all TM IP Spaces with an optional query filter
 func (vcdClient *VCDClient) GetAllTmIpSpaces(queryParameters url.Values) ([]*TmIpSpace, error) {
 	c := crudConfig{
