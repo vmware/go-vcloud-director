@@ -4,4 +4,4 @@
 * Added `ContentLibrary` and `types.ContentLibrary` structures to manage Content Libraries with
   methods `VCDClient.CreateContentLibrary`, `VCDClient.GetAllContentLibraries`,
   `VCDClient.GetContentLibraryByName`, `VCDClient.GetContentLibraryById`, `ContentLibrary.Update`,
-  `ContentLibrary.Delete` [GH-711, GH-721, GH-735, GH-757]
+  `ContentLibrary.Delete` [GH-711, GH-721, GH-735, GH-757, GH-770]
