@@ -54,7 +54,7 @@ func (vcdClient *VCDClient) GetAllContentLibraries(queryParameters url.Values, c
 	c := crudConfig{
 		entityLabel:      labelContentLibrary,
 		endpoint:         types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries,
-		queryParameters:  queryParameters,
+		queryParameters:  defaultPageSize(queryParameters, "64"), // Content Library endpoint forces to use maximum 64 items per page
 		additionalHeader: getTenantContextHeader(ctx),
 		requiresTm:       true,
 	}
