@@ -345,7 +345,7 @@ func (cl *ContentLibrary) GetAllContentLibraryItems(queryParameters url.Values) 
 	c := crudConfig{
 		entityLabel:     labelContentLibraryItem,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
-		queryParameters: queryParameters,
+		queryParameters: defaultPageSize(queryParameters, "64"), // Content Library Item endpoint forces to use maximum 64 items per page
 		additionalHeader: getTenantContextHeader(&TenantContext{
 			OrgId:   cl.ContentLibrary.Org.ID,
 			OrgName: cl.ContentLibrary.Org.Name,
