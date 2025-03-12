@@ -42,7 +42,7 @@ func (vcdClient *VCDClient) GetAllNsxtManagersOpenApi(queryParameters url.Values
 	c := crudConfig{
 		entityLabel:     labelNsxtManagerOpenApi,
 		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointNsxManagers,
-		queryParameters: queryParameters,
+		queryParameters: defaultPageSize(queryParameters, "15"),
 		requiresTm:      true,
 	}
 
