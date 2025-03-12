@@ -128,7 +128,7 @@ func (vcdClient *VCDClient) GetAllVCenters(queryParams url.Values) ([]*VCenter, 
 	c := crudConfig{
 		entityLabel:     labelVirtualCenter,
 		endpoint:        types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointVirtualCenters,
-		queryParameters: queryParams,
+		queryParameters: defaultPageSize(queryParams, "15"),
 	}
 
 	outerType := VCenter{client: vcdClient}
