@@ -1128,9 +1128,9 @@ type OrgLdapSettingsType struct {
 // Since: 0.9
 // Note. Order of these fields matter and API will error if it is changed
 type CustomOrgLdapSettings struct {
-	HREF string   `xml:"href,attr,omitempty"` // The URI of the entity.
-	Type string   `xml:"type,attr,omitempty"` // The MIME type of the entity.
-	Link LinkList `xml:"Link,omitempty"`      // A reference to an entity or operation associated with this object.
+	HREF string   `xml:"href,attr,omitempty" json:"-"` // The URI of the entity.
+	Type string   `xml:"type,attr,omitempty" json:"-"` // The MIME type of the entity.
+	Link LinkList `xml:"Link,omitempty" json:"-"`      // A reference to an entity or operation associated with this object.
 
 	HostName                 string                  `xml:"HostName,omitempty" json:"hostName,omitempty"`
 	Port                     int                     `xml:"Port" json:"port,omitempty"`
@@ -1145,9 +1145,9 @@ type CustomOrgLdapSettings struct {
 	ConnectorType            string                  `xml:"ConnectorType" json:"connectorType,omitempty"`     // Defines LDAP service implementation type
 	UserAttributes           *OrgLdapUserAttributes  `xml:"UserAttributes" json:"userAttributes,omitempty"`   // Defines how LDAP attributes are used when importing a user.
 	GroupAttributes          *OrgLdapGroupAttributes `xml:"GroupAttributes" json:"groupAttributes,omitempty"` // Defines how LDAP attributes are used when importing a group.
-	UseExternalKerberos      bool                    `xml:"UseExternalKerberos"`
+	UseExternalKerberos      bool                    `xml:"UseExternalKerberos" json:"-"`
 	CustomUiButtonLabel      *string                 `xml:"CustomUiButtonLabel,omitempty" json:"customUiButtonLabel,omitempty"`
-	Realm                    string                  `xml:"Realm,omitempty"`
+	Realm                    string                  `xml:"Realm,omitempty" json:"-"`
 }
 
 // OrgLdapGroupAttributes	 represents the ldap group attribute settings for a VMware Cloud Director organization.
