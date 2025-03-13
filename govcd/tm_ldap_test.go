@@ -224,12 +224,17 @@ func (vcd *TestVCD) Test_TmLdapOrg(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(receivedSettings, NotNil)
 
-		err = org.LdapDisable()
-		check.Assert(err, IsNil)
-
 		receivedSettings2, err = org.GetLdapConfiguration()
 		check.Assert(err, IsNil)
 		check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+
+		err = org.LdapDisable()
+		check.Assert(err, IsNil)
+
+		// As LdapDisable is equal to updating with types.LdapModeNone
+		deletedSettings, err := org.GetLdapConfiguration()
+		check.Assert(err, IsNil)
+		check.Assert(deletedSettings, DeepEquals, receivedSettings2)
 
 		if t.isSsl {
 			// Clean up trusted certificate. This step is not needed as it would be gone with the Org, but it's a meaningful check (see comment when
