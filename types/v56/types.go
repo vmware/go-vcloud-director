@@ -1110,8 +1110,8 @@ type VAppLeaseSettings struct {
 // Description: Represents the ldap settings of a VMware Cloud Director organization.
 // Since: 0.9
 type OrgLdapSettingsType struct {
-	XMLName xml.Name `xml:"OrgLdapSettings"`
-	Xmlns   string   `xml:"xmlns,attr,omitempty"`
+	XMLName xml.Name `xml:"OrgLdapSettings" json:"-"`
+	Xmlns   string   `xml:"xmlns,attr,omitempty" json:"-"`
 	HREF    string   `xml:"href,attr,omitempty" json:"href,omitempty"` // The URI of the entity.
 	Type    string   `xml:"type,attr,omitempty" json:"type,omitempty"` // The MIME type of the entity.
 	Link    LinkList `xml:"Link,omitempty" json:"link,omitempty"`      // A reference to an entity or operation associated with this object.

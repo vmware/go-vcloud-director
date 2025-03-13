@@ -224,6 +224,9 @@ func (vcd *TestVCD) Test_TmLdapOrg(check *C) {
 		check.Assert(err, IsNil)
 		check.Assert(receivedSettings, NotNil)
 
+		err = org.LdapDisable()
+		check.Assert(err, IsNil)
+
 		receivedSettings2, err = org.GetLdapConfiguration()
 		check.Assert(err, IsNil)
 		check.Assert(receivedSettings, DeepEquals, receivedSettings2)
