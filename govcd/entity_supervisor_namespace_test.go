@@ -88,17 +88,17 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 			InitialClassConfigOverrides: ccitypes.SupervisorNamespaceSpecInitialClassConfigOverrides{
 				StorageClasses: []ccitypes.SupervisorNamespaceSpecInitialClassConfigOverridesStorageClass{
 					{
-						Name:     storagePolicy,
-						LimitMiB: 256,
+						Name:  storagePolicy,
+						Limit: "256Mi",
 					},
 				},
 				Zones: []ccitypes.SupervisorNamespaceSpecInitialClassConfigOverridesZone{
 					{
-						CpuLimitMHz:          200,
-						CpuReservationMHz:    1,
-						MemoryLimitMiB:       256,
-						MemoryReservationMiB: 1,
-						Name:                 supervisorZoneName,
+						CpuLimit:          "200M",
+						CpuReservation:    "1M",
+						MemoryLimit:       "256Mi",
+						MemoryReservation: "1Mi",
+						Name:              supervisorZoneName,
 					},
 				},
 			},
@@ -208,7 +208,7 @@ func waitForEntityState(client *Client, addr *url.URL, pendingStates, targetStat
 		if err != nil && strings.Contains(err.Error(), "404") {
 			entityState = "DELETED"
 		} else {
-			entityState = cciEntity.Status.Phase
+			entityState = strings.ToUpper(cciEntity.Status.Phase)
 		}
 
 		if strings.EqualFold(entityState, "ERROR") {

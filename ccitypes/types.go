@@ -39,25 +39,26 @@ type SupervisorNamespaceSpecInitialClassConfigOverrides struct {
 }
 
 type SupervisorNamespaceSpecInitialClassConfigOverridesStorageClass struct {
-	LimitMiB int64  `json:"limitMiB"`
-	Name     string `json:"name"`
+	Limit string `json:"limit"`
+	Name  string `json:"name"`
 }
 
 type SupervisorNamespaceSpecInitialClassConfigOverridesZone struct {
-	CpuLimitMHz          int64  `json:"cpuLimitMHz"`
-	CpuReservationMHz    int64  `json:"cpuReservationMHz"`
-	MemoryLimitMiB       int64  `json:"memoryLimitMiB"`
-	MemoryReservationMiB int64  `json:"memoryReservationMiB"`
-	Name                 string `json:"name"`
+	CpuLimit          string `json:"cpuLimit"`
+	CpuReservation    string `json:"cpuReservation"`
+	MemoryLimit       string `json:"memoryLimit"`
+	MemoryReservation string `json:"memoryReservation"`
+	Name              string `json:"name"`
 }
 
 type SupervisorNamespaceStatus struct {
-	Conditions           []SupervisorNamespaceStatusConditions     `json:"conditions,omitempty"`
-	NamespaceEndpointURL string                                    `json:"namespaceEndpointURL,omitempty"`
-	Phase                string                                    `json:"phase,omitempty"`
-	StorageClasses       []SupervisorNamespaceStatusStorageClasses `json:"storageClasses,omitempty"`
-	VMClasses            []SupervisorNamespaceStatusVMClasses      `json:"vmClasses,omitempty"`
-	Zones                []SupervisorNamespaceStatusZones          `json:"zones,omitempty"`
+	Conditions           []SupervisorNamespaceStatusConditions       `json:"conditions,omitempty"`
+	ContentLibraries     []SupervisorNamespaceStatusContentLibraries `json:"contentLibraries,omitempty"`
+	NamespaceEndpointURL string                                      `json:"namespaceEndpointURL,omitempty"`
+	Phase                string                                      `json:"phase,omitempty"`
+	StorageClasses       []SupervisorNamespaceStatusStorageClasses   `json:"storageClasses,omitempty"`
+	VMClasses            []SupervisorNamespaceStatusVMClasses        `json:"vmClasses,omitempty"`
+	Zones                []SupervisorNamespaceStatusZones            `json:"zones,omitempty"`
 }
 
 type SupervisorNamespaceStatusConditions struct {
@@ -68,9 +69,13 @@ type SupervisorNamespaceStatusConditions struct {
 	Type     string `json:"type,omitempty"`
 }
 
+type SupervisorNamespaceStatusContentLibraries struct {
+	Name string `json:"name,omitempty"`
+}
+
 type SupervisorNamespaceStatusStorageClasses struct {
-	LimitMiB int64  `json:"limitMiB,omitempty"`
-	Name     string `json:"name,omitempty"`
+	Limit string `json:"limit,omitempty"`
+	Name  string `json:"name,omitempty"`
 }
 
 type SupervisorNamespaceStatusVMClasses struct {
@@ -78,11 +83,11 @@ type SupervisorNamespaceStatusVMClasses struct {
 }
 
 type SupervisorNamespaceStatusZones struct {
-	CpuLimitMHz          int64  `json:"cpuLimitMHz,omitempty"`
-	CpuReservationMHz    int64  `json:"cpuReservationMHz,omitempty"`
-	MemoryLimitMiB       int64  `json:"memoryLimitMiB,omitempty"`
-	MemoryReservationMiB int64  `json:"memoryReservationMiB,omitempty"`
-	Name                 string `json:"name,omitempty"`
+	CpuLimit          string `json:"cpuLimit,omitempty"`
+	CpuReservation    string `json:"cpuReservation,omitempty"`
+	MemoryLimit       string `json:"memoryLimit,omitempty"`
+	MemoryReservation string `json:"memoryReservation,omitempty"`
+	Name              string `json:"name,omitempty"`
 }
 
 type Project struct {
