@@ -37,6 +37,32 @@ func (vcd *TestVCD) Test_TmLdapSystem(check *C) {
 		{isSsl: true},
 	}
 
+	// Deferred function to clean up trusted certificates if something fails in the middle of the test.
+	defer func() {
+		var errs []error
+
+		// Clear LDAP configuration
+		err := vcd.client.TmLdapDisable()
+		if err != nil {
+			errs = append(errs, err)
+		}
+
+		// Delete certificates
+		certs, err := vcd.client.GetAllTrustedCertificates(url.Values{
+			"filter": []string{fmt.Sprintf("alias==*%s*", vcd.config.Tm.Ldap.Host)},
+		}, nil)
+		if err != nil {
+			errs = append(errs, err)
+		}
+		for _, cert := range certs {
+			err = cert.Delete()
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+		check.Assert(len(errs), Equals, 0)
+	}()
+
 	for _, t := range testCases {
 		fmt.Printf("%s - %#v\n", check.TestName(), t)
 
