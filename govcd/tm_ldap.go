@@ -238,7 +238,7 @@ func ldapExecuteRequest(vcdClient *VCDClient, orgId, method string, payload inte
 	req := vcdClient.Client.newRequest(nil, nil, method, *endpoint, body, "", headers)
 	resp, err := checkJsonResp(vcdClient.Client.Http.Do(req))
 	if err != nil {
-		return nil, fmt.Errorf("error performing %s to LDAP settings: %s", method, err)
+		return nil, fmt.Errorf("error performing %s call to LDAP settings: %s", method, err)
 	}
 
 	// Other than DELETE with get a body response
