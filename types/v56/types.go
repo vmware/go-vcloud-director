@@ -1110,8 +1110,8 @@ type VAppLeaseSettings struct {
 // Description: Represents the ldap settings of a VMware Cloud Director organization.
 // Since: 0.9
 type OrgLdapSettingsType struct {
-	XMLName xml.Name `xml:"OrgLdapSettings" json:"-"`
-	Xmlns   string   `xml:"xmlns,attr,omitempty" json:"-"`
+	XMLName xml.Name `xml:"OrgLdapSettings" json:"-"`                  // '-' omits the field in JSON: https://pkg.go.dev/encoding/json
+	Xmlns   string   `xml:"xmlns,attr,omitempty" json:"-"`             // '-' omits the field in JSON: https://pkg.go.dev/encoding/json
 	HREF    string   `xml:"href,attr,omitempty" json:"href,omitempty"` // The URI of the entity.
 	Type    string   `xml:"type,attr,omitempty" json:"type,omitempty"` // The MIME type of the entity.
 	Link    LinkList `xml:"Link,omitempty" json:"link,omitempty"`      // A reference to an entity or operation associated with this object.
@@ -1128,9 +1128,9 @@ type OrgLdapSettingsType struct {
 // Since: 0.9
 // Note. Order of these fields matter and API will error if it is changed
 type CustomOrgLdapSettings struct {
-	HREF string   `xml:"href,attr,omitempty" json:"-"` // The URI of the entity.
-	Type string   `xml:"type,attr,omitempty" json:"-"` // The MIME type of the entity.
-	Link LinkList `xml:"Link,omitempty" json:"-"`      // A reference to an entity or operation associated with this object.
+	HREF string   `xml:"href,attr,omitempty" json:"-"` // The URI of the entity. '-' omits the field in JSON: https://pkg.go.dev/encoding/json
+	Type string   `xml:"type,attr,omitempty" json:"-"` // The MIME type of the entity. '-' omits the field in JSON: https://pkg.go.dev/encoding/json
+	Link LinkList `xml:"Link,omitempty" json:"-"`      // A reference to an entity or operation associated with this object. '-' omits the field in JSON: https://pkg.go.dev/encoding/json
 
 	HostName                 string                  `xml:"HostName,omitempty" json:"hostName,omitempty"`
 	Port                     int                     `xml:"Port" json:"port,omitempty"`
@@ -1145,9 +1145,9 @@ type CustomOrgLdapSettings struct {
 	ConnectorType            string                  `xml:"ConnectorType" json:"connectorType,omitempty"`     // Defines LDAP service implementation type
 	UserAttributes           *OrgLdapUserAttributes  `xml:"UserAttributes" json:"userAttributes,omitempty"`   // Defines how LDAP attributes are used when importing a user.
 	GroupAttributes          *OrgLdapGroupAttributes `xml:"GroupAttributes" json:"groupAttributes,omitempty"` // Defines how LDAP attributes are used when importing a group.
-	UseExternalKerberos      bool                    `xml:"UseExternalKerberos" json:"-"`
+	UseExternalKerberos      bool                    `xml:"UseExternalKerberos" json:"-"`                     // '-' omits the field in JSON: https://pkg.go.dev/encoding/json
 	CustomUiButtonLabel      *string                 `xml:"CustomUiButtonLabel,omitempty" json:"customUiButtonLabel,omitempty"`
-	Realm                    string                  `xml:"Realm,omitempty" json:"-"`
+	Realm                    string                  `xml:"Realm,omitempty" json:"-"` // '-' omits the field in JSON: https://pkg.go.dev/encoding/json
 }
 
 // OrgLdapGroupAttributes	 represents the ldap group attribute settings for a VMware Cloud Director organization.
