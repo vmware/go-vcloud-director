@@ -5,7 +5,6 @@
 package govcd
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
@@ -218,13 +217,11 @@ func ldapExecuteRequest(vcdClient *VCDClient, orgId, method string, payload inte
 	// If the call is PUT, we prepare the body with the input settings
 	var body io.Reader
 	if method == http.MethodPut {
-		text := bytes.Buffer{}
-		encoder := json.NewEncoder(&text)
-		err = encoder.Encode(payload)
+		text, err := json.Marshal(payload)
 		if err != nil {
 			return nil, err
 		}
-		body = strings.NewReader(text.String())
+		body = strings.NewReader(string(text))
 	}
 	// Minimum version is 40.0 for TM LDAP
 	apiVersion := vcdClient.Client.APIVersion
@@ -241,7 +238,7 @@ func ldapExecuteRequest(vcdClient *VCDClient, orgId, method string, payload inte
 	req := vcdClient.Client.newRequest(nil, nil, method, *endpoint, body, "", headers)
 	resp, err := checkJsonResp(vcdClient.Client.Http.Do(req))
 	if err != nil {
-		return nil, fmt.Errorf("error getting LDAP settings: %s", err)
+		return nil, fmt.Errorf("error performing %s call to LDAP settings: %s", method, err)
 	}
 
 	// Other than DELETE with get a body response

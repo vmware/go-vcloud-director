@@ -37,6 +37,32 @@ func (vcd *TestVCD) Test_TmLdapSystem(check *C) {
 		{isSsl: true},
 	}
 
+	// Deferred function to clean up trusted certificates if something fails in the middle of the test.
+	defer func() {
+		var errs []error
+
+		// Clear LDAP configuration
+		err := vcd.client.TmLdapDisable()
+		if err != nil {
+			errs = append(errs, err)
+		}
+
+		// Delete certificates
+		certs, err := vcd.client.GetAllTrustedCertificates(url.Values{
+			"filter": []string{fmt.Sprintf("alias==*%s*", vcd.config.Tm.Ldap.Host)},
+		}, nil)
+		if err != nil {
+			errs = append(errs, err)
+		}
+		for _, cert := range certs {
+			err = cert.Delete()
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+		check.Assert(len(errs), Equals, 0)
+	}()
+
 	for _, t := range testCases {
 		fmt.Printf("%s - %#v\n", check.TestName(), t)
 
@@ -227,6 +253,14 @@ func (vcd *TestVCD) Test_TmLdapOrg(check *C) {
 		receivedSettings2, err = org.GetLdapConfiguration()
 		check.Assert(err, IsNil)
 		check.Assert(receivedSettings, DeepEquals, receivedSettings2)
+
+		err = org.LdapDisable()
+		check.Assert(err, IsNil)
+
+		// As LdapDisable is equal to updating with types.LdapModeNone
+		deletedSettings, err := org.GetLdapConfiguration()
+		check.Assert(err, IsNil)
+		check.Assert(deletedSettings, DeepEquals, receivedSettings2)
 
 		if t.isSsl {
 			// Clean up trusted certificate. This step is not needed as it would be gone with the Org, but it's a meaningful check (see comment when
