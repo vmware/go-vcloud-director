@@ -687,3 +687,13 @@ type LdapUserAttributesType struct {
 	Telephone                 string `json:"telephone"`
 	UserName                  string `json:"userName"`
 }
+
+// FeatureFlag represents payload of feature flags
+type FeatureFlag struct {
+	ID                 string `json:"id,omitempty"`
+	Name               string `json:"name,omitempty"`
+	Usage              string `json:"usage,omitempty"`
+	Enabled            bool   `json:"enabled,omitempty"`
+	DisplayName        string `json:"displayName,omitempty"`
+	DisplayDescription string `json:"displayDescription,omitempty"`
+}
