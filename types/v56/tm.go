@@ -688,7 +688,7 @@ type LdapUserAttributesType struct {
 	UserName                  string `json:"userName"`
 }
 
-// cloudapi/1.0.0/featureFlags/urn:vcloud:featureflag:CLASSIC_TENANT_CREATION
+// FeatureFlag represents payload of feature flags
 type FeatureFlag struct {
 	ID                 string `json:"id,omitempty"`
 	Name               string `json:"name,omitempty"`
