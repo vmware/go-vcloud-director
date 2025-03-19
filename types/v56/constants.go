@@ -552,6 +552,7 @@ const (
 	OpenApiEndpointTmRegionalNetworkingSettings           = "regionalNetworkingSettings/"
 	OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile = "regionalNetworkingSettings/%s/defaultVpcConnectivityProfile"
 	OpenApiEndpointUsers                                  = "users/"
+	OpenApiEndpointFeatureFlags                           = "featureFlags/"
 )
 
 // Header keys to run operations in tenant context

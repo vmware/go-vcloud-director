@@ -687,3 +687,13 @@ type LdapUserAttributesType struct {
 	Telephone                 string `json:"telephone"`
 	UserName                  string `json:"userName"`
 }
+
+// cloudapi/1.0.0/featureFlags/urn:vcloud:featureflag:CLASSIC_TENANT_CREATION
+type FeatureFlag struct {
+	ID                 string `json:"id,omitempty"`
+	Name               string `json:"name,omitempty"`
+	Usage              string `json:"usage,omitempty"`
+	Enabled            bool   `json:"enabled,omitempty"`
+	DisplayName        string `json:"displayName,omitempty"`
+	DisplayDescription string `json:"displayDescription,omitempty"`
+}
