@@ -89,9 +89,8 @@ fmt:
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
-copyright:
-	@echo "==> Checking copyright headers in source files"
-	@sh -c "'$(CURDIR)/scripts/copyright_check.sh'"
+licensecheck:
+	@sh -c "'$(CURDIR)/scripts/licensecheck.sh'"
 
 build:
 	@echo "==> Building govcd library"
