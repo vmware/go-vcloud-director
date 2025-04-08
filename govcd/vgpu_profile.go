@@ -1,9 +1,5 @@
 package govcd
 
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 import (
 	"fmt"
 	"net/url"

@@ -1,7 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 // Contains auxiliary functions to show library entities structure.
 // Used for debugging and testing.
 package govcd

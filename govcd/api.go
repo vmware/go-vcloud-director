@@ -1,7 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 // Package govcd provides a simple binding for VMware Cloud Director REST APIs.
 package govcd
 
