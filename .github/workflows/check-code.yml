@@ -18,6 +18,9 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v3
 
+    - name: licensecheck
+      run: make licensecheck
+
     - name: vet
       run: make vet
 
