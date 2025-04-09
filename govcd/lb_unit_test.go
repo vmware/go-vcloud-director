@@ -1,8 +1,8 @@
 //go:build unit || lb || lbAppProfile || ALL
 
-/*
- * Copyright 2019 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
+// © Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: Apache-2.0
 
 package govcd
 

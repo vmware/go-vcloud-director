@@ -1,9 +1,10 @@
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
-
 // Package types/v56 provider all types which are used by govcd package in order to perform API
 // requests and parse responses
+
+// © Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: Apache-2.0
+
 package types
 
 import (

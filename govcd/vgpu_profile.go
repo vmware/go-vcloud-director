@@ -1,8 +1,8 @@
-package govcd
+// © Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// SPDX-License-Identifier: Apache-2.0
 
-/*
- * Copyright 2023 VMware, Inc.  All rights reserved.  Licensed under the Apache v2 License.
- */
+package govcd
 
 import (
 	"fmt"
