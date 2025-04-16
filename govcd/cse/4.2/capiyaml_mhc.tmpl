@@ -1,22 +1,50 @@
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: MachineHealthCheck
-metadata:
-  name: "{{.ClusterName}}"
-  namespace: "{{.TargetNamespace}}"
-  labels:
-    clusterctl.cluster.x-k8s.io: ""
-    clusterctl.cluster.x-k8s.io/move: ""
-spec:
-  clusterName: "{{.ClusterName}}"
-  maxUnhealthy: "{{.MaxUnhealthyNodePercentage}}"
-  nodeStartupTimeout: "{{.NodeStartupTimeout}}"
-  selector:
-    matchLabels:
-      cluster.x-k8s.io/cluster-name: "{{.ClusterName}}"
-  unhealthyConditions:
-    - type: Ready
-      status: Unknown
-      timeout: "{{.NodeUnknownTimeout}}"
-    - type: Ready
-      status: "False"
-      timeout: "{{.NodeNotReadyTimeout}}"
+provider:
+  user: serviceadministrator
+  password: "+M)oG6kYeoToRfEQ0PwY"
+  tmVersion: 9.0.0.0.24665344
+  tmApiVersion: 40.0
+  # https://vcfa.10.160.240.107.vcfd.broadcom.net/provider
+  url: https://vcfa.10.160.240.107.vcfd.broadcom.net
+  sysOrg: System
+tenants:
+  - user: foo
+    password: CHANGE-ME
+    sysOrg: foo-org
+  - user: bar
+    password: CHANGE-ME
+    sysOrg: bar-org
+tm:
+  org: test-org
+  createRegion: true
+  region: test-region
+  storageClass: vSAN Default Storage Policy
+  contentLibrary: test-library
+  subscriptionContentLibraryUrl: https://vcfa-gen-wl-vc08.lvn.broadcom.net:443/cls/vcsp/lib/972a669e-c668-48f6-91e9-410962befbe4/lib.json
+
+  createVcenter: true
+  vcenterUsername: administrator@vsphere.local
+  vcenterPassword: VMware1!VMware1!
+  vcenterUrl: https://vcfa-gen-wl-vc08.lvn.broadcom.net
+  vcenterStorageProfile: vSAN Default Storage Policy
+  vcenterSupervisor: vcfa-gen-wl-vc08-cl1-supervisor1
+  vcenterSupervisorZone: vcfa-gen-wl-vc08-cl1-zone1
+
+  createNsxtManager: true
+  nsxtManagerUsername: admin
+  nsxtManagerPassword: VMware1!VMware1!
+  nsxtManagerUrl: https://vcfa-gen-wl-nsx08.lvn.broadcom.net
+  nsxtTier0Gateway: vcfa-gen-wl-nsx08-t0-1
+  nsxtEdgeCluster: vcfa-gen-wl-nsx08-edge-cluster1
+
+  ldap:
+    host: dclb.sqa.vcfa.broadcom.net
+    port: 443
+    isSsl: true
+    username: config-admin
+    password: VMware1!
+    baseDistinguishedName: OU=demo,DC=sqa,DC=vcfa,DC=broadcom,DC=net
+    type: ACTIVE_DIRECTORY # ACTIVE_DIRECTORY or OPEN_LDAP
+logging:
+  enabled: true
+  logFileName: go-vcloud-director-tm.log
+  verboseCleanup: true
