@@ -138,6 +138,16 @@ func (o *VCDClient) AssignVmClassesToRegionQuota(regionQuotaId string, vmClasses
 		endpointParams: []string{regionQuotaId},
 		requiresTm:     true,
 	}
+	// If each OpenAPI reference does not have Name populated, set it to avoid backend errors
+	for i := range vmClasses.Values {
+		if vmClasses.Values[i].Name == "" {
+			vmc, err := o.GetRegionVirtualMachineClassById(vmClasses.Values[i].ID)
+			if err != nil {
+				return err
+			}
+			vmClasses.Values[i].Name = vmc.RegionVirtualMachineClass.Name
+		}
+	}
 	// It's a PUT call with OpenAPI references, so we reuse generic functions for simplicity
 	_, err := updateInnerEntity[types.RegionVirtualMachineClasses](&o.Client, c, vmClasses)
 	if err != nil {
