@@ -141,7 +141,6 @@
 * Bump `gosec` to v2.22.1 ([#752](https://github.com/vmware/go-vcloud-director/pull/752))
 * Bump golang.org/x/net from 0.33.0 to 0.38.0 ([#775](https://github.com/vmware/go-vcloud-director/pull/775))
 
-
 ## 2.26.1 (December 5, 2024)
 
 ### IMPROVEMENTS
