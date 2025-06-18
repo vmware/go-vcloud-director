@@ -1,6 +1,146 @@
-## 3.0.0 (Unreleased)
+## 3.0.0 (June 18, 2025)
 
-Changes in progress for v3.0.0 are available at [.changes/v3.0.0](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v3.0.0) until the release.
+### FEATURES
+* Added `RegionStoragePolicy` and `types.RegionStoragePolicy` structures to read Region Storage Policies
+  with methods `Region.GetAllStoragePolicies`, `Region.GetStoragePolicyByName`, `Region.GetStoragePolicyById`
+  `VCDClient.GetRegionStoragePolicyById` ([#711](https://github.com/vmware/go-vcloud-director/pull/711), [#721](https://github.com/vmware/go-vcloud-director/pull/721))
+* Added `ContentLibrary` and `types.ContentLibrary` structures to manage Content Libraries with
+  methods `VCDClient.CreateContentLibrary`, `VCDClient.GetAllContentLibraries`,
+  `VCDClient.GetContentLibraryByName`, `VCDClient.GetContentLibraryById`, `ContentLibrary.Update`,
+  `ContentLibrary.Delete` ([#711](https://github.com/vmware/go-vcloud-director/pull/711), [#721](https://github.com/vmware/go-vcloud-director/pull/721), [#735](https://github.com/vmware/go-vcloud-director/pull/735), [#757](https://github.com/vmware/go-vcloud-director/pull/757), [#770](https://github.com/vmware/go-vcloud-director/pull/770))
+* Add trusted certificate management types `TrustedCertificate` and `types.TrustedCertificate`
+  together with `VCDClient.AutoTrustCertificate`, `VCDClient.CreateTrustedCertificate`,
+  `TmOrg.CreateTrustedCertificate`, `VCDClient.GetAllTrustedCertificates`, `TmOrg.GetAllTrustedCertificates`,
+  `VCDClient.GetTrustedCertificateByName`, `TmOrg.GetTrustedCertificateByName`,
+  `VCDClient.GetTrustedCertificateById`, `TmOrg.GetTrustedCertificateById`, `TrustedCertificate.Update`, `TrustedCertificate.Delete`
+  ([#714](https://github.com/vmware/go-vcloud-director/pull/714), [#746](https://github.com/vmware/go-vcloud-director/pull/746))
+* vCenter management types `VCenter` and `types.VSphereVirtualCenter` adds Create, Update and Delete
+  methods: `VCDClient.CreateVcenter`, `VCDClient.GetAllVCenters`, `VCDClient.GetVCenterByName`,
+  `VCDClient.GetVCenterById`, `VCenter.Update`, `VCenter.Delete`, `VCenter.RefreshVcenter`,
+  `VCenter.Refresh` ([#714](https://github.com/vmware/go-vcloud-director/pull/714), [#724](https://github.com/vmware/go-vcloud-director/pull/724), [#747](https://github.com/vmware/go-vcloud-director/pull/747), [#753](https://github.com/vmware/go-vcloud-director/pull/753), [#756](https://github.com/vmware/go-vcloud-director/pull/756), [#759](https://github.com/vmware/go-vcloud-director/pull/759), [#760](https://github.com/vmware/go-vcloud-director/pull/760), [#767](https://github.com/vmware/go-vcloud-director/pull/767), [#771](https://github.com/vmware/go-vcloud-director/pull/771))
+* Add NSX-T Manager management types `NsxtManagerOpenApi`, `types.NsxtManagerOpenApi` and methods
+  `VCDClient.CreateNsxtManagerOpenApi`, `VCDClient.GetAllNsxtManagersOpenApi`,
+  `VCDClient.GetNsxtManagerOpenApiById`, `VCDClient.GetNsxtManagerOpenApiByName`,
+  `TmNsxtManager.Update`, `TmNsxtManager.Delete` ([#714](https://github.com/vmware/go-vcloud-director/pull/714), [#722](https://github.com/vmware/go-vcloud-director/pull/722), [#747](https://github.com/vmware/go-vcloud-director/pull/747), [#771](https://github.com/vmware/go-vcloud-director/pull/771))
+* Added async vCenter creation function `VCDClient.CreateVcenterAsync` that exposes the creation
+  task of as it is needed in some cases to retrieve ID of incomplete vCenter creation ([#736](https://github.com/vmware/go-vcloud-director/pull/736))
+* Added `TmOrg` and `types.TmOrg` structure for OpenAPI management of Organizations with methods
+  `VCDClient.CreateTmOrg`, `VCDClient.GetAllTmOrgs`, `VCDClient.GetTmOrgByName`,
+  `VCDClient.GetTmOrgById`, `TmOrg.Update`, `TmOrg.Delete`, `TmOrg.Disable` ([#716](https://github.com/vmware/go-vcloud-director/pull/716))
+* Added `ContentLibraryItem` and `types.ContentLibraryItem` structures to manage Content Library Items
+  with methods `ContentLibrary.CreateContentLibraryItem`, `ContentLibrary.GetAllContentLibraryItems`,
+  `ContentLibrary.GetContentLibraryItemByName`, `ContentLibrary.GetContentLibraryItemById`, `ContentLibraryItem.Update`,
+  `ContentLibraryItem.Delete`, `VCDClient.GetContentLibraryItemById` ([#717](https://github.com/vmware/go-vcloud-director/pull/717), [#724](https://github.com/vmware/go-vcloud-director/pull/724), [#733](https://github.com/vmware/go-vcloud-director/pull/733), [#734](https://github.com/vmware/go-vcloud-director/pull/734), [#762](https://github.com/vmware/go-vcloud-director/pull/762), [#766](https://github.com/vmware/go-vcloud-director/pull/766))
+* Added `VCDClient.GetNsxtManagerOpenApiByUrl` method to retrieve configured NSX-T Manager entry
+  based on URL ([#718](https://github.com/vmware/go-vcloud-director/pull/718))
+* Added `VCDClient.GetVCenterByUrl` method to retrieve configured vCenter server entry based on URL
+  ([#718](https://github.com/vmware/go-vcloud-director/pull/718))
+* Added `VCenter.RefreshStorageProfiles` to refresh storage profiles available in vCenter server
+  ([#718](https://github.com/vmware/go-vcloud-director/pull/718))
+* Added `Region` and `types.Region` structures for OpenAPI management of Regions with methods
+  `VCDClient.CreateRegion`,`VCDClient.CreateRegionAsync`, `VCDClient.GetAllRegions`,
+  `VCDClient.GetRegionByName`, `VCDClient.GetRegionById`, `Region.Update`, `Region.Delete` [[#718](https://github.com/vmware/go-vcloud-director/pull/718),
+  [#737](https://github.com/vmware/go-vcloud-director/pull/737), [#769](https://github.com/vmware/go-vcloud-director/pull/769)]
+* Added `Supervisor` and `types.Supervisor` structure for reading available Supervisors
+  `VCDClient.GetAllSupervisors`, `VCDClient.GetSupervisorById`, `VCDClient.GetSupervisorByName`,
+  `VCDClient.GetSupervisorByNameAndVcenterId`, `Vcenter.GetAllSupervisors`,
+  `Vcenter.GetSupervisorByName` ([#718](https://github.com/vmware/go-vcloud-director/pull/718))
+* Added `SupervisorZone` and `types.SupervisorZone` structure for reading available Supervisor Zones
+  `Supervisor.GetAllSupervisorZones`, `Supervisor.GetSupervisorZoneById`,
+  `Supervisor.GetSupervisorZoneByName`, `Supervisor.`, `VCDClient.GetAllSupervisors`,
+  `VCDClient.GetSupervisorById`, `VCDClient.GetSupervisorByName`, `Vcenter.GetAllSupervisors`
+  ([#718](https://github.com/vmware/go-vcloud-director/pull/718))
+* Added types `RegionQuota` and `types.TmVdc` for managing Tenant Manager Org VDCs with methods
+  `VCDClient.CreateRegionQuota`, `VCDClient.GetAllRegionQuotas`, `VCDClient.GetRegionQuotaByName`,
+  `VCDClient.GetRegionQuotaByNameAndOrgId`, `VCDClient.GetRegionQuotaById`, `RegionQuota.Update`, `RegionQuota.Delete`,
+  `VCDClient.AssignVmClassesToRegionQuota`, `RegionQuota.AssignVmClasses`,
+  `VCDClient.GetVmClassesFromRegionQuota` ([#720](https://github.com/vmware/go-vcloud-director/pull/720), [#738](https://github.com/vmware/go-vcloud-director/pull/738), [#748](https://github.com/vmware/go-vcloud-director/pull/748), [#782](https://github.com/vmware/go-vcloud-director/pull/782))
+* Added types `Zone` and `types.Zone` for reading Region Zones with methods `VCDClient.GetAllZones`,
+  `VCDClient.GetZoneByName`, `VCDClient.GetZoneById`, `Region.GetAllZones`, `Region.GetZoneByName`
+  ([#720](https://github.com/vmware/go-vcloud-director/pull/720))
+* Added `TmIpSpace` and `types.TmIpSpace` structures for OpenAPI management of TM IP Spaces with
+  methods `VCDClient.CreateTmIpSpace`, `VCDClient.CreateTmIpSpaceAsync`,
+  `VCDClient.GetAllTmIpSpaces`, `VCDClient.GetTmIpSpaceByName`, `VCDClient.GetTmIpSpaceById`,
+  `VCDClient.GetTmIpSpaceByNameAndRegionId`, `TmIpSpace.Update`, `TmIpSpace.Delete` ([#724](https://github.com/vmware/go-vcloud-director/pull/724), [#769](https://github.com/vmware/go-vcloud-director/pull/769))
+* Added `TmProviderGateway` and `types.TmProviderGateway` structures and methods
+  `VCDClient.CreateTmProviderGateway`, `VCDClient.GetAllTmProviderGateways`,
+  `VCDClient.GetTmProviderGatewayByName`, `VCDClient.GetTmProviderGatewayById`,
+  `VCDClient.GetTmProviderGatewayByNameAndRegionId`, `TmProviderGateway.Update`,
+  `TmProviderGateway.Delete` to manage Provider Gateways ([#725](https://github.com/vmware/go-vcloud-director/pull/725))
+* Added `TmTier0Gateway` and `types.TmTier0Gateway` structures and methods
+  `VCDClient.GetAllTmTier0GatewaysWithContext`, `VCDClient.GetTmTier0GatewayWithContextByName` to
+  read Tier 0 Gateways that are available for TM consumption ([#725](https://github.com/vmware/go-vcloud-director/pull/725))
+* Added `TmIpSpaceAssociation` and `types.TmIpSpaceAssociation` structures and methods
+  `VCDClient.CreateTmIpSpaceAssociation`, `VCDClient.GetAllTmIpSpaceAssociations`,
+  `VCDClient.GetTmIpSpaceAssociationById`,
+  `VCDClient.GetAllTmIpSpaceAssociationsByProviderGatewayId`,
+  `VCDClient.GetAllTmIpSpaceAssociationsByIpSpaceId`, `TmIpSpaceAssociation.Delete` to manage IP
+  Space associations with Provider Gateways ([#725](https://github.com/vmware/go-vcloud-director/pull/725))
+* Added `VCDClient.CreateTmProviderGateway` that exposes the creation task it is needed in
+  some cases to retrieve ID of incomplete Provider Gateway creation ([#739](https://github.com/vmware/go-vcloud-director/pull/739))
+* Added types `StorageClass` and `types.StorageClass` for reading Tenant Manager Storage Classes with methods
+  `VCDClient.GetAllStorageClasses`, `Region.GetStorageClassByName`, `VCDClient.GetStorageClassByName`,
+  `VCDClient.GetStorageClassById` ([#726](https://github.com/vmware/go-vcloud-director/pull/726))
+* Added types `TmEdgeCluster` and `types.TmEdgeCluster` for reading TM Edge Clusters and managing
+  their QoS settings `VCDClient.GetAllTmEdgeClusters`, `VCDClient.GetTmEdgeClusterByName`,
+  `VCDClient.GetTmEdgeClusterByNameAndRegionId`, `VCDClient.GetTmEdgeClusterById`,
+  `VCDClient.TmSyncEdgeClusters`, `TmEdgeCluster.Update`, `TmEdgeCluster.Delete`,
+  `TmEdgeCluster.GetTransportNodeStatus` ([#730](https://github.com/vmware/go-vcloud-director/pull/730), [#735](https://github.com/vmware/go-vcloud-director/pull/735))
+* Created new type `TmLdapSettings` to manage LDAP settings for the Tenant Manager ([#732](https://github.com/vmware/go-vcloud-director/pull/732), [#746](https://github.com/vmware/go-vcloud-director/pull/746))
+* Added methods `VCDClient.TmLdapConfigure`, `TmOrg.LdapConfigure`, `VCDClient.TmLdapDisable`, `TmOrg.LdapDisable`,
+  `VCDClient.TmGetLdapConfiguration`, `TmOrg.GetLdapConfiguration` to configure LDAP in Tenant Manager and regular Organizations ([#732](https://github.com/vmware/go-vcloud-director/pull/732), [#746](https://github.com/vmware/go-vcloud-director/pull/746), [#774](https://github.com/vmware/go-vcloud-director/pull/774))
+* Added types `RegionQuotaStoragePolicy`, `types.VirtualDatacenterStoragePolicies` and `types.VirtualDatacenterStoragePolicy`
+  to manage VDC Storage Policies, with methods `VCDClient.CreateRegionQuotaStoragePolicies`, `RegionQuota.CreateStoragePolicies`,
+  `VCDClient.GetAllRegionQuotaStoragePolicies`, `RegionQuota.GetAllStoragePolicies`,
+  `RegionQuota.GetStoragePolicyByName`, `VCDClient.GetRegionQuotaStoragePolicyById`,
+  `RegionQuota.GetStoragePolicyById`, `VCDClient.UpdateRegionQuotaStoragePolicy`, `RegionQuotaStoragePolicy.Update`,
+  `VCDClient.DeleteRegionQuotaStoragePolicy`, `RegionQuotaStoragePolicy.Delete` ([#734](https://github.com/vmware/go-vcloud-director/pull/734), [#748](https://github.com/vmware/go-vcloud-director/pull/748))
+  Added type `types.TmOrgNetworkingSettings` and methods `TmOrg.GetOrgNetworkingSettings`,
+  `TmOrg.UpdateOrgNetworkingSettings` for managing Organization Networking Settings ([#741](https://github.com/vmware/go-vcloud-director/pull/741))
+* Added types `TmRegionalNetworkingSetting` and `types.TmRegionalNetworkingSetting` for managing Org
+  Regional Networking Configuration `VCDClient.CreateTmRegionalNetworkingSetting`,
+  `VCDClient.CreateTmRegionalNetworkingSettingAsync`,
+  `VCDClient.GetAllTmRegionalNetworkingSettings`, `VCDClient.GetTmRegionalNetworkingSettingByName`,
+  `VCDClient.GetTmRegionalNetworkingSettingById`,
+  `VCDClient.GetTmRegionalNetworkingSettingByNameAndOrgId`,
+  `VCDClient.GetTmRegionalNetworkingSettingByNameAndRegionId`, `TmRegionalNetworkingSetting.Update`,
+  `TmRegionalNetworkingSetting.Delete` ([#743](https://github.com/vmware/go-vcloud-director/pull/743))
+* Added type `types.TmRegionalNetworkingVpcConnectivityProfile` and methods
+  `TmRegionalNetworkingSetting.GetDefaultVpcConnectivityProfile` and
+  `TmRegionalNetworkingSetting.UpdateDefaultVpcConnectivityProfile` for managing Regional Networking
+  VPC QoS ([#744](https://github.com/vmware/go-vcloud-director/pull/744))
+* Added types `OpenApiUser` and `types.OpenApiUser` for managing Org Users using OpenAPI
+  `VCDClient.CreateUser`, `VCDClient.GetAllUsers`, `VCDClient.GetUserByName`,
+  `VCDClient.GetUserById`, `OpenApiUser.Update`, `OpenApiUser.Delete` ([#745](https://github.com/vmware/go-vcloud-director/pull/745), [#755](https://github.com/vmware/go-vcloud-director/pull/755))
+* Added types `RegionVirtualMachineClass` to read Region VM Classes with methods
+  `VCDClient.GetAllRegionVirtualMachineClasses`, `VCDClient.GetRegionVirtualMachineClassByNameAndRegionId`,
+  `VCDClient.GetRegionVirtualMachineClassById` ([#748](https://github.com/vmware/go-vcloud-director/pull/748))
+* Added new types package `ccitypes` for CCI related types ([#751](https://github.com/vmware/go-vcloud-director/pull/751))
+* Added `Client` low level API interaction methods `GetEntityUrl`, `PostEntity`, `GetEntity`,
+  `DeleteEntity` ([#751](https://github.com/vmware/go-vcloud-director/pull/751))
+* Added `types.TmOrgSettings` structure for OpenAPI management of Organization Settings with methods
+  `TmOrg.GetSettings`, `TmOrg.UpdateSettings` ([#716](https://github.com/vmware/go-vcloud-director/pull/716))
+* Added `*VCDClient` methods `UpdateFeatureFlag`, `GetFeatureFlagById`, `GetAllFeatureFlags` ([#776](https://github.com/vmware/go-vcloud-director/pull/776))
+
+### IMPROVEMENTS
+* Improve authentication and API endpoint lookup mechanism to be compatible with API v40.0 ([#708](https://github.com/vmware/go-vcloud-director/pull/708))
+* `vcdEndpoint` in `NewVCDClient` does not require the URL to contain `/api` suffix ([#765](https://github.com/vmware/go-vcloud-director/pull/765))
+* Remove a workaround that was used for certificate management endpoint with a typo on VCD < 10.3 ([#767](https://github.com/vmware/go-vcloud-director/pull/767))
+*  Updated CCI types to v1alpha2 ([#772](https://github.com/vmware/go-vcloud-director/pull/772))
+
+### BUG FIXES
+* Fixed panic when OIDC server doesn't provide claim mappings on well-known endpoint ([#742](https://github.com/vmware/go-vcloud-director/pull/742))
+
+### NOTES
+* Bumped module version from `v2` to `v3`: `github.com/vmware/go-vcloud-director/v3` ([#715](https://github.com/vmware/go-vcloud-director/pull/715))
+* Generic entity handling type `crudConfig` gets new boolean field `requiresTm` to enforce entity
+  requirement for TM ([#716](https://github.com/vmware/go-vcloud-director/pull/716))
+* Added a new generic internal method `createInnerEntityAsync` to handle async resource creation and
+  Task exposure ([#736](https://github.com/vmware/go-vcloud-director/pull/736))
+* Fix `staticcheck` 2025.1 compatibility ([#750](https://github.com/vmware/go-vcloud-director/pull/750))
+* Bump `gosec` to v2.22.1 ([#752](https://github.com/vmware/go-vcloud-director/pull/752))
+* Bump golang.org/x/net from 0.33.0 to 0.36.0 ([#775](https://github.com/vmware/go-vcloud-director/pull/775))
+
 
 ## 2.26.1 (December 5, 2024)
 
