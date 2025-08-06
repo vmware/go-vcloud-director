@@ -1,3 +1,7 @@
+## 3.1.0 (Unreleased)
+
+Changes in progress for v3.1.0 are available at [.changes/v3.0.1](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v3.1.0) until the release.
+
 ## 3.0.0 (June 18, 2025)
 
 ### FEATURES

@@ -121,8 +121,8 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 	// Delete the policy
 	err = policy.Delete()
 	// TODO: TM: Test with more storage policies when possible, right now the Region Quota always has 1
-	if len(rqPolicies) == 1 {
-		// If there's only one policy, expect an error. There must be always one Storage Policy
+	if vcd.client.Client.APIVCDMaxVersionIs("< 40.1") && len(rqPolicies) == 1 {
+		// If there's only one policy, only in VCFA 9.0, expect an error. There must be always one Storage Policy
 		check.Assert(err, NotNil)
 		check.Assert(strings.Contains(err.Error(), "At least one storage class must be assigned for the region quota to remain functional"), Equals, true)
 	} else {
