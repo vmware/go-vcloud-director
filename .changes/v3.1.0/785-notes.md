@@ -1,0 +1,1 @@
+- Amend test `Test_TmIpSpace` to be compatible with Kubernetes naming convention [GH-785]
