@@ -9,6 +9,7 @@ package govcd
 import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
+	"strings"
 )
 
 func (vcd *TestVCD) Test_TmIpSpace(check *C) {
@@ -25,8 +26,11 @@ func (vcd *TestVCD) Test_TmIpSpace(check *C) {
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
+	// Transforms the test name into a K8s compliant name
+	k8sCompliantName := strings.ReplaceAll(strings.Split(strings.ToLower(check.TestName()), ".")[1], "_", "-")
+
 	ipSpaceType := &types.TmIpSpace{
-		Name:        check.TestName(),
+		Name:        k8sCompliantName,
 		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
 		Description: check.TestName(),
 		DefaultQuota: types.TmIpSpaceDefaultQuota{
