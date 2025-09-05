@@ -82,7 +82,7 @@ func (vcd *TestVCD) Test_TmIpSpace(check *C) {
 	check.Assert(byIdInvalid, IsNil)
 
 	// Update
-	createdIpSpace.TmIpSpace.Name = check.TestName() + "-update"
+	createdIpSpace.TmIpSpace.Name = k8sCompliantName + "-update"
 	updatedVdc, err := createdIpSpace.Update(createdIpSpace.TmIpSpace)
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc.TmIpSpace, DeepEquals, createdIpSpace.TmIpSpace)
