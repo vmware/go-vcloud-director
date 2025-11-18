@@ -366,7 +366,11 @@ func (client *Client) VersionEqualOrGreater(compareTo string, howManyDigits int)
 	if err != nil {
 		return false, err
 	}
-	compareToVersion, err := semver.NewVersion(compareTo)
+
+	// VCFA 9.1+ adds extra "customer patch" version that does not follow SemVer
+	compareToSanitized := strings.ReplaceAll(compareTo, "-", ".")
+
+	compareToVersion, err := semver.NewVersion(compareToSanitized)
 	if err != nil {
 		return false, err
 	}
