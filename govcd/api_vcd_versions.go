@@ -317,12 +317,14 @@ func (client *Client) GetVcdFullVersion() (VcdVersion, error) {
 	if err != nil {
 		return VcdVersion{}, err
 	}
+	// VCFA 9.1+ adds extra "customer patch" version that does not follow SemVer
+	version = strings.ReplaceAll(version, "-", ".")
 
 	vcdVersion.Version, err = semver.NewVersion(version)
 	if err != nil {
 		return VcdVersion{}, err
 	}
-	if len(vcdVersion.Version.Segments()) < 4 {
+	if len(vcdVersion.Version.Segments()) < 3 {
 		return VcdVersion{}, fmt.Errorf("error getting version digits from version %s", version)
 	}
 	vcdVersion.Time = versionTime
@@ -364,7 +366,11 @@ func (client *Client) VersionEqualOrGreater(compareTo string, howManyDigits int)
 	if err != nil {
 		return false, err
 	}
-	compareToVersion, err := semver.NewVersion(compareTo)
+
+	// VCFA 9.1+ adds extra "customer patch" version that does not follow SemVer
+	compareToSanitized := strings.ReplaceAll(compareTo, "-", ".")
+
+	compareToVersion, err := semver.NewVersion(compareToSanitized)
 	if err != nil {
 		return false, err
 	}
