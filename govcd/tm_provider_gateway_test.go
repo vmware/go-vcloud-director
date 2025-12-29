@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"strings"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -47,9 +49,12 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	check.Assert(t0ByNameInNsxtManager.TmTier0Gateway.DisplayName, Equals, vcd.config.Tm.NsxtTier0Gateway)
 	// End of performing TM Tier 0 Gateway lookups to save time on prerequisites in separate tests
 
+	// Transforms the test name into a K8s compliant name
+	k8sCompliantName := strings.ReplaceAll(strings.Split(strings.ToLower(check.TestName()), ".")[1], "_", "-")
+
 	// Provider Gateway
 	t := &types.TmProviderGateway{
-		Name:        check.TestName(),
+		Name:        k8sCompliantName,
 		Description: check.TestName(),
 		BackingType: "NSX_TIER0",
 		BackingRef:  types.OpenApiReference{ID: t0ByNameInRegion.TmTier0Gateway.ID},
@@ -109,7 +114,7 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	check.Assert(byIdInvalid, IsNil)
 
 	// Update (IPSpaceRefs can only be managed using 'TmIpSpaceAssociation' after initial creation)
-	createdTmProviderGateway.TmProviderGateway.Name = check.TestName() + "-update"
+	createdTmProviderGateway.TmProviderGateway.Name = k8sCompliantName + "-update"
 	updatedVdc, err := createdTmProviderGateway.Update(createdTmProviderGateway.TmProviderGateway)
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc.TmProviderGateway, DeepEquals, createdTmProviderGateway.TmProviderGateway)
