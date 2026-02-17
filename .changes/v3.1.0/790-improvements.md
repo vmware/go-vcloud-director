@@ -1,1 +1,1 @@
-- Support postRunning task states
+- Support postRunning task states [GH-790]
