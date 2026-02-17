@@ -26,7 +26,7 @@ func (vcd *TestVCD) Test_QueryTaskList(check *C) {
 	check.Assert(err, IsNil)
 	startQuery := time.Now()
 	allTasks, err := vcd.client.Client.QueryTaskList(map[string]string{
-		"status": "running,preRunning,queued",
+		"status": "running,preRunning,postRunning,queued",
 	})
 	check.Assert(err, IsNil)
 	if testVerbose {
