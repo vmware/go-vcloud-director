@@ -1,1 +1,1 @@
-- Amend test `Test_TmIpSpace` to be compatible with Kubernetes naming convention [GH-785, GH-786]
+* Amend test `Test_TmIpSpace` to be compatible with Kubernetes naming convention [GH-785, GH-786]
