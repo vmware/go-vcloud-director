@@ -7,7 +7,7 @@ package ccitypes
 const (
 	SupervisorNamespaceKind    = "SupervisorNamespace"
 	SupervisorNamespaceAPI     = "infrastructure.cci.vmware.com"
-	SupervisorNamespaceVersion = "v1alpha2"
+	SupervisorNamespaceVersion = "v1alpha3"
 	SupervisorNamespacesURL    = "/apis/" + SupervisorNamespaceAPI + "/" + SupervisorNamespaceVersion + "/namespaces/%s/supervisornamespaces"
 
 	ProjectAPI     = "project.cci.vmware.com"
