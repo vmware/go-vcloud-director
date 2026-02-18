@@ -272,7 +272,7 @@ func (vcd *TestVCD) TestClient_GetSpecificApiVersionOnCondition(check *C) {
 	}
 
 	for _, tt := range tests {
-		fmt.Printf("## " + tt.name + ": ")
+		fmt.Printf("## %s: ", tt.name)
 
 		if got := vcd.client.Client.GetSpecificApiVersionOnCondition(tt.args.versionCondition, tt.args.wantedVersion); got != tt.want {
 			check.Errorf("Client.GetSpecificApiVersionOnCondition() = %v, want %v", got, tt.want)

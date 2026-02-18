@@ -315,7 +315,7 @@ func ParseErr(bodyType types.BodyType, resp *http.Response, errType error) error
 
 	// response body maybe empty for some error, such like 416, 400
 	if errType.Error() == "API Error: 0: " {
-		errType = fmt.Errorf(resp.Status)
+		errType = errors.New(resp.Status)
 	}
 
 	return errType
