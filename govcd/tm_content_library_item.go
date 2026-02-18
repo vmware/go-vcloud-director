@@ -304,7 +304,7 @@ func cleanupContentLibraryItemOnUploadError(cl *ContentLibrary, identifier strin
 func getContentLibraryItemUploadTask(cli *ContentLibraryItem, operation func(task *Task) error) error {
 	taskRecords, err := cli.vcdClient.Client.QueryTaskList(map[string]string{
 		"name":       "contentLibraryItemUpload",
-		"status":     "running,preRunning,queued,error",
+		"status":     "running,preRunning,postRunning,queued,error",
 		"objectType": "contentLibraryItem",
 		"objectName": cli.ContentLibraryItem.Name,
 	})

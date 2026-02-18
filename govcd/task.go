@@ -307,9 +307,9 @@ func SkimTasksListMonitor(taskList []*Task, monitoringFunc TaskMonitoringFunc) (
 	return newTaskList, errorList, nil
 }
 
-// isTaskRunning returns true if the task has started or is about to start
+// isTaskRunning returns true if the task has started or is about to start or is about to finish
 func isTaskRunning(status string) bool {
-	return status == "running" || status == "preRunning" || status == "queued"
+	return status == "running" || status == "preRunning" || status == "postRunning" || status == "queued"
 }
 
 // isTaskComplete returns true if the task has finished successfully or was interrupted, but not if it finished with error
@@ -483,7 +483,7 @@ func (client *Client) WaitForRouteAdvertisementTasks() error {
 
 	util.Logger.Printf("[TRACE] WaitForRouteAdvertisementTasks attempting to search for unfinished tasks with name='%s'", name)
 	allTasks, err := client.QueryTaskList(map[string]string{
-		"status": "running,preRunning,queued",
+		"status": "running,preRunning,postRunning,queued",
 		"name":   name,
 	})
 	if err != nil {

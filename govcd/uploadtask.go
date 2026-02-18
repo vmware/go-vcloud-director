@@ -46,7 +46,7 @@ func (uploadTask *UploadTask) ShowUploadProgress() error {
 		if err := uploadTask.Refresh(); err != nil {
 			return err
 		}
-		if uploadTask.Task.Task.Status != "queued" && uploadTask.Task.Task.Status != "preRunning" && uploadTask.Task.Task.Status != "running" {
+		if uploadTask.Task.Task.Status != "queued" && uploadTask.Task.Task.Status != "preRunning" && uploadTask.Task.Task.Status != "running" && uploadTask.Task.Task.Status != "postRunning" {
 			fmt.Println()
 			break
 		}

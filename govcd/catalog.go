@@ -91,7 +91,7 @@ func (catalog *Catalog) Delete(force, recursive bool) error {
 // 6. wait for the task list until all are finished
 func (catalog *Catalog) consumeTasks() error {
 	allTasks, err := catalog.client.QueryTaskList(map[string]string{
-		"status": "running,preRunning,queued",
+		"status": "running,preRunning,postRunning,queued",
 	})
 	if err != nil {
 		return fmt.Errorf("error getting task list from catalog %s: %s", catalog.Catalog.Name, err)
