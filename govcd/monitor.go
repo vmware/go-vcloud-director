@@ -175,105 +175,105 @@ func prettyEdgeGateway(egw types.EdgeGateway) string {
 }
 
 func LogNetwork(conf types.OrgVDCNetwork) {
-	out("log", prettyNetworkConf(conf))
+	out("log", "%s", prettyNetworkConf(conf))
 }
 
 func ShowNetwork(conf types.OrgVDCNetwork) {
-	out("screen", prettyNetworkConf(conf))
+	out("screen", "%s", prettyNetworkConf(conf))
 }
 
 func LogExternalNetwork(network types.ExternalNetwork) {
-	out("log", prettyExternalNetwork(network))
+	out("log", "%s", prettyExternalNetwork(network))
 }
 
 func ShowExternalNetwork(network types.ExternalNetwork) {
-	out("screen", prettyExternalNetwork(network))
+	out("screen", "%s", prettyExternalNetwork(network))
 }
 
 func LogVapp(vapp types.VApp) {
-	out("log", prettyVapp(vapp))
+	out("log", "%s", prettyVapp(vapp))
 }
 
 func ShowVapp(vapp types.VApp) {
-	out("screen", prettyVapp(vapp))
+	out("screen", "%s", prettyVapp(vapp))
 }
 
 func LogVm(vm types.Vm) {
-	out("log", prettyVm(vm))
+	out("log", "%s", prettyVm(vm))
 }
 
 func ShowVm(vm types.Vm) {
-	out("screen", prettyVm(vm))
+	out("screen", "%s", prettyVm(vm))
 }
 func ShowOrg(org types.Org) {
-	out("screen", prettyOrg(org))
+	out("screen", "%s", prettyOrg(org))
 }
 
 func LogOrg(org types.Org) {
-	out("log", prettyOrg(org))
+	out("log", "%s", prettyOrg(org))
 }
 
 func ShowAdminOrg(org types.AdminOrg) {
-	out("screen", prettyAdminOrg(org))
+	out("screen", "%s", prettyAdminOrg(org))
 }
 
 func LogAdminOrg(org types.AdminOrg) {
-	out("log", prettyAdminOrg(org))
+	out("log", "%s", prettyAdminOrg(org))
 }
 
 func ShowVdc(vdc types.Vdc) {
-	out("screen", prettyVdc(vdc))
+	out("screen", "%s", prettyVdc(vdc))
 }
 
 func LogVdc(vdc types.Vdc) {
-	out("log", prettyVdc(vdc))
+	out("log", "%s", prettyVdc(vdc))
 }
 
 func ShowUser(user types.User) {
-	out("screen", prettyUser(user))
+	out("screen", "%s", prettyUser(user))
 }
 
 func LogUser(user types.User) {
-	out("log", prettyUser(user))
+	out("log", "%s", prettyUser(user))
 }
 
 func ShowDisk(disk types.Disk) {
-	out("screen", prettyDisk(disk))
+	out("screen", "%s", prettyDisk(disk))
 }
 
 func LogDisk(disk types.Disk) {
-	out("log", prettyDisk(disk))
+	out("log", "%s", prettyDisk(disk))
 }
 func ShowCatalog(catalog types.Catalog) {
-	out("screen", prettyCatalog(catalog))
+	out("screen", "%s", prettyCatalog(catalog))
 }
 
 func LogCatalog(catalog types.Catalog) {
-	out("log", prettyCatalog(catalog))
+	out("log", "%s", prettyCatalog(catalog))
 }
 
 func ShowCatalogItem(catalogItem types.CatalogItem) {
-	out("screen", prettyCatalogItem(catalogItem))
+	out("screen", "%s", prettyCatalogItem(catalogItem))
 }
 
 func LogCatalogItem(catalogItem types.CatalogItem) {
-	out("log", prettyCatalogItem(catalogItem))
+	out("log", "%s", prettyCatalogItem(catalogItem))
 }
 
 func ShowAdminCatalog(catalog types.AdminCatalog) {
-	out("screen", prettyAdminCatalog(catalog))
+	out("screen", "%s", prettyAdminCatalog(catalog))
 }
 
 func LogAdminCatalog(catalog types.AdminCatalog) {
-	out("log", prettyAdminCatalog(catalog))
+	out("log", "%s", prettyAdminCatalog(catalog))
 }
 
 func LogEdgeGateway(edgeGateway types.EdgeGateway) {
-	out("log", prettyEdgeGateway(edgeGateway))
+	out("log", "%s", prettyEdgeGateway(edgeGateway))
 }
 
 func ShowEdgeGateway(edgeGateway types.EdgeGateway) {
-	out("screen", prettyEdgeGateway(edgeGateway))
+	out("screen", "%s", prettyEdgeGateway(edgeGateway))
 }
 
 // Auxiliary function to monitor a task
@@ -283,7 +283,7 @@ func outTask(destination string, task *types.Task, howManyTimes int, elapsed tim
 		out(destination, "Task is null\n")
 		return
 	}
-	out(destination, prettyTask(task))
+	out(destination, "%s", prettyTask(task))
 
 	out(destination, "progress: [%s:%d] %d%%\n", elapsed.Round(1*time.Second), howManyTimes, task.Progress)
 	out(destination, "-------------------------------\n")
