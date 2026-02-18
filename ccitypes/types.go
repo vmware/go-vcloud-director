@@ -30,38 +30,62 @@ type SupervisorNamespace struct {
 }
 
 type SupervisorNamespaceSpec struct {
-	ClassName                   string                                             `json:"className,omitempty"`
-	Description                 string                                             `json:"description,omitempty"`
-	InitialClassConfigOverrides SupervisorNamespaceSpecInitialClassConfigOverrides `json:"initialClassConfigOverrides,omitempty"`
-	RegionName                  string                                             `json:"regionName,omitempty"`
-	VpcName                     string                                             `json:"vpcName,omitempty"`
+	ClassName            string                                      `json:"className,omitempty"`
+	Description          string                                      `json:"description,omitempty"`
+	ClassConfigOverrides SupervisorNamespaceSpecClassConfigOverrides `json:"classConfigOverrides,omitempty"`
+	InfraPolicyNames     []string                                    `json:"infraPolicyNames,omitempty"`
+	RegionName           string                                      `json:"regionName,omitempty"`
+	SegName              string                                      `json:"segName,omitempty"`
+	SharedSubnetNames    []string                                    `json:"sharedSubnetNames,omitempty"`
+	VpcName              string                                      `json:"vpcName,omitempty"`
 }
 
-type SupervisorNamespaceSpecInitialClassConfigOverrides struct {
-	StorageClasses []SupervisorNamespaceSpecInitialClassConfigOverridesStorageClass `json:"storageClasses,omitempty"`
-	Zones          []SupervisorNamespaceSpecInitialClassConfigOverridesZone         `json:"zones,omitempty"`
+type SupervisorNamespaceSpecClassConfigOverrides struct {
+	ContentSources []SupervisorNamespaceSpecClassConfigOverridesContentSources `json:"contentSources,omitempty"`
+	StorageClasses []SupervisorNamespaceSpecClassConfigOverridesStorageClass   `json:"storageClasses,omitempty"`
+	Zones          []SupervisorNamespaceSpecClassConfigOverridesZone           `json:"zones,omitempty"`
+	VmClasses      []SupervisorNamespaceSpecClassConfigOverridesVmClass        `json:"vmClasses,omitempty"`
 }
 
-type SupervisorNamespaceSpecInitialClassConfigOverridesStorageClass struct {
+type SupervisorNamespaceSpecClassConfigOverridesContentSources struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type SupervisorNamespaceSpecClassConfigOverridesStorageClass struct {
 	Limit string `json:"limit"`
 	Name  string `json:"name"`
 }
 
-type SupervisorNamespaceSpecInitialClassConfigOverridesZone struct {
-	CpuLimit          string `json:"cpuLimit"`
-	CpuReservation    string `json:"cpuReservation"`
-	MemoryLimit       string `json:"memoryLimit"`
-	MemoryReservation string `json:"memoryReservation"`
-	Name              string `json:"name"`
+type SupervisorNamespaceSpecClassConfigOverridesZone struct {
+	CpuLimit            string                                                              `json:"cpuLimit"`
+	CpuReservation      string                                                              `json:"cpuReservation"`
+	MemoryLimit         string                                                              `json:"memoryLimit"`
+	MemoryReservation   string                                                              `json:"memoryReservation"`
+	Name                string                                                              `json:"name"`
+	VmClassReservations []SupervisorNamespaceSpecClassConfigOverridesZoneVmClassReservation `json:"vmClassReservations"`
+}
+
+type SupervisorNamespaceSpecClassConfigOverridesZoneVmClassReservation struct {
+	Count       int    `json:"count"`
+	VmClassName string `json:"vmClassName"`
+}
+
+type SupervisorNamespaceSpecClassConfigOverridesVmClass struct {
+	Name string `json:"name"`
 }
 
 type SupervisorNamespaceStatus struct {
 	Conditions           []SupervisorNamespaceStatusConditions       `json:"conditions,omitempty"`
 	ContentLibraries     []SupervisorNamespaceStatusContentLibraries `json:"contentLibraries,omitempty"`
+	InfraPolicies        []SupervisorNamespaceStatusInfraPolicies    `json:"infraPolicies,omitempty"`
 	NamespaceEndpointURL string                                      `json:"namespaceEndpointURL,omitempty"`
 	Phase                string                                      `json:"phase,omitempty"`
+	SegName              string                                      `json:"segName,omitempty"`
+	SharedSubnetNames    []string                                    `json:"sharedSubnetNames,omitempty"`
 	StorageClasses       []SupervisorNamespaceStatusStorageClasses   `json:"storageClasses,omitempty"`
 	VMClasses            []SupervisorNamespaceStatusVMClasses        `json:"vmClasses,omitempty"`
+	VpcName              string                                      `json:"vpcName,omitempty"`
 	Zones                []SupervisorNamespaceStatusZones            `json:"zones,omitempty"`
 }
 
@@ -75,6 +99,12 @@ type SupervisorNamespaceStatusConditions struct {
 
 type SupervisorNamespaceStatusContentLibraries struct {
 	Name string `json:"name,omitempty"`
+	Type string `json:"type,omitempty"`
+}
+
+type SupervisorNamespaceStatusInfraPolicies struct {
+	Mandatory bool   `json:"mandatory,omitempty"`
+	Name      string `json:"name,omitempty"`
 }
 
 type SupervisorNamespaceStatusStorageClasses struct {
@@ -87,11 +117,18 @@ type SupervisorNamespaceStatusVMClasses struct {
 }
 
 type SupervisorNamespaceStatusZones struct {
-	CpuLimit          string `json:"cpuLimit,omitempty"`
-	CpuReservation    string `json:"cpuReservation,omitempty"`
-	MemoryLimit       string `json:"memoryLimit,omitempty"`
-	MemoryReservation string `json:"memoryReservation,omitempty"`
-	Name              string `json:"name,omitempty"`
+	CpuLimit            string                                             `json:"cpuLimit,omitempty"`
+	CpuReservation      string                                             `json:"cpuReservation,omitempty"`
+	MarkedForRemoval    bool                                               `json:"markedForRemoval,omitempty"`
+	MemoryLimit         string                                             `json:"memoryLimit,omitempty"`
+	MemoryReservation   string                                             `json:"memoryReservation,omitempty"`
+	Name                string                                             `json:"name,omitempty"`
+	VmClassReservations []SupervisorNamespaceStatusZonesVmClassReservation `json:"vmClassReservations,omitempty"`
+}
+
+type SupervisorNamespaceStatusZonesVmClassReservation struct {
+	Count       int    `json:"count,omitempty"`
+	VmClassName string `json:"vmClassName,omitempty"`
 }
 
 type Project struct {

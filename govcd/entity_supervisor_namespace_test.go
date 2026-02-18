@@ -89,14 +89,14 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 		Spec: ccitypes.SupervisorNamespaceSpec{
 			ClassName:   "small",
 			Description: check.TestName(),
-			InitialClassConfigOverrides: ccitypes.SupervisorNamespaceSpecInitialClassConfigOverrides{
-				StorageClasses: []ccitypes.SupervisorNamespaceSpecInitialClassConfigOverridesStorageClass{
+			ClassConfigOverrides: ccitypes.SupervisorNamespaceSpecClassConfigOverrides{
+				StorageClasses: []ccitypes.SupervisorNamespaceSpecClassConfigOverridesStorageClass{
 					{
 						Name:  storagePolicy,
 						Limit: "256Mi",
 					},
 				},
-				Zones: []ccitypes.SupervisorNamespaceSpecInitialClassConfigOverridesZone{
+				Zones: []ccitypes.SupervisorNamespaceSpecClassConfigOverridesZone{
 					{
 						CpuLimit:          "200M",
 						CpuReservation:    "1M",
