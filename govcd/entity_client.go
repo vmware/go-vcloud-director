@@ -54,6 +54,34 @@ func (client *Client) PostEntity(urlRef *url.URL, params url.Values, payload, ou
 	return nil
 }
 
+func (client *Client) PutEntity(urlRef *url.URL, params url.Values, payload, outType interface{}, additionalHeader map[string]string) error {
+	// copy passed in URL ref so that it is not mutated
+	urlRefCopy := copyUrlRef(urlRef)
+
+	util.Logger.Printf("[TRACE] Putting %s item to endpoint %s with expected response of type %s",
+		reflect.TypeOf(payload), urlRefCopy.String(), reflect.TypeOf(outType))
+
+	if !client.IsTm() {
+		return fmt.Errorf("Client is not supported on this version")
+	}
+
+	resp, err := client.performEntityPostPut(http.MethodPut, urlRefCopy, params, payload, additionalHeader)
+	if err != nil {
+		return err
+	}
+
+	if err = decodeBody(types.BodyTypeJSON, resp, outType); err != nil {
+		return fmt.Errorf("error decoding JSON response after PUT: %s", err)
+	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error closing response body: %s", err)
+	}
+
+	return nil
+}
+
 func (client *Client) GetEntity(urlRef *url.URL, params url.Values, outType interface{}, additionalHeader map[string]string) error {
 	// copy passed in URL ref so that it is not mutated
 	urlRefCopy := copyUrlRef(urlRef)

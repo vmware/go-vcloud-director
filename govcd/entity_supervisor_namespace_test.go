@@ -135,7 +135,7 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	defer func() {
 		p := &ccitypes.SupervisorNamespace{}
 		err = vcd.client.Client.GetEntity(nsAddr, nil, p, nil)
-		if err != nil && !strings.Contains(err.Error(), "404") {
+		if err != nil && !strings.Contains(err.Error(), "400") && !strings.Contains(err.Error(), "404") {
 			err := vcd.client.Client.DeleteEntity(nsAddr, nil, nil)
 			check.Assert(err, IsNil)
 			_, err = waitForEntityState(&vcd.client.Client, nsAddr, []string{"DELETING", "WAITING"}, []string{"DELETED"})
@@ -148,6 +148,32 @@ func (vcd *TestVCD) Test_SupervisorNamespace(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(getNs, NotNil)
 	check.Assert(getNs.Name, Equals, newNs.Name)
+
+	// Put (update)
+	updatedDescription := check.TestName() + "-updated"
+	putPayload := &ccitypes.SupervisorNamespace{
+		TypeMeta:   getNs.TypeMeta,
+		ObjectMeta: getNs.ObjectMeta,
+		Spec:       getNs.Spec,
+		Status:     getNs.Status,
+	}
+	putPayload.Spec.Description = updatedDescription
+
+	putNs := &ccitypes.SupervisorNamespace{}
+	err = vcd.client.Client.PutEntity(nsAddr, nil, putPayload, putNs, nil)
+	check.Assert(err, IsNil)
+	check.Assert(putNs, NotNil)
+	check.Assert(putNs.Spec.Description, Equals, updatedDescription)
+
+	// Verify update is realized
+	_, err = waitForEntityCondition(&vcd.client.Client, nsAddr, "Realized", "True")
+	check.Assert(err, IsNil)
+
+	// Verify update via Get
+	getNsAfterPut := &ccitypes.SupervisorNamespace{}
+	err = vcd.client.Client.GetEntity(nsAddr, nil, getNsAfterPut, nil)
+	check.Assert(err, IsNil)
+	check.Assert(getNsAfterPut.Spec.Description, Equals, updatedDescription)
 
 	// Delete
 	err = vcd.client.Client.DeleteEntity(nsAddr, nil, nil)
@@ -233,5 +259,55 @@ func waitForEntityState(client *Client, addr *url.URL, pendingStates, targetStat
 			time.Sleep(statePollInterval)
 			continue // Only continue if in a pending state
 		}
+	}
+}
+
+func waitForEntityCondition(client *Client, addr *url.URL, conditionType string, conditionValue string) (any, error) {
+	const (
+		conditionWaitTimeout  = 20 * time.Minute
+		conditionWaitDelay    = 10 * time.Second
+		conditionPollInterval = 10 * time.Second
+	)
+
+	startTime := time.Now()
+	endTime := startTime.Add(conditionWaitTimeout)
+
+	util.Logger.Printf("[DEBUG] waitForEntityCondition - expecting condition %s to be %s for entity %s", conditionType, conditionValue, addr.String())
+	util.Logger.Printf("[DEBUG] waitForEntityCondition - sleeping %s before checking entiity %s", conditionWaitDelay, addr.String())
+	time.Sleep(conditionWaitDelay)
+
+	stepCount := 0
+	for {
+		stepCount++
+		if time.Now().After(endTime) {
+			util.Logger.Printf("[DEBUG] waitForEntityCondition - timeout reached for entity %s", addr.String())
+			return nil, fmt.Errorf("waitForEntityCondition - exceeded waiting for condition %s to be %s for entity %s after attempt %d", conditionType, conditionValue, addr.String(), stepCount)
+		}
+
+		cciEntity, err := getSupervisorNamespaceState(client, addr)
+		if err != nil {
+			return nil, fmt.Errorf("error retrieving entity %s: %s", addr.String(), err)
+		}
+
+		var entityCondition *ccitypes.SupervisorNamespaceStatusConditions
+		for _, condition := range cciEntity.Status.Conditions {
+			if strings.EqualFold(condition.Type, conditionType) {
+				entityCondition = &condition
+				break
+			}
+		}
+
+		if entityCondition != nil {
+			if strings.EqualFold(entityCondition.Status, conditionValue) {
+				util.Logger.Printf("[DEBUG] waitForEntityCondition - condition %s reached %s at step %d for entity %s", conditionType, conditionValue, stepCount, addr.String())
+				return cciEntity, nil
+			}
+			util.Logger.Printf("[DEBUG] waitForEntityCondition - current condition %s at step %d is %s for entity %s", conditionType, stepCount, conditionValue, addr.String())
+		} else {
+			util.Logger.Printf("[DEBUG] waitForEntityCondition - condition %s not found for entity %s at step %d", conditionType, addr.String(), stepCount)
+		}
+
+		util.Logger.Printf("[DEBUG] waitForEntityCondition - sleeping %s before next attempt to retrieve entity %s", conditionPollInterval, addr.String())
+		time.Sleep(conditionPollInterval)
 	}
 }
