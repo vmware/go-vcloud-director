@@ -7,6 +7,9 @@
 package govcd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -17,6 +20,12 @@ func (vcd *TestVCD) Test_TmRegionalNetworkingSetting(check *C) {
 
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
 	defer nsxtManagerCleanup()
+
+	edgeClusterName := vcd.config.Tm.NsxtEdgeCluster
+	if vcd.config.Tm.NsxtEdgeClusterSuffixRequired {
+		edgeClusterName = fmt.Sprintf("%s-%s", vcd.config.Tm.NsxtEdgeCluster, nsxtManager.NsxtManagerOpenApi.ID[strings.LastIndex(nsxtManager.NsxtManagerOpenApi.ID, "-")+1:])
+	}
+
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
 
@@ -93,7 +102,7 @@ func (vcd *TestVCD) Test_TmRegionalNetworkingSetting(check *C) {
 
 	// Update testing (only Name and Edge Cluster are updatable)
 	// Lookup Edge Cluster to specify in update of Regional Network Settings
-	edgeCluster, err := vcd.client.GetTmEdgeClusterByName(vcd.config.Tm.NsxtEdgeCluster)
+	edgeCluster, err := vcd.client.GetTmEdgeClusterByName(edgeClusterName)
 	check.Assert(err, IsNil)
 	check.Assert(edgeCluster, NotNil)
 
