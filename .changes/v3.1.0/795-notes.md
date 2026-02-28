@@ -1,0 +1,1 @@
+* Update tests to dynamically get the Edge Cluster name [GH-795]

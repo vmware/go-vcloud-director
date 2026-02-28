@@ -162,12 +162,13 @@ type TestConfig struct {
 		VcenterSupervisor     string `yaml:"vcenterSupervisor"`
 		VcenterSupervisorZone string `yaml:"vcenterSupervisorZone"`
 
-		CreateNsxtManager   bool   `yaml:"createNsxtManager"`
-		NsxtManagerUsername string `yaml:"nsxtManagerUsername"`
-		NsxtManagerPassword string `yaml:"nsxtManagerPassword"`
-		NsxtManagerUrl      string `yaml:"nsxtManagerUrl"`
-		NsxtEdgeCluster     string `yaml:"nsxtEdgeCluster"`
-		NsxtTier0Gateway    string `yaml:"nsxtTier0Gateway"`
+		CreateNsxtManager             bool   `yaml:"createNsxtManager"`
+		NsxtManagerUsername           string `yaml:"nsxtManagerUsername"`
+		NsxtManagerPassword           string `yaml:"nsxtManagerPassword"`
+		NsxtManagerUrl                string `yaml:"nsxtManagerUrl"`
+		NsxtEdgeCluster               string `yaml:"nsxtEdgeCluster"`
+		NsxtEdgeClusterSuffixRequired bool   `yaml:"nsxtEdgeClusterSuffixRequired"`
+		NsxtTier0Gateway              string `yaml:"nsxtTier0Gateway"`
 
 		Ldap struct {
 			Host                  string `yaml:"host"`

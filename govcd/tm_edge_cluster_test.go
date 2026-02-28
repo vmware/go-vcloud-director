@@ -7,6 +7,9 @@
 package govcd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -17,6 +20,12 @@ func (vcd *TestVCD) Test_TmEdgeCluster(check *C) {
 
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
 	defer nsxtManagerCleanup()
+
+	edgeClusterName := vcd.config.Tm.NsxtEdgeCluster
+	if vcd.config.Tm.NsxtEdgeClusterSuffixRequired {
+		edgeClusterName = fmt.Sprintf("%s-%s", vcd.config.Tm.NsxtEdgeCluster, nsxtManager.NsxtManagerOpenApi.ID[strings.LastIndex(nsxtManager.NsxtManagerOpenApi.ID, "-")+1:])
+	}
+
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)
 	defer vcCleanup()
 
@@ -35,10 +44,10 @@ func (vcd *TestVCD) Test_TmEdgeCluster(check *C) {
 	check.Assert(allClusters, NotNil)
 	check.Assert(len(allClusters) > 0, Equals, true)
 
-	ecByName, err := vcd.client.GetTmEdgeClusterByName(vcd.config.Tm.NsxtEdgeCluster)
+	ecByName, err := vcd.client.GetTmEdgeClusterByName(edgeClusterName)
 	check.Assert(err, IsNil)
 	check.Assert(ecByName, NotNil)
-	check.Assert(ecByName.TmEdgeCluster.Name, Equals, vcd.config.Tm.NsxtEdgeCluster)
+	check.Assert(ecByName.TmEdgeCluster.Name, Equals, edgeClusterName)
 
 	ecById, err := vcd.client.GetTmEdgeClusterById(ecByName.TmEdgeCluster.ID)
 	check.Assert(err, IsNil)
@@ -52,7 +61,7 @@ func (vcd *TestVCD) Test_TmEdgeCluster(check *C) {
 
 	check.Assert(ecById.TmEdgeCluster, DeepEquals, ecByName.TmEdgeCluster)
 
-	ecByNameAndRegionId, err := vcd.client.GetTmEdgeClusterByNameAndRegionId(vcd.config.Tm.NsxtEdgeCluster, region.Region.ID)
+	ecByNameAndRegionId, err := vcd.client.GetTmEdgeClusterByNameAndRegionId(edgeClusterName, region.Region.ID)
 	check.Assert(err, IsNil)
 	check.Assert(ecByNameAndRegionId, NotNil)
 	// resetting both values to 0 so that no different values are returned
@@ -60,7 +69,7 @@ func (vcd *TestVCD) Test_TmEdgeCluster(check *C) {
 	ecByNameAndRegionId.TmEdgeCluster.AvgMemoryUsagePercentage = 0
 	check.Assert(ecByNameAndRegionId.TmEdgeCluster, DeepEquals, ecById.TmEdgeCluster)
 
-	ecByNameAndWrongRegionId, err := vcd.client.GetTmEdgeClusterByNameAndRegionId(vcd.config.Tm.NsxtEdgeCluster, "urn:vcloud:region:167d34b3-0000-0000-0000-a388505e6102")
+	ecByNameAndWrongRegionId, err := vcd.client.GetTmEdgeClusterByNameAndRegionId(edgeClusterName, "urn:vcloud:region:167d34b3-0000-0000-0000-a388505e6102")
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(ecByNameAndWrongRegionId, IsNil)
 
@@ -101,7 +110,7 @@ func (vcd *TestVCD) Test_TmEdgeCluster(check *C) {
 	err = updatedQos.Delete()
 	check.Assert(err, IsNil)
 
-	afterQosRemoval, err := vcd.client.GetTmEdgeClusterByName(vcd.config.Tm.NsxtEdgeCluster)
+	afterQosRemoval, err := vcd.client.GetTmEdgeClusterByName(edgeClusterName)
 	check.Assert(err, IsNil)
 	check.Assert(afterQosRemoval, NotNil)
 	check.Assert(afterQosRemoval.TmEdgeCluster.DefaultQosConfig.EgressProfile, NotNil)
