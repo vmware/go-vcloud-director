@@ -374,25 +374,42 @@ type RegionVirtualMachineClasses struct {
 // TmIpSpace provides configuration of mainly the external IP Prefixes that specifies
 // the accessible external networks from the data center
 type TmIpSpace struct {
+	// The identifier of the IP Block in URN format
 	ID string `json:"id,omitempty"`
-	// Name of the IP Space
+	// Name of the IP Space. Name is unique across all IP Blocks of a given type and organization
 	Name string `json:"name"`
+	// Id for the matching IP Block in NSX. This is not a Provider Management URN. This is only set for IP Blocks backed
+	// by enhanced NSX IP Blocks. These IP Blocks can have IP ranges and reserved IP ranges in addition to IP Blocks.
+	// When creating an IP Block, this field is optional. If not provided, the IP Block will be managed by Provider Management,
+	// backingId will effectively be read-only and isImportedIpBlock property will be false. If provided, the IP Block is imported
+	// from an existing NSX IP Block, backingId will effectively be immutable and isImportedIpBlock property will be true.
+	BackingId string `json:"backingId,omitempty"`
 	// Description of the IP Space
 	Description string `json:"description,omitempty"`
 	// RegionRef is the region that this IP Space belongs in. Only Provider Gateways in the same Region can be
 	// associated with this IP Space. This field cannot be updated
 	RegionRef OpenApiReference `json:"regionRef"`
 	// Default IP quota that applies to all the organizations the Ip Space is assigned to
-	DefaultQuota TmIpSpaceDefaultQuota `json:"defaultQuota,omitempty"`
+	DefaultQuota TmIpSpaceQuota `json:"defaultQuota,omitempty"`
 	// ExternalScopeCidr defines the total span of IP addresses to which the IP space has access.
 	// This typically defines the span of IP addresses outside the bounds of a Data Center. For the
 	// internet, this may be 0.0.0.0/0. For a WAN, this could be 10.0.0.0/8.
+	// Deprecated: Use ProviderGateway.inboundRemoteNetworks instead.
 	ExternalScopeCidr string `json:"externalScopeCidr,omitempty"`
-	// InternalScopeCidrBlocks defines the span of IP addresses used within a Data Center. For new
-	// CIDR value not in the existing list, a new IP Block will be created. For existing CIDR value,
-	// the IP Block's name can be updated. If an existing CIDR value is removed from the list, the
-	// the IP Block is removed from the IP Space.
-	InternalScopeCidrBlocks []TmIpSpaceInternalScopeCidrBlocks `json:"internalScopeCidrBlocks,omitempty"`
+	// InternalScopeCidrBlocks along with IpAddressRanges typically defines the span of IP addresses used
+	// within a Data Center. For new CIDR value not in the existing list, a new IP Block will be created.
+	// For existing CIDR value, the IP Block's name can be updated. If an existing CIDR value is removed
+	// from the list, the the IP Block is removed from the IP Space.
+	InternalScopeCidrBlocks []TmIpAddressSpaceIpBlock `json:"internalScopeCidrBlocks,omitempty"`
+	// This along with InternalScopeCidrBlocks typically defines the span of IP addresses used within a Data Center
+	IpAddressRanges []TmIpAddressSpaceRange `json:"ipAddressRanges,omitempty"`
+	// Indicates if the IP Block is imported from an existing NSX IP Block.
+	IsImportedIpBlock bool `json:"isImportedIpBlock,omitempty"`
+	// If set to true, the IP Block details will be hidden from organizations.
+	ProviderVisibilityOnly bool `json:"providerVisibilityOnly,omitempty"`
+	// ReservedIpAddressRanges defines the list of IP addresses that will not be considered for IP allocation.
+	// Reserved IPs have to be part of one of the CIDRs or IP Ranges
+	ReservedIpAddressRanges []TmIpAddressSpaceRange `json:"reservedIpAddressRanges,omitempty"`
 	// Represents current status of the networking entity. Possible values are:
 	// * PENDING - Desired entity configuration has been received by system and is pending realization.
 	// * CONFIGURING - The system is in process of realizing the entity.
@@ -400,11 +417,14 @@ type TmIpSpace struct {
 	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
 	// * UNKNOWN - Current state of entity is unknown.
 	Status string `json:"status,omitempty"`
+	// Whether this IP Block is exclusively for a single CIDR. Set if auto created by a Shared Subnet or a Distributed VLAN
+	// Connection that is exclusively for a subnet.
+	SubnetExclusive bool `json:"subnetExclusive,omitempty"`
 }
 
 // IP Space quota defines the maximum number of IPv4 IPs and CIDRs that can be allocated and used by
 // the IP Space across all its Internal Scopes
-type TmIpSpaceDefaultQuota struct {
+type TmIpSpaceQuota struct {
 	// The maximum number of CIDRs with size maxSubnetSize or less, that can be allocated from all
 	// the Internal Scopes of the IP Space. A '-1' value means no cap on the number of the CIDRs
 	// used
@@ -421,7 +441,7 @@ type TmIpSpaceDefaultQuota struct {
 }
 
 // An IP Block represents a named CIDR that is backed by a network provider
-type TmIpSpaceInternalScopeCidrBlocks struct {
+type TmIpAddressSpaceIpBlock struct {
 	// Unique backing ID of the IP Block. This is not a Tenant Manager URN. This field is read-only and is ignored on create/update
 	ID string `json:"id,omitempty"`
 	// The name of the IP Block. If not set, a random name will be generated that will be prefixed
@@ -430,6 +450,16 @@ type TmIpSpaceInternalScopeCidrBlocks struct {
 	Name string `json:"name,omitempty"`
 	// The CIDR that represents this IP Block. This property is not updatable
 	Cidr string `json:"cidr,omitempty"`
+}
+
+// TmIpAddressSpaceRangee represents an IP Range for an IP Block
+type TmIpAddressSpaceRange struct {
+	// Unique ID of the IP Block Range. For new IP Range, this is unset. Existing IP Range will have an ID which is used for update identification
+	ID string `json:"id,omitempty"`
+	// Starting IP address in the range.
+	StartIpAddress string `json:"startIpAddress,omitempty"`
+	// Ending IP address in the range.
+	EndIpAddress string `json:"endIpAddress,omitempty"`
 }
 
 // TmTier0Gateway represents NSX-T Tier-0 Gateway that are available for consumption in TM
@@ -451,7 +481,9 @@ type TmProviderGateway struct {
 	// OrgRef contains a reference to Org
 	OrgRef     *OpenApiReference `json:"orgRef,omitempty"`
 	BackingRef OpenApiReference  `json:"backingRef,omitempty"`
-	// BackingType - NSX_TIER0
+	// The backing type of the Centralized Connection. Possible values are:
+	// * NSX_TIER0 - NSX-T Tier-0 router
+	// * NSX_VRF_TIER0 - NSX-T Tier-0 VRF router
 	BackingType string `json:"backingType,omitempty"`
 	// RegionRef contains Region reference
 	RegionRef OpenApiReference `json:"regionRef,omitempty"`
@@ -459,6 +491,17 @@ type TmProviderGateway struct {
 	// NOTE. It is used _only_ for creation. Reading will return it empty, and update will not work
 	// - one must use `TmIpSpaceAssociation` to update IP Space associations with Provider Gateway
 	IPSpaceRefs []OpenApiReference `json:"ipSpaceRefs,omitempty"`
+	// The ID of the associated Gateway Connection in NSX, if any. This is not a Provider Management URN.
+	// This is only set for Provider Gateways that are backed by a Gateway Connection in NSX.
+	GatewayConnectionBackingId string `json:"gatewayConnectionBackingId,omitempty"`
+	// The total span of IP addresses to which the Provider Gateway has access.
+	// This typically defines the span of IP addresses outside the bounds of a Data Center.
+	// For the internet, this may be 0.0.0.0/0. For a WAN, this could be 10.0.0.0/8.
+	InboundRemoteNetworks []string `json:"inboundRemoteNetworks,omitempty"`
+	// Allows the Provider Gateway to advertise their own private IP Blocks.
+	AllowAdvertisingPrivateIpBlocks bool `json:"allowAdvertisingPrivateIpBlocks,omitempty"`
+	// Outbound NAT configuration for the Provider Gateway. Outbound NAT cannot be enabled/disabled after Provider Gateway is created.
+	NatConfig TmProviderGatewayNatConfig `json:"natConfig,omitempty"`
 	// Represents current status of the networking entity. Possible values are:
 	// * PENDING - Desired entity configuration has been received by system and is pending realization.
 	// * CONFIGURING - The system is in process of realizing the entity.
@@ -466,6 +509,17 @@ type TmProviderGateway struct {
 	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity.
 	// * UNKNOWN - Current state of entity is unknown.
 	Status string `json:"status,omitempty"`
+}
+
+// TmProviderGatewayNatConfig represents the NAT configuration for a Provider Gateway
+type TmProviderGatewayNatConfig struct {
+	// Whether the Outbound NAT is enabled for the Provider Gateway. If set to true, an IP Block reference must be set.
+	// Outbound NAT cannot be enabled if private IP blocks advertisement is enabled. This is not editable.
+	EnableSnat bool `json:"enableSnat,omitempty"`
+	// IP Block used to configure Outbound NAT. Required if Outbound NAT is enabled. This is not editable.
+	IpSpaceRef *OpenApiReference `json:"ipSpaceRef,omitempty"`
+	// Whether logging is enabled for the Outbound NAT configuration.
+	Logging bool `json:"logging,omitempty"`
 }
 
 // TmIpSpaceAssociation manages IP Space and Provider Gateway associations

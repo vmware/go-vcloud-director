@@ -33,15 +33,32 @@ func (vcd *TestVCD) Test_TmIpSpace(check *C) {
 		Name:        k8sCompliantName,
 		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
 		Description: check.TestName(),
-		DefaultQuota: types.TmIpSpaceDefaultQuota{
+		DefaultQuota: types.TmIpSpaceQuota{
 			MaxCidrCount:  3,
 			MaxIPCount:    -1,
 			MaxSubnetSize: 24,
 		},
-		ExternalScopeCidr: "12.12.0.0/30",
-		InternalScopeCidrBlocks: []types.TmIpSpaceInternalScopeCidrBlocks{
+		InternalScopeCidrBlocks: []types.TmIpAddressSpaceIpBlock{
 			{
 				Cidr: "10.0.0.0/24",
+				Name: check.TestName() + "-internal-scope-cidr-block",
+			},
+		},
+		IpAddressRanges: []types.TmIpAddressSpaceRange{
+			{
+				StartIpAddress: "10.0.1.1",
+				EndIpAddress:   "10.0.1.255",
+			},
+		},
+		ProviderVisibilityOnly: true,
+		ReservedIpAddressRanges: []types.TmIpAddressSpaceRange{
+			{
+				StartIpAddress: "10.0.0.1",
+				EndIpAddress:   "10.0.0.10",
+			},
+			{
+				StartIpAddress: "10.0.1.1",
+				EndIpAddress:   "10.0.1.10",
 			},
 		},
 	}

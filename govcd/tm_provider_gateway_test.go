@@ -33,6 +33,9 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	ipSpace2, ipSpaceCleanup2 := createTmIpSpace(vcd, region, check, "2", "1")
 	defer ipSpaceCleanup2()
 
+	ipSpace3, ipSpaceCleanup3 := createTmIpSpace(vcd, region, check, "3", "2")
+	defer ipSpaceCleanup3()
+
 	// Performing TM Tier 0 Gateway lookups to save time on prerequisites in separate tests
 	allT0sWithContextFilter, err := vcd.client.GetAllTmTier0GatewaysWithContext(region.Region.ID, true)
 	check.Assert(err, IsNil)
@@ -62,6 +65,15 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 		IPSpaceRefs: []types.OpenApiReference{{
 			ID: ipSpace1.TmIpSpace.ID,
 		}},
+		InboundRemoteNetworks:           []string{"12.12.0.0/30"},
+		AllowAdvertisingPrivateIpBlocks: false,
+		NatConfig: types.TmProviderGatewayNatConfig{
+			EnableSnat: true,
+			IpSpaceRef: &types.OpenApiReference{
+				ID: ipSpace2.TmIpSpace.ID,
+			},
+			Logging: true,
+		},
 	}
 
 	// Test Async creation
@@ -131,14 +143,14 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	check.Assert(len(associationByIpSpace1) == 1, Equals, true)
 
 	// Attempt to find an association that does not yet exist
-	associationByIpSpace2, err := vcd.client.GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpace2.TmIpSpace.ID)
+	associationByIpSpace3, err := vcd.client.GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpace3.TmIpSpace.ID)
 	check.Assert(err, IsNil)
-	check.Assert(associationByIpSpace2, NotNil)
+	check.Assert(associationByIpSpace3, NotNil)
 
 	// Create new IP Space Association
 	ipSpaceAssociationCfg := &types.TmIpSpaceAssociation{
 		Name:               "one",
-		IPSpaceRef:         &types.OpenApiReference{ID: ipSpace2.TmIpSpace.ID},
+		IPSpaceRef:         &types.OpenApiReference{ID: ipSpace3.TmIpSpace.ID},
 		ProviderGatewayRef: &types.OpenApiReference{ID: createdTmProviderGateway.TmProviderGateway.ID},
 	}
 	newAssociation, err := vcd.client.CreateTmIpSpaceAssociation(ipSpaceAssociationCfg)
@@ -151,17 +163,17 @@ func (vcd *TestVCD) Test_TmProviderGateway(check *C) {
 	check.Assert(len(updatedAssociationByProviderGateway) == 2, Equals, true)
 
 	// Check association by IP Space
-	newAssociationByIpSpace2, err := vcd.client.GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpace2.TmIpSpace.ID)
+	newAssociationByIpSpace3, err := vcd.client.GetAllTmIpSpaceAssociationsByIpSpaceId(ipSpace3.TmIpSpace.ID)
 	check.Assert(err, IsNil)
-	check.Assert(len(newAssociationByIpSpace2) == 1, Equals, true)
+	check.Assert(len(newAssociationByIpSpace3) == 1, Equals, true)
 
 	// Get Association by ID
-	associationById, err := vcd.client.GetTmIpSpaceAssociationById(newAssociationByIpSpace2[0].TmIpSpaceAssociation.ID)
+	associationById, err := vcd.client.GetTmIpSpaceAssociationById(newAssociationByIpSpace3[0].TmIpSpaceAssociation.ID)
 	check.Assert(err, IsNil)
-	check.Assert(associationById.TmIpSpaceAssociation, DeepEquals, newAssociationByIpSpace2[0].TmIpSpaceAssociation)
+	check.Assert(associationById.TmIpSpaceAssociation, DeepEquals, newAssociationByIpSpace3[0].TmIpSpaceAssociation)
 
 	// Delete Association
-	err = newAssociationByIpSpace2[0].Delete()
+	err = newAssociationByIpSpace3[0].Delete()
 	check.Assert(err, IsNil)
 
 	// Double check Gateway Association count (should remain 1 again)
