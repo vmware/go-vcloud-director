@@ -452,7 +452,7 @@ type TmIpAddressSpaceIpBlock struct {
 	Cidr string `json:"cidr,omitempty"`
 }
 
-// TmIpAddressSpaceRangee represents an IP Range for an IP Block
+// TmIpAddressSpaceRange represents an IP Range for an IP Block
 type TmIpAddressSpaceRange struct {
 	// Unique ID of the IP Block Range. For new IP Range, this is unset. Existing IP Range will have an ID which is used for update identification
 	ID string `json:"id,omitempty"`
