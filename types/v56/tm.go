@@ -755,3 +755,41 @@ type FeatureFlag struct {
 	DisplayName        string `json:"displayName,omitempty"`
 	DisplayDescription string `json:"displayDescription,omitempty"`
 }
+
+// TmSharedSubnet describes a Shared Subnet
+type TmSharedSubnet struct {
+	// The unique ID for the Shared Subnet
+	ID string `json:"id,omitempty"`
+
+	// The name of the Shared Subnet
+	Name string `json:"name,omitempty"`
+
+	// The description of the Shared Subnet
+	Description string `json:"description,omitempty"`
+
+	// Type for Shared Subnet. VLAN is currently the only supported type
+	SubnetType string `json:"subnetType,omitempty"`
+
+	// The VLAN ID if type is VLAN. Required for Subnet bridges of type VLAN
+	VlanId int `json:"vlanId,omitempty"`
+
+	// The gateway CIDR for the Shared Subnet
+	GatewayCidr string `json:"gatewayCidr,omitempty"`
+
+	// The Region this Shared Subnet belongs to
+	RegionRef OpenApiReference `json:"regionRef,omitempty"`
+
+	// The IP Block that is automatically created for this Subnet
+	IPSpaceRef OpenApiReference `json:"ipSpaceRef,omitempty"`
+
+	// ID of the matching Subnet in NSX
+	BackingId string `json:"backingId,omitempty"`
+
+	// Status represents current status of the networking entity. Possible values are:
+	// * PENDING - Desired entity configuration has been received by system and is pending realization
+	// * CONFIGURING - The system is in process of realizing the entity
+	// * REALIZED - The entity is successfully realized in the system
+	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity
+	// * UNKNOWN - Current state of entity is unknown
+	Status string `json:"status,omitempty"`
+}
