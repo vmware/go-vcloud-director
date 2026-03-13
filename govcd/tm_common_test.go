@@ -359,13 +359,12 @@ func createTmIpSpace(vcd *TestVCD, region *Region, check *C, nameSuffix, octet3 
 		Name:        check.TestName() + "-" + nameSuffix,
 		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
 		Description: check.TestName(),
-		DefaultQuota: types.TmIpSpaceDefaultQuota{
+		DefaultQuota: types.TmIpSpaceQuota{
 			MaxCidrCount:  3,
 			MaxIPCount:    -1,
 			MaxSubnetSize: 24,
 		},
-		ExternalScopeCidr: fmt.Sprintf("12.12.%s.0/30", octet3),
-		InternalScopeCidrBlocks: []types.TmIpSpaceInternalScopeCidrBlocks{
+		InternalScopeCidrBlocks: []types.TmIpAddressSpaceIpBlock{
 			{
 				Cidr: fmt.Sprintf("10.0.%s.0/24", octet3),
 			},
@@ -400,6 +399,10 @@ func createTmProviderGateway(vcd *TestVCD, region *Region, check *C) (*TmProvide
 		IPSpaceRefs: []types.OpenApiReference{{
 			ID: ipSpace.TmIpSpace.ID,
 		}},
+		InboundRemoteNetworks: []string{"12.12.0.0/30"},
+		NatConfig: types.TmProviderGatewayNatConfig{
+			EnableSnat: false,
+		},
 	}
 
 	pg, err := vcd.client.CreateTmProviderGateway(t)
