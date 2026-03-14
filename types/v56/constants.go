@@ -551,6 +551,7 @@ const (
 	OpenApiEndpointTmEdgeClustersSync                     = "edgeClusters/sync"
 	OpenApiEndpointTmRegionalNetworkingSettings           = "regionalNetworkingSettings/"
 	OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile = "regionalNetworkingSettings/%s/defaultVpcConnectivityProfile"
+	OpenApiEndpointTmSharedSubnets                        = "sharedSubnets/"
 	OpenApiEndpointUsers                                  = "users/"
 	OpenApiEndpointFeatureFlags                           = "featureFlags/"
 )
