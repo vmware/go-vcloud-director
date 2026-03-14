@@ -1,0 +1,1 @@
+* Add `TmSharedSubnet` type and `VCDClient.CreateTmSharedSubnet`, `VCDClient.CreateTmSharedSubnetAsync`, `VCDClient.GetAllTmSharedSubnets`, `VCDClient.GetTmSharedSubnetByName`, `VCDClient.GetTmSharedSubnetById`, `VCDClient.GetTmSharedSubnetById`,  `TmSharedSubnet.Update`, and `TmSharedSubnet.Delete` functions for managing TM Shared Subnets [GH-797]
