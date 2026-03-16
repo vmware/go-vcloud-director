@@ -175,6 +175,7 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces:                             "40.1",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways:                     "40.1",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmSharedSubnets:                        "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmDistributedVlanConnections:           "40.1",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations:                  "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClusters:                         "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClusterTransportNodeStatus:       "40.0",
