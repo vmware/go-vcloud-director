@@ -103,7 +103,7 @@ func (vcdClient *VCDClient) GetTmProviderGatewayById(id string) (*TmProviderGate
 // GetTmProviderGatewayByNameAndRegionId retrieves Provider Gateway by name in a given Region
 func (vcdClient *VCDClient) GetTmProviderGatewayByNameAndRegionId(name, regionId string) (*TmProviderGateway, error) {
 	if name == "" || regionId == "" {
-		return nil, fmt.Errorf("%s lookup requires name and Org ID", labelTmProviderGateway)
+		return nil, fmt.Errorf("%s lookup requires name and Region ID", labelTmProviderGateway)
 	}
 
 	queryParams := url.Values{}

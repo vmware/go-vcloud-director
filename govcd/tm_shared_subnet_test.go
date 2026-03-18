@@ -99,7 +99,7 @@ func (vcd *TestVCD) Test_TmSharedSubnet(check *C) {
 	byIdAsync, err := vcd.client.GetTmSharedSubnetById(task.Task.Owner.ID)
 	check.Assert(err, IsNil)
 	check.Assert(byIdAsync, NotNil)
-	PrependToCleanupListOpenApi(byIdAsync.TmSharedSubnet.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmSharedSubnets+createdSharedSubnet.TmSharedSubnet.ID)
+	PrependToCleanupListOpenApi(byIdAsync.TmSharedSubnet.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmSharedSubnets+byIdAsync.TmSharedSubnet.ID)
 
 	err = byIdAsync.Delete()
 	check.Assert(err, IsNil)

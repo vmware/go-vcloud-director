@@ -547,8 +547,9 @@ type TmEdgeCluster struct {
 	// Display name for the Edge Cluster
 	Name string `json:"name,omitempty"`
 	// Description for the Edge Cluster
-	Description string            `json:"description,omitempty"`
-	RegionRef   *OpenApiReference `json:"regionRef,omitempty"`
+	Description string `json:"description,omitempty"`
+	// The Region this Edge Cluster belongs to
+	RegionRef *OpenApiReference `json:"regionRef,omitempty"`
 	// Deployment type for transport nodes in the Edge Cluster. Possible values are:
 	// * VIRTUAL_MACHINE - If all members are of type VIRTUAL_MACHINE
 	// * PHYSICAL_MACHINE - If all members are of type PHYSICAL_MACHINE
@@ -643,6 +644,41 @@ type TmEdgeClusterTransportNodeStatus struct {
 	SystemMemoryUsagePercentage float64 `json:"systemMemoryUsagePercentage,omitempty"`
 	// Number of CPU cores in the system
 	TotalCPUCoreCount int `json:"totalCpuCoreCount,omitempty"`
+}
+
+// TmDistributedVlanConnection represents a Distributed VLAN Connection
+type TmDistributedVlanConnection struct {
+	// The unique ID for the Distributed VLAN Connection
+	ID string `json:"id,omitempty"`
+	// The name of the Distributed VLAN Connection
+	Name string `json:"name,omitempty"`
+	// The description of the Distributed VLAN Connection
+	Description string `json:"description,omitempty"`
+	// The VLAN ID for the external traffic
+	VlanId int `json:"vlanId,omitempty"`
+	// The gateway CIDR, should match the VLAN default gateway
+	GatewayCidr string `json:"gatewayCidr,omitempty"`
+	// The Region this Distributed VLAN Connection belongs to
+	RegionRef OpenApiReference `json:"regionRef,omitempty"`
+	// The supervisor zones this Distributed VLAN Connection spans
+	ZoneRefs []OpenApiReference `json:"zoneRefs,omitempty"`
+	// Reference to an IP Block that is used for the external connection
+	IpSpaceRef *OpenApiReference `json:"ipSpaceRef,omitempty"`
+	// Whether this is exclusively for the gateway CIDR only
+	SubnetExclusive bool `json:"subnetExclusive,omitempty"`
+	// ID of the matching Distributed VLAN Connection in NSX
+	BackingId string `json:"backingId,omitempty"`
+	// This field is optional and allows the connection to be dedicated to a specific organization
+	DedicatedOrgRef *OpenApiReference `json:"dedicatedOrgRef,omitempty"`
+	// Reference to the Shared Subnet if this Distributed VLAN Connection is dedicated to one
+	DedicatedSharedSubnetRef *OpenApiReference `json:"dedicatedSharedSubnetRef,omitempty"`
+	// Status represents current status of the networking entity. Possible values are:
+	// * PENDING - Desired entity configuration has been received by system and is pending realization
+	// * CONFIGURING - The system is in process of realizing the entity
+	// * REALIZED - The entity is successfully realized in the system
+	// * REALIZATION_FAILED - There are some issues and the system is not able to realize the entity
+	// * UNKNOWN - Current state of entity is unknown
+	Status string `json:"status,omitempty"`
 }
 
 // TmRegionalNetworkingSetting describes a Regional Networking Setting

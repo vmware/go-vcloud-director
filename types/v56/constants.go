@@ -552,6 +552,7 @@ const (
 	OpenApiEndpointTmRegionalNetworkingSettings           = "regionalNetworkingSettings/"
 	OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile = "regionalNetworkingSettings/%s/defaultVpcConnectivityProfile"
 	OpenApiEndpointTmSharedSubnets                        = "sharedSubnets/"
+	OpenApiEndpointTmDistributedVlanConnections           = "distributedVlanConnections/"
 	OpenApiEndpointUsers                                  = "users/"
 	OpenApiEndpointFeatureFlags                           = "featureFlags/"
 )
