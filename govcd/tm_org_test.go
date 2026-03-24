@@ -57,17 +57,21 @@ func (vcd *TestVCD) Test_TmOrg(check *C) {
 	check.Assert(settings, NotNil)
 	check.Assert(settings.CanCreateSubscribedLibraries, NotNil)
 	check.Assert(settings.QuarantineContentLibraryItems, NotNil)
+	check.Assert(settings.CanSubscribeToThirdPartyLibraries, NotNil)
 
 	settingsUpdated, err := updated.UpdateSettings(&types.TmOrgSettings{
-		CanCreateSubscribedLibraries:  addrOf(!(*settings.CanCreateSubscribedLibraries)),
-		QuarantineContentLibraryItems: addrOf(!(*settings.QuarantineContentLibraryItems)),
+		CanCreateSubscribedLibraries:      addrOf(!(*settings.CanCreateSubscribedLibraries)),
+		QuarantineContentLibraryItems:     addrOf(!(*settings.QuarantineContentLibraryItems)),
+		CanSubscribeToThirdPartyLibraries: addrOf(!(*settings.CanSubscribeToThirdPartyLibraries)),
 	})
 	check.Assert(err, IsNil)
 	check.Assert(settingsUpdated, NotNil)
 	check.Assert(settingsUpdated.CanCreateSubscribedLibraries, NotNil)
 	check.Assert(settingsUpdated.QuarantineContentLibraryItems, NotNil)
+	check.Assert(settingsUpdated.CanSubscribeToThirdPartyLibraries, NotNil)
 	check.Assert(*settingsUpdated.CanCreateSubscribedLibraries, Equals, !(*settings.CanCreateSubscribedLibraries))
 	check.Assert(*settingsUpdated.QuarantineContentLibraryItems, Equals, !(*settings.QuarantineContentLibraryItems))
+	check.Assert(*settingsUpdated.CanSubscribeToThirdPartyLibraries, Equals, !(*settings.CanSubscribeToThirdPartyLibraries))
 
 	// Delete
 	err = tmOrg.Delete()

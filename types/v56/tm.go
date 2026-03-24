@@ -216,6 +216,9 @@ type TmOrgSettings struct {
 
 	// Whether to quarantine new content library items for file inspection.
 	QuarantineContentLibraryItems *bool `json:"quarantineContentLibraryItems,omitempty"`
+
+	// Whether the organization can create content libraries that are subscribed to official third-party sources.
+	CanSubscribeToThirdPartyLibraries *bool `json:"canSubscribeToThirdPartyLibraries,omitempty"`
 }
 
 // Region represents a collection of supervisor clusters across different VCs
