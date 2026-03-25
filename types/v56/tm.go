@@ -90,6 +90,16 @@ type ContentLibrary struct {
 	SubscriptionConfig *ContentLibrarySubscriptionConfig `json:"subscriptionConfig,omitempty"`
 	// Version number of this Content library
 	VersionNumber int64 `json:"versionNumber,omitempty"`
+	// Whether this content library is scoped to specific projects in this organization
+	IsProjectScoped bool `json:"isProjectScoped,omitempty"`
+	// Permissions to apply to all projects in this organization for this Content Library (READ_ONLY, READ_WRITE)
+	AllProjectsPermission string `json:"allProjectsPermission,omitempty"`
+	// A collection of project permissions for this Content Library. In POST requests, this field may be
+	// supplied as an unbounded list. In PUT requests, this field is considered read-only and will be ignored.
+	// In GET responses, this field contains a random selection of up to ten project permissions that exist for this Content Library.
+	ProjectPermissions []ContentLibraryProjectPermission `json:"projectPermissions,omitempty"`
+	// Status of this content library (READY, NOT_READY, FAILED, PARTIALLY_READY)
+	Status string `json:"status,omitempty"`
 }
 
 // ContentLibrarySubscriptionConfig represents subscription settings of a Content Library
@@ -100,6 +110,14 @@ type ContentLibrarySubscriptionConfig struct {
 	NeedLocalCopy bool `json:"needLocalCopy,omitempty"`
 	// Password to use to authenticate with the publisher
 	Password string `json:"password,omitempty"`
+}
+
+// ContentLibraryProjectPermission represents a project permission of a Content Library
+type ContentLibraryProjectPermission struct {
+	// The type of project permission (READ_ONLY, READ_WRITE)
+	Permissions string `json:"permissions"`
+	// The reference to the project that this permission applies to
+	ProjectAssignment OpenApiReference `json:"projectAssignment,omitempty"`
 }
 
 // ContentLibraryItem is an object representing a VCF Content Library Item
