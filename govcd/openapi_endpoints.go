@@ -172,10 +172,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVcf + types.OpenApiEndpointTmVmClasses:                            "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses:                        "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies:                   "40.0",
-	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces:                             "40.1",
-	types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways:                     "40.1",
-	types.OpenApiPathVcf + types.OpenApiEndpointTmSharedSubnets:                        "40.1",
-	types.OpenApiPathVcf + types.OpenApiEndpointTmDistributedVlanConnections:           "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces:                             "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways:                     "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaceAssociations:                  "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClusters:                         "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmEdgeClusterTransportNodeStatus:       "40.0",
@@ -185,6 +183,8 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettings:           "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile: "40.0",
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFeatureFlags:                  "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmSharedSubnets:                        "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmDistributedVlanConnections:           "40.1",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions
@@ -276,6 +276,12 @@ var endpointElevatedApiVersions = map[string][]string{
 	},
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers: {
 		"40.0", // TM Tier 0 Gateways
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces: {
+		"40.1", // TM IP Spaces
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways: {
+		"40.1", // TM Provider Gateways
 	},
 }
 
