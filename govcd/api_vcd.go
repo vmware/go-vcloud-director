@@ -466,6 +466,14 @@ func rewrapRespBodyNoopCloser(resp *http.Response) ([]byte, error) {
 		if err != nil {
 			return bodyBytes, fmt.Errorf("could not read response body: %s", err)
 		}
+		// Close the original body to release the underlying TCP connection
+		// and the net/http.setRequestCancel goroutine that watches it.
+		// Without this close every caller that uses rewrap (api_vcd,
+		// entity_client, openapi) leaks one goroutine per request, because
+		// after rewrap resp.Body is a NopCloser whose Close() is a no-op,
+		// so any subsequent resp.Body.Close() in the caller never reaches
+		// the real Body.
+		_ = resp.Body.Close()
 		// Restore the io.ReadCloser to its original state with no-op closer
 		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
