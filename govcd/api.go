@@ -307,6 +307,15 @@ func (client *Client) NewRequestWithApiVersion(params map[string]string, method 
 // ParseErr takes an error XML resp, error interface for unmarshalling and returns a single string for
 // use in error messages.
 func ParseErr(bodyType types.BodyType, resp *http.Response, errType error) error {
+	// Close the response body so the underlying TCP connection and the
+	// internal net/http.setRequestCancel goroutine that watches it can be
+	// released. checkRespWithErrType returns (nil, ParseErr(...)) on the
+	// error path, so the caller no longer has access to the response and
+	// cannot close it; this is the last opportunity to do so.
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
 	// if there was an error decoding the body, just return that
 	if err := decodeBody(bodyType, resp, errType); err != nil {
 		util.Logger.Printf("[ParseErr]: unhandled response <--\n%+v\n-->\n", resp)
