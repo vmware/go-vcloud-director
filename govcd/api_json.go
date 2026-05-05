@@ -43,6 +43,12 @@ func (client Client) executeJsonRequest(href, httpMethod string, inputStructure 
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
+		// Close the body on the error path. Callers do
+		// `defer closeBody(resp)` only after an
+		// `if err != nil { return nil, err }` early-return, which never
+		// runs the deferred close. Without an explicit close here every
+		// non-2xx response leaks a net/http.setRequestCancel goroutine.
+		_ = resp.Body.Close()
 		util.ProcessResponseOutput(util.CallFuncName(), resp, string(body))
 		var jsonError types.OpenApiError
 		err = json.Unmarshal(body, &jsonError)
