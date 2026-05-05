@@ -1,0 +1,1 @@
+* Fix: close response body in ParseErr to prevent goroutine leak [GH-804]
