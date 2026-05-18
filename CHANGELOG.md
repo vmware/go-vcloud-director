@@ -1,6 +1,31 @@
-## 3.1.0 (Unreleased)
+## 3.1.0 (May 18. 2026)
 
-Changes in progress for v3.1.0 are available at [.changes/v3.0.1](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v3.1.0) until the release.
+### FEATURES
+* Add `TmSharedSubnet` type and `VCDClient.CreateTmSharedSubnet`, `VCDClient.CreateTmSharedSubnetAsync`, `VCDClient.GetAllTmSharedSubnets`, `VCDClient.GetTmSharedSubnetByName`, `VCDClient.GetTmSharedSubnetById`, `VCDClient.GetTmSharedSubnetById`,  `TmSharedSubnet.Update`, and `TmSharedSubnet.Delete` functions for managing TM Shared Subnets [GH-797]
+* Add `TmDistributedVlanConnection` type and `VCDClient.CreateTmDistributedVlanConnection`, `VCDClient.CreateTmDistributedVlanConnectionAsync`, `VCDClient.GetAllTmDistributedVlanConnections`, `VCDClient.GetTmDistributedVlanConnectionByName`, `VCDClient.GetTmDistributedVlanConnectionById`, `VCDClient.GetTmDistributedVlanConnectionByNameAndRegionId`, `TmDistributedVlanConnection.Update`, and `TmDistributedVlanConnection.Delete` functions for managing TM Distributed VLAN Connections [GH-798]
+
+### IMPROVEMENTS
+* Adapt the Go SDK to be compatible with newer versions of VCFA/TM [GH-788]
+* Support postRunning task states [GH-790]
+* Update SupervisorNamespace CCI type to v1alpha3 [GH-791]
+* Add missing LastTransitionTime property to CCI types [GH-793]
+* Add PutEntity function [GH-794]
+* Update TM ProviderGateway and IpSpace properties. Added `BackingId`, `IpAddressRanges`, `IsImportedIpBlock`, `ProviderVisibilityOnly`, `ReservedIpAddressRanges`, and `SubnetExclusive` properties to the `TmIpSpace` structure. Added `GatewayConnectionBackingId`, `InboundRemoteNetworks`, `AllowAdvertisingPrivateIpBlocks`, and `NatConfig` properties to the `TmProviderGateway` structure. [GH-796]
+* Add new `CanSubscribeToThirdPartyLibraries` property to `TmOrgSettings` [GH-799]
+* Update TM ContentLibrary properties. Added `IsProjectScoped`, `AllProjectsPermission`, `ProjectPermissions`, and `Status` properties to the `ContentLibrary` structure [GH-800]
+
+### BUG FIXES
+* Fix: close response body in ParseErr to prevent goroutine leak [GH-804]
+
+### NOTES
+* Amend `Test_TmRegionQuotaStoragePolicy` to avoid failures in the newest versions of VCFA [GH-784]
+* Amend test `Test_TmIpSpace` to be compatible with Kubernetes naming convention [GH-785, GH-786]
+* Amend test `Test_TmProviderGateway` to be compatible with Kubernetes naming convention [GH-789]
+* Bump dependencies, Go to 1.25, and staticcheck to 2026.1 [GH-792]
+* Update tests to dynamically get the Edge Cluster name [GH-795]
+* Fix OpenAPI endpoints min versions [GH-801]
+* Temporarily disable content library item version test [GH-802]
+* Bump golang to 1.26.2 and module dependencies [GH-806]
 
 ## 3.0.0 (June 18, 2025)
 
