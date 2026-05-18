@@ -1,6 +1,31 @@
-## 3.1.0 (Unreleased)
+## 3.1.0 (May 18. 2026)
 
-Changes in progress for v3.1.0 are available at [.changes/v3.0.1](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v3.1.0) until the release.
+### FEATURES
+* Add `TmSharedSubnet` type and `VCDClient.CreateTmSharedSubnet`, `VCDClient.CreateTmSharedSubnetAsync`, `VCDClient.GetAllTmSharedSubnets`, `VCDClient.GetTmSharedSubnetByName`, `VCDClient.GetTmSharedSubnetById`, `VCDClient.GetTmSharedSubnetById`,  `TmSharedSubnet.Update`, and `TmSharedSubnet.Delete` functions for managing TM Shared Subnets ([#797](https://github.com/vmware/go-vcloud-director/pull/797))
+* Add `TmDistributedVlanConnection` type and `VCDClient.CreateTmDistributedVlanConnection`, `VCDClient.CreateTmDistributedVlanConnectionAsync`, `VCDClient.GetAllTmDistributedVlanConnections`, `VCDClient.GetTmDistributedVlanConnectionByName`, `VCDClient.GetTmDistributedVlanConnectionById`, `VCDClient.GetTmDistributedVlanConnectionByNameAndRegionId`, `TmDistributedVlanConnection.Update`, and `TmDistributedVlanConnection.Delete` functions for managing TM Distributed VLAN Connections ([#798](https://github.com/vmware/go-vcloud-director/pull/798))
+
+### IMPROVEMENTS
+* Adapt the Go SDK to be compatible with newer versions of VCFA/TM ([#788](https://github.com/vmware/go-vcloud-director/pull/788))
+* Support postRunning task states ([#790](https://github.com/vmware/go-vcloud-director/pull/790))
+* Update SupervisorNamespace CCI type to v1alpha3 ([#791](https://github.com/vmware/go-vcloud-director/pull/791))
+* Add missing LastTransitionTime property to CCI types ([#793](https://github.com/vmware/go-vcloud-director/pull/793))
+* Add PutEntity function ([#794](https://github.com/vmware/go-vcloud-director/pull/794))
+* Update TM ProviderGateway and IpSpace properties. Added `BackingId`, `IpAddressRanges`, `IsImportedIpBlock`, `ProviderVisibilityOnly`, `ReservedIpAddressRanges`, and `SubnetExclusive` properties to the `TmIpSpace` structure. Added `GatewayConnectionBackingId`, `InboundRemoteNetworks`, `AllowAdvertisingPrivateIpBlocks`, and `NatConfig` properties to the `TmProviderGateway` structure. ([#796](https://github.com/vmware/go-vcloud-director/pull/796))
+* Add new `CanSubscribeToThirdPartyLibraries` property to `TmOrgSettings` ([#799](https://github.com/vmware/go-vcloud-director/pull/799))
+* Update TM ContentLibrary properties. Added `IsProjectScoped`, `AllProjectsPermission`, `ProjectPermissions`, and `Status` properties to the `ContentLibrary` structure ([#800](https://github.com/vmware/go-vcloud-director/pull/800))
+
+### BUG FIXES
+* Fix: close response body in ParseErr to prevent goroutine leak ([#804](https://github.com/vmware/go-vcloud-director/pull/804))
+
+### NOTES
+* Amend `Test_TmRegionQuotaStoragePolicy` to avoid failures in the newest versions of VCFA ([#784](https://github.com/vmware/go-vcloud-director/pull/784))
+* Amend test `Test_TmIpSpace` to be compatible with Kubernetes naming convention ([#785](https://github.com/vmware/go-vcloud-director/pull/785), [#786](https://github.com/vmware/go-vcloud-director/pull/786))
+* Amend test `Test_TmProviderGateway` to be compatible with Kubernetes naming convention ([#789](https://github.com/vmware/go-vcloud-director/pull/789))
+* Bump dependencies, Go to 1.25, and staticcheck to 2026.1 ([#792](https://github.com/vmware/go-vcloud-director/pull/792))
+* Update tests to dynamically get the Edge Cluster name ([#795](https://github.com/vmware/go-vcloud-director/pull/795))
+* Fix OpenAPI endpoints min versions ([#801](https://github.com/vmware/go-vcloud-director/pull/801))
+* Temporarily disable content library item version test ([#802](https://github.com/vmware/go-vcloud-director/pull/802))
+* Bump golang to 1.26.2 and module dependencies ([#806](https://github.com/vmware/go-vcloud-director/pull/806))
 
 ## 3.0.0 (June 18, 2025)
 
