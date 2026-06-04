@@ -283,6 +283,12 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVcf + types.OpenApiEndpointTmProviderGateways: {
 		"40.1", // TM Provider Gateways
 	},
+	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettings: {
+		"40.1", // TM Regional Networking Settings
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointTmRegionalNetworkingSettingsVpcProfile: {
+		"40.1", // TM Regional Networking VPC Connectivity Profile
+	},
 }
 
 // checkOpenApiEndpointCompatibility checks if VCD version (to which the client is connected) is sufficient to work with
