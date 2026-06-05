@@ -94,7 +94,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 
 func waitForListenerStatusConnected(v *VCenter) error {
 	startTime := time.Now()
-	tryCount := 20
+	tryCount := 30
 	for c := 0; c < tryCount; c++ {
 		err := v.Refresh()
 		if err != nil {
@@ -105,7 +105,7 @@ func waitForListenerStatusConnected(v *VCenter) error {
 			return nil
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 
 	return fmt.Errorf("waiting for listener state to become 'CONNECTED' expired after %d tries (%d seconds), got '%s'",
