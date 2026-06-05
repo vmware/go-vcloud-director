@@ -164,8 +164,8 @@ func SetLog() {
 	}
 }
 
-// hideSensitive hides passwords, tokens, and certificate details
-func hideSensitive(in string, onScreen bool) string {
+// HideSensitive hides passwords, tokens, and certificate details
+func HideSensitive(in string, onScreen bool) string {
 	if !onScreen && LogPasswords {
 		return in
 	}
@@ -328,7 +328,7 @@ func ProcessRequestOutput(caller, operation, url, payload string, req *http.Requ
 	logSanitizedHeader(req.Header)
 
 	if dataSize > 0 {
-		Logger.Printf("Request data: [%d]\n%s\n", dataSize, hideSensitive(payload, false))
+		Logger.Printf("Request data: [%d]\n%s\n", dataSize, HideSensitive(payload, false))
 	}
 }
 
@@ -373,11 +373,11 @@ func ProcessResponseOutput(caller string, resp *http.Response, result string) {
 	dataSize := len(result)
 	outTextSize := len(outText)
 	if outTextSize != dataSize {
-		Logger.Printf("Response text: [%d -> %d]\n%s\n", dataSize, outTextSize, hideSensitive(outText, false))
+		Logger.Printf("Response text: [%d -> %d]\n%s\n", dataSize, outTextSize, HideSensitive(outText, false))
 	} else if dataSize == 0 {
 		Logger.Printf("Response text: [%d]\n", dataSize)
 	} else {
-		Logger.Printf("Response text: [%d]\n%s\n", dataSize, hideSensitive(outText, false))
+		Logger.Printf("Response text: [%d]\n%s\n", dataSize, HideSensitive(outText, false))
 	}
 }
 
