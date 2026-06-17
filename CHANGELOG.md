@@ -1,6 +1,9 @@
-## 3.1.1 (Unreleased)
+## 3.1.1 (June 17. 2026)
 
-Changes in progress for v3.1.1 are available at [.changes/v3.1.1](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v3.1.1) until the release.
+### NOTES
+* Bump RegionalNetworkingSettings API version ([#808](https://github.com/vmware/go-vcloud-director/pull/808))
+* Export util.HideSensitive function ([#809](https://github.com/vmware/go-vcloud-director/pull/809))
+* Increate VC connection timeout in tests ([#810](https://github.com/vmware/go-vcloud-director/pull/810))
 
 ## 3.1.0 (May 18. 2026)
 
