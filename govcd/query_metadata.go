@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"strings"
 
@@ -283,7 +284,8 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 		client:  nil,
 	}
 
-	for retrieved != wanted {
+	maxPage := client.calculateMaxPage(result.Results.Total, result.Results.PageSize)
+	for retrieved != wanted && page < maxPage {
 		page++
 		notEncodedParams["page"] = fmt.Sprintf("%d", page)
 		var size int
@@ -296,9 +298,24 @@ func (client *Client) cumulativeQueryWithHeaders(queryType string, params, notEn
 			return Results{}, err
 		}
 		retrieved += size
+		wanted = int(newResult.Results.Total)
+		maxPage = client.calculateMaxPage(newResult.Results.Total, newResult.Results.PageSize)
 	}
 
-	return result, nil
+	return cumulativeResult, nil
+}
+
+// calculateMaxPage returns the highest valid page number for a paginated query result, given
+// the total number of records and the page size.
+func (client *Client) calculateMaxPage(total float64, pageSize int) int {
+	if pageSize <= 0 {
+		return 1
+	}
+	maxPage := int(math.Ceil(total / float64(pageSize)))
+	if maxPage < 1 {
+		maxPage = 1
+	}
+	return maxPage
 }
 
 // queryWithMetadataFields is a wrapper around QueryWithNotEncodedParams with additional metadata fields
