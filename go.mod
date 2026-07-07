@@ -8,7 +8,7 @@ require (
 	github.com/kr/pretty v0.3.1
 	github.com/peterhellberg/link v1.2.0
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f
-	golang.org/x/text v0.36.0
+	golang.org/x/text v0.37.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apimachinery v0.36.0
@@ -25,7 +25,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
-	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260504175024-7bfe71ffdc10 // indirect
