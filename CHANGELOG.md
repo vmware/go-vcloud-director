@@ -2,14 +2,14 @@
 
 Changes in progress for v3.1.2 are available at [.changes/v3.1.2](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v3.1.2) until the release.
 
-## 3.1.1 (June 17. 2026)
+## 3.1.1 (June 17, 2026)
 
 ### NOTES
 * Bump RegionalNetworkingSettings API version ([#808](https://github.com/vmware/go-vcloud-director/pull/808))
 * Export util.HideSensitive function ([#809](https://github.com/vmware/go-vcloud-director/pull/809))
 * Increate VC connection timeout in tests ([#810](https://github.com/vmware/go-vcloud-director/pull/810))
 
-## 3.1.0 (May 18. 2026)
+## 3.1.0 (May 18, 2026)
 
 ### FEATURES
 * Add `TmSharedSubnet` type and `VCDClient.CreateTmSharedSubnet`, `VCDClient.CreateTmSharedSubnetAsync`, `VCDClient.GetAllTmSharedSubnets`, `VCDClient.GetTmSharedSubnetByName`, `VCDClient.GetTmSharedSubnetById`, `VCDClient.GetTmSharedSubnetById`,  `TmSharedSubnet.Update`, and `TmSharedSubnet.Delete` functions for managing TM Shared Subnets ([#797](https://github.com/vmware/go-vcloud-director/pull/797))
@@ -180,6 +180,11 @@ Changes in progress for v3.1.2 are available at [.changes/v3.1.2](https://github
 * Fix `staticcheck` 2025.1 compatibility ([#750](https://github.com/vmware/go-vcloud-director/pull/750))
 * Bump `gosec` to v2.22.1 ([#752](https://github.com/vmware/go-vcloud-director/pull/752))
 * Bump golang.org/x/net from 0.33.0 to 0.38.0 ([#775](https://github.com/vmware/go-vcloud-director/pull/775))
+
+## 2.26.2 (July 7, 2026)
+
+### BUG FIXES
+* Fix the pagination loop at the client cumulative query function ([#814](https://github.com/vmware/go-vcloud-director/pull/814))
 
 ## 2.26.1 (December 5, 2024)
 
