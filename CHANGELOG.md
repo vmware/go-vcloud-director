@@ -1,6 +1,7 @@
-## 2.26.2 (Unreleased)
+## 2.26.2 (July 7, 2026)
 
-Changes in progress for v2.26.2 are available at [.changes/v2.26.2](https://github.com/vmware/go-vcloud-director/tree/release/v2.x/.changes/v2.26.2) until the release.
+### BUG FIXES
+* Fix the pagination loop at the client cumulative query function ([#814](https://github.com/vmware/go-vcloud-director/pull/814))
 
 ## 2.26.1 (December 5, 2024)
 
