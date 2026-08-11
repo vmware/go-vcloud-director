@@ -57,7 +57,7 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	_, err = vcd.client.AutoTrustHttpsCertificate(url, nil)
 	check.Assert(err, IsNil)
 
-	vc, err = vcd.client.CreateVcenter(vcCfg)
+	vc, err = createVCenterWithRetries(vcd, vcCfg, 5, 1*time.Second)
 	check.Assert(err, IsNil)
 	check.Assert(vc, NotNil)
 	PrependToCleanupList(vcCfg.Name, "OpenApiEntityVcenter", check.TestName(), types.OpenApiPathVersion1_0_0+types.OpenApiEndpointVirtualCenters+vc.VSphereVCenter.VcId)
@@ -66,18 +66,16 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	err = waitForListenerStatusConnected(vc)
 	check.Assert(err, IsNil)
 	printVerbose("# Sleeping after vCenter is 'CONNECTED'\n")
-	time.Sleep(4 * time.Second) // TODO: TM: Re-evaluate need for sleep
+	time.Sleep(2 * time.Second) // TODO: TM: Re-evaluate need for sleep
 	// Refresh connected vCenter to be sure that all artifacts are loaded
 	printVerbose("# Refreshing vCenter %s\n", vc.VSphereVCenter.Url)
-	err = vc.RefreshVcenter()
+	err = retryOnError(vc.RefreshVcenter, 5, 1*time.Second)
 	check.Assert(err, IsNil)
 
 	printVerbose("# Refreshing Storage Profiles in vCenter %s\n", vc.VSphereVCenter.Url)
 	err = vc.RefreshStorageProfiles()
 	check.Assert(err, IsNil)
 
-	printVerbose("# Sleeping after vCenter refreshes\n")
-	time.Sleep(1 * time.Minute) // TODO: TM: Re-evaluate need for sleep
 	vCenterCreated := true
 
 	return vc, func() {
@@ -92,9 +90,26 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	}
 }
 
+func createVCenterWithRetries(vcd *TestVCD, vcCfg *types.VSphereVirtualCenter, maxRetries int, retryInterval time.Duration) (*VCenter, error) {
+	var vc *VCenter
+	var err error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		vc, err = vcd.client.CreateVcenter(vcCfg)
+		if err == nil {
+			return vc, nil
+		}
+
+		fmt.Printf("# create vCenter - retrying after %v (Attempt %d/%d)\n", retryInterval, attempt+1, maxRetries)
+		fmt.Printf("# create vCenter - error was: %s", err)
+		time.Sleep(retryInterval)
+	}
+
+	return vc, fmt.Errorf("exceeded maximum retries creating a vCenter, final error: %s", err)
+}
+
 func waitForListenerStatusConnected(v *VCenter) error {
 	startTime := time.Now()
-	tryCount := 30
+	tryCount := 150
 	for c := 0; c < tryCount; c++ {
 		err := v.Refresh()
 		if err != nil {
@@ -105,7 +120,7 @@ func waitForListenerStatusConnected(v *VCenter) error {
 			return nil
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
 	return fmt.Errorf("waiting for listener state to become 'CONNECTED' expired after %d tries (%d seconds), got '%s'",
@@ -140,7 +155,7 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 	check.Assert(err, IsNil)
 	_, err = vcd.client.AutoTrustHttpsCertificate(url, nil)
 	check.Assert(err, IsNil)
-	nsxtManager, err = vcd.client.CreateNsxtManagerOpenApi(nsxtCfg)
+	nsxtManager, err = createNsxtManagerWithRetries(vcd, nsxtCfg, 5, 1)
 	check.Assert(err, IsNil)
 	check.Assert(nsxtManager, NotNil)
 	PrependToCleanupListOpenApi(nsxtManager.NsxtManagerOpenApi.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointNsxManagers+nsxtManager.NsxtManagerOpenApi.ID)
@@ -154,6 +169,23 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 		err = nsxtManager.Delete()
 		check.Assert(err, IsNil)
 	}
+}
+
+func createNsxtManagerWithRetries(vcd *TestVCD, nsxtCfg *types.NsxtManagerOpenApi, maxRetries int, retryInterval time.Duration) (*NsxtManagerOpenApi, error) {
+	var nsxtManager *NsxtManagerOpenApi
+	var err error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		nsxtManager, err = vcd.client.CreateNsxtManagerOpenApi(nsxtCfg)
+		if err == nil {
+			return nsxtManager, nil
+		}
+
+		fmt.Printf("# create NSX-T Manager - retrying after %v (Attempt %d/%d)\n", retryInterval, attempt+1, maxRetries)
+		fmt.Printf("# create NSX-T Manager - error was: %s", err)
+		time.Sleep(retryInterval)
+	}
+
+	return nsxtManager, fmt.Errorf("exceeded maximum retries creating a NSX-T Manager, final error: %s", err)
 }
 
 // getOrCreateRegion will check configuration file and create a Region if
