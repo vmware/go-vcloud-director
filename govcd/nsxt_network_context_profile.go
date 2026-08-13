@@ -11,6 +11,73 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
+const labelNetworkContextProfile = "NSX-T Network Context Profile"
+
+// NsxtNetworkContextProfile contains a structure for managing user-defined NSX-T Network Context
+// Profiles. SYSTEM scoped profiles are built-in and read-only; profiles with PROVIDER and TENANT
+// scopes can be managed by this structure
+type NsxtNetworkContextProfile struct {
+	NsxtNetworkContextProfile *types.NsxtNetworkContextProfile
+	VCDClient                 *VCDClient
+}
+
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (n NsxtNetworkContextProfile) wrap(inner *types.NsxtNetworkContextProfile) *NsxtNetworkContextProfile {
+	n.NsxtNetworkContextProfile = inner
+	return &n
+}
+
+// CreateNetworkContextProfile creates a user-defined Network Context Profile that can be
+// referenced in Distributed Firewall rules.
+//
+// Profiles with TENANT scope require both OrgRef and ContextEntityID (an Org VDC or VDC Group ID)
+// to be set. Profiles with PROVIDER scope are visible to all tenants and require System
+// administrator privileges
+func (vcdClient *VCDClient) CreateNetworkContextProfile(config *types.NsxtNetworkContextProfile) (*NsxtNetworkContextProfile, error) {
+	c := crudConfig{
+		endpoint:    types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles,
+		entityLabel: labelNetworkContextProfile,
+	}
+	outerType := NsxtNetworkContextProfile{VCDClient: vcdClient}
+	return createOuterEntity(&vcdClient.Client, outerType, c, config)
+}
+
+// GetNetworkContextProfileById retrieves a Network Context Profile of any scope by its ID
+func (vcdClient *VCDClient) GetNetworkContextProfileById(id string) (*NsxtNetworkContextProfile, error) {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles,
+		endpointParams: []string{id},
+		entityLabel:    labelNetworkContextProfile,
+	}
+
+	outerType := NsxtNetworkContextProfile{VCDClient: vcdClient}
+	return getOuterEntity[NsxtNetworkContextProfile, types.NsxtNetworkContextProfile](&vcdClient.Client, outerType, c)
+}
+
+// Update updates a user-defined Network Context Profile. Only profiles with PROVIDER or TENANT
+// scope can be updated
+func (profile *NsxtNetworkContextProfile) Update(config *types.NsxtNetworkContextProfile) (*NsxtNetworkContextProfile, error) {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles,
+		endpointParams: []string{config.ID},
+		entityLabel:    labelNetworkContextProfile,
+	}
+	outerType := NsxtNetworkContextProfile{VCDClient: profile.VCDClient}
+	return updateOuterEntity(&profile.VCDClient.Client, outerType, c, config)
+}
+
+// Delete removes a user-defined Network Context Profile
+func (profile *NsxtNetworkContextProfile) Delete() error {
+	c := crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles,
+		endpointParams: []string{profile.NsxtNetworkContextProfile.ID},
+		entityLabel:    labelNetworkContextProfile,
+	}
+	return deleteEntityById(&profile.VCDClient.Client, c)
+}
+
 // GetAllNetworkContextProfiles retrieves a slice of types.NsxtNetworkContextProfile
 // This function requires at least a filter value for 'context_id' which can be one of:
 // * Org VDC ID - to get Network Context Profiles scoped for VDC
