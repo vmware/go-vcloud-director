@@ -103,4 +103,19 @@ func (vcd *TestVCD) Test_TmSharedSubnet(check *C) {
 
 	err = byIdAsync.Delete()
 	check.Assert(err, IsNil)
+
+	// Since 9.2, removing the last Distributed VLAN Connection under a Shared Subnet no longer
+	// deletes the Regional Networking Setting that the backend auto-created for the Region's
+	// default consumption Org, as that setting may still host other shared network resources.
+	// It must be deleted explicitly here, or the deferred Region cleanup above fails because the
+	// orphaned setting still references the Region.
+	allRegionalNetworkingSettings, err := vcd.client.GetAllTmRegionalNetworkingSettings(nil)
+	check.Assert(err, IsNil)
+	for _, one := range allRegionalNetworkingSettings {
+		if one.TmRegionalNetworkingSetting.RegionRef.ID != region.Region.ID {
+			continue
+		}
+		err = one.Delete()
+		check.Assert(err, IsNil)
+	}
 }
