@@ -64,7 +64,6 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 	util.Logger.Printf("[TRACE] Starting uploading: %s, offset: %v, fileze: %v, toLink: %s \n", filePath, uDetails.uploadedBytes, uDetails.fileSizeToUpload, uDetails.uploadLink)
 
 	var part []byte
-	var count int
 	var pieceSize int64
 
 	file, err := os.Open(filepath.Clean(filePath))
@@ -84,6 +83,12 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 	defer safeClose(file)
 
 	fileSize := fileInfo.Size()
+	if fileSize == 0 {
+		err = fmt.Errorf("file %s is empty, nothing to upload", filePath)
+		util.Logger.Printf("[ERROR] during upload process - file size issue : %s, error %s ", filePath, err)
+		*uDetails.uploadError = err
+		return 0, err
+	}
 	// when file size in OVF does not exist, use real file size instead
 	if uDetails.fileSizeToUpload == -1 {
 		uDetails.fileSizeToUpload = fileSize
@@ -105,32 +110,24 @@ func uploadFile(client *Client, filePath string, uDetails uploadDetails) (int64,
 	util.Logger.Printf("[TRACE] Uploading will use piece size: %#v \n", pieceSize)
 	part = make([]byte, pieceSize)
 
-	for {
-		if count, err = io.ReadFull(file, part); err != nil {
-			break
-		}
-		err = uploadPartFile(client, part, int64(count), uDetails)
-		uDetails.uploadedBytes += int64(count)
-		uDetails.uploadedBytesForCallback += int64(count)
-		if err != nil {
-			util.Logger.Printf("[ERROR] during upload process: %s, error %s ", filePath, err)
-			*uDetails.uploadError = err
-			return 0, err
-		}
-	}
+	// offset is loop control only; the file itself is read sequentially.
+	for offset := int64(0); offset < fileSize; offset += pieceSize {
+		chunkSize := min(pieceSize, fileSize-offset)
 
-	// upload last part as ReadFull returns io.ErrUnexpectedEOF when reaches end of file.
-	if err == io.ErrUnexpectedEOF {
-		err = uploadPartFile(client, part[:count], int64(count), uDetails)
-		if err != nil {
+		if _, err = io.ReadFull(file, part[:chunkSize]); err != nil {
+			util.Logger.Printf("[ERROR] during upload process - file read issue : %s, error %s ", filePath, err)
+			*uDetails.uploadError = err
+			return 0, err
+		}
+
+		if err = uploadPartFile(client, part[:chunkSize], chunkSize, uDetails); err != nil {
 			util.Logger.Printf("[ERROR] during upload process: %s, error %s ", filePath, err)
 			*uDetails.uploadError = err
 			return 0, err
 		}
-	} else {
-		util.Logger.Printf("Error Uploading: %s, error %s ", filePath, err)
-		*uDetails.uploadError = err
-		return 0, err
+
+		uDetails.uploadedBytes += chunkSize
+		uDetails.uploadedBytesForCallback += chunkSize
 	}
 
 	return fileSize, nil
