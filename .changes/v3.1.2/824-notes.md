@@ -1,0 +1,1 @@
+* Avoid NSX purge-cycle conflicts in `Test_TmSharedSubnet` and `Test_TmDistributedVlanConnection` by re-creating entities under a different name, and always remove RegionalNetworkingSettings in `Test_TmSharedSubnet` cleanup [GH-824]
