@@ -1543,24 +1543,38 @@ type DistributedFirewallRuleVersion struct {
 }
 
 type NsxtNetworkContextProfile struct {
-	OrgRef               *OpenApiReference `json:"orgRef"`
-	ContextEntityID      interface{}       `json:"contextEntityId"`
-	NetworkProviderScope interface{}       `json:"networkProviderScope"`
-	ID                   string            `json:"id"`
+	OrgRef               *OpenApiReference `json:"orgRef,omitempty"`
+	ContextEntityID      string            `json:"contextEntityId,omitempty"`
+	NetworkProviderScope string            `json:"networkProviderScope,omitempty"`
+	ID                   string            `json:"id,omitempty"`
 	Name                 string            `json:"name"`
-	Description          string            `json:"description"`
+	Description          string            `json:"description,omitempty"`
 
 	// Scope of NSX-T Network Context Profile
 	// SYSTEM profiles are available to all tenants. They are default profiles from the backing networking provider.
 	// PROVIDER profiles are available to all tenants. They are defined by the provider at a system level.
 	// TENANT profiles are available only to the specific tenant organization. They are defined by the tenant or by a provider on behalf of a tenant.
-	Scope      string                                `json:"scope"`
-	Attributes []NsxtNetworkContextProfileAttributes `json:"attributes"`
+	Scope      string                                `json:"scope,omitempty"`
+	Attributes []NsxtNetworkContextProfileAttributes `json:"attributes,omitempty"`
 }
+
+// NsxtNetworkContextProfileAttributes defines a single attribute of a Network Context Profile.
+// Type can be one of 'APP_ID' or 'DOMAIN_NAME'. The backing NSX-T environment validates values:
+// 'DOMAIN_NAME' entries must exist in the NSX-T FQDN catalog and ALG type App IDs (e.g. FTP,
+// TFTP, ORACLE) must be the only value of their attribute. Only 'APP_ID' attributes support
+// sub-attributes, and only when the attribute carries a single value (e.g. SSL or CIFS). The
+// endpoint 'cloudapi/1.0.0/networkContextProfiles/attributes' lists valid values per context
 type NsxtNetworkContextProfileAttributes struct {
-	Type          string      `json:"type"`
-	Values        []string    `json:"values"`
-	SubAttributes interface{} `json:"subAttributes"`
+	Type          string                                  `json:"type"`
+	Values        []string                                `json:"values"`
+	SubAttributes []NsxtNetworkContextProfileSubAttribute `json:"subAttributes,omitempty"`
+}
+
+// NsxtNetworkContextProfileSubAttribute defines a sub-attribute of an 'APP_ID' attribute in a
+// Network Context Profile (e.g. TLS_VERSION, TLS_CIPHER_SUITE, CIFS_SMB_VERSION)
+type NsxtNetworkContextProfileSubAttribute struct {
+	Type   string   `json:"type"`
+	Values []string `json:"values"`
 }
 
 // SecurityTag represents An individual security tag

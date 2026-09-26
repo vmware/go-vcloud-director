@@ -73,3 +73,83 @@ func filteredTestGetAllNetworkContextProfiles(queryParams url.Values, client *Cl
 	check.Assert(err, IsNil)
 	check.Assert(profiles, NotNil)
 }
+
+func (vcd *TestVCD) Test_NsxtNetworkContextProfileCRUD(check *C) {
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointNetworkContextProfiles)
+
+	adminOrg, err := vcd.client.GetAdminOrgByName(vcd.config.VCD.Org)
+	check.Assert(err, IsNil)
+
+	vdcGroup, err := adminOrg.GetVdcGroupByName(vcd.config.VCD.Nsxt.VdcGroup)
+	check.Assert(err, IsNil)
+
+	config := &types.NsxtNetworkContextProfile{
+		Name:            check.TestName(),
+		Description:     check.TestName() + "-description",
+		Scope:           "TENANT",
+		OrgRef:          &types.OpenApiReference{ID: adminOrg.AdminOrg.ID},
+		ContextEntityID: vdcGroup.VdcGroup.Id,
+		Attributes: []types.NsxtNetworkContextProfileAttributes{
+			{
+				Type:   "APP_ID",
+				Values: []string{"HTTP", "SSL"},
+			},
+		},
+	}
+
+	createdProfile, err := vcd.client.CreateNetworkContextProfile(config)
+	check.Assert(err, IsNil)
+	check.Assert(createdProfile, NotNil)
+	check.Assert(createdProfile.NsxtNetworkContextProfile.ID, Not(Equals), "")
+
+	openApiEndpoint := types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles + createdProfile.NsxtNetworkContextProfile.ID
+	AddToCleanupListOpenApi(config.Name, check.TestName(), openApiEndpoint)
+
+	// Get by ID and compare main fields
+	retrievedProfile, err := vcd.client.GetNetworkContextProfileById(createdProfile.NsxtNetworkContextProfile.ID)
+	check.Assert(err, IsNil)
+	check.Assert(retrievedProfile.NsxtNetworkContextProfile.Name, Equals, config.Name)
+	check.Assert(retrievedProfile.NsxtNetworkContextProfile.Scope, Equals, "TENANT")
+	check.Assert(len(retrievedProfile.NsxtNetworkContextProfile.Attributes), Equals, 1)
+
+	// Lookup with the pre-existing name based function must find the same entity
+	byName, err := GetNetworkContextProfilesByNameScopeAndContext(&vcd.client.Client, config.Name, "TENANT", vdcGroup.VdcGroup.Id)
+	check.Assert(err, IsNil)
+	check.Assert(byName.ID, Equals, createdProfile.NsxtNetworkContextProfile.ID)
+
+	// Update description and attribute values
+	updateConfig := &types.NsxtNetworkContextProfile{
+		ID:              createdProfile.NsxtNetworkContextProfile.ID,
+		Name:            config.Name,
+		Description:     config.Description + "-updated",
+		Scope:           config.Scope,
+		OrgRef:          config.OrgRef,
+		ContextEntityID: config.ContextEntityID,
+		Attributes: []types.NsxtNetworkContextProfileAttributes{
+			{
+				Type:   "APP_ID",
+				Values: []string{"SSL"},
+				SubAttributes: []types.NsxtNetworkContextProfileSubAttribute{
+					{
+						Type:   "TLS_VERSION",
+						Values: []string{"TLS_V12", "TLS_V13"},
+					},
+				},
+			},
+		},
+	}
+	updatedProfile, err := retrievedProfile.Update(updateConfig)
+	check.Assert(err, IsNil)
+	check.Assert(updatedProfile.NsxtNetworkContextProfile.Description, Equals, updateConfig.Description)
+	check.Assert(len(updatedProfile.NsxtNetworkContextProfile.Attributes), Equals, 1)
+	check.Assert(len(updatedProfile.NsxtNetworkContextProfile.Attributes[0].Values), Equals, 1)
+
+	// Delete and expect the entity to be gone
+	err = updatedProfile.Delete()
+	check.Assert(err, IsNil)
+
+	notFoundProfile, err := vcd.client.GetNetworkContextProfileById(createdProfile.NsxtNetworkContextProfile.ID)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(notFoundProfile, IsNil)
+}
