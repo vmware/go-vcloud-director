@@ -27,6 +27,23 @@ func (vcd *TestVCD) Test_TmSharedSubnet(check *C) {
 	region, regionCleanup := getOrCreateRegion(vcd, nsxtManager, supervisor, check)
 	defer regionCleanup()
 
+	// Since 9.2, removing the last Distributed VLAN Connection under a Shared Subnet no longer
+	// deletes the Regional Networking Setting that the backend auto-created for the Region's
+	// default consumption Org. It is deleted in a defer so that it also runs when an assertion
+	// fails, otherwise the orphaned setting blocks the deferred Region cleanup above.
+	defer func() {
+		allRegionalNetworkingSettings, err := vcd.client.GetAllTmRegionalNetworkingSettings(nil)
+		if !check.Check(err, IsNil) {
+			return
+		}
+		for _, one := range allRegionalNetworkingSettings {
+			if one.TmRegionalNetworkingSetting.RegionRef.ID != region.Region.ID {
+				continue
+			}
+			check.Check(one.Delete(), IsNil)
+		}
+	}()
+
 	// Transforms the test name into a K8s compliant name
 	k8sCompliantName := strings.ReplaceAll(strings.Split(strings.ToLower(check.TestName()), ".")[1], "_", "-")
 
@@ -88,7 +105,9 @@ func (vcd *TestVCD) Test_TmSharedSubnet(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
 
-	// Create async
+	// Create async with a different name: NSX keeps the deleted segment path reserved until its
+	// purge cycle runs (every 5 minutes), so re-creating with the same name fails with error 500045
+	sharedSubnetType.Name = k8sCompliantName + "-async"
 	task, err := vcd.client.CreateTmSharedSubnetAsync(sharedSubnetType)
 	check.Assert(err, IsNil)
 	check.Assert(task, NotNil)
@@ -103,19 +122,4 @@ func (vcd *TestVCD) Test_TmSharedSubnet(check *C) {
 
 	err = byIdAsync.Delete()
 	check.Assert(err, IsNil)
-
-	// Since 9.2, removing the last Distributed VLAN Connection under a Shared Subnet no longer
-	// deletes the Regional Networking Setting that the backend auto-created for the Region's
-	// default consumption Org, as that setting may still host other shared network resources.
-	// It must be deleted explicitly here, or the deferred Region cleanup above fails because the
-	// orphaned setting still references the Region.
-	allRegionalNetworkingSettings, err := vcd.client.GetAllTmRegionalNetworkingSettings(nil)
-	check.Assert(err, IsNil)
-	for _, one := range allRegionalNetworkingSettings {
-		if one.TmRegionalNetworkingSetting.RegionRef.ID != region.Region.ID {
-			continue
-		}
-		err = one.Delete()
-		check.Assert(err, IsNil)
-	}
 }

@@ -92,7 +92,9 @@ func (vcd *TestVCD) Test_TmDistributedVlanConnection(check *C) {
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(notFoundByName, IsNil)
 
-	// Create async
+	// Create async with a different name: NSX keeps the deleted segment path reserved until its
+	// purge cycle runs (every 5 minutes), so re-creating with the same name fails with error 500045
+	distributedVlanConnectionType.Name = k8sCompliantName + "-async"
 	task, err := vcd.client.CreateTmDistributedVlanConnectionAsync(distributedVlanConnectionType)
 	check.Assert(err, IsNil)
 	check.Assert(task, NotNil)
