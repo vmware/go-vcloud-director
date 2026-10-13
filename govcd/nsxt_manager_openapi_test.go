@@ -21,6 +21,9 @@ func (vcd *TestVCD) Test_NsxtManagerOpenApi(check *C) {
 		check.Skip("Skipping NSX-T Manager creation")
 	}
 
+	// This test creates these entities itself, so the ones shared with other tests must be gone
+	releaseTmSharedFixture(check)
+
 	cfg := &types.NsxtManagerOpenApi{
 		Name:     check.TestName(),
 		Username: vcd.config.Tm.NsxtManagerUsername,
