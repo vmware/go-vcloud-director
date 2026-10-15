@@ -15,10 +15,21 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+// registerTmCleanup returns the cleanup function that the getOrCreate* helpers hand to their callers.
+// With 'tm.shareInfrastructure' the real cleanup is deferred to releaseTmSharedFixture and the
+// returned function does nothing, otherwise it runs the real cleanup.
+func registerTmCleanup(vcd *TestVCD, check *C, cleanup func(check *C)) func() {
+	if vcd.config.Tm.ShareInfrastructure {
+		tmSharedCleanups = append(tmSharedCleanups, cleanup)
+		return func() {}
+	}
+	return func() { cleanup(check) }
+}
+
 // getOrCreateVCenter will check configuration file and create vCenter if
 // stated in the 'createVcenter' property and not present in TM.
-// If created, it returns also a cleanup function to delete it afterward.
-// Otherwise, it just retrieves the existing vCenter
+// If created, it returns also a cleanup function to delete it afterward. With 'tm.shareInfrastructure'
+// it is kept for the following tests instead, and deleted by releaseTmSharedFixture.
 func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	vc, err := vcd.client.GetVCenterByUrl(vcd.config.Tm.VcenterUrl)
 	if err == nil {
@@ -76,18 +87,11 @@ func getOrCreateVCenter(vcd *TestVCD, check *C) (*VCenter, func()) {
 	err = vc.RefreshStorageProfiles()
 	check.Assert(err, IsNil)
 
-	vCenterCreated := true
-
-	return vc, func() {
-		if !vCenterCreated {
-			return
-		}
+	return vc, registerTmCleanup(vcd, check, func(check *C) {
 		printVerbose("# Disabling and deleting vCenter %s\n", vcd.config.Tm.VcenterUrl)
-		err = vc.Disable()
-		check.Assert(err, IsNil)
-		err = vc.Delete()
-		check.Assert(err, IsNil)
-	}
+		check.Check(vc.Disable(), IsNil)
+		check.Check(vc.Delete(), IsNil)
+	})
 }
 
 func createVCenterWithRetries(vcd *TestVCD, vcCfg *types.VSphereVirtualCenter, maxRetries int, retryInterval time.Duration) (*VCenter, error) {
@@ -159,16 +163,10 @@ func getOrCreateNsxtManager(vcd *TestVCD, check *C) (*NsxtManagerOpenApi, func()
 	check.Assert(err, IsNil)
 	check.Assert(nsxtManager, NotNil)
 	PrependToCleanupListOpenApi(nsxtManager.NsxtManagerOpenApi.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointNsxManagers+nsxtManager.NsxtManagerOpenApi.ID)
-	nsxtManagerCreated := true
-
-	return nsxtManager, func() {
-		if !nsxtManagerCreated {
-			return
-		}
+	return nsxtManager, registerTmCleanup(vcd, check, func(check *C) {
 		printVerbose("# Deleting NSX-T Manager %s\n", nsxtManager.NsxtManagerOpenApi.Name)
-		err = nsxtManager.Delete()
-		check.Assert(err, IsNil)
-	}
+		check.Check(nsxtManager.Delete(), IsNil)
+	})
 }
 
 func createNsxtManagerWithRetries(vcd *TestVCD, nsxtCfg *types.NsxtManagerOpenApi, maxRetries int, retryInterval time.Duration) (*NsxtManagerOpenApi, error) {
@@ -226,18 +224,13 @@ func getOrCreateRegion(vcd *TestVCD, nsxtManager *NsxtManagerOpenApi, supervisor
 	region, err = vcd.client.CreateRegion(r)
 	check.Assert(err, IsNil)
 	check.Assert(region, NotNil)
-	regionCreated := true
 	AddToCleanupListOpenApi(region.Region.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointRegions+region.Region.ID)
 	check.Assert(region.Region.Status, Equals, "READY") // Region must be READY to be operational
 
-	return region, func() {
-		if !regionCreated {
-			return
-		}
+	return region, registerTmCleanup(vcd, check, func(check *C) {
 		printVerbose("# Deleting Region %s\n", region.Region.Name)
-		err = region.Delete()
-		check.Assert(err, IsNil)
-	}
+		check.Check(region.Delete(), IsNil)
+	})
 }
 
 // getOrCreateContentLibrary will check configuration file and create a Content Library if

@@ -300,6 +300,10 @@ solutionAddOn:
   # An existing Add-On image within catalog
   addonImageDse: "vmware-vcd-ds-1.4.0-23376809.iso"
 tm:
+  # When true, the NSX-T Manager, vCenter and Region created by the tests (see the 'createXxx' properties
+  # below) are created once and shared by all tests, instead of being created and deleted in every test.
+  # It makes the test suite much faster. Defaults to false.
+  shareInfrastructure: true
   createRegion: true
   # An existing Region to create VDCs, Content Libraries...
   region: my-region

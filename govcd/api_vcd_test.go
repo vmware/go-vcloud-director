@@ -147,6 +147,8 @@ type TestConfig struct {
 		SupervisorZone string `yaml:"supervisorZone"`
 	} `yaml:"cci,omitempty"`
 	Tm struct {
+		ShareInfrastructure bool `yaml:"shareInfrastructure"`
+
 		CreateRegion bool   `yaml:"createRegion"`
 		Region       string `yaml:"region"`
 		StorageClass string `yaml:"storageClass"`
@@ -1868,7 +1870,25 @@ func (vcd *TestVCD) removeLeftoverEntities(entity CleanupEntity) {
 	}
 }
 
+// tmSharedCleanups holds the cleanup functions of the NSX-T Manager, vCenter and Region created by
+// the getOrCreate* helpers when 'tm.shareInfrastructure' is true. Creating and deleting them is by
+// far the slowest part of the TM tests, so the first test that needs them creates them and all the
+// following tests reuse them. They are deleted by releaseTmSharedFixture, in reverse creation order.
+var tmSharedCleanups []func(check *C)
+
+// releaseTmSharedFixture deletes the NSX-T Manager, vCenter and Region that were created by the
+// getOrCreate* helpers. It must be called by tests that create these entities themselves (they
+// would otherwise clash with the shared ones), and at the end of the suite.
+func releaseTmSharedFixture(check *C) {
+	for i := len(tmSharedCleanups) - 1; i >= 0; i-- {
+		tmSharedCleanups[i](check)
+	}
+	tmSharedCleanups = nil
+}
+
 func (vcd *TestVCD) TearDownSuite(check *C) {
+	// Must go first: the shared Region, vCenter and NSX-T Manager have to be deleted in dependency order
+	releaseTmSharedFixture(check)
 	// We will try to remove every entity that has been registered into
 	// CleanupEntityList. Entities that have already been cleaned up by their
 	// functions will be ignored.

@@ -21,6 +21,9 @@ func (vcd *TestVCD) Test_VCenter(check *C) {
 		check.Skip("Skipping vCenter creation")
 	}
 
+	// This test creates these entities itself, so the ones shared with other tests must be gone
+	releaseTmSharedFixture(check)
+
 	cfg := &types.VSphereVirtualCenter{
 		Name:      check.TestName() + "-vc",
 		Username:  vcd.config.Tm.VcenterUsername,

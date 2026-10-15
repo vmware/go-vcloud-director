@@ -15,6 +15,9 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	skipNonTm(vcd, check)
 	sysadminOnly(vcd, check)
 
+	// This test creates these entities itself, so the ones shared with other tests must be gone
+	releaseTmSharedFixture(check)
+
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
 	defer nsxtManagerCleanup()
 	vc, vcCleanup := getOrCreateVCenter(vcd, check)

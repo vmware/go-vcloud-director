@@ -1,0 +1,1 @@
+* Speed up TM tests with the new `tm.shareInfrastructure` test configuration property, which creates the NSX-T Manager, vCenter and Region once and shares them across tests instead of creating and deleting them in every test [GH-825]
