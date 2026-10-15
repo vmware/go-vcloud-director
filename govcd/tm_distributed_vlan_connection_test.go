@@ -84,16 +84,9 @@ func (vcd *TestVCD) Test_TmDistributedVlanConnection(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc.TmDistributedVlanConnection, DeepEquals, createdDistributedVlanConnection.TmDistributedVlanConnection)
 
-	// Delete
-	err = createdDistributedVlanConnection.Delete()
-	check.Assert(err, IsNil)
-
-	notFoundByName, err := vcd.client.GetTmDistributedVlanConnectionByName(createdDistributedVlanConnection.TmDistributedVlanConnection.Name)
-	check.Assert(ContainsNotFound(err), Equals, true)
-	check.Assert(notFoundByName, IsNil)
-
-	// Create async with a different name: NSX keeps the deleted segment path reserved until its
-	// purge cycle runs (every 5 minutes), so re-creating with the same name fails with error 500045
+	// Create async with a different name, BEFORE deleting the first one: deleting the last entity in the
+	// Region makes the backend remove the NSX project, which stays reserved until NSX's purge cycle (every 5 minutes)
+	// and makes the re-create fail with error 500045
 	distributedVlanConnectionType.Name = k8sCompliantName + "-async"
 	task, err := vcd.client.CreateTmDistributedVlanConnectionAsync(distributedVlanConnectionType)
 	check.Assert(err, IsNil)
@@ -106,6 +99,14 @@ func (vcd *TestVCD) Test_TmDistributedVlanConnection(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(byIdAsync, NotNil)
 	PrependToCleanupListOpenApi(byIdAsync.TmDistributedVlanConnection.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmDistributedVlanConnections+byIdAsync.TmDistributedVlanConnection.ID)
+
+	// Delete the first one now that another one exists
+	err = createdDistributedVlanConnection.Delete()
+	check.Assert(err, IsNil)
+
+	notFoundByName, err := vcd.client.GetTmDistributedVlanConnectionByName(createdDistributedVlanConnection.TmDistributedVlanConnection.Name)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(notFoundByName, IsNil)
 
 	err = byIdAsync.Delete()
 	check.Assert(err, IsNil)
