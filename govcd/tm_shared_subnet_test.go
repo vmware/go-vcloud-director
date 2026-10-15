@@ -97,17 +97,13 @@ func (vcd *TestVCD) Test_TmSharedSubnet(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(updatedVdc.TmSharedSubnet, DeepEquals, createdSharedSubnet.TmSharedSubnet)
 
-	// Delete
-	err = createdSharedSubnet.Delete()
-	check.Assert(err, IsNil)
-
-	notFoundByName, err := vcd.client.GetTmSharedSubnetByName(createdSharedSubnet.TmSharedSubnet.Name)
-	check.Assert(ContainsNotFound(err), Equals, true)
-	check.Assert(notFoundByName, IsNil)
-
-	// Create async with a different name: NSX keeps the deleted segment path reserved until its
-	// purge cycle runs (every 5 minutes), so re-creating with the same name fails with error 500045
+	// Create async with a different name, BEFORE deleting the first one: deleting the last entity in the
+	// Region makes the backend remove the NSX project, which stays reserved until NSX's purge cycle (every 5 minutes)
+	// and makes the re-create fail with error 500045. Both subnets exist at the same time, so the second one
+	// needs its own VLAN ID and CIDR (same VLAN ID on overlapping zones is rejected with error 640957)
 	sharedSubnetType.Name = k8sCompliantName + "-async"
+	sharedSubnetType.VlanId = 101
+	sharedSubnetType.GatewayCidr = "10.0.1.1/24"
 	task, err := vcd.client.CreateTmSharedSubnetAsync(sharedSubnetType)
 	check.Assert(err, IsNil)
 	check.Assert(task, NotNil)
@@ -119,6 +115,14 @@ func (vcd *TestVCD) Test_TmSharedSubnet(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(byIdAsync, NotNil)
 	PrependToCleanupListOpenApi(byIdAsync.TmSharedSubnet.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmSharedSubnets+byIdAsync.TmSharedSubnet.ID)
+
+	// Delete the first one now that another one exists
+	err = createdSharedSubnet.Delete()
+	check.Assert(err, IsNil)
+
+	notFoundByName, err := vcd.client.GetTmSharedSubnetByName(createdSharedSubnet.TmSharedSubnet.Name)
+	check.Assert(ContainsNotFound(err), Equals, true)
+	check.Assert(notFoundByName, IsNil)
 
 	err = byIdAsync.Delete()
 	check.Assert(err, IsNil)
