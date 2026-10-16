@@ -441,7 +441,7 @@ const (
 	OpenApiEndpointVdcGroupsDfwDefaultPolicies        = "vdcGroups/%s/dfwPolicies/default"
 	OpenApiEndpointVdcGroupsDfwRules                  = "vdcGroups/%s/dfwPolicies/%s/rules"
 	OpenApiEndpointLogicalVmGroups                    = "logicalVmGroups/"
-	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles"
+	OpenApiEndpointNetworkContextProfiles             = "networkContextProfiles/"
 	OpenApiEndpointSecurityTags                       = "securityTags"
 	OpenApiEndpointNsxtRouteAdvertisement             = "edgeGateways/%s/routing/advertisement"
 	OpenApiEndpointTestConnection                     = "testConnection/"
