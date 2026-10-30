@@ -44,10 +44,10 @@ func (vcd *TestVCD) Test_TmRegionQuota(check *C) {
 		ZoneResourceAllocation: []*types.TmVdcZoneResourceAllocation{{
 			Zone: &types.OpenApiReference{ID: regionZones[0].Zone.ID},
 			ResourceAllocation: types.TmVdcResourceAllocation{
-				CPUReservationMHz:    100,
-				CPULimitMHz:          500,
-				MemoryReservationMiB: 256,
-				MemoryLimitMiB:       512,
+				CPUReservationMHz:    addrOf(int64(100)),
+				CPULimitMHz:          addrOf(int64(500)),
+				MemoryReservationMiB: addrOf(int64(256)),
+				MemoryLimitMiB:       addrOf(int64(512)),
 			},
 		}},
 	}

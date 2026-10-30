@@ -50,10 +50,10 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 		ZoneResourceAllocation: []*types.TmVdcZoneResourceAllocation{{
 			Zone: &types.OpenApiReference{ID: regionZones[0].Zone.ID},
 			ResourceAllocation: types.TmVdcResourceAllocation{
-				CPUReservationMHz:    100,
-				CPULimitMHz:          500,
-				MemoryReservationMiB: 256,
-				MemoryLimitMiB:       512,
+				CPUReservationMHz:    addrOf(int64(100)),
+				CPULimitMHz:          addrOf(int64(500)),
+				MemoryReservationMiB: addrOf(int64(256)),
+				MemoryLimitMiB:       addrOf(int64(512)),
 			},
 		}},
 	}
@@ -75,7 +75,7 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 				RegionStoragePolicy: types.OpenApiReference{
 					ID: sp.RegionStoragePolicy.ID,
 				},
-				StorageLimitMiB: 100,
+				StorageLimitMiB: addrOf(int64(100)),
 				VirtualDatacenter: types.OpenApiReference{
 					ID: createdRegionQuota.TmVdc.ID,
 				},
@@ -106,12 +106,13 @@ func (vcd *TestVCD) Test_TmRegionQuotaStoragePolicy(check *C) {
 	// Update policy
 	updatedPolicy, err := rqPolicies[0].Update(&types.VirtualDatacenterStoragePolicy{
 		RegionStoragePolicy: rqPolicies[0].VirtualDatacenterStoragePolicy.RegionStoragePolicy,
-		StorageLimitMiB:     200,
+		StorageLimitMiB:     addrOf(int64(200)),
 		VirtualDatacenter:   rqPolicies[0].VirtualDatacenterStoragePolicy.VirtualDatacenter,
 	})
 	check.Assert(err, IsNil)
 	check.Assert(updatedPolicy, NotNil)
-	check.Assert(updatedPolicy.VirtualDatacenterStoragePolicy.StorageLimitMiB, Equals, int64(200))
+	check.Assert(updatedPolicy.VirtualDatacenterStoragePolicy.StorageLimitMiB, NotNil)
+	check.Assert(*updatedPolicy.VirtualDatacenterStoragePolicy.StorageLimitMiB, Equals, int64(200))
 
 	policy, err = vcd.client.GetRegionQuotaStoragePolicyById(rqPolicies[0].VirtualDatacenterStoragePolicy.ID)
 	check.Assert(err, IsNil)

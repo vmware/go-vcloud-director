@@ -34,8 +34,8 @@ func (vcd *TestVCD) Test_TmIpSpace(check *C) {
 		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
 		Description: check.TestName(),
 		DefaultQuota: types.TmIpSpaceQuota{
-			MaxCidrCount:  3,
-			MaxIPCount:    -1,
+			MaxCidrCount:  addrOf(3),
+			MaxIPCount:    addrOf(-1),
 			MaxSubnetSize: 24,
 		},
 		InternalScopeCidrBlocks: []types.TmIpAddressSpaceIpBlock{

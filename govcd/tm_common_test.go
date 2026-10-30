@@ -258,7 +258,7 @@ func getOrCreateContentLibrary(vcd *TestVCD, storageClass *StorageClass, org *Tm
 
 	payload := types.ContentLibrary{
 		Name: vcd.config.Tm.ContentLibrary,
-		StorageClasses: types.OpenApiReferences{{
+		StorageClasses: []types.ContentLibraryStorageClass{{
 			Name: storageClass.StorageClass.Name,
 			ID:   storageClass.StorageClass.ID,
 		}},
@@ -341,10 +341,10 @@ func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*Reg
 		ZoneResourceAllocation: []*types.TmVdcZoneResourceAllocation{{
 			Zone: &types.OpenApiReference{ID: regionZones[0].Zone.ID},
 			ResourceAllocation: types.TmVdcResourceAllocation{
-				CPUReservationMHz:    100,
-				CPULimitMHz:          500,
-				MemoryReservationMiB: 256,
-				MemoryLimitMiB:       512,
+				CPUReservationMHz:    addrOf(int64(100)),
+				CPULimitMHz:          addrOf(int64(500)),
+				MemoryReservationMiB: addrOf(int64(256)),
+				MemoryLimitMiB:       addrOf(int64(512)),
 			},
 		}},
 	}
@@ -364,7 +364,7 @@ func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*Reg
 				RegionStoragePolicy: types.OpenApiReference{
 					ID: sp.RegionStoragePolicy.ID,
 				},
-				StorageLimitMiB: 500,
+				StorageLimitMiB: addrOf(int64(500)),
 				VirtualDatacenter: types.OpenApiReference{
 					ID: rq.TmVdc.ID,
 				},
@@ -385,8 +385,8 @@ func createTmIpSpace(vcd *TestVCD, region *Region, check *C, nameSuffix, octet3 
 		RegionRef:   types.OpenApiReference{ID: region.Region.ID},
 		Description: check.TestName(),
 		DefaultQuota: types.TmIpSpaceQuota{
-			MaxCidrCount:  3,
-			MaxIPCount:    -1,
+			MaxCidrCount:  addrOf(3),
+			MaxIPCount:    addrOf(-1),
 			MaxSubnetSize: 24,
 		},
 		InternalScopeCidrBlocks: []types.TmIpAddressSpaceIpBlock{

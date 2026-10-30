@@ -7,18 +7,20 @@ package types
 // RegionStoragePolicy defines a Region storage policy
 type RegionStoragePolicy struct {
 	ID string `json:"id,omitempty"`
-	// Name for the policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
+	// Name for the policy
 	Name string `json:"name"`
+	// Kubernetes-compliant name of the policy (API 40.1+)
+	KubernetesCompliantName string `json:"kubernetesCompliantName,omitempty"`
 	// The Region that this policy belongs to
 	Region *OpenApiReference `json:"region"`
 	// Description of the policy
 	Description string `json:"description,omitempty"`
 	// The creation status of the region storage policy. Can be [NOT_READY, READY]
 	Status string `json:"status,omitempty"`
-	// Storage capacity in megabytes for this policy
-	StorageCapacityMB int64 `json:"storageCapacityMB,omitempty"`
-	// Consumed storage in megabytes for this policy
-	StorageConsumedMB int64 `json:"storageConsumedMB,omitempty"`
+	// Storage capacity in mebibytes for this policy
+	StorageCapacityMiB int64 `json:"storageCapacityMiB,omitempty"`
+	// Consumed storage in mebibytes for this policy
+	StorageConsumedMiB int64 `json:"storageConsumedMiB,omitempty"`
 }
 
 // StorageClass defines a Storage Class
@@ -26,10 +28,14 @@ type StorageClass struct {
 	ID string `json:"id,omitempty"`
 	// Name for the storage class
 	Name string `json:"name"`
+	// Kubernetes-compliant name of the storage class (API 40.1+, read-only)
+	KubernetesCompliantName string `json:"kubernetesCompliantName,omitempty"`
 	// The Region that this storage class belongs to
 	Region *OpenApiReference `json:"region"`
-	// The total storage capacity of the storage class in mebibytes
-	StorageCapacityMiB int64 `json:"storageCapacityMiB,omitempty"`
+	// The total storage capacity in mebibytes. Nil represents no upper bound for unlimited allocation.
+	StorageCapacityMiB *int64 `json:"storageCapacityMiB"`
+	// Whether the tenant storage class uses unlimited allocation (FlexNamespaces, read-only)
+	IsUnlimitedAllocation bool `json:"isUnlimitedAllocation,omitempty"`
 	// For tenants, this represents the total storage given to all namespaces consuming from this storage class in mebibytes.
 	// For providers, this represents the total storage given to tenants from this storage class in mebibytes.
 	StorageConsumedMiB int64 `json:"storageConsumedMiB,omitempty"`
@@ -50,8 +56,11 @@ type VirtualDatacenterStoragePolicy struct {
 	RegionStoragePolicy OpenApiReference `json:"regionStoragePolicy"`
 	// The name of the VDC Storage Policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
 	Name string `json:"name,omitempty"`
-	// Maximum allowed storage allocation in mebibytes. Minimum Value: 0
-	StorageLimitMiB int64 `json:"storageLimitMiB"`
+	// Maximum allowed storage allocation in mebibytes. Nil is serialized as null (no upper bound)
+	// for unlimited allocation; a non-nil pointer is required for limited allocation. Minimum value: 0.
+	StorageLimitMiB *int64 `json:"storageLimitMiB"`
+	// Whether the policy uses unlimited allocation (FlexNamespaces, read-only)
+	IsUnlimitedAllocation bool `json:"isUnlimitedAllocation,omitempty"`
 	// Amount of storage used in mebibytes. Minimum Value: 0
 	StorageUsedMiB int64 `json:"storageUsedMiB,omitempty"`
 	// A reference to the VDC that the policy applies to
@@ -63,7 +72,7 @@ type ContentLibrary struct {
 	// The name of the Content Library
 	Name string `json:"name"`
 	// A collection of storage class references used by this Content Library
-	StorageClasses OpenApiReferences `json:"storageClasses,omitempty"`
+	StorageClasses []ContentLibraryStorageClass `json:"storageClasses,omitempty"`
 	// For Tenant Content Libraries this field represents whether this Content Library should be automatically attached to
 	// all current and future namespaces in the tenant organization. If no value is supplied during Tenant Content Library
 	// creation then this field will default to true. If a value of false is supplied, then this Tenant Content Library will
@@ -102,12 +111,25 @@ type ContentLibrary struct {
 	Status string `json:"status,omitempty"`
 }
 
+// ContentLibraryStorageClass describes a storage class reference returned by a Content Library.
+type ContentLibraryStorageClass struct {
+	// Unique identifier of the storage class in URN format
+	ID string `json:"id,omitempty"`
+	// Name of the storage class
+	Name string `json:"name,omitempty"`
+	// Kubernetes-compliant name of the storage class (read-only)
+	KubernetesCompliantName string `json:"kubernetesCompliantName,omitempty"`
+	// Region associated with this storage class
+	Region *OpenApiReference `json:"region,omitempty"`
+}
+
 // ContentLibrarySubscriptionConfig represents subscription settings of a Content Library
 type ContentLibrarySubscriptionConfig struct {
 	// Subscription url of this Content Library. It cannot be changed once set for a Content Library
 	SubscriptionUrl string `json:"subscriptionUrl"`
-	// Whether to eagerly download content from publisher and store it locally
-	NeedLocalCopy bool `json:"needLocalCopy,omitempty"`
+	// Whether to eagerly download content from the publisher and store it locally.
+	// Nil leaves the server default (true) unchanged; a pointer to false explicitly disables eager download.
+	NeedLocalCopy *bool `json:"needLocalCopy,omitempty"`
 	// Password to use to authenticate with the publisher
 	Password string `json:"password,omitempty"`
 }
@@ -152,6 +174,10 @@ type ContentLibraryItem struct {
 	// The size of the content library item file to upload in bytes.
 	// This field is only required for ISO content library items and will be NULL for Template based content library items
 	FileUploadSizeBytes int64 `json:"fileUploadSizeBytes,omitempty"`
+	// Size in bytes of one stored copy of the item, excluding replication (read-only)
+	SizeBytes int64 `json:"sizeBytes,omitempty"`
+	// Whether this item reserves storage before its content is uploaded
+	Placeholder *bool `json:"placeholder,omitempty"`
 }
 
 // ContentLibraryItemFile specifies a Content Library Item file for uploads
@@ -248,6 +274,11 @@ type Region struct {
 	Description string `json:"description"`
 	// The NSX manager for the region.
 	NsxManager *OpenApiReference `json:"nsxManager"`
+	// Load balancer type of the supervisors in this Region (read-only)
+	LoadBalancerType string `json:"loadBalancerType,omitempty"`
+	// Whether new Region Quotas must use unlimited allocation (FlexNamespaces).
+	// Nil omits the setting; a pointer to false explicitly disables it.
+	SupportsUnlimitedAllocation *bool `json:"supportsUnlimitedAllocation,omitempty"`
 	// Total CPU resources in MHz available to this Region.
 	CPUCapacityMHz int `json:"cpuCapacityMHz,omitempty"`
 	// Total CPU reservation resources in MHz available to this Region.
@@ -278,6 +309,12 @@ type Supervisor struct {
 	Region *OpenApiReference `json:"region,omitempty"`
 	// The vCenter this supervisor is associated with.
 	VirtualCenter *OpenApiReference `json:"virtualCenter"`
+	// Load balancer type of this supervisor (read-only)
+	LoadBalancerType string `json:"loadBalancerType,omitempty"`
+	// NSX Manager associated with this supervisor through its vCenter (API 40.1+, read-only)
+	NsxManager *OpenApiReference `json:"nsxManager,omitempty"`
+	// Whether the associated vCenter is dedicated to classic tenants (API 40.1+, read-only)
+	IsDedicatedForClassicTenants bool `json:"isDedicatedForClassicTenants,omitempty"`
 }
 
 // SupervisorZone represents a single zone within Supervisor
@@ -301,6 +338,8 @@ type SupervisorZone struct {
 	CpuUsedMHz int64 `json:"cpuUsedMHz"`
 	// Region contains a reference to parent region
 	Region *OpenApiReference `json:"region"`
+	// Region zone corresponding to this supervisor zone (read-only)
+	Zone *OpenApiReference `json:"zone,omitempty"`
 }
 
 // TmVdc defines a structure for creating VDCs using OpenAPI endpoint
@@ -320,6 +359,9 @@ type TmVdc struct {
 	Supervisors []OpenApiReference `json:"supervisors,omitempty"`
 	// ZoneResourceAllocation contain references of each zone within Supervisor
 	ZoneResourceAllocation []*TmVdcZoneResourceAllocation `json:"zoneResourceAllocation,omitempty"`
+	// Whether this quota receives all of its Region's resources (API 40.1+).
+	// Nil omits the setting; a pointer to false explicitly disables full allocation.
+	IsFullAllocation *bool `json:"isFullAllocation,omitempty"`
 }
 
 // TmVdcZoneResourceAllocation defines resource allocation for a single zone
@@ -330,14 +372,19 @@ type TmVdcZoneResourceAllocation struct {
 
 // TmVdcResourceAllocation defines compute resources of single VDC
 type TmVdcResourceAllocation struct {
-	// CPULimitMHz defines maximum CPU consumption limit in MHz
-	CPULimitMHz int `json:"cpuLimitMHz"`
-	// CPUReservationMHz defines reserved CPU capacity in MHz
-	CPUReservationMHz int `json:"cpuReservationMHz"`
-	// MemoryLimitMiB defines maximum memory consumption limit in MiB
-	MemoryLimitMiB int `json:"memoryLimitMiB"`
-	// MemoryReservationMiB defines reserved memory in Mib
-	MemoryReservationMiB int `json:"memoryReservationMiB"`
+	// CPULimitMHz defines maximum CPU consumption in MHz. Nil means no upper bound in unlimited allocation mode.
+	CPULimitMHz *int64 `json:"cpuLimitMHz"`
+	// CPUReservationMHz defines reserved CPU capacity in MHz. Nil means no upper bound in unlimited allocation mode.
+	CPUReservationMHz *int64 `json:"cpuReservationMHz"`
+	// MemoryLimitMiB defines maximum memory consumption in MiB. Nil means no upper bound in unlimited allocation mode.
+	MemoryLimitMiB *int64 `json:"memoryLimitMiB"`
+	// MemoryReservationMiB defines reserved memory in MiB. Nil means no upper bound in unlimited allocation mode.
+	MemoryReservationMiB *int64 `json:"memoryReservationMiB"`
+	// Whether this zone allocation uses unlimited allocation (FlexNamespaces, read-only).
+	// When false, supply non-nil resource limits and reservations.
+	IsUnlimitedAllocation bool `json:"isUnlimitedAllocation,omitempty"`
+	// vCPU speed in MHz for unlimited allocation (FlexNamespaces)
+	VcpuSpeedMHz *int64 `json:"vcpuSpeedMHz,omitempty"`
 }
 
 // Zone defines a Region Zone structure
@@ -349,17 +396,17 @@ type Zone struct {
 	Region *OpenApiReference `json:"region"`
 	// CPULimitMhz defines the total amount of reserved and unreserved CPU resources allocated in
 	// MHz
-	CPULimitMhz int `json:"cpuLimitMhz"`
+	CPULimitMhz int `json:"cpuLimitMHz"`
 	// CPUReservationMhz contains the total amount of CPU resources reserved in MHz
-	CPUReservationMhz int `json:"cpuReservationMhz"`
+	CPUReservationMhz int `json:"cpuReservationMHz"`
 	// CPUReservationUsedMhz defines the amount of CPU resources used in MHz. For Tenants, this
 	// value represents the total given to all of a Tenant's Namespaces. For Providers, this value
 	// represents the total given to all Tenants
-	CPUReservationUsedMhz int `json:"cpuReservationUsedMhz"`
+	CPUReservationUsedMhz int `json:"cpuReservationUsedMHz"`
 	// CPUUsedMhz defines the amount of reserved and unreserved CPU resources used in MHz. For
 	// Tenants, this value represents the total given to all of a Tenant's Namespaces. For
 	// Providers, this value represents the total given to all Tenants
-	CPUUsedMhz int `json:"cpuUsedMhz"`
+	CPUUsedMhz int `json:"cpuUsedMHz"`
 	// MemoryLimitMiB defines the total amount of reserved and unreserved memory resources allocated
 	// in MiB
 	MemoryLimitMiB int `json:"memoryLimitMiB"`
@@ -373,6 +420,14 @@ type Zone struct {
 	// MiB. For Tenants, this value represents the total given to all of a Tenant's Namespaces. For
 	// Providers, this value represents the total given to all Tenants
 	MemoryUsedMiB int `json:"memoryUsedMiB"`
+	// Maximum memory reservation available to a new namespace in this zone (API 40.1+, read-only)
+	MaxNamespaceMemoryReservationMiB int64 `json:"maxNamespaceMemoryReservationMiB,omitempty"`
+	// Maximum CPU reservation available to a new namespace in this zone (API 40.1+, read-only)
+	MaxNamespaceCPUReservationMHz int64 `json:"maxNamespaceCpuReservationMHz,omitempty"`
+	// Whether the zone uses unlimited allocation in the tenant context (FlexNamespaces, read-only)
+	IsUnlimitedAllocation bool `json:"isUnlimitedAllocation,omitempty"`
+	// Configured vCPU speed in MHz, or nil in provider context (FlexNamespaces, read-only)
+	VcpuSpeedMHz *int64 `json:"vcpuSpeedMHz,omitempty"`
 }
 
 // RegionVirtualMachineClass represents virtual machine sizing configurations information including cpu, memory
@@ -441,6 +496,8 @@ type TmIpSpace struct {
 	// Whether this IP Block is exclusively for a single CIDR. Set if auto created by a Shared Subnet or a Distributed VLAN
 	// Connection that is exclusively for a subnet.
 	SubnetExclusive bool `json:"subnetExclusive,omitempty"`
+	// Distributed VLAN connection exclusively associated with this IP Space (API 40.1+, read-only)
+	DedicatedDistributedVlanConnectionRef *OpenApiReference `json:"dedicatedDistributedVlanConnectionRef,omitempty"`
 }
 
 // IP Space quota defines the maximum number of IPv4 IPs and CIDRs that can be allocated and used by
@@ -448,12 +505,12 @@ type TmIpSpace struct {
 type TmIpSpaceQuota struct {
 	// The maximum number of CIDRs with size maxSubnetSize or less, that can be allocated from all
 	// the Internal Scopes of the IP Space. A '-1' value means no cap on the number of the CIDRs
-	// used
-	MaxCidrCount int `json:"maxCidrCount,omitempty"`
+	// used. Nil omits the quota (server default: 1); a pointer to zero prohibits CIDR allocation.
+	MaxCidrCount *int `json:"maxCidrCount,omitempty"`
 	// The maximum number of single floating IP addresses that can be allocated and used from all
 	// the Internal Scopes of the IP Space. A '-1' value means no cap on the number of floating IP
-	// Addresses
-	MaxIPCount int `json:"maxIpCount,omitempty"`
+	// Addresses. Nil omits the quota (server default: 1); a pointer to zero prohibits floating IP allocation.
+	MaxIPCount *int `json:"maxIpCount,omitempty"`
 	// The maximum size of the subnets, represented as a prefix length. The CIDRs that are allocated
 	// from the Internal Scopes of the IP Space must be smaller or equal to the specified size. For
 	// example, for a maxSubnetSize of 24, CIDRs with prefix length of 24, 28 or 30 can be
@@ -713,8 +770,10 @@ type TmRegionalNetworkingSetting struct {
 	// The Organization this Regional Networking Setting belongs to
 	OrgRef OpenApiReference `json:"orgRef"`
 
-	// Reference to the associated Provider Gateway for egress
-	ProviderGatewayRef OpenApiReference `json:"providerGatewayRef"`
+	// Reference to the associated Provider Gateway for egress. Leave nil when using a distributed connection.
+	ProviderGatewayRef *OpenApiReference `json:"providerGatewayRef,omitempty"`
+	// Distributed VLAN connection used for egress (API 40.1+), as an alternative to a Provider Gateway
+	DistributedVlanConnectionRef *OpenApiReference `json:"distributedVlanConnectionRef,omitempty"`
 
 	// The Region this Regional Networking Setting belongs to
 	RegionRef OpenApiReference `json:"regionRef"`
@@ -723,6 +782,12 @@ type TmRegionalNetworkingSetting struct {
 	// Region. If the Edge Cluster is not specified, the system will default to the Edge Cluster of
 	// the selected Provider Gateway's backing router.
 	ServiceEdgeClusterRef *OpenApiReference `json:"serviceEdgeClusterRef"`
+	// VNA cluster used with a distributed connection (API 40.1+)
+	VirtualNetworkApplianceClusterRef *OpenApiReference `json:"virtualNetworkApplianceClusterRef,omitempty"`
+	// Optional IPv4 CIDR override for the default VPC's private subnet (API 40.1+, creation only)
+	DefaultVpcPrivateSubnetCidrOverride string `json:"defaultVpcPrivateSubnetCidrOverride,omitempty"`
+	// Optional IPv4 CIDR override for the project transit gateway's private subnet (API 40.1+, creation only)
+	ProjectTgwPrivateSubnetCidrOverride string `json:"projectTgwPrivateSubnetCidrOverride,omitempty"`
 
 	// Status represents current status of the networking entity. Possible values are:
 	// * PENDING - Desired entity configuration has been received by system and is pending realization
@@ -752,6 +817,8 @@ type TmRegionalNetworkingVpcConnectivityProfile struct {
 	Name                  string                           `json:"name,omitempty"`
 	QosConfig             *VpcConnectivityProfileQosConfig `json:"qosConfig,omitempty"`
 	ServiceEdgeClusterRef *OpenApiReference                `json:"serviceEdgeClusterRef,omitempty"`
+	// VNA cluster used by Organization workloads in the VPC (API 40.1+, read-only)
+	VirtualNetworkApplianceClusterRef *OpenApiReference `json:"virtualNetworkApplianceClusterRef,omitempty"`
 	// ExternalCidrBlocks is a comma separated list of the external IP CIDRs which are available for use by the VPC.
 	ExternalCidrBlocks string `json:"externalCidrBlocks,omitempty"`
 }
