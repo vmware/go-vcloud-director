@@ -1,6 +1,17 @@
-## 3.1.2 (Unreleased)
+## 3.1.2 (October 29, 2026)
 
-Changes in progress for v3.1.2 are available at [.changes/v3.1.2](https://github.com/vmware/go-vcloud-director/tree/main/.changes/v3.1.2) until the release.
+### BUG FIXES
+* Fix the pagination loop at the client cumulative query function ([#813](https://github.com/vmware/go-vcloud-director/pull/813))
+* Fixed `uploadFile` failing with `EOF` after a complete transfer when the file size is an exact multiple of the upload piece size ([#821](https://github.com/vmware/go-vcloud-director/pull/821))
+
+### NOTES
+* Update the common `getOrCreateVCenter` test function to create the VC with retries ([#819](https://github.com/vmware/go-vcloud-director/pull/819))
+* Update the common `getOrCreateNsxtManager` test function to create the NSX-T Manager with retries ([#819](https://github.com/vmware/go-vcloud-director/pull/819))
+* Tune a few test wait times ([#819](https://github.com/vmware/go-vcloud-director/pull/819))
+* Explicity remove RegionalNetworkingSettings when cleaning up from test ([#823](https://github.com/vmware/go-vcloud-director/pull/823))
+* Avoid NSX purge-cycle conflicts in `Test_TmSharedSubnet` and `Test_TmDistributedVlanConnection` by re-creating entities under a different name, and always remove RegionalNetworkingSettings in `Test_TmSharedSubnet` cleanup ([#824](https://github.com/vmware/go-vcloud-director/pull/824))
+* Speed up TM tests with the new `tm.shareInfrastructure` test configuration property, which creates the NSX-T Manager, vCenter and Region once and shares them across tests instead of creating and deleting them in every test ([#825](https://github.com/vmware/go-vcloud-director/pull/825))
+* Avoid NSX 500045 (project marked for deletion) in `Test_TmSharedSubnet` and `Test_TmDistributedVlanConnection` by creating the second entity before deleting the first one ([#826](https://github.com/vmware/go-vcloud-director/pull/826))
 
 ## 3.1.1 (June 17, 2026)
 
