@@ -63,7 +63,11 @@ func (task *Task) Refresh() error {
 
 	req := task.client.NewRequest(map[string]string{}, http.MethodGet, *refreshUrl, nil)
 
-	resp, err := checkResp(task.client.Http.Do(req))
+	resp, err := task.client.Http.Do(req)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+	resp, err = checkResp(resp, err)
 	if err != nil {
 		return fmt.Errorf("%s: %s", errorRetrievingTask, err)
 	}

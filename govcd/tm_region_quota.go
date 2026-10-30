@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
@@ -175,4 +176,115 @@ func (o *VCDClient) GetVmClassesFromRegionQuota(regionQuotaId string) (*types.Re
 		return nil, err
 	}
 	return result, nil
+}
+
+// DeleteWithForce deletes the RegionQuota and waits for completion (API 40.0+).
+// Setting force to true requests forceful deletion even if the backing resource cannot be removed normally.
+func (o *RegionQuota) DeleteWithForce(force bool, options ...TmOperationOptions) error {
+	c := crudConfig{
+		entityLabel:     types.OpenApiEndpointTmVdcs,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs,
+		queryParameters: url.Values{"force": {fmt.Sprintf("%t", force)}},
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return runOpenApiOperation(&o.vcdClient.Client, c.item(o.TmVdc.ID).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// AddVmClassesToRegionQuota adds VM classes without replacing existing assignments (API 40.0+).
+// It returns the server's first result page. Use RegionQuota.GetAllVmClasses to retrieve all assignments.
+func (o *VCDClient) AddVmClassesToRegionQuota(regionQuotaId string, vmClasses *types.RegionVirtualMachineClasses, options ...TmOperationOptions) (*types.RegionVirtualMachineClasses, error) {
+	c := crudConfig{
+		entityLabel:    types.OpenApiEndpointTmVdcsVmClasses,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses,
+		endpointParams: []string{regionQuotaId},
+		requiresTm:     true,
+		minimumVersion: "40.0",
+	}
+	return writeInnerEntity(&o.Client, c.withTmOptions(options), http.MethodPost, vmClasses)
+}
+
+// AddVmClasses adds VM classes to the receiver region quota and returns the first result page (API 40.0+).
+func (o *RegionQuota) AddVmClasses(vmClasses *types.RegionVirtualMachineClasses, options ...TmOperationOptions) (*types.RegionVirtualMachineClasses, error) {
+	return o.vcdClient.AddVmClassesToRegionQuota(o.TmVdc.ID, vmClasses, options...)
+}
+
+// GetAllVmClasses retrieves the region quota's VM-class assignments across all pages (API 40.0+).
+func (o *RegionQuota) GetAllVmClasses(queryParameters url.Values, options ...TmOperationOptions) ([]*types.OpenApiReference, error) {
+	c := crudConfig{
+		entityLabel:     types.OpenApiEndpointTmVdcsVmClasses,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointTmVdcsVmClasses,
+		endpointParams:  []string{o.TmVdc.ID},
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return getAllInnerEntities[types.OpenApiReference](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// GetAllReservedVmClasses retrieves the region quota's VM-class reservations across all pages (API 40.0+).
+func (o *RegionQuota) GetAllReservedVmClasses(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmVdcReservedVmClass, error) {
+	c := crudConfig{
+		entityLabel:     "virtualDatacenters/reservedVMClasses",
+		endpoint:        types.OpenApiPathVcf + "virtualDatacenters/%s/reservedVMClasses",
+		endpointParams:  []string{o.TmVdc.ID},
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return getAllInnerEntities[types.TmVdcReservedVmClass](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// UpdateReservedVmClasses updates the desired VM-class reservations and returns the first result page (API 40.0+).
+// Use GetAllReservedVmClasses to retrieve all reservations after the update.
+func (o *RegionQuota) UpdateReservedVmClasses(config *types.TmVdcReservedVmClasses, options ...TmOperationOptions) (*types.TmVdcReservedVmClasses, error) {
+	c := crudConfig{
+		entityLabel:    "virtualDatacenters/reservedVMClasses",
+		endpoint:       types.OpenApiPathVcf + "virtualDatacenters/%s/reservedVMClasses",
+		endpointParams: []string{o.TmVdc.ID},
+		requiresTm:     true,
+		minimumVersion: "40.0",
+	}
+	return updateInnerEntity(&o.vcdClient.Client, c.withTmOptions(options), config)
+}
+
+// GetAllNamespaces retrieves namespace summaries for the region quota across all pages (API 40.0+).
+// queryParameters can specify page and pageSize.
+func (o *RegionQuota) GetAllNamespaces(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmNamespaceSummary, error) {
+	c := crudConfig{
+		entityLabel:     "virtualDatacenters/namespaces",
+		endpoint:        types.OpenApiPathVcf + "virtualDatacenters/%s/namespaces",
+		endpointParams:  []string{o.TmVdc.ID},
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return getAllInnerEntities[types.TmNamespaceSummary](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// GetAllInfraPolicies retrieves the region quota's infrastructure-policy assignments across all pages (API 40.1+).
+func (o *RegionQuota) GetAllInfraPolicies(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmVdcInfraPolicy, error) {
+	c := crudConfig{
+		entityLabel:     "virtualDatacenters/infraPolicies",
+		endpoint:        types.OpenApiPathVcf + "virtualDatacenters/%s/infraPolicies",
+		endpointParams:  []string{o.TmVdc.ID},
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.1",
+	}
+	return getAllInnerEntities[types.TmVdcInfraPolicy](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// UpdateInfraPolicies replaces the region quota's infrastructure-policy assignments (API 40.1+).
+// Pass an empty Values slice to remove assignments, subject to server validation.
+// The response contains the first page; use GetAllInfraPolicies to retrieve all assignments.
+func (o *RegionQuota) UpdateInfraPolicies(config *types.TmVdcInfraPolicies, options ...TmOperationOptions) (*types.TmVdcInfraPolicies, error) {
+	c := crudConfig{
+		entityLabel:    "virtualDatacenters/infraPolicies",
+		endpoint:       types.OpenApiPathVcf + "virtualDatacenters/%s/infraPolicies",
+		endpointParams: []string{o.TmVdc.ID},
+		requiresTm:     true,
+		minimumVersion: "40.1",
+	}
+	return updateInnerEntity(&o.vcdClient.Client, c.withTmOptions(options), config)
 }

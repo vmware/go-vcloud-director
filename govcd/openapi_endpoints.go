@@ -318,6 +318,12 @@ func (client *Client) checkOpenApiEndpointCompatibility(endpoint string) (string
 	if !ok {
 		return "", fmt.Errorf("minimum API version for endpoint '%s' is not defined", endpoint)
 	}
+	if _, err := tmComparableVersion(minimumApiVersion); err == nil {
+		if err := client.vcdFetchSupportedVersions(); err != nil {
+			return "", err
+		}
+		return selectTmApiVersion(client.supportedVersions, minimumApiVersion, client.APIVersion, "")
+	}
 
 	if client.APIVCDMaxVersionIs("< " + minimumApiVersion) {
 		maxSupportedVersion, err := client.MaxSupportedVersion()
@@ -357,6 +363,19 @@ func (client *Client) getOpenApiHighestElevatedVersion(endpoint string) (string,
 	if !elevatedVersionsDefined {
 		util.Logger.Printf("[DEBUG] No elevated API versions are defined for endpoint '%s'. Using minimum '%s'",
 			endpoint, minimumApiVersion)
+		return minimumApiVersion, nil
+	}
+	if chosen, err := tmComparableVersion(minimumApiVersion); err == nil {
+		// TM aliases do not sort in release order as ordinary semantic versions.
+		for _, raw := range elevatedVersionSlice {
+			candidate, err := tmComparableVersion(raw)
+			if err != nil || candidate.Prerelease() != "" || !candidate.GreaterThan(chosen) {
+				continue
+			}
+			if _, err := selectTmApiVersion(client.supportedVersions, endpointMinApiVersions[endpoint], "", raw); err == nil {
+				chosen, minimumApiVersion = candidate, raw
+			}
+		}
 		return minimumApiVersion, nil
 	}
 

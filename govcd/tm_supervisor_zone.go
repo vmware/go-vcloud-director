@@ -83,3 +83,16 @@ func (s *Supervisor) GetSupervisorZoneByName(name string) (*SupervisorZone, erro
 
 	return singleEntity, nil
 }
+
+// GetAllVmClassReservations retrieves this supervisor zone's VM-class reservations across all pages (API 40.0+).
+func (o *SupervisorZone) GetAllVmClassReservations(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmVmClassReservation, error) {
+	c := crudConfig{
+		entityLabel:     "supervisorZones/vmClassReservations",
+		endpoint:        types.OpenApiPathVcf + "supervisorZones/%s/vmClassReservations",
+		endpointParams:  []string{o.SupervisorZone.ID},
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return getAllInnerEntities[types.TmVmClassReservation](&o.vcdClient.Client, c.withTmOptions(options))
+}

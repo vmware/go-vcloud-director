@@ -4,8 +4,11 @@
 
 package types
 
+import "encoding/json"
+
 // RegionStoragePolicy defines a Region storage policy
 type RegionStoragePolicy struct {
+	// Read-only identifier. RegionStoragePolicy.Update uses the receiver's ID in the URL.
 	ID string `json:"id,omitempty"`
 	// Name for the policy
 	Name string `json:"name"`
@@ -21,6 +24,8 @@ type RegionStoragePolicy struct {
 	StorageCapacityMiB int64 `json:"storageCapacityMiB,omitempty"`
 	// Consumed storage in mebibytes for this policy
 	StorageConsumedMiB int64 `json:"storageConsumedMiB,omitempty"`
+	// Whether the policy is restricted to system-owned namespaces (API 9.1.2+). Nil omits the property.
+	IsRestricted *bool `json:"isRestricted,omitempty"`
 }
 
 // StorageClass defines a Storage Class
@@ -32,20 +37,26 @@ type StorageClass struct {
 	KubernetesCompliantName string `json:"kubernetesCompliantName,omitempty"`
 	// The Region that this storage class belongs to
 	Region *OpenApiReference `json:"region"`
-	// The total storage capacity in mebibytes. Nil represents no upper bound for unlimited allocation.
+	// The total storage capacity in mebibytes (read-only)
 	StorageCapacityMiB *int64 `json:"storageCapacityMiB"`
-	// Whether the tenant storage class uses unlimited allocation (FlexNamespaces, read-only)
-	IsUnlimitedAllocation bool `json:"isUnlimitedAllocation,omitempty"`
 	// For tenants, this represents the total storage given to all namespaces consuming from this storage class in mebibytes.
 	// For providers, this represents the total storage given to tenants from this storage class in mebibytes.
 	StorageConsumedMiB int64 `json:"storageConsumedMiB,omitempty"`
 	// The zones available to the storage class
 	Zones OpenApiReferences `json:"zones,omitempty"`
+	// Whether the storage class is restricted for system use and cannot be assigned to tenant
+	// namespaces (read-only, only returned by servers that support restricted storage classes)
+	IsRestricted bool `json:"isRestricted,omitempty"`
 }
 
 // VirtualDatacenterStoragePolicies represents a slice of RegionStoragePolicy
 type VirtualDatacenterStoragePolicies struct {
-	Values []VirtualDatacenterStoragePolicy `json:"values"`
+	// Pagination metadata describes the returned page.
+	ResultTotal int                              `json:"resultTotal,omitempty"`
+	PageCount   int                              `json:"pageCount,omitempty"`
+	Page        int                              `json:"page,omitempty"`
+	PageSize    int                              `json:"pageSize,omitempty"`
+	Values      []VirtualDatacenterStoragePolicy `json:"values"`
 }
 
 // VirtualDatacenterStoragePolicy describes a Virtual Datacenter Storage Policy
@@ -56,11 +67,9 @@ type VirtualDatacenterStoragePolicy struct {
 	RegionStoragePolicy OpenApiReference `json:"regionStoragePolicy"`
 	// The name of the VDC Storage Policy. It must follow RFC 1123 Label Names to conform with Kubernetes standards
 	Name string `json:"name,omitempty"`
-	// Maximum allowed storage allocation in mebibytes. Nil is serialized as null (no upper bound)
-	// for unlimited allocation; a non-nil pointer is required for limited allocation. Minimum value: 0.
+	// Maximum allowed storage allocation in mebibytes. It is required and must be 0 or higher, so a nil
+	// pointer (serialized as null) is rejected by the server on write. Read-only for full allocation region quotas.
 	StorageLimitMiB *int64 `json:"storageLimitMiB"`
-	// Whether the policy uses unlimited allocation (FlexNamespaces, read-only)
-	IsUnlimitedAllocation bool `json:"isUnlimitedAllocation,omitempty"`
 	// Amount of storage used in mebibytes. Minimum Value: 0
 	StorageUsedMiB int64 `json:"storageUsedMiB,omitempty"`
 	// A reference to the VDC that the policy applies to
@@ -142,6 +151,16 @@ type ContentLibraryProjectPermission struct {
 	ProjectAssignment OpenApiReference `json:"projectAssignment,omitempty"`
 }
 
+// ContentLibraryProjectPermissions is a page of project permissions, or the payload for updating them.
+// It contains explicit project assignments; the organization-wide grant is ContentLibrary.AllProjectsPermission.
+type ContentLibraryProjectPermissions struct {
+	Values      []ContentLibraryProjectPermission `json:"values"`
+	ResultTotal int                               `json:"resultTotal,omitempty"`
+	PageCount   int                               `json:"pageCount,omitempty"`
+	Page        int                               `json:"page,omitempty"`
+	PageSize    int                               `json:"pageSize,omitempty"`
+}
+
 // ContentLibraryItem is an object representing a VCF Content Library Item
 type ContentLibraryItem struct {
 	// The reference to the content library that this item belongs to
@@ -178,6 +197,20 @@ type ContentLibraryItem struct {
 	SizeBytes int64 `json:"sizeBytes,omitempty"`
 	// Whether this item reserves storage before its content is uploaded
 	Placeholder *bool `json:"placeholder,omitempty"`
+}
+
+// ContentLibraryItemPromotion identifies the provider library receiving a promoted project item (API 40.1+).
+type ContentLibraryItemPromotion struct {
+	TargetContentLibrary *OpenApiReference `json:"targetContentLibrary"`
+}
+
+// ContentLibraryDownloadRequest describes an OVA bundle of images and client-supplied metadata (API 40.1+).
+type ContentLibraryDownloadRequest struct {
+	BundleName string `json:"bundleName"`
+	// MetadataFileContent is base64-encoded file content, limited to 10 MiB before encoding.
+	MetadataFileContent string   `json:"metadataFileContent"`
+	ImageIdentifiers    []string `json:"imageIdentifiers"`
+	ProjectID           string   `json:"projectId"`
 }
 
 // ContentLibraryItemFile specifies a Content Library Item file for uploads
@@ -276,9 +309,6 @@ type Region struct {
 	NsxManager *OpenApiReference `json:"nsxManager"`
 	// Load balancer type of the supervisors in this Region (read-only)
 	LoadBalancerType string `json:"loadBalancerType,omitempty"`
-	// Whether new Region Quotas must use unlimited allocation (FlexNamespaces).
-	// Nil omits the setting; a pointer to false explicitly disables it.
-	SupportsUnlimitedAllocation *bool `json:"supportsUnlimitedAllocation,omitempty"`
 	// Total CPU resources in MHz available to this Region.
 	CPUCapacityMHz int `json:"cpuCapacityMHz,omitempty"`
 	// Total CPU reservation resources in MHz available to this Region.
@@ -315,6 +345,40 @@ type Supervisor struct {
 	NsxManager *OpenApiReference `json:"nsxManager,omitempty"`
 	// Whether the associated vCenter is dedicated to classic tenants (API 40.1+, read-only)
 	IsDedicatedForClassicTenants bool `json:"isDedicatedForClassicTenants,omitempty"`
+}
+
+// TmCompatibleZoneGroup contains the names of zones compatible for namespace placement (API 40.1+).
+type TmCompatibleZoneGroup struct {
+	Zones []string `json:"zones"`
+}
+
+// TmRegionCapability describes a read-only capability of a region (API 40.1+).
+type TmRegionCapability struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// Value can be a boolean, string or list, as indicated by Type.
+	Value    json.RawMessage `json:"value"`
+	Type     string          `json:"type"`
+	Category string          `json:"category"`
+	// Settings preserves the capability's arbitrary vCenter settings without numeric precision loss.
+	Settings json.RawMessage `json:"settings,omitempty"`
+}
+
+// TmComputeCluster describes a compute cluster in the Tenant Manager inventory (API 40.0+).
+type TmComputeCluster struct {
+	ID            string            `json:"id"`
+	Address       string            `json:"address,omitempty"`
+	VirtualCenter *OpenApiReference `json:"virtualCenter,omitempty"`
+	Moref         string            `json:"moref,omitempty"`
+	Supervisor    *OpenApiReference `json:"supervisor,omitempty"`
+	Zone          *OpenApiReference `json:"zone,omitempty"`
+}
+
+// TmVmClassReservation reports VM-class capacity in a supervisor zone (API 40.0+).
+type TmVmClassReservation struct {
+	VirtualMachineClassName string `json:"virtualMachineClassName"`
+	MaximumCount            int64  `json:"maximumCount"`
+	AvailableCount          int64  `json:"availableCount"`
 }
 
 // SupervisorZone represents a single zone within Supervisor
@@ -372,19 +436,14 @@ type TmVdcZoneResourceAllocation struct {
 
 // TmVdcResourceAllocation defines compute resources of single VDC
 type TmVdcResourceAllocation struct {
-	// CPULimitMHz defines maximum CPU consumption in MHz. Nil means no upper bound in unlimited allocation mode.
+	// CPULimitMHz defines maximum CPU consumption in MHz.
 	CPULimitMHz *int64 `json:"cpuLimitMHz"`
-	// CPUReservationMHz defines reserved CPU capacity in MHz. Nil means no upper bound in unlimited allocation mode.
+	// CPUReservationMHz defines reserved CPU capacity in MHz.
 	CPUReservationMHz *int64 `json:"cpuReservationMHz"`
-	// MemoryLimitMiB defines maximum memory consumption in MiB. Nil means no upper bound in unlimited allocation mode.
+	// MemoryLimitMiB defines maximum memory consumption in MiB.
 	MemoryLimitMiB *int64 `json:"memoryLimitMiB"`
-	// MemoryReservationMiB defines reserved memory in MiB. Nil means no upper bound in unlimited allocation mode.
+	// MemoryReservationMiB defines reserved memory in MiB.
 	MemoryReservationMiB *int64 `json:"memoryReservationMiB"`
-	// Whether this zone allocation uses unlimited allocation (FlexNamespaces, read-only).
-	// When false, supply non-nil resource limits and reservations.
-	IsUnlimitedAllocation bool `json:"isUnlimitedAllocation,omitempty"`
-	// vCPU speed in MHz for unlimited allocation (FlexNamespaces)
-	VcpuSpeedMHz *int64 `json:"vcpuSpeedMHz,omitempty"`
 }
 
 // Zone defines a Region Zone structure
@@ -424,10 +483,8 @@ type Zone struct {
 	MaxNamespaceMemoryReservationMiB int64 `json:"maxNamespaceMemoryReservationMiB,omitempty"`
 	// Maximum CPU reservation available to a new namespace in this zone (API 40.1+, read-only)
 	MaxNamespaceCPUReservationMHz int64 `json:"maxNamespaceCpuReservationMHz,omitempty"`
-	// Whether the zone uses unlimited allocation in the tenant context (FlexNamespaces, read-only)
-	IsUnlimitedAllocation bool `json:"isUnlimitedAllocation,omitempty"`
-	// Configured vCPU speed in MHz, or nil in provider context (FlexNamespaces, read-only)
-	VcpuSpeedMHz *int64 `json:"vcpuSpeedMHz,omitempty"`
+	// Network stack type of the zone: FULL_STACK_VPC or VLAN_BACKED_VPC (API 9.1.1+, read-only)
+	NetworkStack string `json:"networkStack,omitempty"`
 }
 
 // RegionVirtualMachineClass represents virtual machine sizing configurations information including cpu, memory
@@ -444,7 +501,127 @@ type RegionVirtualMachineClass struct {
 
 // RegionVirtualMachineClasses represents a slice of RegionVirtualMachineClass
 type RegionVirtualMachineClasses struct {
-	Values OpenApiReferences `json:"values"`
+	// Pagination metadata describes the returned page.
+	ResultTotal int               `json:"resultTotal,omitempty"`
+	PageCount   int               `json:"pageCount,omitempty"`
+	Page        int               `json:"page,omitempty"`
+	PageSize    int               `json:"pageSize,omitempty"`
+	Values      OpenApiReferences `json:"values"`
+}
+
+// TmReservedVmClass reports a reserved VM class and its capacity within a region and zone (API 40.0+).
+type TmReservedVmClass struct {
+	Region              *OpenApiReference `json:"region,omitempty"`
+	Zone                *OpenApiReference `json:"zone,omitempty"`
+	VirtualMachineClass *OpenApiReference `json:"virtualMachineClass,omitempty"`
+	TotalCount          int64             `json:"totalCount"`
+	AvailableCount      int64             `json:"availableCount"`
+	// GroupNumbers identifies the reservation groups (API 40.1+).
+	GroupNumbers []int64 `json:"groupNumbers,omitempty"`
+}
+
+// TmVdcReservedVmClass describes a VM-class reservation assigned to a region quota (API 40.0+).
+type TmVdcReservedVmClass struct {
+	// Region and AvailableCount are read-only.
+	Region *OpenApiReference `json:"region,omitempty"`
+	Zone   *OpenApiReference `json:"zone,omitempty"`
+	Name   string            `json:"name,omitempty"`
+	// TotalCount preserves an explicit zero separately from an omitted count.
+	TotalCount     *int64 `json:"totalCount,omitempty"`
+	AvailableCount int64  `json:"availableCount,omitempty"`
+}
+
+// TmVdcReservedVmClasses contains a page of region-quota VM-class reservations.
+// For updates, set Values to the desired reservations; pagination fields are read-only.
+type TmVdcReservedVmClasses struct {
+	ResultTotal int                    `json:"resultTotal,omitempty"`
+	PageCount   int                    `json:"pageCount,omitempty"`
+	Page        int                    `json:"page,omitempty"`
+	PageSize    int                    `json:"pageSize,omitempty"`
+	Values      []TmVdcReservedVmClass `json:"values"`
+}
+
+// TmVdcInfraPolicy describes an infrastructure policy assigned to a region quota (API 40.1+).
+type TmVdcInfraPolicy struct {
+	InfraPolicy *OpenApiReference `json:"infraPolicy"`
+	// Status is read-only: PENDING_ENFORCEMENT, READY or PENDING_DELETION.
+	Status string `json:"status,omitempty"`
+}
+
+// TmVdcInfraPolicies contains a page of region-quota infrastructure-policy assignments.
+// For updates, set Values to the desired assignments; pagination fields are read-only.
+type TmVdcInfraPolicies struct {
+	ResultTotal int                `json:"resultTotal,omitempty"`
+	PageCount   int                `json:"pageCount,omitempty"`
+	Page        int                `json:"page,omitempty"`
+	PageSize    int                `json:"pageSize,omitempty"`
+	Values      []TmVdcInfraPolicy `json:"values"`
+}
+
+// TmNamespaceSummary is the read-only namespace view returned for a region quota (API 40.0+).
+type TmNamespaceSummary struct {
+	ID                      string                                      `json:"id"`
+	Name                    string                                      `json:"name"`
+	Description             string                                      `json:"description,omitempty"`
+	ProjectAssignment       *OpenApiReference                           `json:"projectAssignment"`
+	Organization            *OpenApiReference                           `json:"organization,omitempty"`
+	Region                  *OpenApiReference                           `json:"region"`
+	VirtualPrivateCloudName string                                      `json:"virtualPrivateCloudName,omitempty"`
+	WorkloadNetwork         *OpenApiReference                           `json:"workloadNetwork,omitempty"`
+	ZonalResourceAllocation []TmNamespaceSummaryZonalResourceAllocation `json:"zonalResourceAllocation"`
+	ProxyURL                string                                      `json:"proxyURL,omitempty"`
+	Status                  string                                      `json:"status,omitempty"`
+	VcReference             *TmNamespaceVcReference                     `json:"vcReference,omitempty"`
+	// SegName and LastModifiedTime are available in API 40.1+. The time may be null.
+	SegName          string  `json:"segName,omitempty"`
+	LastModifiedTime *string `json:"lastModifiedTime,omitempty"`
+	// Supervisor optionally pins placement to a supervisor in the organization's region quota.
+	// Immutable after creation. Available in API 9.1.2+.
+	Supervisor *OpenApiReference `json:"supervisor,omitempty"`
+	// ManagedBy identifies the component managing a system-reserved namespace.
+	// Immutable after creation. Available in API 9.1.2+.
+	ManagedBy string `json:"managedBy,omitempty"`
+}
+
+// TmNamespaceVcReference identifies the supervisor and vCenter backing a namespace.
+type TmNamespaceVcReference struct {
+	SupervisorUuid string `json:"supervisorUuid,omitempty"`
+	VcUuid         string `json:"vcUuid,omitempty"`
+}
+
+// TmNamespaceSummaryZonalResourceAllocation describes a namespace's allocation in one zone.
+type TmNamespaceSummaryZonalResourceAllocation struct {
+	Zone               *OpenApiReference                     `json:"zone"`
+	ResourceAllocation *TmNamespaceSummaryResourceAllocation `json:"resourceAllocation"`
+	// ErrorMessage and RealizedStatus are available in API 40.1+.
+	ErrorMessage   string `json:"errorMessage,omitempty"`
+	RealizedStatus string `json:"realizedStatus,omitempty"`
+}
+
+// TmNamespaceSummaryResourceAllocation reports requested and realized compute resources.
+// Nullable requested limits/reservations are distinct from explicit zero values.
+type TmNamespaceSummaryResourceAllocation struct {
+	MemoryLimitMiB       *int64                          `json:"memoryLimitMiB"`
+	MemoryReservationMiB *int64                          `json:"memoryReservationMiB"`
+	CpuLimitMHz          *int64                          `json:"cpuLimitMHz"`
+	CpuReservationMHz    *int64                          `json:"cpuReservationMHz"`
+	VmClassReservations  []TmNamespaceVmClassReservation `json:"vmClassReservations,omitempty"`
+	// Realized allocation, usage and removal status are available in API 40.1+.
+	RealizedMemoryLimitMiB       *int64 `json:"realizedMemoryLimitMiB,omitempty"`
+	RealizedMemoryReservationMiB *int64 `json:"realizedMemoryReservationMiB,omitempty"`
+	RealizedCpuLimitMHz          *int64 `json:"realizedCpuLimitMHz,omitempty"`
+	RealizedCpuReservationMHz    *int64 `json:"realizedCpuReservationMHz,omitempty"`
+	MemoryUsedMiB                *int64 `json:"memoryUsedMiB,omitempty"`
+	CpuUsedMHz                   *int64 `json:"cpuUsedMHz,omitempty"`
+	MarkedForRemoval             bool   `json:"markedForRemoval,omitempty"`
+}
+
+// TmNamespaceVmClassReservation reports a namespace's reserved instances of a VM class.
+type TmNamespaceVmClassReservation struct {
+	VirtualMachineClassName string `json:"virtualMachineClassName"`
+	Count                   int64  `json:"count"`
+	// UsedCount is available in API 40.1+.
+	UsedCount *int64 `json:"usedCount,omitempty"`
 }
 
 // TmIpSpace provides configuration of mainly the external IP Prefixes that specifies
@@ -452,6 +629,11 @@ type RegionVirtualMachineClasses struct {
 type TmIpSpace struct {
 	// The identifier of the IP Block in URN format
 	ID string `json:"id,omitempty"`
+	// Type of the IP Block: PUBLIC or PRIVATE. Only returned by servers that support three personas networking.
+	Type string `json:"type,omitempty"`
+	// The organization a PRIVATE IP Block belongs to. Required for PRIVATE IP Blocks, only supported
+	// by servers that support three personas networking.
+	OrgRef *OpenApiReference `json:"orgRef,omitempty"`
 	// Name of the IP Space. Name is unique across all IP Blocks of a given type and organization
 	Name string `json:"name"`
 	// Id for the matching IP Block in NSX. This is not a Provider Management URN. This is only set for IP Blocks backed
@@ -498,6 +680,23 @@ type TmIpSpace struct {
 	SubnetExclusive bool `json:"subnetExclusive,omitempty"`
 	// Distributed VLAN connection exclusively associated with this IP Space (API 40.1+, read-only)
 	DedicatedDistributedVlanConnectionRef *OpenApiReference `json:"dedicatedDistributedVlanConnectionRef,omitempty"`
+}
+
+// TmIpSpaceUtilizationSummary contains total utilization and the breakdown by block and range.
+type TmIpSpaceUtilizationSummary struct {
+	TotalUtilization    *TmIpSpaceUtilizationCounts  `json:"totalUtilization,omitempty"`
+	IpBlockUtilizations []TmIpSpaceUtilizationCounts `json:"ipBlockUtilizations,omitempty"`
+	// Per-range utilization is available from API 40.1.
+	IpRangeUtilizations []TmIpSpaceUtilizationCounts `json:"ipRangeUtilizations,omitempty"`
+}
+
+// TmIpSpaceUtilizationCounts uses strings for counts, as specified by the API, to preserve large IP address counts.
+type TmIpSpaceUtilizationCounts struct {
+	Name           string  `json:"name,omitempty"`
+	TotalCount     string  `json:"totalCount,omitempty"`
+	UsedCount      string  `json:"usedCount,omitempty"`
+	AvailableCount string  `json:"availableCount,omitempty"`
+	UsedPercentage float64 `json:"usedPercentage,omitempty"`
 }
 
 // IP Space quota defines the maximum number of IPv4 IPs and CIDRs that can be allocated and used by
@@ -559,6 +758,9 @@ type TmProviderGateway struct {
 	// OrgRef contains a reference to Org
 	OrgRef     *OpenApiReference `json:"orgRef,omitempty"`
 	BackingRef OpenApiReference  `json:"backingRef,omitempty"`
+	// The Sub-Provider Organization this Centralized Connection belongs to. Unset when the connection is
+	// available to more than one organization. Only supported by servers that support three personas networking.
+	SubProviderOrgRef *OpenApiReference `json:"subProviderOrgRef,omitempty"`
 	// The backing type of the Centralized Connection. Possible values are:
 	// * NSX_TIER0 - NSX-T Tier-0 router
 	// * NSX_VRF_TIER0 - NSX-T Tier-0 VRF router
@@ -607,6 +809,12 @@ type TmIpSpaceAssociation struct {
 	Name        string `json:"name,omitempty"`
 	// IPSpaceRef must contain an IP Space reference that will be associated with Provider Gateway
 	IPSpaceRef *OpenApiReference `json:"ipSpaceRef"`
+	// IPSpaceType is the type of the IP Space in this association: PUBLIC or PRIVATE (read-only, only
+	// returned by servers that support three personas networking)
+	IPSpaceType string `json:"ipSpaceType,omitempty"`
+	// DistributedVxlanConnectionRef is the Distributed VXLAN Connection in this association (API 9.1.1+).
+	// It is not updatable.
+	DistributedVxlanConnectionRef *OpenApiReference `json:"distributedVxlanConnectionRef,omitempty"`
 	// ProviderGatewayRef must contain a Provider Gateway reference that will be association with an
 	// IP Space
 	ProviderGatewayRef *OpenApiReference `json:"providerGatewayRef"`
@@ -774,6 +982,8 @@ type TmRegionalNetworkingSetting struct {
 	ProviderGatewayRef *OpenApiReference `json:"providerGatewayRef,omitempty"`
 	// Distributed VLAN connection used for egress (API 40.1+), as an alternative to a Provider Gateway
 	DistributedVlanConnectionRef *OpenApiReference `json:"distributedVlanConnectionRef,omitempty"`
+	// Distributed VXLAN connection used for egress (API 9.1.1+), as an alternative to a Provider Gateway
+	DistributedVxlanConnectionRef *OpenApiReference `json:"distributedVxlanConnectionRef,omitempty"`
 
 	// The Region this Regional Networking Setting belongs to
 	RegionRef OpenApiReference `json:"regionRef"`
@@ -821,6 +1031,99 @@ type TmRegionalNetworkingVpcConnectivityProfile struct {
 	VirtualNetworkApplianceClusterRef *OpenApiReference `json:"virtualNetworkApplianceClusterRef,omitempty"`
 	// ExternalCidrBlocks is a comma separated list of the external IP CIDRs which are available for use by the VPC.
 	ExternalCidrBlocks string `json:"externalCidrBlocks,omitempty"`
+}
+
+// TmRegionalProviderGatewayConnection represents provider gateway connection.
+// Optional boolean and numeric pointers distinguish omission from explicit false or zero.
+type TmRegionalProviderGatewayConnection struct {
+	// Realization status of this networking entity (read-only).
+	Status string `json:"status,omitempty"`
+	// The identifier of the Gateway Connection in the NSX Manager.
+	ID string `json:"id,omitempty"`
+	// Name of the Gateway Connection.
+	Name string `json:"name,omitempty"`
+	// The Centralized Connection for this Gateway Connection.
+	ProviderGatewayRef *OpenApiReference `json:"providerGatewayRef"`
+	// Whether this Centralized Connection Connection is assigned to the default Transit Gateway.
+	IsDefault *bool `json:"isDefault,omitempty"`
+	// Whether the Centralized Connection Connection allows the organization to advertise their own private IP
+	// Blocks. If set to true, the Centralized Connection Connection is considered effectively dedicated to the
+	// organization.
+	AllowAdvertisingPrivateIpBlocks *bool `json:"allowAdvertisingPrivateIpBlocks,omitempty"`
+}
+
+// TmRegionalSharedSubnet represents regional shared subnet.
+// Optional boolean and numeric pointers distinguish omission from explicit false or zero.
+type TmRegionalSharedSubnet struct {
+	// Realization status of this networking entity (read-only).
+	Status string `json:"status,omitempty"`
+	// The identifier of the Shared Subnet in the Network Manager.
+	ID string `json:"id,omitempty"`
+	// The urn for the Shared Subnet in Provider Management. Can be null if the Subnet was shared directly in
+	// Network Manager.
+	SubnetRef *OpenApiReference `json:"subnetRef,omitempty"`
+	// Name of the Shared Subnet.
+	Name string `json:"name,omitempty"`
+	// VLAN ID for the Shared Subnet.
+	VlanId *int `json:"vlanId,omitempty"`
+}
+
+// TmRegionalDistributedVlanConnection represents regional distributed vlan connection.
+// Optional boolean and numeric pointers distinguish omission from explicit false or zero.
+type TmRegionalDistributedVlanConnection struct {
+	// Realization status of this networking entity (read-only).
+	Status string `json:"status,omitempty"`
+	// The identifier of the Distributed VLAN Connection in the NSX Manager.
+	ID string `json:"id,omitempty"`
+	// The Distributed VLAN Connection assigned to the Regional Networking Setting.
+	DistributedVlanConnectionRef *OpenApiReference `json:"distributedVlanConnectionRef,omitempty"`
+	// Whether this Distributed VLAN Connection is assigned to the default distributed Transit Gateway.
+	IsDefault *bool `json:"isDefault,omitempty"`
+	// The VLAN ID for the external traffic.
+	VlanId *int `json:"vlanId,omitempty"`
+	// The gateway CIDR.
+	GatewayCidr string `json:"gatewayCidr,omitempty"`
+	// Reference to the IP Block used for the external connection.
+	IpSpaceRef *OpenApiReference `json:"ipSpaceRef,omitempty"`
+}
+
+// TmRegionalDistributedVxlanConnection represents regional distributed vxlan connection.
+// Optional boolean and numeric pointers distinguish omission from explicit false or zero.
+type TmRegionalDistributedVxlanConnection struct {
+	// Realization status of this networking entity (read-only).
+	Status string `json:"status,omitempty"`
+	// The identifier of the Distributed VXLAN Connection in the NSX Manager.
+	ID string `json:"id,omitempty"`
+	// The Distributed VXLAN Connection assigned to the Regional Networking Setting.
+	DistributedVxlanConnectionRef *OpenApiReference `json:"distributedVxlanConnectionRef,omitempty"`
+	// Whether this Distributed VXLAN Connection is assigned to the default distributed Transit Gateway.
+	IsDefault *bool `json:"isDefault,omitempty"`
+	// Layer 3 VNI for EVPN.
+	L3Vni *int `json:"l3Vni,omitempty"`
+	// Route distinguisher for EVPN.
+	RouteDistinguisher string `json:"routeDistinguisher,omitempty"`
+}
+
+// TmRegionalAviSetting represents avi setting.
+// Optional boolean and numeric pointers distinguish omission from explicit false or zero.
+type TmRegionalAviSetting struct {
+	// Realization status of this networking entity (read-only).
+	Status string `json:"status,omitempty"`
+	// Whether Avi Load Balancer is configured in the Regional Networking Setting or not.
+	Active bool `json:"active"`
+	// The Avi Load Balancer Service Engine Group's management mode. PROVIDER_MANAGED - Service Engines Group is
+	// provider managed. TENANT_MANAGED - Service Engines Group is organization managed.
+	ServiceEngineGroupMode string `json:"serviceEngineGroupMode,omitempty"`
+	// Maximum number of Service Engines that the organization can provision. Applicable in TENANT_MANAGED mode
+	// only.
+	ServiceEngineQuota *int `json:"serviceEngineQuota,omitempty"`
+	// Maximum number of applications that the organization can provision. Applicable in PROVIDER_MANAGED mode
+	// only.
+	ApplicationLimit *int `json:"applicationLimit,omitempty"`
+	// The initial set of Avi Load Balancer Service Engine Groups assigned to the organization. It is required
+	// when Avi setting is set to active in PROVIDER_MANAGED mode. After initial configuration, the assignments
+	// can be managed by Service Engine Group assignment API. This property will be set to null on retrieval.
+	ServiceEngineGroupRefs []OpenApiReference `json:"serviceEngineGroupRefs,omitempty"`
 }
 
 // TmLdapSettings is the type that defines LDAP settings in Tenant Manager

@@ -6,9 +6,7 @@
 
 package govcd
 
-import (
-	"testing"
-)
+import "testing"
 
 func Test_urlFromEndpoint(t *testing.T) {
 	type args struct {

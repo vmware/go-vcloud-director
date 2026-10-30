@@ -15,6 +15,43 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
+// Test_selectTmApiVersion exercises version policy directly, without HTTP clients or fixtures.
+func Test_selectTmApiVersion(t *testing.T) {
+	tests := []struct {
+		name      string
+		versions  []string
+		minimum   string
+		preferred string
+		explicit  string
+		want      string
+		wantErr   bool
+	}{
+		{name: "legacy minimum", versions: []string{"39.0", "40.0", "40.1"}, minimum: "40.0", preferred: "37.2", want: "40.0"},
+		{name: "product versions only", versions: []string{"9.0.0", "9.1.2"}, minimum: "40.0", want: "9.0.0"},
+		{name: "product default newer than alias", versions: []string{"40.1", "9.1.2"}, minimum: "40.1", preferred: "9.1.2", want: "9.1.2"},
+		{name: "alias default older than patch minimum", versions: []string{"40.1", "9.1.1", "9.1.2"}, minimum: "9.1.2", preferred: "40.1", want: "9.1.2"},
+		{name: "alias does not satisfy patch minimum", versions: []string{"40.1"}, minimum: "9.1.1", wantErr: true},
+		{name: "explicit older eligible version", versions: []string{"40.0", "9.1.2"}, minimum: "40.0", preferred: "9.1.2", explicit: "40.0", want: "40.0"},
+		{name: "explicit version must be advertised", versions: []string{"40.0", "9.1.2"}, minimum: "40.0", explicit: "9.0.0", wantErr: true},
+		{name: "explicit version below minimum", versions: []string{"40.0", "9.1.2"}, minimum: "40.1", explicit: "40.0", wantErr: true},
+		{name: "earliest stable fallback", versions: []string{"9.1.2", "41.0", "9.1.1", "invalid"}, minimum: "40.1", want: "9.1.1"},
+		{name: "preview requires opt in", versions: []string{"41.0", "41.0.0-alpha"}, minimum: "40.1", wantErr: true},
+		{name: "explicit preview", versions: []string{"41.0"}, minimum: "40.1", explicit: "41.0", want: "41.0"},
+		{name: "preview client default", versions: []string{"41.0"}, minimum: "40.1", preferred: "41.0", want: "41.0"},
+		{name: "preview minimum is not opt in", versions: []string{"41.0"}, minimum: "41.0", wantErr: true},
+		{name: "VCD versions are not TM versions", versions: []string{"31.0", "39.0", "39.0.0"}, minimum: "40.0", wantErr: true},
+		{name: "invalid minimum", versions: []string{"40.0"}, minimum: "invalid", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := selectTmApiVersion(renderSupportedVersions(tt.versions), tt.minimum, tt.preferred, tt.explicit)
+			if (err != nil) != tt.wantErr || got != tt.want {
+				t.Fatalf("got version %q, error %v; want version %q, error %t", got, err, tt.want, tt.wantErr)
+			}
+		})
+	}
+}
+
 // TestClient_getOpenApiHighestElevatedVersion aims to test out capabilities of getOpenApiHighestElevatedVersion
 // It consists of:
 // * A few manually defined tests for known endpoints
@@ -101,7 +138,7 @@ func TestClient_getOpenApiHighestElevatedVersion(t *testing.T) {
 			name: fmt.Sprintf("%s_minimum_version_%s", minimumRequiredVersion, endpointName),
 			// Put a list of versions which always satisfied minimum requirement
 			supportedVersions: renderSupportedVersions([]string{
-				"27.0", "28.0", "29.0", "30.0", "31.0", "32.0", "33.0", "34.0", "35.0", "35.1", "35.2", "36.0", "37.0", "38.0", "39.0", "40.0", "41.0",
+				"27.0", "28.0", "29.0", "30.0", "31.0", "32.0", "33.0", "34.0", "35.0", "35.1", "35.2", "36.0", "37.0", "38.0", "39.0", "40.0", "40.1", "41.0",
 			}),
 			endpoint:    endpointName,
 			wantVersion: wantVersion,

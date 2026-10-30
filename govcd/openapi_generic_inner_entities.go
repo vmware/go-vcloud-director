@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // crudConfig contains configuration that must be supplied when invoking generic functions that are defined
@@ -34,6 +36,14 @@ type crudConfig struct {
 	// additionalHeader can be used to pass additional headers for API calls. One of the common purposes is to pass
 	// tenant context
 	additionalHeader map[string]string
+	// expectedStatus optionally restricts successful responses to one HTTP status.
+	// Async helpers always require 202; waiting helpers accept any success status and wait on 202.
+	expectedStatus int
+
+	// minimumVersion overrides the endpoint-wide minimum for a TM operation.
+	minimumVersion string
+	tmOptions      []TmOperationOptions
+	tenantContext  *TenantContext
 
 	// requiresTm is a flag to signify if this resource works only in TM
 	requiresTm bool
@@ -50,6 +60,10 @@ func (c crudConfig) validate(client *Client) error {
 
 	if c.endpoint == "" {
 		panic("'endpoint' must always be specified when initializing crudConfig")
+	}
+
+	if client == nil {
+		return fmt.Errorf("OpenAPI client is nil")
 	}
 
 	// softer validations that consumers of this SDK can manipulate
@@ -73,231 +87,231 @@ func (c crudConfig) validate(client *Client) error {
 	return nil
 }
 
-// createInnerEntity implements a common pattern for creating an entity throughout codebase
-// Parameters:
-// * `client` is a *Client
-// * `c` holds settings for performing API call
-// * `innerConfig` is the new entity type
-func createInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I, error) {
-	if err := c.validate(client); err != nil {
-		return nil, err
-	}
-
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityLabel, err)
-	}
-
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
-	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", c.entityLabel, err)
-	}
-
-	createdInnerEntityConfig := new(I)
-	err = client.OpenApiPostItem(apiVersion, urlRef, c.queryParameters, innerConfig, createdInnerEntityConfig, c.additionalHeader)
-	if err != nil {
-		return nil, fmt.Errorf("error creating entity of type '%s': %s", c.entityLabel, err)
-	}
-
-	return createdInnerEntityConfig, nil
+// withTmOptions supplies per-call policy to the same CRUD implementation used by VCD.
+func (c crudConfig) withTmOptions(options []TmOperationOptions) crudConfig {
+	c.tmOptions = options
+	return c
 }
 
-// createInnerEntityAsync implements a common pattern for creating an entity throughout codebase
-// Parameters:
-// * `client` is a *Client
-// * `c` holds settings for performing API call
-// * `innerConfig` is the new entity type
-func createInnerEntityAsync[I any](client *Client, c crudConfig, innerConfig *I) (*Task, error) {
-	if err := c.validate(client); err != nil {
-		return nil, err
+// retainTmOptions copies per-call policy so resource methods can reuse it without
+// retaining a caller-owned slice or tenant context.
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func retainTmOptions(options []TmOperationOptions) []TmOperationOptions {
+	result := append([]TmOperationOptions(nil), options...)
+	for i := range result {
+		if result[i].TenantContext != nil {
+			context := *result[i].TenantContext
+			result[i].TenantContext = &context
+		}
 	}
-
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error getting API version for creating entity '%s': %s", c.entityLabel, err)
-	}
-
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
-	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s' creation: %s", c.entityLabel, err)
-	}
-
-	task, err := client.OpenApiPostItemAsyncWithHeaders(apiVersion, urlRef, c.queryParameters, innerConfig, c.additionalHeader)
-	if err != nil {
-		return nil, fmt.Errorf("error creating entity of type '%s': %s", c.entityLabel, err)
-	}
-
-	return &task, nil
+	return result
 }
 
-// updateInnerEntity implements a common pattern for updating entity throughout codebase
-// Parameters:
-// * `client` is a *Client
-// * `c` holds settings for performing API call
-// * `innerConfig` is the new entity type
-func updateInnerEntity[I any](client *Client, c crudConfig, innerConfig *I) (*I, error) {
-	// Discarding returned headers to better match return signature for most common cases
-	updatedInnerEntity, _, err := updateInnerEntityWithHeaders(client, c, innerConfig)
-	return updatedInnerEntity, err
+// inheritTmOptions applies explicit overrides to the policy saved on a resource.
+// Invalid option counts are preserved for validation by crudConfig.prepare.
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func inheritTmOptions(saved, options []TmOperationOptions) []TmOperationOptions {
+	if len(options) == 0 {
+		return retainTmOptions(saved)
+	}
+	if len(options) != 1 || len(saved) != 1 {
+		return retainTmOptions(options)
+	}
+	option := options[0]
+	if option.APIVersion == "" {
+		option.APIVersion = saved[0].APIVersion
+	}
+	if option.TenantContext == nil {
+		option.TenantContext = saved[0].TenantContext
+	}
+	return retainTmOptions([]TmOperationOptions{option})
 }
 
-// updateInnerEntityWithHeaders implements a common pattern for updating entity throughout codebase
-// Parameters:
-// * `client` is a *Client
-// * `c` holds settings for performing API call
-// * `innerConfig` is the new entity type
-func updateInnerEntityWithHeaders[I any](client *Client, c crudConfig, innerConfig *I) (*I, http.Header, error) {
+func (c crudConfig) item(id string) crudConfig {
+	c.endpoint = strings.TrimSuffix(c.endpoint, "/") + "/%s"
+	c.endpointParams = append(append([]string(nil), c.endpointParams...), id)
+	return c
+}
+
+// prepare resolves version, URL and context once for all CRUD and action helpers.
+// VCD keeps its endpoint version rules. TM can specify an operation minimum.
+func (c crudConfig) prepare(client *Client) (openApiOperation, error) {
+	if len(c.tmOptions) > 1 {
+		return openApiOperation{}, fmt.Errorf("at most one TmOperationOptions value is allowed")
+	}
+	var option TmOperationOptions
+	if len(c.tmOptions) == 1 {
+		option = c.tmOptions[0]
+	}
 	if err := c.validate(client); err != nil {
+		return openApiOperation{}, err
+	}
+	params := c.endpointParams
+	var version string
+	var err error
+	if c.minimumVersion != "" {
+		if err = client.vcdFetchSupportedVersions(); err != nil {
+			return openApiOperation{}, err
+		}
+		version, err = selectTmApiVersion(client.supportedVersions, c.minimumVersion, client.APIVersion, option.APIVersion)
+		// Existing generic callers may pass path fragments; operation-specific IDs
+		// are individual path segments and must be escaped.
+		params = make([]string, len(c.endpointParams))
+		for i, id := range c.endpointParams {
+			params[i] = url.PathEscape(id)
+		}
+	} else {
+		version, err = client.getOpenApiHighestElevatedVersion(c.endpoint)
+	}
+	if err != nil {
+		return openApiOperation{}, fmt.Errorf("error selecting API version for %s: %s", c.entityLabel, err)
+	}
+	endpoint, err := urlFromEndpoint(c.endpoint, params)
+	if err != nil {
+		return openApiOperation{}, err
+	}
+	uri, err := client.OpenApiBuildEndpoint(endpoint)
+	if err != nil {
+		return openApiOperation{}, err
+	}
+	headers := c.additionalHeader
+	ctx := c.tenantContext
+	if option.TenantContext != nil {
+		ctx = option.TenantContext
+	}
+	if ctx != nil {
+		headers = make(map[string]string, len(c.additionalHeader)+2)
+		for key, value := range c.additionalHeader {
+			if !strings.EqualFold(key, types.HeaderTenantContext) && !strings.EqualFold(key, types.HeaderAuthContext) {
+				headers[key] = value
+			}
+		}
+		for key, value := range getTenantContextHeader(ctx) {
+			headers[key] = value
+		}
+	}
+	requestClient := client
+	if c.requiresTm && (ctx != nil || headers[types.HeaderTenantContext] != "" || headers[types.HeaderAuthContext] != "") {
+		// A selected context replaces inherited headers, including an empty System context.
+		cloned := *client
+		cloned.customHeader = client.customHeader.Clone()
+		cloned.customHeader.Del(types.HeaderTenantContext)
+		cloned.customHeader.Del(types.HeaderAuthContext)
+		requestClient = &cloned
+	}
+	op := requestClient.openApiOperation(version, uri, c.queryParameters, headers)
+	if c.expectedStatus != 0 {
+		op.expectedStatus = []int{c.expectedStatus}
+	}
+	// Preserve legacy VCD lookup semantics; operation-specific TM reads keep 403 errors.
+	op.forbiddenAsNotFound = c.minimumVersion == ""
+	return op, nil
+}
+
+// createInnerEntity creates a resource, waiting for a task and retrieving its owner when needed.
+func createInnerEntity[I any](client *Client, c crudConfig, config *I) (*I, error) {
+	return writeInnerEntity(client, c, http.MethodPost, config)
+}
+
+// createInnerEntityAsync returns the tracking task without waiting for creation.
+func createInnerEntityAsync[I any](client *Client, c crudConfig, config *I) (*Task, error) {
+	return runOpenApiOperationAsync(client, c, http.MethodPost, config)
+}
+
+func updateInnerEntity[I any](client *Client, c crudConfig, config *I) (*I, error) {
+	result, _, err := updateInnerEntityWithHeaders(client, c, config)
+	return result, err
+}
+
+func updateInnerEntityWithHeaders[I any](client *Client, c crudConfig, config *I) (*I, http.Header, error) {
+	return writeInnerEntityWithHeaders(client, c, http.MethodPut, config)
+}
+
+// writeInnerEntity also handles writes that return a result page instead of a resource.
+func writeInnerEntity[I any](client *Client, c crudConfig, method string, config *I) (*I, error) {
+	result, _, err := writeInnerEntityWithHeaders(client, c, method, config)
+	return result, err
+}
+
+func writeInnerEntityWithHeaders[I any](client *Client, c crudConfig, method string, config *I) (*I, http.Header, error) {
+	if config == nil {
+		return nil, nil, fmt.Errorf("%s config must not be nil", c.entityLabel)
+	}
+	op, err := c.prepare(client)
+	if err != nil {
 		return nil, nil, err
 	}
-
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
+	result := new(I)
+	headers, err := op.write(method, config, result)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error getting API version for updating entity '%s': %s", c.entityLabel, err)
+		return nil, nil, fmt.Errorf("error writing entity of type '%s': %s", c.entityLabel, err)
 	}
-
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error building API endpoint for entity '%s' update: %s", c.entityLabel, err)
-	}
-
-	updatedInnerEntityConfig := new(I)
-	headers, err := client.OpenApiPutItemAndGetHeaders(apiVersion, urlRef, c.queryParameters, innerConfig, updatedInnerEntityConfig, c.additionalHeader)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error updating entity of type '%s': %s", c.entityLabel, err)
-	}
-
-	return updatedInnerEntityConfig, headers, nil
+	return result, headers, nil
 }
 
-// getInnerEntity is an implementation for a common pattern in our code where we have to retrieve
-// outer entity (usually *types.XXXX) and does not need to be wrapped in an inner container entity.
-// Parameters:
-// * `client` is a *Client
-// * `c` holds settings for performing API call
 func getInnerEntity[I any](client *Client, c crudConfig) (*I, error) {
-	// Discarding returned headers to better match return signature for most common cases
-	innerEntity, _, err := getInnerEntityWithHeaders[I](client, c)
-	return innerEntity, err
+	result, _, err := getInnerEntityWithHeaders[I](client, c)
+	return result, err
 }
 
-// getInnerEntityWithHeaders is an implementation for a common pattern in our code where we have to retrieve
-// outer entity (usually *types.XXXX) and does not need to be wrapped in an inner container entity.
-// Parameters:
-// * `client` is a *Client
-// * `c` holds settings for performing API call
 func getInnerEntityWithHeaders[I any](client *Client, c crudConfig) (*I, http.Header, error) {
-	if err := c.validate(client); err != nil {
+	op, err := c.prepare(client)
+	if err != nil {
 		return nil, nil, err
 	}
-
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityLabel, err)
-	}
-
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityLabel, err)
-	}
-
-	typeResponse := new(I)
-	headers, err := client.OpenApiGetItemAndHeaders(apiVersion, urlRef, c.queryParameters, typeResponse, c.additionalHeader)
+	result := new(I)
+	headers, err := op.read(result)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error retrieving entity of type '%s': %s", c.entityLabel, err)
 	}
-
-	return typeResponse, headers, nil
+	return result, headers, nil
 }
 
-// getAllInnerEntities can be used to retrieve a slice of any inner entities in the OpenAPI
-// endpoints that are not nested in outer types
-//
-// Parameters:
-// * `client` is a *Client
-// * `c` holds settings for performing API call
 func getAllInnerEntities[I any](client *Client, c crudConfig) ([]*I, error) {
-	if err := c.validate(client); err != nil {
+	op, err := c.prepare(client)
+	if err != nil {
 		return nil, err
 	}
-
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error getting API version for entity '%s': %s", c.entityLabel, err)
+	result := make([]*I, 0)
+	// Pagination adds pageSize/page parameters; do not modify the caller's query.
+	query := make(url.Values, len(c.queryParameters))
+	for key, values := range c.queryParameters {
+		query[key] = append([]string(nil), values...)
 	}
-
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
-	if err != nil {
-		return nil, fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
-	}
-
-	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error building API endpoint for entity '%s': %s", c.entityLabel, err)
-	}
-
-	typeResponses := make([]*I, 0)
-	err = client.OpenApiGetAllItems(apiVersion, urlRef, c.queryParameters, &typeResponses, c.additionalHeader)
-	if err != nil {
+	if err := op.client.OpenApiGetAllItems(op.apiVersion, op.url, query, &result, op.headers); err != nil {
 		return nil, fmt.Errorf("error retrieving all entities of type '%s': %s", c.entityLabel, err)
 	}
-
-	return typeResponses, nil
+	return result, nil
 }
 
-// deleteEntityById performs a common operation for OpenAPI endpoints that calls DELETE method for a
-// given endpoint.
-// Note. It does not use generics for the operation, but is held in this file with other CRUD entries
-// Parameters:
-// * `client` is a *Client
-// * `c` holds settings for performing API call
 func deleteEntityById(client *Client, c crudConfig) error {
-	if err := c.validate(client); err != nil {
-		return err
-	}
-
-	apiVersion, err := client.getOpenApiHighestElevatedVersion(c.endpoint)
+	op, err := c.prepare(client)
 	if err != nil {
 		return err
 	}
+	_, err = op.write(http.MethodDelete, nil, nil)
+	return err
+}
 
-	exactEndpoint, err := urlFromEndpoint(c.endpoint, c.endpointParams)
+// runOpenApiOperationAsync handles actions and association writes without assuming
+// that the task owner identifies a resource to retrieve afterward.
+func runOpenApiOperationAsync(client *Client, c crudConfig, method string, payload interface{}) (*Task, error) {
+	op, err := c.prepare(client)
 	if err != nil {
-		return fmt.Errorf("error building endpoint '%s' with given params '%s' for entity '%s': %s", c.endpoint, strings.Join(c.endpointParams, ","), c.entityLabel, err)
+		return nil, err
 	}
+	return op.runAsync(method, payload)
+}
 
-	urlRef, err := client.OpenApiBuildEndpoint(exactEndpoint)
+func runOpenApiOperation(client *Client, c crudConfig, method string, payload interface{}) error {
+	op, err := c.prepare(client)
 	if err != nil {
 		return err
 	}
-
-	err = client.OpenApiDeleteItem(apiVersion, urlRef, c.queryParameters, c.additionalHeader)
-
-	if err != nil {
-		return fmt.Errorf("error deleting %s: %s", c.entityLabel, err)
-	}
-
-	return nil
+	_, err = op.write(method, payload, nil)
+	return err
 }
 
 func urlFromEndpoint(endpoint string, endpointParams []string) (string, error) {
@@ -329,4 +343,15 @@ func urlFromEndpoint(endpoint string, endpointParams []string) (string, error) {
 	}
 
 	return endpoint, nil
+}
+
+// TmOperationOptions overrides the request version or organization context for a TM operation.
+// These options are optional and do not change the client's default version or context.
+type TmOperationOptions struct {
+	// APIVersion must be advertised by the server and meet the operation's minimum version.
+	// When empty, use the client's version if eligible, otherwise the earliest eligible stable version.
+	APIVersion string
+	// TenantContext overrides the context retained by a resource wrapper, if provided.
+	// An explicit System context clears inherited tenant headers, including during task polling.
+	TenantContext *TenantContext
 }

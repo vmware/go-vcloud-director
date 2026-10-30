@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
@@ -127,4 +128,45 @@ func (r *Region) GetAllVmClasses(queryParameters url.Values) ([]*types.RegionVir
 		requiresTm:      true,
 	}
 	return getAllInnerEntities[types.RegionVirtualMachineClass](&r.vcdClient.Client, c)
+}
+
+// DeleteWithForce deletes the Region and waits for completion (API 40.0+).
+// Setting force to true requests forceful deletion even if the backing resource cannot be removed normally.
+func (o *Region) DeleteWithForce(force bool, options ...TmOperationOptions) error {
+	c := crudConfig{
+		entityLabel:     types.OpenApiEndpointRegions,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointRegions,
+		queryParameters: url.Values{"force": {fmt.Sprintf("%t", force)}},
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return runOpenApiOperation(&o.vcdClient.Client, c.item(o.Region.ID).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// GetAllNamespaceCompatibleZoneGroups retrieves groups of zones compatible for namespace placement (API 40.1+).
+// queryParameters can specify page and pageSize; all result pages are retrieved.
+func (o *Region) GetAllNamespaceCompatibleZoneGroups(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmCompatibleZoneGroup, error) {
+	c := crudConfig{
+		entityLabel:     "regions/namespaceCompatibleZones",
+		endpoint:        types.OpenApiPathVcf + "regions/%s/namespaceCompatibleZones",
+		endpointParams:  []string{o.Region.ID},
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.1",
+	}
+	return getAllInnerEntities[types.TmCompatibleZoneGroup](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// GetAllCapabilities retrieves the region's capabilities across all result pages (API 40.1+).
+// queryParameters can specify page and pageSize.
+func (o *Region) GetAllCapabilities(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmRegionCapability, error) {
+	c := crudConfig{
+		entityLabel:     "regions/capabilities",
+		endpoint:        types.OpenApiPathVcf + "regions/%s/capabilities",
+		endpointParams:  []string{o.Region.ID},
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.1",
+	}
+	return getAllInnerEntities[types.TmRegionCapability](&o.vcdClient.Client, c.withTmOptions(options))
 }

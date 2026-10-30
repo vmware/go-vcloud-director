@@ -142,3 +142,15 @@ func (o *TmIpSpace) Delete() error {
 	}
 	return deleteEntityById(&o.vcdClient.Client, c)
 }
+
+// GetUtilizationSummary retrieves IP-space utilization totals and the breakdown by block and range (API 40.0+).
+func (o *TmIpSpace) GetUtilizationSummary(options ...TmOperationOptions) (*types.TmIpSpaceUtilizationSummary, error) {
+	c := crudConfig{
+		entityLabel:    "ipSpaces/utilizationSummary",
+		endpoint:       types.OpenApiPathVcf + "ipSpaces/%s/utilizationSummary",
+		endpointParams: []string{o.TmIpSpace.ID},
+		requiresTm:     true,
+		minimumVersion: "40.0",
+	}
+	return getInnerEntity[types.TmIpSpaceUtilizationSummary](&o.vcdClient.Client, c.withTmOptions(options))
+}

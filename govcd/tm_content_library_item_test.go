@@ -7,8 +7,10 @@
 package govcd
 
 import (
+	"fmt"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
+	"net/url"
 	"path/filepath"
 )
 
@@ -191,6 +193,58 @@ func testContentLibraryItem(vcd *TestVCD, cl *ContentLibrary, args ContentLibrar
 	check.Assert(updatedCli.ContentLibraryItem.CreationDate, Equals, obtainedCliById.ContentLibraryItem.CreationDate)
 	check.Assert(updatedCli.ContentLibraryItem.ItemType, Equals, obtainedCliById.ContentLibraryItem.ItemType)
 
-	err = cli.Delete()
+	err = cli.DeleteWithForce(filepath.Ext(args.FilePath) != ".iso")
 	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_ContentLibraryDownloadBundle(check *C) {
+	requireTmTestVersion(vcd, check, "40.1")
+	quotas, err := vcd.client.GetAllRegionQuotas(nil)
+	check.Assert(err, IsNil)
+	projectID := ""
+	var context *TenantContext
+	for _, quota := range quotas {
+		namespaces, err := quota.GetAllNamespaces(nil)
+		check.Assert(err, IsNil)
+		for _, ns := range namespaces {
+			if ns.ProjectAssignment != nil && ns.ProjectAssignment.ID != "" && quota.TmVdc.Org != nil {
+				projectID = ns.ProjectAssignment.ID
+				context = &TenantContext{OrgId: quota.TmVdc.Org.ID, OrgName: quota.TmVdc.Org.Name}
+				break
+			}
+		}
+		if projectID != "" {
+			break
+		}
+	}
+	if projectID == "" {
+		check.Skip("no project discoverable from existing region-quota namespaces")
+	}
+	for _, async := range []bool{false, true} {
+		config := &types.ContentLibraryDownloadRequest{BundleName: fmt.Sprintf("sdk-test-%t", async), ProjectID: projectID, MetadataFileContent: "e30="}
+		// Both requests generate metadata-only bundles: nil and explicit empty image lists.
+		if async {
+			config.ImageIdentifiers = []string{}
+		}
+		options := TmOperationOptions{TenantContext: context}
+		var task *Task
+		var err error
+		if async {
+			task, err = vcd.client.GenerateContentLibraryDownloadBundleAsync(config, options)
+			tmTestWaitTask(check, task, err)
+		} else {
+			task, err = vcd.client.GenerateContentLibraryDownloadBundle(config, options)
+			check.Assert(err, IsNil)
+			check.Assert(task, NotNil)
+		}
+		check.Assert(task.Task.Status, Equals, "success")
+		check.Assert(task.Task.Details, Not(Equals), "")
+		download, err := url.Parse(task.Task.Details)
+		check.Assert(err, IsNil)
+		check.Assert(download.Host, Not(Equals), "")
+		check.Assert(download.Scheme == "https" || download.Scheme == "http", Equals, true)
+		if !async {
+			check.Assert(config.ImageIdentifiers, IsNil)
+		}
+	}
 }

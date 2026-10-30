@@ -6,6 +6,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
@@ -174,4 +175,226 @@ func (o *TmRegionalNetworkingSetting) UpdateDefaultVpcConnectivityProfile(regNet
 		requiresTm:     true,
 	}
 	return updateInnerEntity(&o.vcdClient.Client, c, regNetVpcProfileConfig)
+}
+
+func (o *TmRegionalNetworkingSetting) operation(endpoint, minimumVersion string) crudConfig {
+	return crudConfig{
+		entityLabel:    "regionalNetworkingSettings/" + endpoint,
+		endpoint:       types.OpenApiPathVcf + ("regionalNetworkingSettings/%s/" + endpoint),
+		endpointParams: []string{o.TmRegionalNetworkingSetting.ID},
+		requiresTm:     true,
+		minimumVersion: minimumVersion,
+	}
+}
+
+// GetAllProviderGatewayConnections retrieves all providerGatewayConnections assigned to this regional networking setting.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) GetAllProviderGatewayConnections(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmRegionalProviderGatewayConnection, error) {
+	c := o.operation("providerGatewayConnections", "40.1")
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmRegionalProviderGatewayConnection](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// GetProviderGatewayConnectionById retrieves one providerGatewayConnections assignment by its ID.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) GetProviderGatewayConnectionById(id string, options ...TmOperationOptions) (*types.TmRegionalProviderGatewayConnection, error) {
+	return getInnerEntity[types.TmRegionalProviderGatewayConnection](&o.vcdClient.Client, o.operation("providerGatewayConnections", "40.1").item(id).withTmOptions(options))
+}
+
+// CreateProviderGatewayConnection adds an assignment and waits for its task to complete.
+// Use GetAllProviderGatewayConnections to retrieve the resulting assignments.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) CreateProviderGatewayConnection(config *types.TmRegionalProviderGatewayConnection, options ...TmOperationOptions) error {
+	task, err := o.CreateProviderGatewayConnectionAsync(config, options...)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// CreateProviderGatewayConnectionAsync adds an assignment and returns its tracking task.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) CreateProviderGatewayConnectionAsync(config *types.TmRegionalProviderGatewayConnection, options ...TmOperationOptions) (*Task, error) {
+	if config == nil {
+		return nil, fmt.Errorf("providerGatewayConnections config must not be nil")
+	}
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("providerGatewayConnections", "40.1").withTmOptions(options), http.MethodPost, config)
+}
+
+// DeleteProviderGatewayConnection removes an assignment and waits for its task to complete.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) DeleteProviderGatewayConnection(id string, options ...TmOperationOptions) error {
+	return runOpenApiOperation(&o.vcdClient.Client, o.operation("providerGatewayConnections", "40.1").item(id).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// DeleteProviderGatewayConnectionAsync removes an assignment and returns its tracking task.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) DeleteProviderGatewayConnectionAsync(id string, options ...TmOperationOptions) (*Task, error) {
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("providerGatewayConnections", "40.1").item(id).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// GetAllSharedSubnets retrieves all sharedSubnets assigned to this regional networking setting.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) GetAllSharedSubnets(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmRegionalSharedSubnet, error) {
+	c := o.operation("sharedSubnets", "40.1")
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmRegionalSharedSubnet](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// GetSharedSubnetById retrieves one sharedSubnets assignment by its ID.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) GetSharedSubnetById(id string, options ...TmOperationOptions) (*types.TmRegionalSharedSubnet, error) {
+	return getInnerEntity[types.TmRegionalSharedSubnet](&o.vcdClient.Client, o.operation("sharedSubnets", "40.1").item(id).withTmOptions(options))
+}
+
+// CreateSharedSubnet adds an assignment and waits for its task to complete.
+// Use GetAllSharedSubnets to retrieve the resulting assignments.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) CreateSharedSubnet(config *types.TmRegionalSharedSubnet, options ...TmOperationOptions) error {
+	task, err := o.CreateSharedSubnetAsync(config, options...)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// CreateSharedSubnetAsync adds an assignment and returns its tracking task.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) CreateSharedSubnetAsync(config *types.TmRegionalSharedSubnet, options ...TmOperationOptions) (*Task, error) {
+	if config == nil {
+		return nil, fmt.Errorf("sharedSubnets config must not be nil")
+	}
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("sharedSubnets", "40.1").withTmOptions(options), http.MethodPost, config)
+}
+
+// DeleteSharedSubnet removes an assignment and waits for its task to complete.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) DeleteSharedSubnet(id string, options ...TmOperationOptions) error {
+	return runOpenApiOperation(&o.vcdClient.Client, o.operation("sharedSubnets", "40.1").item(id).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// DeleteSharedSubnetAsync removes an assignment and returns its tracking task.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) DeleteSharedSubnetAsync(id string, options ...TmOperationOptions) (*Task, error) {
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("sharedSubnets", "40.1").item(id).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// GetAllDistributedVlanConnections retrieves all distributedVlanConnections assigned to this regional networking setting.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) GetAllDistributedVlanConnections(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmRegionalDistributedVlanConnection, error) {
+	c := o.operation("distributedVlanConnections", "40.1")
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmRegionalDistributedVlanConnection](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// GetDistributedVlanConnectionById retrieves one distributedVlanConnections assignment by its ID.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) GetDistributedVlanConnectionById(id string, options ...TmOperationOptions) (*types.TmRegionalDistributedVlanConnection, error) {
+	return getInnerEntity[types.TmRegionalDistributedVlanConnection](&o.vcdClient.Client, o.operation("distributedVlanConnections", "40.1").item(id).withTmOptions(options))
+}
+
+// CreateDistributedVlanConnection adds an assignment and waits for its task to complete.
+// Use GetAllDistributedVlanConnections to retrieve the resulting assignments.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) CreateDistributedVlanConnection(config *types.TmRegionalDistributedVlanConnection, options ...TmOperationOptions) error {
+	task, err := o.CreateDistributedVlanConnectionAsync(config, options...)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// CreateDistributedVlanConnectionAsync adds an assignment and returns its tracking task.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) CreateDistributedVlanConnectionAsync(config *types.TmRegionalDistributedVlanConnection, options ...TmOperationOptions) (*Task, error) {
+	if config == nil {
+		return nil, fmt.Errorf("distributedVlanConnections config must not be nil")
+	}
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("distributedVlanConnections", "40.1").withTmOptions(options), http.MethodPost, config)
+}
+
+// DeleteDistributedVlanConnection removes an assignment and waits for its task to complete.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) DeleteDistributedVlanConnection(id string, options ...TmOperationOptions) error {
+	return runOpenApiOperation(&o.vcdClient.Client, o.operation("distributedVlanConnections", "40.1").item(id).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// DeleteDistributedVlanConnectionAsync removes an assignment and returns its tracking task.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) DeleteDistributedVlanConnectionAsync(id string, options ...TmOperationOptions) (*Task, error) {
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("distributedVlanConnections", "40.1").item(id).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// GetAllDistributedVxlanConnections retrieves all distributedVxlanConnections assigned to this regional networking setting.
+// Requires TM API 9.1.1 or later.
+func (o *TmRegionalNetworkingSetting) GetAllDistributedVxlanConnections(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmRegionalDistributedVxlanConnection, error) {
+	c := o.operation("distributedVxlanConnections", "9.1.1")
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmRegionalDistributedVxlanConnection](&o.vcdClient.Client, c.withTmOptions(options))
+}
+
+// GetDistributedVxlanConnectionById retrieves one distributedVxlanConnections assignment by its ID.
+// Requires TM API 9.1.1 or later.
+func (o *TmRegionalNetworkingSetting) GetDistributedVxlanConnectionById(id string, options ...TmOperationOptions) (*types.TmRegionalDistributedVxlanConnection, error) {
+	return getInnerEntity[types.TmRegionalDistributedVxlanConnection](&o.vcdClient.Client, o.operation("distributedVxlanConnections", "9.1.1").item(id).withTmOptions(options))
+}
+
+// CreateDistributedVxlanConnection adds an assignment and waits for its task to complete.
+// Use GetAllDistributedVxlanConnections to retrieve the resulting assignments.
+// Requires TM API 9.1.1 or later.
+func (o *TmRegionalNetworkingSetting) CreateDistributedVxlanConnection(config *types.TmRegionalDistributedVxlanConnection, options ...TmOperationOptions) error {
+	task, err := o.CreateDistributedVxlanConnectionAsync(config, options...)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// CreateDistributedVxlanConnectionAsync adds an assignment and returns its tracking task.
+// Requires TM API 9.1.1 or later.
+func (o *TmRegionalNetworkingSetting) CreateDistributedVxlanConnectionAsync(config *types.TmRegionalDistributedVxlanConnection, options ...TmOperationOptions) (*Task, error) {
+	if config == nil {
+		return nil, fmt.Errorf("distributedVxlanConnections config must not be nil")
+	}
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("distributedVxlanConnections", "9.1.1").withTmOptions(options), http.MethodPost, config)
+}
+
+// DeleteDistributedVxlanConnection removes an assignment and waits for its task to complete.
+// Requires TM API 9.1.1 or later.
+func (o *TmRegionalNetworkingSetting) DeleteDistributedVxlanConnection(id string, options ...TmOperationOptions) error {
+	return runOpenApiOperation(&o.vcdClient.Client, o.operation("distributedVxlanConnections", "9.1.1").item(id).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// DeleteDistributedVxlanConnectionAsync removes an assignment and returns its tracking task.
+// Requires TM API 9.1.1 or later.
+func (o *TmRegionalNetworkingSetting) DeleteDistributedVxlanConnectionAsync(id string, options ...TmOperationOptions) (*Task, error) {
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("distributedVxlanConnections", "9.1.1").item(id).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// GetAviSetting retrieves this regional networking setting's aviSetting.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) GetAviSetting(options ...TmOperationOptions) (*types.TmRegionalAviSetting, error) {
+	return getInnerEntity[types.TmRegionalAviSetting](&o.vcdClient.Client, o.operation("aviSetting", "40.1").withTmOptions(options))
+}
+
+// UpdateAviSetting updates the configuration, waits for completion and retrieves the result.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) UpdateAviSetting(config *types.TmRegionalAviSetting, options ...TmOperationOptions) (*types.TmRegionalAviSetting, error) {
+	task, err := o.UpdateAviSettingAsync(config, options...)
+	if err != nil {
+		return nil, err
+	}
+	if err := task.WaitTaskCompletion(); err != nil {
+		return nil, err
+	}
+	return o.GetAviSetting(options...)
+}
+
+// UpdateAviSettingAsync updates the configuration and returns its tracking task.
+// Requires TM API 40.1 or later.
+func (o *TmRegionalNetworkingSetting) UpdateAviSettingAsync(config *types.TmRegionalAviSetting, options ...TmOperationOptions) (*Task, error) {
+	if config == nil {
+		return nil, fmt.Errorf("aviSetting config must not be nil")
+	}
+	return runOpenApiOperationAsync(&o.vcdClient.Client, o.operation("aviSetting", "40.1").withTmOptions(options), http.MethodPut, config)
 }
