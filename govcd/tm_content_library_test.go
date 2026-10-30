@@ -38,7 +38,7 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 
 	clDefinition := &types.ContentLibrary{
 		Name:           check.TestName(),
-		StorageClasses: []types.OpenApiReference{{ID: sc.StorageClass.ID}},
+		StorageClasses: []types.ContentLibraryStorageClass{{ID: sc.StorageClass.ID}},
 		AutoAttach:     true, // Always true for providers
 		Description:    check.TestName(),
 	}
@@ -147,7 +147,7 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 
 	clDefinition := &types.ContentLibrary{
 		Name:           check.TestName(),
-		StorageClasses: []types.OpenApiReference{{ID: sc.StorageClass.ID}},
+		StorageClasses: []types.ContentLibraryStorageClass{{ID: sc.StorageClass.ID}},
 		AutoAttach:     false,
 		Description:    check.TestName(),
 	}
@@ -256,7 +256,7 @@ func (vcd *TestVCD) Test_ContentLibraryTenantProjectScoped(check *C) {
 
 	clDefinition := &types.ContentLibrary{
 		Name:                  check.TestName(),
-		StorageClasses:        []types.OpenApiReference{{ID: sc.StorageClass.ID}},
+		StorageClasses:        []types.ContentLibraryStorageClass{{ID: sc.StorageClass.ID}},
 		AutoAttach:            true,
 		Description:           check.TestName(),
 		IsProjectScoped:       true,
@@ -369,12 +369,12 @@ func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 
 	clDefinition := &types.ContentLibrary{
 		Name:           check.TestName(),
-		StorageClasses: []types.OpenApiReference{{ID: sc.StorageClass.ID}},
+		StorageClasses: []types.ContentLibraryStorageClass{{ID: sc.StorageClass.ID}},
 		Description:    check.TestName(), // This should be ignored as it takes publisher description
 		AutoAttach:     true,             // Always true for providers
 		SubscriptionConfig: &types.ContentLibrarySubscriptionConfig{
 			SubscriptionUrl: vcd.config.Tm.SubscriptionContentLibraryUrl,
-			NeedLocalCopy:   true,
+			NeedLocalCopy:   addrOf(true),
 		},
 	}
 
@@ -403,7 +403,8 @@ func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 	check.Assert(createdCl.ContentLibrary.Org.Name, Equals, "System")
 	check.Assert(createdCl.ContentLibrary.SubscriptionConfig, NotNil)
 	check.Assert(createdCl.ContentLibrary.SubscriptionConfig.SubscriptionUrl, Equals, vcd.config.Tm.SubscriptionContentLibraryUrl)
-	check.Assert(createdCl.ContentLibrary.SubscriptionConfig.NeedLocalCopy, Equals, true)
+	check.Assert(createdCl.ContentLibrary.SubscriptionConfig.NeedLocalCopy, NotNil)
+	check.Assert(*createdCl.ContentLibrary.SubscriptionConfig.NeedLocalCopy, Equals, true)
 	check.Assert(createdCl.ContentLibrary.SubscriptionConfig.Password, Equals, "******") // Password is returned sealed
 	check.Assert(createdCl.ContentLibrary.CreationDate, Not(Equals), "")
 	check.Assert(createdCl.ContentLibrary.IsProjectScoped, Equals, false)

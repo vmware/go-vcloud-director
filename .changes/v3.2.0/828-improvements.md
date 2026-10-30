@@ -1,0 +1,16 @@
+* Add `KubernetesCompliantName` property to `RegionStoragePolicy` [GH-828]
+* Add `KubernetesCompliantName` and `IsUnlimitedAllocation` properties to `StorageClass` [GH-828]
+* Add `IsUnlimitedAllocation` property to `VirtualDatacenterStoragePolicy` [GH-828]
+* Add `SizeBytes` and `Placeholder` properties to `ContentLibraryItem` [GH-828]
+* Add `LoadBalancerType` and `SupportsUnlimitedAllocation` properties to `Region` [GH-828]
+* Add `LoadBalancerType`, `NsxManager`, and `IsDedicatedForClassicTenants` properties to `Supervisor` [GH-828]
+* Add `Zone` property to `SupervisorZone` [GH-828]
+* Add `IsFullAllocation` property to `TmVdc` [GH-828]
+* Add `IsUnlimitedAllocation` and `VcpuSpeedMHz` properties to `TmVdcResourceAllocation` [GH-828]
+* Add `MaxNamespaceMemoryReservationMiB`, `MaxNamespaceCPUReservationMHz`, `IsUnlimitedAllocation`,
+  and `VcpuSpeedMHz` properties to `Zone` [GH-828]
+* Add `DedicatedDistributedVlanConnectionRef` property to `TmIpSpace` [GH-828]
+* Add `DistributedVlanConnectionRef`, `VirtualNetworkApplianceClusterRef`, `DefaultVpcPrivateSubnetCidrOverride`,
+  and `ProjectTgwPrivateSubnetCidrOverride` properties to `TmRegionalNetworkingSetting` [GH-828]
+* Add `VirtualNetworkApplianceClusterRef` property to `TmRegionalNetworkingVpcConnectivityProfile` [GH-828]
+* Add `Status`, `IsDedicatedForClassicTenants`, `ClusterID`, and `Active` properties to `NsxtManager` [GH-828]

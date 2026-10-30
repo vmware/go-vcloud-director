@@ -46,7 +46,7 @@ func (vcd *TestVCD) Test_TmRegionalNetworkingSetting(check *C) {
 		Name:               "test-terraform",
 		OrgRef:             types.OpenApiReference{ID: org.TmOrg.ID},
 		RegionRef:          types.OpenApiReference{ID: region.Region.ID},
-		ProviderGatewayRef: types.OpenApiReference{ID: pg.TmProviderGateway.ID},
+		ProviderGatewayRef: &types.OpenApiReference{ID: pg.TmProviderGateway.ID},
 	}
 
 	// TODO: TM: This one "conflicts" with the CreateTmRegionalNetworkingSetting below, as there is work done in background

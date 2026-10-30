@@ -1954,6 +1954,14 @@ type NsxtManager struct {
 	LocalNsxTManagerRef         []interface{} `json:"localNsxTManagerRef"`
 	LocalManagerLocationName    interface{}   `json:"localManagerLocationName"`
 	VCloudExtension             []interface{} `json:"vCloudExtension"`
+	// Realization status of the NSX Manager in Tenant Manager
+	Status string `json:"status,omitempty"`
+	// Whether the NSX Manager is dedicated to classic tenants and cannot participate in Regions or Zones
+	IsDedicatedForClassicTenants *bool `json:"isDedicatedForClassicTenants,omitempty"`
+	// Identifier of the NSX cluster, rather than a Provider Management URN (read-only)
+	ClusterID string `json:"clusterId,omitempty"`
+	// Whether this NSX Manager can manage networking constructs (read-only)
+	Active bool `json:"active,omitempty"`
 }
 
 // NsxtEdgeGatewayDns is used for configuring the DNS forwarder for a specific Edge Gateway

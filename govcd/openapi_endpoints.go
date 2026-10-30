@@ -277,6 +277,24 @@ var endpointElevatedApiVersions = map[string][]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointImportableTier0Routers: {
 		"40.0", // TM Tier 0 Gateways
 	},
+	types.OpenApiPathVcf + types.OpenApiEndpointRegionStoragePolicies: {
+		"40.1", // Kubernetes-compliant storage policy names
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointStorageClasses: {
+		"40.1", // Kubernetes-compliant storage class names
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointContentLibraries: {
+		"40.1", // Storage class references with region and Kubernetes-compliant name
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointSupervisors: {
+		"40.1", // NSX manager and classic tenant dedication
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointZones: {
+		"40.1", // Maximum namespace CPU and memory reservations
+	},
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVdcs: {
+		"40.1", // Full Region allocation
+	},
 	types.OpenApiPathVcf + types.OpenApiEndpointTmIpSpaces: {
 		"40.1", // TM IP Spaces
 	},
