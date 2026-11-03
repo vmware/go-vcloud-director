@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"net/url"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -57,4 +59,24 @@ func (vcd *TestVCD) Test_TmSupervisor(check *C) {
 	check.Assert(zoneByName, NotNil)
 
 	check.Assert(zoneById.SupervisorZone, DeepEquals, zoneByName.SupervisorZone)
+}
+
+func (vcd *TestVCD) Test_TmComputeClusters(check *C) {
+	requireTmTestVersion(vcd, check, "40.0")
+	_, cleanup := getOrCreateVCenter(vcd, check)
+	defer cleanup()
+	clusters, err := vcd.client.GetAllTmComputeClusters(url.Values{"pageSize": {"1"}})
+	check.Assert(err, IsNil)
+	check.Assert(len(clusters) > 0, Equals, true)
+	seen := map[string]bool{}
+	for _, cluster := range clusters {
+		check.Assert(cluster.ID, Not(Equals), "")
+		check.Assert(seen[cluster.ID], Equals, false)
+		seen[cluster.ID] = true
+		byID, err := vcd.client.GetTmComputeClusterById(cluster.ID)
+		check.Assert(err, IsNil)
+		check.Assert(byID, DeepEquals, cluster)
+		check.Assert(byID.VirtualCenter, NotNil)
+		check.Assert(byID.Moref, Not(Equals), "")
+	}
 }

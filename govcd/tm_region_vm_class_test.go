@@ -7,6 +7,8 @@
 package govcd
 
 import (
+	"net/url"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -44,4 +46,19 @@ func (vcd *TestVCD) Test_RegionVmClass(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(*vmClass.RegionVirtualMachineClass, DeepEquals, *vmClasses[0])
 
+}
+
+func (vcd *TestVCD) Test_TmReservedVmClasses(check *C) {
+	requireTmTestVersion(vcd, check, "40.0")
+	region, cleanup := tmTestRegion(vcd, check)
+	defer cleanup()
+	rows, err := vcd.client.GetAllTmReservedVmClasses(url.Values{"filter": {"region.id==" + region.Region.ID}, "pageSize": {"1"}})
+	check.Assert(err, IsNil)
+	for _, row := range rows {
+		check.Assert(row.Region, NotNil)
+		check.Assert(row.Region.ID, Equals, region.Region.ID)
+		check.Assert(row.Zone, NotNil)
+		check.Assert(row.VirtualMachineClass, NotNil)
+		check.Assert(row.TotalCount >= row.AvailableCount, Equals, true)
+	}
 }

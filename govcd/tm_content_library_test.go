@@ -7,6 +7,7 @@
 package govcd
 
 import (
+	"net/http"
 	"net/url"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
@@ -103,6 +104,32 @@ func (vcd *TestVCD) Test_ContentLibraryProvider(check *C) {
 	check.Assert(updatedCl.ContentLibrary.Name, Equals, clDefinition.Name)
 	check.Assert(updatedCl.ContentLibrary.Description, Equals, clDefinition.Description)
 
+	// Exercise both refresh entry points while verifying that explicit provider
+	// context overrides tenant headers during the action and task polling.
+	tenant, tenantCleanup := createOrg(vcd, check, false)
+	defer tenantCleanup()
+	scopedClient := *vcd.client
+	scopedClient.Client.customHeader = vcd.client.Client.customHeader.Clone()
+	if scopedClient.Client.customHeader == nil {
+		scopedClient.Client.customHeader = make(http.Header)
+	}
+	for name, value := range getTenantContextHeader(&TenantContext{OrgId: tenant.TmOrg.ID, OrgName: tenant.TmOrg.Name}) {
+		scopedClient.Client.customHeader.Set(name, value)
+	}
+	originalHeaders := scopedClient.Client.customHeader.Clone()
+	scopedLibrary := *createdCl
+	scopedLibrary.vcdClient = &scopedClient
+	check.Assert(scopedLibrary.Refresh(TmOperationOptions{TenantContext: &TenantContext{OrgName: "System"}}), IsNil)
+	options := tmTestOptions(vcd, check, "40.0")
+	options.TenantContext = &TenantContext{OrgName: "System"}
+	task, err := scopedLibrary.RefreshAsync(options)
+	check.Assert(err, IsNil)
+	check.Assert(task.client.APIVersion, Equals, options.APIVersion)
+	check.Assert(task.client.customHeader.Get(types.HeaderTenantContext), Equals, "")
+	check.Assert(task.client.customHeader.Get(types.HeaderAuthContext), Equals, "")
+	tmTestWaitTask(check, task, nil)
+	check.Assert(scopedClient.Client.customHeader, DeepEquals, originalHeaders)
+
 	// Not found errors
 	_, err = vcd.client.GetContentLibraryByName("notexist", nil)
 	check.Assert(ContainsNotFound(err), Equals, true)
@@ -172,6 +199,8 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 	check.Assert(createdCl.ContentLibrary.IsShared, Equals, false) // False for tenants
 	check.Assert(createdCl.ContentLibrary.IsSubscribed, Equals, false)
 	check.Assert(createdCl.ContentLibrary.LibraryType, Equals, "TENANT")
+	check.Assert(createdCl.tenantContext, NotNil)
+	check.Assert(createdCl.tenantContext.OrgId, Equals, org.TmOrg.ID)
 	check.Assert(createdCl.ContentLibrary.VersionNumber, Equals, int64(1))
 	check.Assert(createdCl.ContentLibrary.Org, NotNil)
 	check.Assert(createdCl.ContentLibrary.Org.Name, Equals, org.TmOrg.Name)
@@ -226,7 +255,7 @@ func (vcd *TestVCD) Test_ContentLibraryTenant(check *C) {
 
 // Test_ContentLibraryProviderProjectScoped tests CRUD operations for a Project Scoped Content Library as a tenant (Organization)
 func (vcd *TestVCD) Test_ContentLibraryTenantProjectScoped(check *C) {
-	skipNonTm(vcd, check)
+	requireTmTestVersion(vcd, check, "40.1")
 	sysadminOnly(vcd, check) // As it creates testing resources first
 
 	nsxtManager, nsxtManagerCleanup := getOrCreateNsxtManager(vcd, check)
@@ -285,6 +314,8 @@ func (vcd *TestVCD) Test_ContentLibraryTenantProjectScoped(check *C) {
 	check.Assert(createdCl.ContentLibrary.IsShared, Equals, false) // False for tenants
 	check.Assert(createdCl.ContentLibrary.IsSubscribed, Equals, false)
 	check.Assert(createdCl.ContentLibrary.LibraryType, Equals, "TENANT")
+	check.Assert(createdCl.tenantContext, NotNil)
+	check.Assert(createdCl.tenantContext.OrgId, Equals, org.TmOrg.ID)
 	check.Assert(createdCl.ContentLibrary.VersionNumber, Equals, int64(1))
 	check.Assert(createdCl.ContentLibrary.Org, NotNil)
 	check.Assert(createdCl.ContentLibrary.Org.Name, Equals, org.TmOrg.Name)
@@ -316,12 +347,34 @@ func (vcd *TestVCD) Test_ContentLibraryTenantProjectScoped(check *C) {
 	// Test updating an existing Content Library
 	clDefinition.Name = check.TestName() + "Updated"
 	clDefinition.Description = check.TestName() + "Updated"
+	// Clear the organization-wide grant through the library endpoint before testing
+	// explicit assignments. Project-permission updates preserve it in 9.1.2, but
+	// newer servers can clear it when omitted from the project-permissions payload.
+	clDefinition.AllProjectsPermission = ""
 	updatedCl, err := createdCl.Update(clDefinition)
 	check.Assert(err, IsNil)
 	check.Assert(updatedCl, NotNil)
 	check.Assert(updatedCl.ContentLibrary.ID, Equals, createdCl.ContentLibrary.ID)
 	check.Assert(updatedCl.ContentLibrary.Name, Equals, clDefinition.Name)
 	check.Assert(updatedCl.ContentLibrary.Description, Equals, clDefinition.Description)
+	check.Assert(updatedCl.ContentLibrary.AllProjectsPermission, Equals, clDefinition.AllProjectsPermission)
+
+	assertProjectPermissions := func() {
+		permissions, err := updatedCl.GetProjectPermissions(url.Values{"pageSize": {"1"}})
+		check.Assert(err, IsNil)
+		check.Assert(len(permissions.Values), Equals, 0)
+		// No organization-wide grant is configured during these assignment updates.
+		actual, err := org.GetContentLibraryById(updatedCl.ContentLibrary.ID)
+		check.Assert(err, IsNil)
+		check.Assert(actual.ContentLibrary.AllProjectsPermission, Equals, clDefinition.AllProjectsPermission)
+	}
+	assertProjectPermissions()
+	config := &types.ContentLibraryProjectPermissions{Values: []types.ContentLibraryProjectPermission{}}
+	check.Assert(updatedCl.UpdateProjectPermissions(config), IsNil)
+	assertProjectPermissions()
+	task, err := updatedCl.UpdateProjectPermissionsAsync(config)
+	tmTestWaitTask(check, task, err)
+	assertProjectPermissions()
 
 	// Not found errors
 	_, err = org.GetContentLibraryByName("notexist")
@@ -431,4 +484,12 @@ func (vcd *TestVCD) Test_ContentLibrarySubscribed(check *C) {
 	check.Assert(err, IsNil)
 	check.Assert(cl, NotNil)
 	check.Assert(*cl.ContentLibrary, DeepEquals, *createdCl.ContentLibrary)
+	check.Assert(cl.Sync(), IsNil)
+	task, err := cl.SyncAsync()
+	tmTestWaitTask(check, task, err)
+	actual, err := vcd.client.GetContentLibraryById(cl.ContentLibrary.ID, nil)
+	check.Assert(err, IsNil)
+	check.Assert(actual.ContentLibrary.IsSubscribed, Equals, true)
+	check.Assert(actual.ContentLibrary.SubscriptionConfig.SubscriptionUrl, Equals, vcd.config.Tm.SubscriptionContentLibraryUrl)
+
 }

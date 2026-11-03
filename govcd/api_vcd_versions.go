@@ -391,5 +391,89 @@ func (client *Client) VersionEqualOrGreater(compareTo string, howManyDigits int)
 }
 
 func (client *Client) IsTm() bool {
-	return client.APIVCDMaxVersionIs(">= 40") // TODO: TM: Make it more precise
+	if err := client.vcdFetchSupportedVersions(); err != nil {
+		util.Logger.Printf("[ERROR] could not retrieve supported versions: %s", err)
+		return false
+	}
+	if advertisesTmVersion(client.supportedVersions) {
+		return true
+	}
+	return client.APIVCDMaxVersionIs(">= 40")
+}
+
+// advertisesTmVersion returns true if any advertised version is a TM API version
+func advertisesTmVersion(versions SupportedVersions) bool {
+	for _, info := range versions.VersionInfos {
+		if _, err := tmComparableVersion(info.Version); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+// tmComparableVersion follows the TM schema's legacy version aliases. Comparing 40.1
+// and 9.1.1 as ordinary semantic versions would incorrectly prefer the older API.
+func tmComparableVersion(v string) (*semver.Version, error) {
+	switch v {
+	case "40.0":
+		v = "9.0.0"
+	case "40.1":
+		v = "9.1.0"
+	case "41.0", "41.0.0-alpha":
+		v = "10.0.0-alpha"
+	}
+	if strings.Count(v, ".") < 2 {
+		return nil, fmt.Errorf("%q is not a TM API version", v)
+	}
+	parsed, err := semver.NewVersion(v)
+	if err != nil {
+		return nil, err
+	}
+	if parsed.LessThan(semver.Must(semver.NewVersion("9.0.0"))) || parsed.Segments()[0] >= 31 {
+		return nil, fmt.Errorf("%q is not a TM API version", v)
+	}
+	return parsed, nil
+}
+
+// selectTmApiVersion compares legacy aliases and product versions while retaining
+// the exact version string advertised by the server for the Accept header.
+func selectTmApiVersion(versions SupportedVersions, minimumVersion, preferred, explicit string) (string, error) {
+	minimum, err := tmComparableVersion(minimumVersion)
+	if err != nil {
+		return "", err
+	}
+	supported := make(map[string]*semver.Version)
+	for _, info := range versions.VersionInfos {
+		v, err := tmComparableVersion(info.Version)
+		if err == nil && !v.LessThan(minimum) {
+			supported[info.Version] = v
+		}
+	}
+	if explicit != "" {
+		if _, ok := supported[explicit]; !ok {
+			return "", fmt.Errorf("requires a server-advertised TM API version at least %s; %q is not eligible", minimumVersion, explicit)
+		}
+		return explicit, nil
+	}
+	if _, ok := supported[preferred]; ok {
+		return preferred, nil
+	}
+	if v, ok := supported[minimumVersion]; ok && v.Prerelease() == "" {
+		return minimumVersion, nil
+	}
+	chosen := ""
+	for raw, v := range supported {
+		// Never opt into a preview API unless the caller selected it explicitly
+		// (either for this operation or as the client's default).
+		if v.Prerelease() != "" {
+			continue
+		}
+		if chosen == "" || v.LessThan(supported[chosen]) || v.Equal(supported[chosen]) && raw < chosen {
+			chosen = raw
+		}
+	}
+	if chosen == "" {
+		return "", fmt.Errorf("requires TM API %s or later", minimumVersion)
+	}
+	return chosen, nil
 }

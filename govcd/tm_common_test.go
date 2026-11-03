@@ -8,12 +8,79 @@ package govcd
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
 )
+
+// Account for the 40.0/40.1 aliases when guarding tests on 9.x servers.
+func tmTestSupportsVersion(vcd *TestVCD, check *C, minimum string) bool {
+	check.Assert(vcd.client.Client.vcdFetchSupportedVersions(), IsNil)
+	want, err := tmComparableVersion(minimum)
+	check.Assert(err, IsNil)
+	for _, info := range vcd.client.Client.supportedVersions.VersionInfos {
+		version, err := tmComparableVersion(info.Version)
+		if err == nil && version.Prerelease() == "" && !version.LessThan(want) {
+			return true
+		}
+	}
+	return false
+}
+
+func requireTmTestVersion(vcd *TestVCD, check *C, minimum string) {
+	skipNonTm(vcd, check)
+	sysadminOnly(vcd, check)
+	if !tmTestSupportsVersion(vcd, check, minimum) {
+		check.Skip("requires TM API " + minimum + " or later")
+	}
+}
+
+func tmTestRegion(vcd *TestVCD, check *C) (*Region, func()) {
+	var cleanups []func()
+	cleanup := func() {
+		for i := len(cleanups) - 1; i >= 0; i-- {
+			cleanups[i]()
+		}
+	}
+	ready := false
+	defer func() {
+		if !ready {
+			cleanup()
+		}
+	}()
+	nsx, nsxCleanup := getOrCreateNsxtManager(vcd, check)
+	cleanups = append(cleanups, nsxCleanup)
+	vc, vcCleanup := getOrCreateVCenter(vcd, check)
+	cleanups = append(cleanups, vcCleanup)
+	supervisor, err := vc.GetSupervisorByName(vcd.config.Tm.VcenterSupervisor)
+	check.Assert(err, IsNil)
+	region, regionCleanup := getOrCreateRegion(vcd, nsx, supervisor, check)
+	cleanups = append(cleanups, regionCleanup)
+	ready = true
+	return region, cleanup
+}
+
+// Tests that depend on existing regional resources cannot find those resources in
+// a newly created region. Discover the configured region without provisioning it.
+func tmTestExistingRegion(vcd *TestVCD, check *C) *Region {
+	region, err := vcd.client.GetRegionByName(vcd.config.Tm.Region)
+	if ContainsNotFound(err) {
+		check.Skip("requires an existing tm.region with compatible resources")
+	}
+	check.Assert(err, IsNil)
+	return region
+}
+
+func tmTestWaitTask(check *C, task *Task, err error) {
+	check.Assert(err, IsNil)
+	check.Assert(task, NotNil)
+	check.Assert(task.Task.HREF, Not(Equals), "")
+	check.Assert(task.WaitTaskCompletion(), IsNil)
+	check.Assert(task.Task.Status, Equals, "success")
+}
 
 // registerTmCleanup returns the cleanup function that the getOrCreate* helpers hand to their callers.
 // With 'tm.shareInfrastructure' the real cleanup is deferred to releaseTmSharedFixture and the
@@ -353,6 +420,16 @@ func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*Reg
 	check.Assert(rq, NotNil)
 
 	PrependToCleanupListOpenApi(rq.TmVdc.ID, cfg.Name, types.OpenApiPathVcf+types.OpenApiEndpointTmVdcs+rq.TmVdc.ID)
+	cleanup := func() {
+		check.Check(rq.Delete(), IsNil)
+	}
+	ready := false
+	defer func() {
+		// An assertion during setup exits before the caller can defer cleanup.
+		if !ready {
+			cleanup()
+		}
+	}()
 
 	err = rq.AssignVmClasses(&types.RegionVirtualMachineClasses{
 		Values: types.OpenApiReferences{{Name: vmClasses[0].Name, ID: vmClasses[0].ID}},
@@ -373,10 +450,8 @@ func createRegionQuota(vcd *TestVCD, org *TmOrg, region *Region, check *C) (*Reg
 	})
 	check.Assert(err, IsNil)
 
-	return rq, func() {
-		err = rq.Delete()
-		check.Assert(err, IsNil)
-	}
+	ready = true
+	return rq, cleanup
 }
 
 func createTmIpSpace(vcd *TestVCD, region *Region, check *C, nameSuffix, octet3 string) (*TmIpSpace, func()) {
@@ -454,4 +529,18 @@ func setOrgShortLogname(vcd *TestVCD, org *TmOrg, check *C) func() {
 		_, err := org.UpdateOrgNetworkingSettings(t)
 		check.Assert(err, IsNil)
 	}
+}
+
+func tmTestOptions(vcd *TestVCD, check *C, minimum string) TmOperationOptions {
+	requireTmTestVersion(vcd, check, minimum)
+	c := crudConfig{
+		entityLabel:    "regions",
+		endpoint:       types.OpenApiPathVcf + "regions",
+		requiresTm:     true,
+		minimumVersion: minimum,
+		expectedStatus: http.StatusOK,
+	}
+	op, err := c.prepare(&vcd.client.Client)
+	check.Assert(err, IsNil)
+	return TmOperationOptions{APIVersion: op.apiVersion}
 }

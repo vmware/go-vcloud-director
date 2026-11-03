@@ -73,3 +73,15 @@ func (vcdClient *VCDClient) GetRegionVirtualMachineClassById(id string) (*Region
 	outerType := RegionVirtualMachineClass{vcdClient: vcdClient}
 	return getOuterEntity(&vcdClient.Client, outerType, c)
 }
+
+// GetAllTmReservedVmClasses retrieves reserved VM-class inventory across all result pages (API 40.0+).
+func (o *VCDClient) GetAllTmReservedVmClasses(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmReservedVmClass, error) {
+	c := crudConfig{
+		entityLabel:     "reservedVMClasses",
+		endpoint:        types.OpenApiPathVcf + "reservedVMClasses",
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return getAllInnerEntities[types.TmReservedVmClass](&o.Client, c.withTmOptions(options))
+}

@@ -8,6 +8,7 @@ package govcd
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
@@ -189,4 +190,229 @@ func (vcd *TestVCD) Test_TmRegionalNetworkingSetting(check *C) {
 	check.Assert(removedVpcQos.QosConfig.IngressProfile.Type, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.Type)
 	check.Assert(removedVpcQos.QosConfig.IngressProfile.BurstSizeBytes, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.BurstSizeBytes)
 	check.Assert(removedVpcQos.QosConfig.IngressProfile.CommittedBandwidthMbps, Equals, parentEdgeCluster.TmEdgeCluster.DefaultQosConfig.IngressProfile.CommittedBandwidthMbps)
+}
+
+// Write tests use an isolated organization and setting. Discovered backing objects
+// are only assigned and unassigned, never deleted.
+func tmTestRegionalSetting(vcd *TestVCD, region *Region, check *C) (*TmRegionalNetworkingSetting, func()) {
+	var cleanups []func()
+	cleanup := func() {
+		for i := len(cleanups) - 1; i >= 0; i-- {
+			cleanups[i]()
+		}
+	}
+	ready := false
+	defer func() {
+		if !ready {
+			cleanup()
+		}
+	}()
+	org, orgCleanup := createOrg(vcd, check, false)
+	cleanups = append(cleanups, orgCleanup)
+	pg, pgCleanup := createTmProviderGateway(vcd, region, check)
+	cleanups = append(cleanups, pgCleanup)
+	logCleanup := setOrgShortLogname(vcd, org, check)
+	cleanups = append(cleanups, logCleanup)
+	setting, err := vcd.client.CreateTmRegionalNetworkingSetting(&types.TmRegionalNetworkingSetting{
+		Name: check.TestName(), OrgRef: types.OpenApiReference{ID: org.TmOrg.ID}, RegionRef: types.OpenApiReference{ID: region.Region.ID}, ProviderGatewayRef: &types.OpenApiReference{ID: pg.TmProviderGateway.ID},
+	})
+	check.Assert(err, IsNil)
+	PrependToCleanupListOpenApi(setting.TmRegionalNetworkingSetting.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointTmRegionalNetworkingSettings+setting.TmRegionalNetworkingSetting.ID)
+	cleanups = append(cleanups, func() { check.Check(setting.Delete(), IsNil) })
+	ready = true
+	return setting, cleanup
+}
+
+func testTmRegionalAssignment[T any](check *C, config *T, options TmOperationOptions,
+	list func(url.Values, ...TmOperationOptions) ([]*T, error),
+	get func(string, ...TmOperationOptions) (*T, error),
+	create func(*T, ...TmOperationOptions) error,
+	createAsync func(*T, ...TmOperationOptions) (*Task, error),
+	remove func(string, ...TmOperationOptions) error,
+	removeAsync func(string, ...TmOperationOptions) (*Task, error),
+	id func(*T) string, verify func(*T)) {
+	for _, async := range []bool{false, true} {
+		before, err := list(url.Values{"pageSize": {"1"}}, options)
+		check.Assert(err, IsNil)
+		existing := map[string]bool{}
+		for _, row := range before {
+			existing[id(row)] = true
+		}
+		if async {
+			task, err := createAsync(config, options)
+			tmTestWaitTask(check, task, err)
+		} else {
+			check.Assert(create(config, options), IsNil)
+		}
+		after, err := list(url.Values{"pageSize": {"1"}}, options)
+		check.Assert(err, IsNil)
+		check.Assert(len(after), Equals, len(before)+1)
+		var created *T
+		for _, row := range after {
+			if !existing[id(row)] {
+				check.Assert(created, IsNil)
+				created = row
+			}
+		}
+		check.Assert(created, NotNil)
+		check.Assert(id(created), Not(Equals), "")
+		verify(created)
+		byID, err := get(id(created), options)
+		check.Assert(err, IsNil)
+		check.Assert(id(byID), Equals, id(created))
+		verify(byID)
+		if async {
+			task, err := removeAsync(id(created), options)
+			tmTestWaitTask(check, task, err)
+		} else {
+			check.Assert(remove(id(created), options), IsNil)
+		}
+		remaining, err := list(url.Values{"pageSize": {"1"}}, options)
+		check.Assert(err, IsNil)
+		check.Assert(len(remaining), Equals, len(before))
+		for _, row := range remaining {
+			check.Assert(existing[id(row)], Equals, true)
+		}
+		_, err = get(id(created), options)
+		check.Assert(ContainsNotFound(err), Equals, true)
+	}
+}
+
+func (vcd *TestVCD) Test_TmRegionalProviderGatewayConnections(check *C) {
+	requireTmTestVersion(vcd, check, "40.1")
+	options := TmOperationOptions{}
+
+	region := tmTestExistingRegion(vcd, check)
+	candidates, err := vcd.client.GetAllTmProviderGateways(nil)
+	check.Assert(err, IsNil)
+	var config *types.TmRegionalProviderGatewayConnection
+	for _, candidate := range candidates {
+		backing := candidate.TmProviderGateway
+		if backing.RegionRef.ID != region.Region.ID || backing.Status != "REALIZED" {
+			continue
+		}
+		if backing.OrgRef != nil || backing.AllowAdvertisingPrivateIpBlocks {
+			continue
+		}
+		config = &types.TmRegionalProviderGatewayConnection{ProviderGatewayRef: &types.OpenApiReference{ID: backing.ID}, IsDefault: addrOf(false), AllowAdvertisingPrivateIpBlocks: addrOf(false)}
+		break
+	}
+	if config == nil {
+		check.Skip("no compatible ProviderGatewayConnection backing discovered in the region")
+	}
+	// Provision the test setting only after finding a compatible backing. Its
+	// new provider gateway is distinct from the existing candidate above.
+	setting, cleanup := tmTestRegionalSetting(vcd, region, check)
+	defer cleanup()
+
+	testTmRegionalAssignment(check, config, options, setting.GetAllProviderGatewayConnections, setting.GetProviderGatewayConnectionById,
+		setting.CreateProviderGatewayConnection, setting.CreateProviderGatewayConnectionAsync, setting.DeleteProviderGatewayConnection, setting.DeleteProviderGatewayConnectionAsync,
+		func(row *types.TmRegionalProviderGatewayConnection) string { return row.ID }, func(row *types.TmRegionalProviderGatewayConnection) {
+			check.Assert(row.ProviderGatewayRef, NotNil)
+			check.Assert(row.ProviderGatewayRef.ID, Equals, config.ProviderGatewayRef.ID)
+		})
+}
+
+func (vcd *TestVCD) Test_TmRegionalSharedSubnets(check *C) {
+	requireTmTestVersion(vcd, check, "40.1")
+	options := TmOperationOptions{}
+
+	region := tmTestExistingRegion(vcd, check)
+	candidates, err := vcd.client.GetAllTmSharedSubnets(nil)
+	check.Assert(err, IsNil)
+	var config *types.TmRegionalSharedSubnet
+	for _, candidate := range candidates {
+		backing := candidate.TmSharedSubnet
+		if backing.RegionRef.ID != region.Region.ID || backing.Status != "REALIZED" {
+			continue
+		}
+		config = &types.TmRegionalSharedSubnet{SubnetRef: &types.OpenApiReference{ID: backing.ID}}
+		break
+	}
+	if config == nil {
+		check.Skip("no compatible SharedSubnet backing discovered in the region")
+	}
+	setting, cleanup := tmTestRegionalSetting(vcd, region, check)
+	defer cleanup()
+
+	testTmRegionalAssignment(check, config, options, setting.GetAllSharedSubnets, setting.GetSharedSubnetById,
+		setting.CreateSharedSubnet, setting.CreateSharedSubnetAsync, setting.DeleteSharedSubnet, setting.DeleteSharedSubnetAsync,
+		func(row *types.TmRegionalSharedSubnet) string { return row.ID }, func(row *types.TmRegionalSharedSubnet) {
+			check.Assert(row.SubnetRef, NotNil)
+			check.Assert(row.SubnetRef.ID, Equals, config.SubnetRef.ID)
+		})
+}
+
+func (vcd *TestVCD) Test_TmRegionalDistributedVlanConnections(check *C) {
+	requireTmTestVersion(vcd, check, "40.1")
+	options := TmOperationOptions{}
+
+	region := tmTestExistingRegion(vcd, check)
+	candidates, err := vcd.client.GetAllTmDistributedVlanConnections(nil)
+	check.Assert(err, IsNil)
+	var config *types.TmRegionalDistributedVlanConnection
+	for _, candidate := range candidates {
+		backing := candidate.TmDistributedVlanConnection
+		if backing.RegionRef.ID != region.Region.ID || backing.Status != "REALIZED" {
+			continue
+		}
+		if backing.DedicatedOrgRef != nil || backing.DedicatedSharedSubnetRef != nil || backing.SubnetExclusive {
+			continue
+		}
+		config = &types.TmRegionalDistributedVlanConnection{DistributedVlanConnectionRef: &types.OpenApiReference{ID: backing.ID}, IsDefault: addrOf(false), VlanId: addrOf(backing.VlanId), GatewayCidr: backing.GatewayCidr, IpSpaceRef: backing.IpSpaceRef}
+		break
+	}
+	if config == nil {
+		check.Skip("no compatible DistributedVlanConnection backing discovered in the region")
+	}
+	setting, cleanup := tmTestRegionalSetting(vcd, region, check)
+	defer cleanup()
+
+	testTmRegionalAssignment(check, config, options, setting.GetAllDistributedVlanConnections, setting.GetDistributedVlanConnectionById,
+		setting.CreateDistributedVlanConnection, setting.CreateDistributedVlanConnectionAsync, setting.DeleteDistributedVlanConnection, setting.DeleteDistributedVlanConnectionAsync,
+		func(row *types.TmRegionalDistributedVlanConnection) string { return row.ID }, func(row *types.TmRegionalDistributedVlanConnection) {
+			check.Assert(row.DistributedVlanConnectionRef, NotNil)
+			check.Assert(row.DistributedVlanConnectionRef.ID, Equals, config.DistributedVlanConnectionRef.ID)
+		})
+}
+
+func (vcd *TestVCD) Test_TmRegionalDistributedVxlanConnections(check *C) {
+	requireTmTestVersion(vcd, check, "9.1.1")
+	options := TmOperationOptions{}
+	settings, err := vcd.client.GetAllTmRegionalNetworkingSettings(nil)
+	check.Assert(err, IsNil)
+	found := false
+	for _, setting := range settings {
+		rows, err := setting.GetAllDistributedVxlanConnections(url.Values{"pageSize": {"1"}}, options)
+		check.Assert(err, IsNil)
+		for _, row := range rows {
+			found = true
+			check.Assert(row.ID, Not(Equals), "")
+			actual, err := setting.GetDistributedVxlanConnectionById(row.ID, options)
+			check.Assert(err, IsNil)
+			check.Assert(actual.ID, Equals, row.ID)
+			check.Assert(actual.DistributedVxlanConnectionRef, NotNil)
+			check.Assert(actual.DistributedVxlanConnectionRef, DeepEquals, row.DistributedVxlanConnectionRef)
+		}
+	}
+	if !found {
+		check.Skip("no existing DistributedVxlanConnections assignments found")
+	}
+}
+
+func (vcd *TestVCD) Test_TmRegionalAviSetting(check *C) {
+	requireTmTestVersion(vcd, check, "40.1")
+	settings, err := vcd.client.GetAllTmRegionalNetworkingSettings(nil)
+	check.Assert(err, IsNil)
+	if len(settings) == 0 {
+		check.Skip("no regional networking settings available")
+	}
+	for _, setting := range settings {
+		avi, err := setting.GetAviSetting()
+		check.Assert(err, IsNil)
+		check.Assert(avi, NotNil)
+		if avi.Active {
+			check.Assert(avi.ServiceEngineGroupMode, Not(Equals), "")
+		}
+	}
 }

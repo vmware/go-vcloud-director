@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"github.com/vmware/go-vcloud-director/v3/util"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -418,4 +419,75 @@ func (cli *ContentLibraryItem) Delete() error {
 		requiresTm:     true,
 	}
 	return deleteEntityById(&cli.vcdClient.Client, c)
+}
+
+// DeleteWithForce deletes the ContentLibraryItem and waits for completion (API 40.0+).
+// Setting force to true requests forceful deletion even if the backing resource cannot be removed normally.
+func (o *ContentLibraryItem) DeleteWithForce(force bool, options ...TmOperationOptions) error {
+	c := crudConfig{
+		entityLabel:     types.OpenApiEndpointContentLibraryItems,
+		endpoint:        types.OpenApiPathVcf + types.OpenApiEndpointContentLibraryItems,
+		queryParameters: url.Values{"force": {fmt.Sprintf("%t", force)}},
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return runOpenApiOperation(&o.vcdClient.Client, c.item(o.ContentLibraryItem.ID).withTmOptions(options), http.MethodDelete, nil)
+}
+
+// Promote promotes a project content-library item to a provider library and waits for completion (API 40.1+).
+func (o *ContentLibraryItem) Promote(config *types.ContentLibraryItemPromotion, options ...TmOperationOptions) error {
+	task, err := o.PromoteAsync(config, options...)
+	if err != nil {
+		return err
+	}
+	return task.WaitTaskCompletion()
+}
+
+// PromoteAsync starts promotion to the target provider content library and returns its task (API 40.1+).
+func (o *ContentLibraryItem) PromoteAsync(config *types.ContentLibraryItemPromotion, options ...TmOperationOptions) (*Task, error) {
+	if config == nil || config.TargetContentLibrary == nil || config.TargetContentLibrary.ID == "" {
+		return nil, fmt.Errorf("promotion requires a target content library ID")
+	}
+	c := crudConfig{
+		entityLabel:    "contentLibraryItems/promote",
+		endpoint:       types.OpenApiPathVcf + "contentLibraryItems/%s/promote",
+		endpointParams: []string{o.ContentLibraryItem.ID},
+		requiresTm:     true,
+		minimumVersion: "40.1",
+	}
+	return runOpenApiOperationAsync(&o.vcdClient.Client, c.withTmOptions(options), http.MethodPost, config)
+}
+
+// GenerateContentLibraryDownloadBundle generates an OVA bundle and waits for completion (API 40.1+).
+// The returned task's Details contains the server's download information. No files are downloaded by this method.
+func (o *VCDClient) GenerateContentLibraryDownloadBundle(config *types.ContentLibraryDownloadRequest, options ...TmOperationOptions) (*Task, error) {
+	task, err := o.GenerateContentLibraryDownloadBundleAsync(config, options...)
+	if err != nil {
+		return nil, err
+	}
+	if err := task.WaitTaskCompletion(); err != nil {
+		return task, err
+	}
+	return task, nil
+}
+
+// GenerateContentLibraryDownloadBundleAsync starts OVA bundle generation and returns its task (API 40.1+).
+// After completion, read Task.Details for the download information.
+func (o *VCDClient) GenerateContentLibraryDownloadBundleAsync(config *types.ContentLibraryDownloadRequest, options ...TmOperationOptions) (*Task, error) {
+	if config == nil || config.BundleName == "" || config.ProjectID == "" {
+		return nil, fmt.Errorf("bundle generation requires a config with a bundle name and project ID")
+	}
+	// An omitted image list represents a metadata-only bundle. Send an empty array,
+	// which the server can iterate, without changing the caller's configuration.
+	request := *config
+	if request.ImageIdentifiers == nil {
+		request.ImageIdentifiers = []string{}
+	}
+	c := crudConfig{
+		entityLabel:    "contentLibraryItems/download",
+		endpoint:       types.OpenApiPathVcf + "contentLibraryItems/download",
+		requiresTm:     true,
+		minimumVersion: "40.1",
+	}
+	return runOpenApiOperationAsync(&o.Client, c.withTmOptions(options), http.MethodPost, &request)
 }

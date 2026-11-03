@@ -9,6 +9,7 @@ package govcd
 import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
+	"math/big"
 	"strings"
 )
 
@@ -97,6 +98,24 @@ func (vcd *TestVCD) Test_TmIpSpace(check *C) {
 	byIdInvalid, err := vcd.client.GetTmIpSpaceById("urn:vcloud:ipSpace:5344b964-0000-0000-0000-d554913db643")
 	check.Assert(ContainsNotFound(err), Equals, true)
 	check.Assert(byIdInvalid, IsNil)
+
+	// Counts are strings because IPv6 capacities can exceed uint64.
+	utilization, err := createdIpSpace.GetUtilizationSummary()
+	check.Assert(err, IsNil)
+	check.Assert(utilization.TotalUtilization, NotNil)
+	counts := append([]types.TmIpSpaceUtilizationCounts{*utilization.TotalUtilization}, utilization.IpBlockUtilizations...)
+	check.Assert(len(utilization.IpBlockUtilizations) > 0, Equals, true)
+	for _, count := range counts {
+		total, ok := new(big.Int).SetString(count.TotalCount, 10)
+		check.Assert(ok, Equals, true)
+		used, ok := new(big.Int).SetString(count.UsedCount, 10)
+		check.Assert(ok, Equals, true)
+		available, ok := new(big.Int).SetString(count.AvailableCount, 10)
+		check.Assert(ok, Equals, true)
+		check.Assert(total.Sign() >= 0 && used.Sign() >= 0 && available.Sign() >= 0, Equals, true)
+		check.Assert(new(big.Int).Add(used, available).Cmp(total), Equals, 0)
+		check.Assert(count.UsedPercentage >= 0 && count.UsedPercentage <= 100, Equals, true)
+	}
 
 	// Update
 	createdIpSpace.TmIpSpace.Name = k8sCompliantName + "-update"

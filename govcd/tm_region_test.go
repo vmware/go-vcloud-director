@@ -7,6 +7,9 @@
 package govcd
 
 import (
+	"encoding/json"
+	"net/url"
+
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
 )
@@ -73,7 +76,7 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	check.Assert(updated.Region.Description, Equals, "new-description")
 
 	// Delete
-	err = createdRegion.Delete()
+	err = createdRegion.DeleteWithForce(false)
 	check.Assert(err, IsNil)
 
 	notFoundByName, err := vcd.client.GetRegionByName(createdRegion.Region.Name)
@@ -93,6 +96,37 @@ func (vcd *TestVCD) Test_TmRegion(check *C) {
 	check.Assert(byIdAsync, NotNil)
 	AddToCleanupListOpenApi(createdRegion.Region.ID, check.TestName(), types.OpenApiPathVcf+types.OpenApiEndpointRegions+createdRegion.Region.ID)
 
-	err = byIdAsync.Delete()
+	err = byIdAsync.DeleteWithForce(true)
 	check.Assert(err, IsNil)
+}
+
+func (vcd *TestVCD) Test_TmRegionCapabilitiesAndCompatibleZones(check *C) {
+	requireTmTestVersion(vcd, check, "40.1")
+	region, cleanup := tmTestRegion(vcd, check)
+	defer cleanup()
+	zones, err := region.GetAllZones(nil)
+	check.Assert(err, IsNil)
+	zoneNames := map[string]bool{}
+	for _, zone := range zones {
+		zoneNames[zone.Zone.Name] = true
+	}
+	groups, err := region.GetAllNamespaceCompatibleZoneGroups(url.Values{"pageSize": {"1"}})
+	check.Assert(err, IsNil)
+	for _, group := range groups {
+		check.Assert(len(group.Zones) > 0, Equals, true)
+		for _, zone := range group.Zones {
+			check.Assert(zoneNames[zone], Equals, true, Commentf("compatible zone %q is not in the region's zone inventory", zone))
+		}
+	}
+	capabilities, err := region.GetAllCapabilities(url.Values{"pageSize": {"1"}})
+	check.Assert(err, IsNil)
+	for _, capability := range capabilities {
+		check.Assert(capability.Name, Not(Equals), "")
+		if len(capability.Value) > 0 {
+			check.Assert(json.Valid(capability.Value), Equals, true)
+		}
+		if len(capability.Settings) > 0 {
+			check.Assert(json.Valid(capability.Settings), Equals, true)
+		}
+	}
 }

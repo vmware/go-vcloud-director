@@ -119,3 +119,26 @@ func (v *VCenter) GetSupervisorByName(name string) (*Supervisor, error) {
 
 	return oneOrError("name", name, s)
 }
+
+// GetAllTmComputeClusters retrieves compute-cluster inventory across all result pages (API 40.0+).
+func (o *VCDClient) GetAllTmComputeClusters(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmComputeCluster, error) {
+	c := crudConfig{
+		entityLabel:     "clusters",
+		endpoint:        types.OpenApiPathVcf + "clusters",
+		queryParameters: queryParameters,
+		requiresTm:      true,
+		minimumVersion:  "40.0",
+	}
+	return getAllInnerEntities[types.TmComputeCluster](&o.Client, c.withTmOptions(options))
+}
+
+// GetTmComputeClusterById retrieves a compute cluster by its URN (API 40.0+).
+func (o *VCDClient) GetTmComputeClusterById(id string, options ...TmOperationOptions) (*types.TmComputeCluster, error) {
+	c := crudConfig{
+		entityLabel:    "clusters",
+		endpoint:       types.OpenApiPathVcf + "clusters",
+		requiresTm:     true,
+		minimumVersion: "40.0",
+	}
+	return getInnerEntity[types.TmComputeCluster](&o.Client, c.item(id).withTmOptions(options))
+}

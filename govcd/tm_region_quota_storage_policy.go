@@ -6,9 +6,10 @@ package govcd
 
 import (
 	"fmt"
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"net/http"
 	"net/url"
-	"strings"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 const labelRegionQuotaStoragePolicies = "Region Quota Storage Policies"
@@ -31,23 +32,24 @@ func (g RegionQuotaStoragePolicy) wrap(inner *types.VirtualDatacenterStoragePoli
 // The request will fail if the list of Storage Policies is empty.
 // It returns the list of all Storage Policies that are available in the Region Quota after creation.
 func (vcdClient *VCDClient) CreateRegionQuotaStoragePolicies(regionQuotaId string, regionStoragePolicies *types.VirtualDatacenterStoragePolicies) ([]*RegionQuotaStoragePolicy, error) {
+	if regionStoragePolicies == nil {
+		return nil, fmt.Errorf("%s config must not be nil", labelRegionQuotaStoragePolicies)
+	}
 	c := crudConfig{
 		entityLabel: labelRegionQuotaStoragePolicies,
 		endpoint:    types.OpenApiPathVcf + types.OpenApiEndpointTmVdcStoragePolicies,
 		requiresTm:  true,
 	}
 
-	_, err := createInnerEntity[types.VirtualDatacenterStoragePolicies](&vcdClient.Client, c, regionStoragePolicies)
-	if err != nil {
-		// TODO: TM: The returned task contains a wrong URN in the "Owner" field, so the VDC can't be retrieved.
-		//           We don't really need it either, so we ignore this error.
-		if !strings.Contains(err.Error(), "error retrieving item after creation") {
-			return nil, err
-		}
+	// This batch task belongs to the Region Quota, not an individual storage policy.
+	// Wait for completion without trying to retrieve the task owner as a policy.
+	if err := runOpenApiOperation(&vcdClient.Client, c, http.MethodPost, regionStoragePolicies); err != nil {
+		return nil, fmt.Errorf("error creating %s: %w", labelRegionQuotaStoragePolicies, err)
 	}
 
 	// Get all the storage policies from the Region Quota and return them
-	allPolicies, err := vcdClient.GetAllRegionQuotaStoragePolicies(nil)
+	params := queryParameterFilterAnd("virtualDatacenter.id=="+regionQuotaId, nil)
+	allPolicies, err := vcdClient.GetAllRegionQuotaStoragePolicies(params)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve all the %s after creation: %s", labelRegionQuotaStoragePolicies, err)
 	}
@@ -156,4 +158,18 @@ func (vcdClient *VCDClient) DeleteRegionQuotaStoragePolicy(regionQuotaStoragePol
 // Delete deletes a Region Quota Storage Policy
 func (sp *RegionQuotaStoragePolicy) Delete() error {
 	return sp.vcdClient.DeleteRegionQuotaStoragePolicy(sp.VirtualDatacenterStoragePolicy.ID)
+}
+
+// UpdateStoragePolicies replaces the region quota's storage-policy assignments and limits (API 40.1+).
+// The response contains the first page of policies. To retrieve all policies, call
+// GetAllRegionQuotaStoragePolicies with a virtualDatacenter.id filter for this region quota.
+func (o *RegionQuota) UpdateStoragePolicies(config *types.VirtualDatacenterStoragePolicies, options ...TmOperationOptions) (*types.VirtualDatacenterStoragePolicies, error) {
+	c := crudConfig{
+		entityLabel:    "virtualDatacenters/virtualDatacenterStoragePolicies",
+		endpoint:       types.OpenApiPathVcf + "virtualDatacenters/%s/virtualDatacenterStoragePolicies",
+		endpointParams: []string{o.TmVdc.ID},
+		requiresTm:     true,
+		minimumVersion: "40.1",
+	}
+	return updateInnerEntity(&o.vcdClient.Client, c.withTmOptions(options), config)
 }
