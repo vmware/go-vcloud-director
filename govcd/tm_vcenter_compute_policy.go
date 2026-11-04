@@ -5,87 +5,83 @@
 package govcd
 
 import (
-	"net/url"
-
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
+	"net/url"
 )
 
-// TmVCenterComputePolicy manages a Tenant Manager VCenterComputePolicy.
+const labelTmVCenterComputePolicy = "TM vCenter Compute Policy"
+
+// TmVCenterComputePolicy manages a vCenter compute policy.
 type TmVCenterComputePolicy struct {
 	TmVCenterComputePolicy *types.TmVCenterComputePolicy
 	vcdClient              *VCDClient
 	options                []TmOperationOptions
 }
 
-// GetAllTmVCenterComputePolicies retrieves a paginated list of vCenter compute policies. Requires TM API
-// 40.1+.
-func (vcdClient *VCDClient) GetAllTmVCenterComputePolicies(queryParameters url.Values, options ...TmOperationOptions) ([]*TmVCenterComputePolicy, error) {
-	c := crudConfig{
-		entityLabel:     "vCenterComputePolicies",
-		endpoint:        types.OpenApiPathVcf + "vCenterComputePolicies",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmVCenterComputePolicy](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	wrapped := make([]*TmVCenterComputePolicy, len(result))
-	for i := range result {
-		wrapped[i] = &TmVCenterComputePolicy{TmVCenterComputePolicy: result[i], vcdClient: vcdClient, options: retainTmOptions(options)}
-	}
-	return wrapped, nil
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (g TmVCenterComputePolicy) wrap(inner *types.TmVCenterComputePolicy) *TmVCenterComputePolicy {
+	g.TmVCenterComputePolicy = inner
+	return &g
 }
 
-// GetTmVCenterComputePolicyById retrieves a vCenter compute policy. Requires TM API 40.1+.
-func (vcdClient *VCDClient) GetTmVCenterComputePolicyById(urn string, options ...TmOperationOptions) (*TmVCenterComputePolicy, error) {
-	c := crudConfig{
-		entityLabel:    "vCenterComputePolicies",
-		endpoint:       types.OpenApiPathVcf + "vCenterComputePolicies/%s",
+// tmVCenterComputePolicyConfig returns the CRUD configuration for vCenter compute policy operations. Optional params are appended to the endpoint.
+func tmVCenterComputePolicyConfig(options []TmOperationOptions, params ...string) crudConfig {
+	return crudConfig{
+		entityLabel:    labelTmVCenterComputePolicy,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmVCenterComputePolicies,
+		endpointParams: params,
 		requiresTm:     true,
 		minimumVersion: "40.1",
-		endpointParams: []string{urn},
-	}
-	result, err := getInnerEntity[types.TmVCenterComputePolicy](&vcdClient.Client, c.withTmOptions(options))
+	}.withTmOptions(options)
+}
+
+// GetAllTmVCenterComputePolicies retrieves all vCenter compute policys. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetAllTmVCenterComputePolicies(queryParameters url.Values, options ...TmOperationOptions) ([]*TmVCenterComputePolicy, error) {
+	c := tmVCenterComputePolicyConfig(options)
+	c.queryParameters = queryParameters
+	outerType := TmVCenterComputePolicy{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
+}
+
+// GetTmVCenterComputePolicyByName retrieves a vCenter compute policy by name. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmVCenterComputePolicyByName(name string, options ...TmOperationOptions) (*TmVCenterComputePolicy, error) {
+	entities, err := vcdClient.GetAllTmVCenterComputePolicies(nil, options...)
 	if err != nil {
 		return nil, err
 	}
-	return &TmVCenterComputePolicy{TmVCenterComputePolicy: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	return tmEntityByName(labelTmVCenterComputePolicy, name, entities, func(e *TmVCenterComputePolicy) string { return e.TmVCenterComputePolicy.Name })
 }
 
-// GetAllTags retrieves tags for a vCenter compute policy. Requires TM API 40.1+.
+// GetTmVCenterComputePolicyById retrieves a vCenter compute policy by ID. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmVCenterComputePolicyById(id string, options ...TmOperationOptions) (*TmVCenterComputePolicy, error) {
+	outerType := TmVCenterComputePolicy{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getOuterEntity(&vcdClient.Client, outerType, tmVCenterComputePolicyConfig(options, id))
+}
+
+// GetTmVCenterComputePolicyByNameOrId retrieves a vCenter compute policy by name or ID. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmVCenterComputePolicyByNameOrId(identifier string, options ...TmOperationOptions) (*TmVCenterComputePolicy, error) {
+	return tmEntityByNameOrId(identifier,
+		func(id string) (*TmVCenterComputePolicy, error) {
+			return vcdClient.GetTmVCenterComputePolicyById(id, options...)
+		},
+		func(name string) (*TmVCenterComputePolicy, error) {
+			return vcdClient.GetTmVCenterComputePolicyByName(name, options...)
+		})
+}
+
+// GetAllTags retrieves the tags of a vCenter compute policy. Requires TM API 40.1+.
 func (o *TmVCenterComputePolicy) GetAllTags(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmVCenterComputePolicyTag, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:     "vCenterComputePolicies/tags",
-		endpoint:        types.OpenApiPathVcf + "vCenterComputePolicies/%s/tags",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		endpointParams:  []string{o.TmVCenterComputePolicy.ID},
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmVCenterComputePolicyTag](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	c := tmCrudConfig("TM vCenter Compute Policy tag", types.OpenApiEndpointTmVCenterComputePolicyTags, "40.1", options, o.TmVCenterComputePolicy.ID)
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmVCenterComputePolicyTag](&o.vcdClient.Client, c)
 }
 
-// GetAllTmVCenterComputePolicyNames retrieves a list of unique vCenter compute policy names. Requires TM
-// API 40.1+.
+// GetAllTmVCenterComputePolicyNames retrieves a list of unique vCenter compute policy names. Requires TM API 40.1+.
 func (vcdClient *VCDClient) GetAllTmVCenterComputePolicyNames(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmVCenterComputePolicyName, error) {
-	c := crudConfig{
-		entityLabel:     "vcenterComputePolicyNames",
-		endpoint:        types.OpenApiPathVcf + "vcenterComputePolicyNames",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmVCenterComputePolicyName](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	c := tmCrudConfig("TM vCenter Compute Policy name", types.OpenApiEndpointTmVCenterComputePolicyNames, "40.1", options)
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmVCenterComputePolicyName](&vcdClient.Client, c)
 }

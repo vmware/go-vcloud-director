@@ -20,6 +20,7 @@ func (vcd *TestVCD) Test_TmAviControllerInventory(check *C) {
 	if len(all) == 0 {
 		check.Skip("no AviController resources available")
 	}
+	names := tmNameCounts(all, func(e *TmAviController) string { return e.TmAviController.Name })
 	seen := make(map[string]bool)
 	for _, item := range all {
 		id := item.TmAviController.ID
@@ -29,5 +30,16 @@ func (vcd *TestVCD) Test_TmAviControllerInventory(check *C) {
 		byID, err := vcd.client.GetTmAviControllerById(id, options)
 		check.Assert(err, IsNil)
 		check.Assert(byID.TmAviController.ID, Equals, id)
+		if name := item.TmAviController.Name; name != "" && names[name] == 1 {
+			byName, err := vcd.client.GetTmAviControllerByName(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmAviController.ID, Equals, id)
+			byNameOrId, err := vcd.client.GetTmAviControllerByNameOrId(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmAviController.ID, Equals, id)
+			byNameOrId, err = vcd.client.GetTmAviControllerByNameOrId(id, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmAviController.ID, Equals, id)
+		}
 	}
 }

@@ -6,220 +6,154 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/http"
 	"net/url"
 	"strconv"
-
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-// TmNamespace manages a Tenant Manager Namespace.
+const labelTmNamespace = "TM Namespace"
+
+// TmNamespace manages a Namespace.
 type TmNamespace struct {
 	TmNamespace *types.TmNamespace
 	vcdClient   *VCDClient
 	options     []TmOperationOptions
 }
 
-// GetAllTmNamespaceSummaries retrieves all Namespace summaries. Requires TM API 40.0+.
-func (vcdClient *VCDClient) GetAllTmNamespaceSummaries(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmNamespaceSummary, error) {
-	c := crudConfig{
-		entityLabel:     "namespaceSummaries",
-		endpoint:        types.OpenApiPathVcf + "namespaceSummaries",
-		requiresTm:      true,
-		minimumVersion:  "40.0",
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmNamespaceSummary](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (g TmNamespace) wrap(inner *types.TmNamespace) *TmNamespace {
+	g.TmNamespace = inner
+	return &g
 }
 
-// CreateTmNamespace creates a new Namespace. Waits for task completion. Requires TM API 40.0+.
-func (vcdClient *VCDClient) CreateTmNamespace(config *types.TmNamespace, options ...TmOperationOptions) (*TmNamespace, error) {
-	if config == nil {
-		return nil, fmt.Errorf("CreateTmNamespace config must not be nil")
-	}
-	c := crudConfig{
-		entityLabel:    "namespaces",
-		endpoint:       types.OpenApiPathVcf + "namespaces",
+// tmNamespaceConfig returns the CRUD configuration for Namespace operations. Optional params are appended to the endpoint.
+func tmNamespaceConfig(options []TmOperationOptions, params ...string) crudConfig {
+	return crudConfig{
+		entityLabel:    labelTmNamespace,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmNamespaces,
+		endpointParams: params,
 		requiresTm:     true,
 		minimumVersion: "40.0",
-	}
-	result, err := createInnerEntity(&vcdClient.Client, c.withTmOptions(options), config)
-	if err != nil {
-		return nil, err
-	}
-	return &TmNamespace{TmNamespace: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	}.withTmOptions(options)
 }
 
-// CreateTmNamespaceAsync creates a new Namespace. Returns the tracking task without waiting. Requires TM
-// API 40.0+.
+// CreateTmNamespace creates a Namespace. Waits for task completion. Requires TM API 40.0+.
+func (vcdClient *VCDClient) CreateTmNamespace(config *types.TmNamespace, options ...TmOperationOptions) (*TmNamespace, error) {
+	outerType := TmNamespace{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return createOuterEntity(&vcdClient.Client, outerType, tmNamespaceConfig(options), config)
+}
+
+// CreateTmNamespaceAsync creates a Namespace. Returns the tracking task without waiting. Requires TM API 40.0+.
 func (vcdClient *VCDClient) CreateTmNamespaceAsync(config *types.TmNamespace, options ...TmOperationOptions) (*Task, error) {
 	if config == nil {
 		return nil, fmt.Errorf("CreateTmNamespace config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "namespaces",
-		endpoint:       types.OpenApiPathVcf + "namespaces",
-		requiresTm:     true,
-		minimumVersion: "40.0",
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPost, config)
+	return createInnerEntityAsync(&vcdClient.Client, tmNamespaceConfig(options), config)
 }
 
-// GetTmNamespaceById retrieves a Namespace. Requires TM API 40.0+.
-func (vcdClient *VCDClient) GetTmNamespaceById(namespaceId string, options ...TmOperationOptions) (*TmNamespace, error) {
-	c := crudConfig{
-		entityLabel:    "namespaces",
-		endpoint:       types.OpenApiPathVcf + "namespaces/%s",
-		requiresTm:     true,
-		minimumVersion: "40.0",
-		endpointParams: []string{namespaceId},
-	}
-	result, err := getInnerEntity[types.TmNamespace](&vcdClient.Client, c.withTmOptions(options))
+// GetAllTmNamespaces retrieves all Namespaces. Requires TM API 40.0+.
+func (vcdClient *VCDClient) GetAllTmNamespaces(queryParameters url.Values, options ...TmOperationOptions) ([]*TmNamespace, error) {
+	c := tmNamespaceConfig(options)
+	c.queryParameters = queryParameters
+	outerType := TmNamespace{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
+}
+
+// GetTmNamespaceByName retrieves a Namespace by name. Requires TM API 40.0+.
+func (vcdClient *VCDClient) GetTmNamespaceByName(name string, options ...TmOperationOptions) (*TmNamespace, error) {
+	entities, err := vcdClient.GetAllTmNamespaces(nil, options...)
 	if err != nil {
 		return nil, err
 	}
-	return &TmNamespace{TmNamespace: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	return tmEntityByName(labelTmNamespace, name, entities, func(e *TmNamespace) string { return e.TmNamespace.Name })
+}
+
+// GetTmNamespaceById retrieves a Namespace by ID. Requires TM API 40.0+.
+func (vcdClient *VCDClient) GetTmNamespaceById(id string, options ...TmOperationOptions) (*TmNamespace, error) {
+	outerType := TmNamespace{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getOuterEntity(&vcdClient.Client, outerType, tmNamespaceConfig(options, id))
+}
+
+// GetTmNamespaceByNameOrId retrieves a Namespace by name or ID. Requires TM API 40.0+.
+func (vcdClient *VCDClient) GetTmNamespaceByNameOrId(identifier string, options ...TmOperationOptions) (*TmNamespace, error) {
+	return tmEntityByNameOrId(identifier,
+		func(id string) (*TmNamespace, error) { return vcdClient.GetTmNamespaceById(id, options...) },
+		func(name string) (*TmNamespace, error) { return vcdClient.GetTmNamespaceByName(name, options...) })
 }
 
 // Update updates a Namespace. Waits for task completion. Requires TM API 40.0+.
 func (o *TmNamespace) Update(config *types.TmNamespace, options ...TmOperationOptions) (*TmNamespace, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	if config == nil {
-		return nil, fmt.Errorf("Update config must not be nil")
-	}
-	c := crudConfig{
-		entityLabel:    "namespaces",
-		endpoint:       types.OpenApiPathVcf + "namespaces/%s",
-		requiresTm:     true,
-		minimumVersion: "40.0",
-		endpointParams: []string{o.TmNamespace.ID},
-	}
-	if err := runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodPut, config); err != nil {
-		return nil, err
-	}
-	result, err := getInnerEntity[types.TmNamespace](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return &TmNamespace{TmNamespace: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	outerType := TmNamespace{vcdClient: o.vcdClient, options: retainTmOptions(options)}
+	return updateOuterEntity(&o.vcdClient.Client, outerType, tmNamespaceConfig(options, o.TmNamespace.ID), config)
 }
 
 // UpdateAsync updates a Namespace. Returns the tracking task without waiting. Requires TM API 40.0+.
 func (o *TmNamespace) UpdateAsync(config *types.TmNamespace, options ...TmOperationOptions) (*Task, error) {
-	vcdClient := o.vcdClient
-	options = inheritTmOptions(o.options, options)
 	if config == nil {
 		return nil, fmt.Errorf("Update config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "namespaces",
-		endpoint:       types.OpenApiPathVcf + "namespaces/%s",
-		requiresTm:     true,
-		minimumVersion: "40.0",
-		endpointParams: []string{o.TmNamespace.ID},
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPut, config)
+	options = inheritTmOptions(o.options, options)
+	return runOpenApiOperationAsync(&o.vcdClient.Client, tmNamespaceConfig(options, o.TmNamespace.ID), http.MethodPut, config)
 }
 
-// Delete deletes a specified namespace. Waits for task completion. Requires TM API 40.0+. With detachOnly,
-// the namespace remains in vCenter.
+// Delete deletes a Namespace. Waits for task completion. Requires TM API 40.0+. With detachOnly, the namespace remains in vCenter.
 func (o *TmNamespace) Delete(detachOnly bool, options ...TmOperationOptions) error {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:     "namespaces",
-		endpoint:        types.OpenApiPathVcf + "namespaces/%s",
-		requiresTm:      true,
-		minimumVersion:  "40.0",
-		endpointParams:  []string{o.TmNamespace.ID},
-		queryParameters: url.Values{"detachOnly": {strconv.FormatBool(detachOnly)}},
-	}
-	return runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodDelete, nil)
+	c := tmNamespaceConfig(options, o.TmNamespace.ID)
+	c.queryParameters = url.Values{"detachOnly": {strconv.FormatBool(detachOnly)}}
+	return deleteEntityById(&o.vcdClient.Client, c)
 }
 
-// DeleteAsync deletes a specified namespace. Returns the tracking task without waiting. Requires TM API
-// 40.0+. With detachOnly, the namespace remains in vCenter.
+// DeleteAsync deletes a Namespace. Returns the tracking task without waiting. Requires TM API 40.0+. With detachOnly, the namespace remains in vCenter.
 func (o *TmNamespace) DeleteAsync(detachOnly bool, options ...TmOperationOptions) (*Task, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:     "namespaces",
-		endpoint:        types.OpenApiPathVcf + "namespaces/%s",
-		requiresTm:      true,
-		minimumVersion:  "40.0",
-		endpointParams:  []string{o.TmNamespace.ID},
-		queryParameters: url.Values{"detachOnly": {strconv.FormatBool(detachOnly)}},
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodDelete, nil)
+	c := tmNamespaceConfig(options, o.TmNamespace.ID)
+	c.queryParameters = url.Values{"detachOnly": {strconv.FormatBool(detachOnly)}}
+	return runOpenApiOperationAsync(&o.vcdClient.Client, c, http.MethodDelete, nil)
 }
 
-// GetAllCapabilities retrieves capabilities of a specific namespace. Requires TM API 40.1+.
+// GetAllTmNamespaceSummaries retrieves all Namespace summaries. Requires TM API 40.0+.
+func (vcdClient *VCDClient) GetAllTmNamespaceSummaries(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmNamespaceSummary, error) {
+	c := tmCrudConfig("TM Namespace Summary", types.OpenApiEndpointTmNamespaceSummaries, "40.0", options)
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmNamespaceSummary](&vcdClient.Client, c)
+}
+
+// GetAllCapabilities retrieves the capabilities of a Namespace. Requires TM API 40.1+.
 func (o *TmNamespace) GetAllCapabilities(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmRegionCapability, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:     "namespaces/capabilities",
-		endpoint:        types.OpenApiPathVcf + "namespaces/%s/capabilities",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		endpointParams:  []string{o.TmNamespace.ID},
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmRegionCapability](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	c := tmCrudConfig("TM Namespace capability", types.OpenApiEndpointTmNamespaceCapabilities, "40.1", options, o.TmNamespace.ID)
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmRegionCapability](&o.vcdClient.Client, c)
 }
 
-// ImportTmNamespace imports an existing Namespace from vCenter. Waits for task completion. Requires TM API
-// 40.0+.
+// ImportTmNamespace imports an existing Namespace from vCenter. Waits for task completion. Requires TM API 40.0+.
 func (vcdClient *VCDClient) ImportTmNamespace(config *types.TmNamespaceImportDetails, options ...TmOperationOptions) error {
 	if config == nil {
 		return fmt.Errorf("ImportTmNamespace config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "namespaces/import",
-		endpoint:       types.OpenApiPathVcf + "namespaces/import",
-		requiresTm:     true,
-		minimumVersion: "40.0",
-	}
-	return runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodPost, config)
+	c := tmCrudConfig("TM Namespace import", types.OpenApiEndpointTmNamespaceImport, "40.0", options)
+	return runOpenApiOperation(&vcdClient.Client, c, http.MethodPost, config)
 }
 
-// ImportTmNamespaceAsync imports an existing Namespace from vCenter. Returns the tracking task without
-// waiting. Requires TM API 40.0+.
+// ImportTmNamespaceAsync imports an existing Namespace from vCenter. Returns the tracking task without waiting.
+// Requires TM API 40.0+.
 func (vcdClient *VCDClient) ImportTmNamespaceAsync(config *types.TmNamespaceImportDetails, options ...TmOperationOptions) (*Task, error) {
 	if config == nil {
 		return nil, fmt.Errorf("ImportTmNamespace config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "namespaces/import",
-		endpoint:       types.OpenApiPathVcf + "namespaces/import",
-		requiresTm:     true,
-		minimumVersion: "40.0",
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPost, config)
+	c := tmCrudConfig("TM Namespace import", types.OpenApiEndpointTmNamespaceImport, "40.0", options)
+	return runOpenApiOperationAsync(&vcdClient.Client, c, http.MethodPost, config)
 }
 
-// GetAllTmNamespaceStorageClassMetrics retrieves paginated list of namespace storage class usage objects.
+// GetAllTmNamespaceStorageClassMetrics retrieves the paginated list of Namespace storage class usage objects.
 // Requires TM API 40.1+.
 func (vcdClient *VCDClient) GetAllTmNamespaceStorageClassMetrics(queryParameters url.Values, options ...TmOperationOptions) ([]*types.TmNamespaceStorageClassMetric, error) {
-	c := crudConfig{
-		entityLabel:     "namespaceStorageClassMetrics",
-		endpoint:        types.OpenApiPathVcf + "namespaceStorageClassMetrics",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmNamespaceStorageClassMetric](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	c := tmCrudConfig("TM Namespace storage class metric", types.OpenApiEndpointTmNamespaceStorageClassMetrics, "40.1", options)
+	c.queryParameters = queryParameters
+	return getAllInnerEntities[types.TmNamespaceStorageClassMetric](&vcdClient.Client, c)
 }

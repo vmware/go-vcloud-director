@@ -6,191 +6,126 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/http"
 	"net/url"
 	"strconv"
-
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-// TmAviController manages a Tenant Manager AviController.
+const labelTmAviController = "TM Avi Controller"
+
+// TmAviController manages an Avi Load Balancer Controller.
 type TmAviController struct {
 	TmAviController *types.TmAviController
 	vcdClient       *VCDClient
 	options         []TmOperationOptions
 }
 
-// CreateTmAviController register a new Avi Load Balancer Controller. Waits for task completion. Requires TM
-// API 40.1+.
-func (vcdClient *VCDClient) CreateTmAviController(config *types.TmAviController, options ...TmOperationOptions) (*TmAviController, error) {
-	if config == nil {
-		return nil, fmt.Errorf("CreateTmAviController config must not be nil")
-	}
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviControllers",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviControllers",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-	}
-	result, err := createInnerEntity(&vcdClient.Client, c.withTmOptions(options), config)
-	if err != nil {
-		return nil, err
-	}
-	return &TmAviController{TmAviController: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (g TmAviController) wrap(inner *types.TmAviController) *TmAviController {
+	g.TmAviController = inner
+	return &g
 }
 
-// CreateTmAviControllerAsync register a new Avi Load Balancer Controller. Returns the tracking task without
-// waiting. Requires TM API 40.1+.
+// tmAviControllerConfig returns the CRUD configuration for Avi Load Balancer Controller operations. Optional params are appended to the endpoint.
+func tmAviControllerConfig(options []TmOperationOptions, params ...string) crudConfig {
+	return crudConfig{
+		entityLabel:    labelTmAviController,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmAviControllers,
+		endpointParams: params,
+		requiresTm:     true,
+		minimumVersion: "40.1",
+	}.withTmOptions(options)
+}
+
+// CreateTmAviController creates an Avi Load Balancer Controller. Waits for task completion. Requires TM API 40.1+.
+func (vcdClient *VCDClient) CreateTmAviController(config *types.TmAviController, options ...TmOperationOptions) (*TmAviController, error) {
+	outerType := TmAviController{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return createOuterEntity(&vcdClient.Client, outerType, tmAviControllerConfig(options), config)
+}
+
+// CreateTmAviControllerAsync creates an Avi Load Balancer Controller. Returns the tracking task without waiting. Requires TM API 40.1+.
 func (vcdClient *VCDClient) CreateTmAviControllerAsync(config *types.TmAviController, options ...TmOperationOptions) (*Task, error) {
 	if config == nil {
 		return nil, fmt.Errorf("CreateTmAviController config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviControllers",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviControllers",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPost, config)
+	return createInnerEntityAsync(&vcdClient.Client, tmAviControllerConfig(options), config)
 }
 
-// GetAllTmAviControllers retrieves all registered Avi Load Balancer Controllers in the system. Requires TM
-// API 40.1+.
+// GetAllTmAviControllers retrieves all Avi Load Balancer Controllers. Requires TM API 40.1+.
 func (vcdClient *VCDClient) GetAllTmAviControllers(queryParameters url.Values, options ...TmOperationOptions) ([]*TmAviController, error) {
-	c := crudConfig{
-		entityLabel:     "loadBalancer/aviControllers",
-		endpoint:        types.OpenApiPathVcf + "loadBalancer/aviControllers",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmAviController](&vcdClient.Client, c.withTmOptions(options))
+	c := tmAviControllerConfig(options)
+	c.queryParameters = queryParameters
+	outerType := TmAviController{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
+}
+
+// GetTmAviControllerByName retrieves an Avi Load Balancer Controller by name. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmAviControllerByName(name string, options ...TmOperationOptions) (*TmAviController, error) {
+	entities, err := vcdClient.GetAllTmAviControllers(nil, options...)
 	if err != nil {
 		return nil, err
 	}
-	wrapped := make([]*TmAviController, len(result))
-	for i := range result {
-		wrapped[i] = &TmAviController{TmAviController: result[i], vcdClient: vcdClient, options: retainTmOptions(options)}
-	}
-	return wrapped, nil
+	return tmEntityByName(labelTmAviController, name, entities, func(e *TmAviController) string { return e.TmAviController.Name })
 }
 
-// GetTmAviControllerById retrieves Avi Load Balancer Controller. Requires TM API 40.1+.
-func (vcdClient *VCDClient) GetTmAviControllerById(aviControllerId string, options ...TmOperationOptions) (*TmAviController, error) {
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviControllers",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviControllers/%s",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-		endpointParams: []string{aviControllerId},
-	}
-	result, err := getInnerEntity[types.TmAviController](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return &TmAviController{TmAviController: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+// GetTmAviControllerById retrieves an Avi Load Balancer Controller by ID. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmAviControllerById(id string, options ...TmOperationOptions) (*TmAviController, error) {
+	outerType := TmAviController{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getOuterEntity(&vcdClient.Client, outerType, tmAviControllerConfig(options, id))
 }
 
-// Update updates specified Avi Load Balancer Controller. Waits for task completion. Requires TM API 40.1+.
+// GetTmAviControllerByNameOrId retrieves an Avi Load Balancer Controller by name or ID. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmAviControllerByNameOrId(identifier string, options ...TmOperationOptions) (*TmAviController, error) {
+	return tmEntityByNameOrId(identifier,
+		func(id string) (*TmAviController, error) { return vcdClient.GetTmAviControllerById(id, options...) },
+		func(name string) (*TmAviController, error) {
+			return vcdClient.GetTmAviControllerByName(name, options...)
+		})
+}
+
+// Update updates an Avi Load Balancer Controller. Waits for task completion. Requires TM API 40.1+.
 func (o *TmAviController) Update(config *types.TmAviController, options ...TmOperationOptions) (*TmAviController, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	if config == nil {
-		return nil, fmt.Errorf("Update config must not be nil")
-	}
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviControllers",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviControllers/%s",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-		endpointParams: []string{o.TmAviController.ID},
-	}
-	if err := runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodPut, config); err != nil {
-		return nil, err
-	}
-	result, err := getInnerEntity[types.TmAviController](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return &TmAviController{TmAviController: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	outerType := TmAviController{vcdClient: o.vcdClient, options: retainTmOptions(options)}
+	return updateOuterEntity(&o.vcdClient.Client, outerType, tmAviControllerConfig(options, o.TmAviController.ID), config)
 }
 
-// UpdateAsync updates specified Avi Load Balancer Controller. Returns the tracking task without waiting.
-// Requires TM API 40.1+.
+// UpdateAsync updates an Avi Load Balancer Controller. Returns the tracking task without waiting. Requires TM API 40.1+.
 func (o *TmAviController) UpdateAsync(config *types.TmAviController, options ...TmOperationOptions) (*Task, error) {
-	vcdClient := o.vcdClient
-	options = inheritTmOptions(o.options, options)
 	if config == nil {
 		return nil, fmt.Errorf("Update config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviControllers",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviControllers/%s",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-		endpointParams: []string{o.TmAviController.ID},
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPut, config)
+	options = inheritTmOptions(o.options, options)
+	return runOpenApiOperationAsync(&o.vcdClient.Client, tmAviControllerConfig(options, o.TmAviController.ID), http.MethodPut, config)
 }
 
-// Delete unregister the specified Avi Load Balancer Controller. Waits for task completion. Requires TM API
-// 40.1+.
+// Delete unregisters an Avi Load Balancer Controller. Waits for task completion. Requires TM API 40.1+.
 func (o *TmAviController) Delete(force bool, options ...TmOperationOptions) error {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:     "loadBalancer/aviControllers",
-		endpoint:        types.OpenApiPathVcf + "loadBalancer/aviControllers/%s",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		endpointParams:  []string{o.TmAviController.ID},
-		queryParameters: url.Values{"force": {strconv.FormatBool(force)}},
-	}
-	return runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodDelete, nil)
+	c := tmAviControllerConfig(options, o.TmAviController.ID)
+	c.queryParameters = url.Values{"force": {strconv.FormatBool(force)}}
+	return deleteEntityById(&o.vcdClient.Client, c)
 }
 
-// DeleteAsync unregister the specified Avi Load Balancer Controller. Returns the tracking task without
-// waiting. Requires TM API 40.1+.
+// DeleteAsync unregisters an Avi Load Balancer Controller. Returns the tracking task without waiting. Requires TM API 40.1+.
 func (o *TmAviController) DeleteAsync(force bool, options ...TmOperationOptions) (*Task, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:     "loadBalancer/aviControllers",
-		endpoint:        types.OpenApiPathVcf + "loadBalancer/aviControllers/%s",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		endpointParams:  []string{o.TmAviController.ID},
-		queryParameters: url.Values{"force": {strconv.FormatBool(force)}},
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodDelete, nil)
+	c := tmAviControllerConfig(options, o.TmAviController.ID)
+	c.queryParameters = url.Values{"force": {strconv.FormatBool(force)}}
+	return runOpenApiOperationAsync(&o.vcdClient.Client, c, http.MethodDelete, nil)
 }
 
-// Sync synchronizes Avi Load Balancer Controller along with associated Cloud and Service Engine Groups.
-// Waits for task completion. Requires TM API 40.1+.
+// Sync synchronizes the Avi Load Balancer Controller along with its associated Cloud and Service Engine Groups. Waits for task completion. Requires TM API 40.1+.
 func (o *TmAviController) Sync(options ...TmOperationOptions) error {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviControllers/sync",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviControllers/%s/sync",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-		endpointParams: []string{o.TmAviController.ID},
-	}
-	return runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodPost, nil)
+	return runOpenApiOperation(&o.vcdClient.Client, tmCrudConfig("TM Avi Controller sync", types.OpenApiEndpointTmAviControllerSync, "40.1", options, o.TmAviController.ID), http.MethodPost, nil)
 }
 
-// SyncAsync synchronizes Avi Load Balancer Controller along with associated Cloud and Service Engine
-// Groups. Returns the tracking task without waiting. Requires TM API 40.1+.
+// SyncAsync synchronizes the Avi Load Balancer Controller along with its associated Cloud and Service Engine Groups. Returns the tracking task without waiting. Requires TM API 40.1+.
 func (o *TmAviController) SyncAsync(options ...TmOperationOptions) (*Task, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviControllers/sync",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviControllers/%s/sync",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-		endpointParams: []string{o.TmAviController.ID},
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPost, nil)
+	return runOpenApiOperationAsync(&o.vcdClient.Client, tmCrudConfig("TM Avi Controller sync", types.OpenApiEndpointTmAviControllerSync, "40.1", options, o.TmAviController.ID), http.MethodPost, nil)
 }

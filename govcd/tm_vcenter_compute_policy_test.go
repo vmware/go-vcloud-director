@@ -20,6 +20,7 @@ func (vcd *TestVCD) Test_TmVCenterComputePolicyInventory(check *C) {
 	if len(all) == 0 {
 		check.Skip("no VCenterComputePolicy resources available")
 	}
+	names := tmNameCounts(all, func(e *TmVCenterComputePolicy) string { return e.TmVCenterComputePolicy.Name })
 	seen := make(map[string]bool)
 	for _, item := range all {
 		id := item.TmVCenterComputePolicy.ID
@@ -29,6 +30,17 @@ func (vcd *TestVCD) Test_TmVCenterComputePolicyInventory(check *C) {
 		byID, err := vcd.client.GetTmVCenterComputePolicyById(id, options)
 		check.Assert(err, IsNil)
 		check.Assert(byID.TmVCenterComputePolicy.ID, Equals, id)
+		if name := item.TmVCenterComputePolicy.Name; name != "" && names[name] == 1 {
+			byName, err := vcd.client.GetTmVCenterComputePolicyByName(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmVCenterComputePolicy.ID, Equals, id)
+			byNameOrId, err := vcd.client.GetTmVCenterComputePolicyByNameOrId(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmVCenterComputePolicy.ID, Equals, id)
+			byNameOrId, err = vcd.client.GetTmVCenterComputePolicyByNameOrId(id, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmVCenterComputePolicy.ID, Equals, id)
+		}
 		tags, err := item.GetAllTags(url.Values{"pageSize": {"1"}})
 		check.Assert(err, IsNil)
 		for _, tag := range tags {

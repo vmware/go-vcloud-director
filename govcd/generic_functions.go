@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
 // oneOrError is used to cover up a common pattern in this codebase which is usually used in
@@ -131,4 +133,46 @@ func convertRdeEntityToAny[E any](content map[string]interface{}) (*E, error) {
 	}
 
 	return result, nil
+}
+
+// tmEntityByName returns the only entity whose name matches exactly. The names are compared
+// literally on the client side because not every TM list endpoint supports filtering by name.
+func tmEntityByName[E any](entityLabel, name string, entities []*E, nameOf func(*E) string) (*E, error) {
+	if name == "" {
+		return nil, fmt.Errorf("%s lookup requires name", entityLabel)
+	}
+	var matches []*E
+	for _, entity := range entities {
+		if nameOf(entity) == name {
+			matches = append(matches, entity)
+		}
+	}
+	return oneOrError("name", name, matches)
+}
+
+// tmEntityByNameOrId looks up an entity by ID when the identifier looks like a URN or UUID, falling back to
+// the name when it is not found by ID.
+func tmEntityByNameOrId[E any](identifier string, getById, getByName func(string) (*E, error)) (*E, error) {
+	if isUrn(identifier) || IsUuid(identifier) {
+		entity, err := getById(identifier)
+		if err == nil {
+			return entity, nil
+		}
+		if !ContainsNotFound(err) {
+			return nil, err
+		}
+	}
+	return getByName(identifier)
+}
+
+// tmCrudConfig builds the configuration of a TM operation on an endpoint with the minimum TM API version that
+// supports it. Optional params replace the '%s' placeholders of the endpoint, or are appended to it.
+func tmCrudConfig(entityLabel, endpoint, minimumVersion string, options []TmOperationOptions, params ...string) crudConfig {
+	return crudConfig{
+		entityLabel:    entityLabel,
+		endpoint:       types.OpenApiPathVcf + endpoint,
+		endpointParams: params,
+		requiresTm:     true,
+		minimumVersion: minimumVersion,
+	}.withTmOptions(options)
 }

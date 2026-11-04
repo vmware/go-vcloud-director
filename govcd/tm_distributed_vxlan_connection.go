@@ -6,157 +6,113 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/http"
 	"net/url"
-
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-// TmDistributedVxlanConnection manages a Tenant Manager DistributedVxlanConnection.
+const labelTmDistributedVxlanConnection = "TM Distributed VXLAN Connection"
+
+// TmDistributedVxlanConnection manages a Distributed VXLAN Connection.
 type TmDistributedVxlanConnection struct {
 	TmDistributedVxlanConnection *types.TmDistributedVxlanConnection
 	vcdClient                    *VCDClient
 	options                      []TmOperationOptions
 }
 
-// GetAllTmDistributedVxlanConnections retrieves all Distributed VXLAN Connections. Requires TM API 9.1.1+.
-func (vcdClient *VCDClient) GetAllTmDistributedVxlanConnections(queryParameters url.Values, options ...TmOperationOptions) ([]*TmDistributedVxlanConnection, error) {
-	c := crudConfig{
-		entityLabel:     "distributedVxlanConnections",
-		endpoint:        types.OpenApiPathVcf + "distributedVxlanConnections",
-		requiresTm:      true,
-		minimumVersion:  "9.1.1",
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmDistributedVxlanConnection](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	wrapped := make([]*TmDistributedVxlanConnection, len(result))
-	for i := range result {
-		wrapped[i] = &TmDistributedVxlanConnection{TmDistributedVxlanConnection: result[i], vcdClient: vcdClient, options: retainTmOptions(options)}
-	}
-	return wrapped, nil
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (g TmDistributedVxlanConnection) wrap(inner *types.TmDistributedVxlanConnection) *TmDistributedVxlanConnection {
+	g.TmDistributedVxlanConnection = inner
+	return &g
 }
 
-// CreateTmDistributedVxlanConnection creates a new Distributed VXLAN Connection. Waits for task completion.
-// Requires TM API 9.1.1+.
-func (vcdClient *VCDClient) CreateTmDistributedVxlanConnection(config *types.TmDistributedVxlanConnection, options ...TmOperationOptions) (*TmDistributedVxlanConnection, error) {
-	if config == nil {
-		return nil, fmt.Errorf("CreateTmDistributedVxlanConnection config must not be nil")
-	}
-	c := crudConfig{
-		entityLabel:    "distributedVxlanConnections",
-		endpoint:       types.OpenApiPathVcf + "distributedVxlanConnections",
+// tmDistributedVxlanConnectionConfig returns the CRUD configuration for Distributed VXLAN Connection operations. Optional params are appended to the endpoint.
+func tmDistributedVxlanConnectionConfig(options []TmOperationOptions, params ...string) crudConfig {
+	return crudConfig{
+		entityLabel:    labelTmDistributedVxlanConnection,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmDistributedVxlanConnections,
+		endpointParams: params,
 		requiresTm:     true,
 		minimumVersion: "9.1.1",
-	}
-	result, err := createInnerEntity(&vcdClient.Client, c.withTmOptions(options), config)
-	if err != nil {
-		return nil, err
-	}
-	return &TmDistributedVxlanConnection{TmDistributedVxlanConnection: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	}.withTmOptions(options)
 }
 
-// CreateTmDistributedVxlanConnectionAsync creates a new Distributed VXLAN Connection. Returns the tracking
-// task without waiting. Requires TM API 9.1.1+.
+// CreateTmDistributedVxlanConnection creates a Distributed VXLAN Connection. Waits for task completion. Requires TM API 9.1.1+.
+func (vcdClient *VCDClient) CreateTmDistributedVxlanConnection(config *types.TmDistributedVxlanConnection, options ...TmOperationOptions) (*TmDistributedVxlanConnection, error) {
+	outerType := TmDistributedVxlanConnection{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return createOuterEntity(&vcdClient.Client, outerType, tmDistributedVxlanConnectionConfig(options), config)
+}
+
+// CreateTmDistributedVxlanConnectionAsync creates a Distributed VXLAN Connection. Returns the tracking task without waiting. Requires TM API 9.1.1+.
 func (vcdClient *VCDClient) CreateTmDistributedVxlanConnectionAsync(config *types.TmDistributedVxlanConnection, options ...TmOperationOptions) (*Task, error) {
 	if config == nil {
 		return nil, fmt.Errorf("CreateTmDistributedVxlanConnection config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "distributedVxlanConnections",
-		endpoint:       types.OpenApiPathVcf + "distributedVxlanConnections",
-		requiresTm:     true,
-		minimumVersion: "9.1.1",
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPost, config)
+	return createInnerEntityAsync(&vcdClient.Client, tmDistributedVxlanConnectionConfig(options), config)
 }
 
-// GetTmDistributedVxlanConnectionById retrieves a Distributed VXLAN Connection. Requires TM API 9.1.1+.
-func (vcdClient *VCDClient) GetTmDistributedVxlanConnectionById(distributedVxlanConnectionId string, options ...TmOperationOptions) (*TmDistributedVxlanConnection, error) {
-	c := crudConfig{
-		entityLabel:    "distributedVxlanConnections",
-		endpoint:       types.OpenApiPathVcf + "distributedVxlanConnections/%s",
-		requiresTm:     true,
-		minimumVersion: "9.1.1",
-		endpointParams: []string{distributedVxlanConnectionId},
-	}
-	result, err := getInnerEntity[types.TmDistributedVxlanConnection](&vcdClient.Client, c.withTmOptions(options))
+// GetAllTmDistributedVxlanConnections retrieves all Distributed VXLAN Connections. Requires TM API 9.1.1+.
+func (vcdClient *VCDClient) GetAllTmDistributedVxlanConnections(queryParameters url.Values, options ...TmOperationOptions) ([]*TmDistributedVxlanConnection, error) {
+	c := tmDistributedVxlanConnectionConfig(options)
+	c.queryParameters = queryParameters
+	outerType := TmDistributedVxlanConnection{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
+}
+
+// GetTmDistributedVxlanConnectionByName retrieves a Distributed VXLAN Connection by name. Requires TM API 9.1.1+.
+func (vcdClient *VCDClient) GetTmDistributedVxlanConnectionByName(name string, options ...TmOperationOptions) (*TmDistributedVxlanConnection, error) {
+	entities, err := vcdClient.GetAllTmDistributedVxlanConnections(nil, options...)
 	if err != nil {
 		return nil, err
 	}
-	return &TmDistributedVxlanConnection{TmDistributedVxlanConnection: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	return tmEntityByName(labelTmDistributedVxlanConnection, name, entities, func(e *TmDistributedVxlanConnection) string { return e.TmDistributedVxlanConnection.Name })
+}
+
+// GetTmDistributedVxlanConnectionById retrieves a Distributed VXLAN Connection by ID. Requires TM API 9.1.1+.
+func (vcdClient *VCDClient) GetTmDistributedVxlanConnectionById(id string, options ...TmOperationOptions) (*TmDistributedVxlanConnection, error) {
+	outerType := TmDistributedVxlanConnection{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getOuterEntity(&vcdClient.Client, outerType, tmDistributedVxlanConnectionConfig(options, id))
+}
+
+// GetTmDistributedVxlanConnectionByNameOrId retrieves a Distributed VXLAN Connection by name or ID. Requires TM API 9.1.1+.
+func (vcdClient *VCDClient) GetTmDistributedVxlanConnectionByNameOrId(identifier string, options ...TmOperationOptions) (*TmDistributedVxlanConnection, error) {
+	return tmEntityByNameOrId(identifier,
+		func(id string) (*TmDistributedVxlanConnection, error) {
+			return vcdClient.GetTmDistributedVxlanConnectionById(id, options...)
+		},
+		func(name string) (*TmDistributedVxlanConnection, error) {
+			return vcdClient.GetTmDistributedVxlanConnectionByName(name, options...)
+		})
 }
 
 // Update updates a Distributed VXLAN Connection. Waits for task completion. Requires TM API 9.1.1+.
 func (o *TmDistributedVxlanConnection) Update(config *types.TmDistributedVxlanConnection, options ...TmOperationOptions) (*TmDistributedVxlanConnection, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	if config == nil {
-		return nil, fmt.Errorf("Update config must not be nil")
-	}
-	c := crudConfig{
-		entityLabel:    "distributedVxlanConnections",
-		endpoint:       types.OpenApiPathVcf + "distributedVxlanConnections/%s",
-		requiresTm:     true,
-		minimumVersion: "9.1.1",
-		endpointParams: []string{o.TmDistributedVxlanConnection.ID},
-	}
-	if err := runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodPut, config); err != nil {
-		return nil, err
-	}
-	result, err := getInnerEntity[types.TmDistributedVxlanConnection](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return &TmDistributedVxlanConnection{TmDistributedVxlanConnection: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	outerType := TmDistributedVxlanConnection{vcdClient: o.vcdClient, options: retainTmOptions(options)}
+	return updateOuterEntity(&o.vcdClient.Client, outerType, tmDistributedVxlanConnectionConfig(options, o.TmDistributedVxlanConnection.ID), config)
 }
 
-// UpdateAsync updates a Distributed VXLAN Connection. Returns the tracking task without waiting. Requires
-// TM API 9.1.1+.
+// UpdateAsync updates a Distributed VXLAN Connection. Returns the tracking task without waiting. Requires TM API 9.1.1+.
 func (o *TmDistributedVxlanConnection) UpdateAsync(config *types.TmDistributedVxlanConnection, options ...TmOperationOptions) (*Task, error) {
-	vcdClient := o.vcdClient
-	options = inheritTmOptions(o.options, options)
 	if config == nil {
 		return nil, fmt.Errorf("Update config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "distributedVxlanConnections",
-		endpoint:       types.OpenApiPathVcf + "distributedVxlanConnections/%s",
-		requiresTm:     true,
-		minimumVersion: "9.1.1",
-		endpointParams: []string{o.TmDistributedVxlanConnection.ID},
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPut, config)
+	options = inheritTmOptions(o.options, options)
+	return runOpenApiOperationAsync(&o.vcdClient.Client, tmDistributedVxlanConnectionConfig(options, o.TmDistributedVxlanConnection.ID), http.MethodPut, config)
 }
 
-// Delete deletes a specific Distributed VXLAN Connection. Waits for task completion. Requires TM API
-// 9.1.1+.
+// Delete deletes a Distributed VXLAN Connection. Waits for task completion. Requires TM API 9.1.1+.
 func (o *TmDistributedVxlanConnection) Delete(options ...TmOperationOptions) error {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:    "distributedVxlanConnections",
-		endpoint:       types.OpenApiPathVcf + "distributedVxlanConnections/%s",
-		requiresTm:     true,
-		minimumVersion: "9.1.1",
-		endpointParams: []string{o.TmDistributedVxlanConnection.ID},
-	}
-	return runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodDelete, nil)
+	c := tmDistributedVxlanConnectionConfig(options, o.TmDistributedVxlanConnection.ID)
+	return deleteEntityById(&o.vcdClient.Client, c)
 }
 
-// DeleteAsync deletes a specific Distributed VXLAN Connection. Returns the tracking task without waiting.
-// Requires TM API 9.1.1+.
+// DeleteAsync deletes a Distributed VXLAN Connection. Returns the tracking task without waiting. Requires TM API 9.1.1+.
 func (o *TmDistributedVxlanConnection) DeleteAsync(options ...TmOperationOptions) (*Task, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:    "distributedVxlanConnections",
-		endpoint:       types.OpenApiPathVcf + "distributedVxlanConnections/%s",
-		requiresTm:     true,
-		minimumVersion: "9.1.1",
-		endpointParams: []string{o.TmDistributedVxlanConnection.ID},
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodDelete, nil)
+	c := tmDistributedVxlanConnectionConfig(options, o.TmDistributedVxlanConnection.ID)
+	return runOpenApiOperationAsync(&o.vcdClient.Client, c, http.MethodDelete, nil)
 }

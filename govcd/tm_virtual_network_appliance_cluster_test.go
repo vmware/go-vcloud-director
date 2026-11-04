@@ -20,6 +20,7 @@ func (vcd *TestVCD) Test_TmVirtualNetworkApplianceClusterInventory(check *C) {
 	if len(all) == 0 {
 		check.Skip("no VirtualNetworkApplianceCluster resources available")
 	}
+	names := tmNameCounts(all, func(e *TmVirtualNetworkApplianceCluster) string { return e.TmVirtualNetworkApplianceCluster.Name })
 	seen := make(map[string]bool)
 	for _, item := range all {
 		id := item.TmVirtualNetworkApplianceCluster.ID
@@ -29,6 +30,17 @@ func (vcd *TestVCD) Test_TmVirtualNetworkApplianceClusterInventory(check *C) {
 		byID, err := vcd.client.GetTmVirtualNetworkApplianceClusterById(id, options)
 		check.Assert(err, IsNil)
 		check.Assert(byID.TmVirtualNetworkApplianceCluster.ID, Equals, id)
+		if name := item.TmVirtualNetworkApplianceCluster.Name; name != "" && names[name] == 1 {
+			byName, err := vcd.client.GetTmVirtualNetworkApplianceClusterByName(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmVirtualNetworkApplianceCluster.ID, Equals, id)
+			byNameOrId, err := vcd.client.GetTmVirtualNetworkApplianceClusterByNameOrId(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmVirtualNetworkApplianceCluster.ID, Equals, id)
+			byNameOrId, err = vcd.client.GetTmVirtualNetworkApplianceClusterByNameOrId(id, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmVirtualNetworkApplianceCluster.ID, Equals, id)
+		}
 		statuses, err := item.GetAllTransportNodeStatuses()
 		check.Assert(err, IsNil)
 		check.Assert(statuses, NotNil)
