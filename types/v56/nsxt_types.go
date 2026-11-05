@@ -1544,8 +1544,8 @@ type DistributedFirewallRuleVersion struct {
 
 type NsxtNetworkContextProfile struct {
 	OrgRef               *OpenApiReference `json:"orgRef"`
-	ContextEntityID      interface{}       `json:"contextEntityId"`
-	NetworkProviderScope interface{}       `json:"networkProviderScope"`
+	ContextEntityID      string            `json:"contextEntityId,omitempty"`
+	NetworkProviderScope string            `json:"networkProviderScope,omitempty"`
 	ID                   string            `json:"id"`
 	Name                 string            `json:"name"`
 	Description          string            `json:"description"`
@@ -1558,9 +1558,16 @@ type NsxtNetworkContextProfile struct {
 	Attributes []NsxtNetworkContextProfileAttributes `json:"attributes"`
 }
 type NsxtNetworkContextProfileAttributes struct {
-	Type          string      `json:"type"`
-	Values        []string    `json:"values"`
-	SubAttributes interface{} `json:"subAttributes"`
+	Type          string                                   `json:"type"`
+	Values        []string                                 `json:"values"`
+	SubAttributes []NsxtNetworkContextProfileSubAttributes `json:"subAttributes,omitempty"`
+}
+
+// NsxtNetworkContextProfileSubAttributes is a sub-attribute of an attribute of a Network Context
+// Profile (for example, TLS_VERSION for an APP_ID attribute)
+type NsxtNetworkContextProfileSubAttributes struct {
+	Type   string   `json:"type"`
+	Values []string `json:"values"`
 }
 
 // SecurityTag represents An individual security tag

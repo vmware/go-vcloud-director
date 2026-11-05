@@ -73,3 +73,67 @@ func filteredTestGetAllNetworkContextProfiles(queryParams url.Values, client *Cl
 	check.Assert(err, IsNil)
 	check.Assert(profiles, NotNil)
 }
+
+func (vcd *TestVCD) Test_NsxtNetworkContextProfileCRUD(check *C) {
+	vcd.skipIfNotSysAdmin(check)
+	skipNoNsxtConfiguration(vcd, check)
+	skipOpenApiEndpointTest(vcd, check, types.OpenApiPathVersion1_0_0+types.OpenApiEndpointNetworkContextProfiles)
+
+	vdc, err := vcd.org.GetVDCByName(vcd.config.VCD.Nsxt.Vdc, false)
+	check.Assert(err, IsNil)
+
+	// Validation errors
+	_, err = vcd.client.CreateNetworkContextProfile(nil)
+	check.Assert(err, NotNil)
+	_, err = vcd.client.GetNetworkContextProfileById("")
+	check.Assert(err, NotNil)
+
+	config := &types.NsxtNetworkContextProfile{
+		Name:            check.TestName(),
+		Description:     "created by go-vcloud-director tests",
+		Scope:           "TENANT",
+		ContextEntityID: vdc.Vdc.ID,
+		Attributes: []types.NsxtNetworkContextProfileAttributes{
+			{Type: "APP_ID", Values: []string{"SSL"}},
+		},
+	}
+	profile, err := vcd.client.CreateNetworkContextProfile(config)
+	check.Assert(err, IsNil)
+	check.Assert(profile.NsxtNetworkContextProfile.ID, Not(Equals), "")
+	PrependToCleanupListOpenApi(profile.NsxtNetworkContextProfile.ID, check.TestName(),
+		types.OpenApiPathVersion1_0_0+types.OpenApiEndpointNetworkContextProfiles+profile.NsxtNetworkContextProfile.ID)
+
+	// Get by ID and by name through the existing lookup function
+	byId, err := vcd.client.GetNetworkContextProfileById(profile.NsxtNetworkContextProfile.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byId.NsxtNetworkContextProfile.Name, Equals, config.Name)
+	check.Assert(byId.NsxtNetworkContextProfile.Attributes[0].Type, Equals, "APP_ID")
+
+	byName, err := GetNetworkContextProfilesByNameScopeAndContext(&vcd.client.Client, config.Name, "TENANT", vdc.Vdc.ID)
+	check.Assert(err, IsNil)
+	check.Assert(byName.ID, Equals, profile.NsxtNetworkContextProfile.ID)
+
+	// Update
+	update := *byId.NsxtNetworkContextProfile
+	update.Description = "updated"
+	update.Attributes = []types.NsxtNetworkContextProfileAttributes{
+		{
+			Type:   "APP_ID",
+			Values: []string{"SSL"},
+			SubAttributes: []types.NsxtNetworkContextProfileSubAttributes{
+				{Type: "TLS_VERSION", Values: []string{"TLS_V12"}},
+			},
+		},
+	}
+	updated, err := byId.Update(&update)
+	check.Assert(err, IsNil)
+	check.Assert(updated.NsxtNetworkContextProfile.Description, Equals, "updated")
+	check.Assert(len(updated.NsxtNetworkContextProfile.Attributes[0].SubAttributes), Equals, 1)
+
+	// Delete
+	err = updated.Delete()
+	check.Assert(err, IsNil)
+	_, err = vcd.client.GetNetworkContextProfileById(profile.NsxtNetworkContextProfile.ID)
+	check.Assert(err, NotNil)
+	check.Assert(ContainsNotFound(err), Equals, true)
+}
