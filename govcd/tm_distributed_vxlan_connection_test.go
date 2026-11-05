@@ -20,6 +20,7 @@ func (vcd *TestVCD) Test_TmDistributedVxlanConnectionInventory(check *C) {
 	if len(all) == 0 {
 		check.Skip("no DistributedVxlanConnection resources available")
 	}
+	names := tmNameCounts(all, func(e *TmDistributedVxlanConnection) string { return e.TmDistributedVxlanConnection.Name })
 	seen := make(map[string]bool)
 	for _, item := range all {
 		id := item.TmDistributedVxlanConnection.ID
@@ -29,5 +30,16 @@ func (vcd *TestVCD) Test_TmDistributedVxlanConnectionInventory(check *C) {
 		byID, err := vcd.client.GetTmDistributedVxlanConnectionById(id, options)
 		check.Assert(err, IsNil)
 		check.Assert(byID.TmDistributedVxlanConnection.ID, Equals, id)
+		if name := item.TmDistributedVxlanConnection.Name; name != "" && names[name] == 1 {
+			byName, err := vcd.client.GetTmDistributedVxlanConnectionByName(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmDistributedVxlanConnection.ID, Equals, id)
+			byNameOrId, err := vcd.client.GetTmDistributedVxlanConnectionByNameOrId(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmDistributedVxlanConnection.ID, Equals, id)
+			byNameOrId, err = vcd.client.GetTmDistributedVxlanConnectionByNameOrId(id, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmDistributedVxlanConnection.ID, Equals, id)
+		}
 	}
 }

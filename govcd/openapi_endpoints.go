@@ -185,6 +185,30 @@ var endpointMinApiVersions = map[string]string{
 	types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointFeatureFlags:                  "40.0",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmSharedSubnets:                        "40.1",
 	types.OpenApiPathVcf + types.OpenApiEndpointTmDistributedVlanConnections:           "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmAviControllers:                       "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmAviControllerSync:                    "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmAviServiceEngineGroups:               "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmAviServiceEngineGroupAssignments:     "40.1",
+	// Operations on this endpoint require TM API 9.1.1, which is enforced through crudConfig.minimumVersion because
+	// patch versions have no legacy alias. The alias below is the endpoint-wide floor.
+	types.OpenApiPathVcf + types.OpenApiEndpointTmDistributedVxlanConnections:                       "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmInfraPolicies:                                     "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmInfraPolicyVCenterPolicies:                        "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmInfraPolicySyncToVCenters:                         "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmNamespaces:                                        "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmNamespaceSummaries:                                "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmNamespaceCapabilities:                             "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmNamespaceImport:                                   "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmNamespaceStorageClassMetrics:                      "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmProjectAccessLevels:                               "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmProjectAssignments:                                "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmProjectAssignmentMembers:                          "40.0",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVCenterComputePolicies:                            "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVCenterComputePolicyTags:                          "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVCenterComputePolicyNames:                         "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVirtualNetworkApplianceClusters:                   "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVirtualNetworkApplianceClusterTransportNodeStatus: "40.1",
+	types.OpenApiPathVcf + types.OpenApiEndpointTmVirtualNetworkApplianceClustersSync:               "40.1",
 }
 
 // endpointElevatedApiVersions endpoint elevated API versions

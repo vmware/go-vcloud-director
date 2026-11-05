@@ -544,3 +544,12 @@ func tmTestOptions(vcd *TestVCD, check *C, minimum string) TmOperationOptions {
 	check.Assert(err, IsNil)
 	return TmOperationOptions{APIVersion: op.apiVersion}
 }
+
+// tmNameCounts counts how many entities have each name, so that lookups by name are only checked for unique names
+func tmNameCounts[E any](entities []*E, nameOf func(*E) string) map[string]int {
+	result := make(map[string]int, len(entities))
+	for _, entity := range entities {
+		result[nameOf(entity)]++
+	}
+	return result
+}

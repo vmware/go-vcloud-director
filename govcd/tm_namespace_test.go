@@ -9,6 +9,7 @@ package govcd
 import (
 	"net/url"
 
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	. "gopkg.in/check.v1"
 )
 
@@ -21,12 +22,21 @@ func (vcd *TestVCD) Test_TmNamespaceInventory(check *C) {
 	if len(namespaces) == 0 {
 		check.Skip("no namespaces available")
 	}
+	names := tmNameCounts(namespaces, func(e *types.TmNamespaceSummary) string { return e.Name })
 	for _, summary := range namespaces {
 		namespace, err := vcd.client.GetTmNamespaceById(summary.ID, options)
 		check.Assert(err, IsNil)
 		check.Assert(namespace.TmNamespace.ID, Equals, summary.ID)
 		check.Assert(namespace.TmNamespace.Name, Equals, summary.Name)
 		check.Assert(namespace.TmNamespace.ProjectAssignment, NotNil)
+		if names[summary.Name] == 1 {
+			byName, err := vcd.client.GetTmNamespaceByName(summary.Name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmNamespace.ID, Equals, summary.ID)
+			byNameOrId, err := vcd.client.GetTmNamespaceByNameOrId(summary.Name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmNamespace.ID, Equals, summary.ID)
+		}
 	}
 }
 

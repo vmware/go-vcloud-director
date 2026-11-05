@@ -6,161 +6,140 @@ package govcd
 
 import (
 	"fmt"
+	"github.com/vmware/go-vcloud-director/v3/types/v56"
 	"net/http"
 	"net/url"
-
-	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
-// TmAviServiceEngineGroup manages a Tenant Manager AviServiceEngineGroup.
+const labelTmAviServiceEngineGroup = "TM Avi Service Engine Group"
+
+// TmAviServiceEngineGroup manages an Avi Load Balancer Service Engine Group.
 type TmAviServiceEngineGroup struct {
 	TmAviServiceEngineGroup *types.TmAviServiceEngineGroup
 	vcdClient               *VCDClient
 	options                 []TmOperationOptions
 }
 
-// TmAviServiceEngineGroupAssignment manages a Tenant Manager AviServiceEngineGroupAssignment.
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (g TmAviServiceEngineGroup) wrap(inner *types.TmAviServiceEngineGroup) *TmAviServiceEngineGroup {
+	g.TmAviServiceEngineGroup = inner
+	return &g
+}
+
+// tmAviServiceEngineGroupConfig returns the CRUD configuration for Avi Load Balancer Service Engine Group operations. Optional params are appended to the endpoint.
+func tmAviServiceEngineGroupConfig(options []TmOperationOptions, params ...string) crudConfig {
+	return crudConfig{
+		entityLabel:    labelTmAviServiceEngineGroup,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmAviServiceEngineGroups,
+		endpointParams: params,
+		requiresTm:     true,
+		minimumVersion: "40.1",
+	}.withTmOptions(options)
+}
+
+// GetAllTmAviServiceEngineGroups retrieves all Avi Load Balancer Service Engine Groups. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetAllTmAviServiceEngineGroups(queryParameters url.Values, options ...TmOperationOptions) ([]*TmAviServiceEngineGroup, error) {
+	c := tmAviServiceEngineGroupConfig(options)
+	c.queryParameters = queryParameters
+	outerType := TmAviServiceEngineGroup{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
+}
+
+// GetTmAviServiceEngineGroupByName retrieves an Avi Load Balancer Service Engine Group by name. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmAviServiceEngineGroupByName(name string, options ...TmOperationOptions) (*TmAviServiceEngineGroup, error) {
+	entities, err := vcdClient.GetAllTmAviServiceEngineGroups(nil, options...)
+	if err != nil {
+		return nil, err
+	}
+	return tmEntityByName(labelTmAviServiceEngineGroup, name, entities, func(e *TmAviServiceEngineGroup) string { return e.TmAviServiceEngineGroup.Name })
+}
+
+// GetTmAviServiceEngineGroupById retrieves an Avi Load Balancer Service Engine Group by ID. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmAviServiceEngineGroupById(id string, options ...TmOperationOptions) (*TmAviServiceEngineGroup, error) {
+	outerType := TmAviServiceEngineGroup{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getOuterEntity(&vcdClient.Client, outerType, tmAviServiceEngineGroupConfig(options, id))
+}
+
+// GetTmAviServiceEngineGroupByNameOrId retrieves an Avi Load Balancer Service Engine Group by name or ID. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmAviServiceEngineGroupByNameOrId(identifier string, options ...TmOperationOptions) (*TmAviServiceEngineGroup, error) {
+	return tmEntityByNameOrId(identifier,
+		func(id string) (*TmAviServiceEngineGroup, error) {
+			return vcdClient.GetTmAviServiceEngineGroupById(id, options...)
+		},
+		func(name string) (*TmAviServiceEngineGroup, error) {
+			return vcdClient.GetTmAviServiceEngineGroupByName(name, options...)
+		})
+}
+
+// #nosec G101 -- This is a label, not a credential
+const labelTmAviServiceEngineGroupAssignment = "TM Avi Service Engine Group Assignment"
+
+// TmAviServiceEngineGroupAssignment manages an Avi Load Balancer Service Engine Group Assignment.
 type TmAviServiceEngineGroupAssignment struct {
 	TmAviServiceEngineGroupAssignment *types.TmAviServiceEngineGroupAssignment
 	vcdClient                         *VCDClient
 	options                           []TmOperationOptions
 }
 
-// GetAllTmAviServiceEngineGroups retrieves all Avi Load Balancer Service Engine Groups in the system.
-// Requires TM API 40.1+.
-func (vcdClient *VCDClient) GetAllTmAviServiceEngineGroups(queryParameters url.Values, options ...TmOperationOptions) ([]*TmAviServiceEngineGroup, error) {
-	c := crudConfig{
-		entityLabel:     "loadBalancer/aviServiceEngineGroups",
-		endpoint:        types.OpenApiPathVcf + "loadBalancer/aviServiceEngineGroups",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmAviServiceEngineGroup](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	wrapped := make([]*TmAviServiceEngineGroup, len(result))
-	for i := range result {
-		wrapped[i] = &TmAviServiceEngineGroup{TmAviServiceEngineGroup: result[i], vcdClient: vcdClient, options: retainTmOptions(options)}
-	}
-	return wrapped, nil
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (g TmAviServiceEngineGroupAssignment) wrap(inner *types.TmAviServiceEngineGroupAssignment) *TmAviServiceEngineGroupAssignment {
+	g.TmAviServiceEngineGroupAssignment = inner
+	return &g
 }
 
-// GetTmAviServiceEngineGroupById retrieves Avi Load Balancer Service Engine Group. Requires TM API 40.1+.
-func (vcdClient *VCDClient) GetTmAviServiceEngineGroupById(aviServiceEngineGroupId string, options ...TmOperationOptions) (*TmAviServiceEngineGroup, error) {
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviServiceEngineGroups",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviServiceEngineGroups/%s",
+// tmAviServiceEngineGroupAssignmentConfig returns the CRUD configuration for Avi Load Balancer Service Engine Group Assignment operations. Optional params are appended to the endpoint.
+func tmAviServiceEngineGroupAssignmentConfig(options []TmOperationOptions, params ...string) crudConfig {
+	return crudConfig{
+		entityLabel:    labelTmAviServiceEngineGroupAssignment,
+		endpoint:       types.OpenApiPathVcf + types.OpenApiEndpointTmAviServiceEngineGroupAssignments,
+		endpointParams: params,
 		requiresTm:     true,
 		minimumVersion: "40.1",
-		endpointParams: []string{aviServiceEngineGroupId},
-	}
-	result, err := getInnerEntity[types.TmAviServiceEngineGroup](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return &TmAviServiceEngineGroup{TmAviServiceEngineGroup: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	}.withTmOptions(options)
 }
 
-// CreateTmAviServiceEngineGroupAssignment creates a new Avi Service Engine Group Assignment. Waits for task
-// completion. Requires TM API 40.1+.
+// CreateTmAviServiceEngineGroupAssignment creates an Avi Load Balancer Service Engine Group Assignment. Waits for task completion. Requires TM API 40.1+.
 func (vcdClient *VCDClient) CreateTmAviServiceEngineGroupAssignment(config *types.TmAviServiceEngineGroupAssignment, options ...TmOperationOptions) (*TmAviServiceEngineGroupAssignment, error) {
-	if config == nil {
-		return nil, fmt.Errorf("CreateTmAviServiceEngineGroupAssignment config must not be nil")
-	}
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviServiceEngineGroupsAssignments",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviServiceEngineGroupsAssignments",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-	}
-	result, err := createInnerEntity(&vcdClient.Client, c.withTmOptions(options), config)
-	if err != nil {
-		return nil, err
-	}
-	return &TmAviServiceEngineGroupAssignment{TmAviServiceEngineGroupAssignment: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+	outerType := TmAviServiceEngineGroupAssignment{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return createOuterEntity(&vcdClient.Client, outerType, tmAviServiceEngineGroupAssignmentConfig(options), config)
 }
 
-// CreateTmAviServiceEngineGroupAssignmentAsync creates a new Avi Service Engine Group Assignment. Returns
-// the tracking task without waiting. Requires TM API 40.1+.
+// CreateTmAviServiceEngineGroupAssignmentAsync creates an Avi Load Balancer Service Engine Group Assignment. Returns the tracking task without waiting. Requires TM API 40.1+.
 func (vcdClient *VCDClient) CreateTmAviServiceEngineGroupAssignmentAsync(config *types.TmAviServiceEngineGroupAssignment, options ...TmOperationOptions) (*Task, error) {
 	if config == nil {
 		return nil, fmt.Errorf("CreateTmAviServiceEngineGroupAssignment config must not be nil")
 	}
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviServiceEngineGroupsAssignments",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviServiceEngineGroupsAssignments",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodPost, config)
+	return createInnerEntityAsync(&vcdClient.Client, tmAviServiceEngineGroupAssignmentConfig(options), config)
 }
 
-// GetAllTmAviServiceEngineGroupAssignments retrieves the assignments for Avi Load Balancer Service Engine
-// Groups in the system. Requires TM API 40.1+.
+// GetAllTmAviServiceEngineGroupAssignments retrieves all Avi Load Balancer Service Engine Group Assignments. Requires TM API 40.1+.
 func (vcdClient *VCDClient) GetAllTmAviServiceEngineGroupAssignments(queryParameters url.Values, options ...TmOperationOptions) ([]*TmAviServiceEngineGroupAssignment, error) {
-	c := crudConfig{
-		entityLabel:     "loadBalancer/aviServiceEngineGroupsAssignments",
-		endpoint:        types.OpenApiPathVcf + "loadBalancer/aviServiceEngineGroupsAssignments",
-		requiresTm:      true,
-		minimumVersion:  "40.1",
-		queryParameters: queryParameters,
-	}
-	result, err := getAllInnerEntities[types.TmAviServiceEngineGroupAssignment](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	wrapped := make([]*TmAviServiceEngineGroupAssignment, len(result))
-	for i := range result {
-		wrapped[i] = &TmAviServiceEngineGroupAssignment{TmAviServiceEngineGroupAssignment: result[i], vcdClient: vcdClient, options: retainTmOptions(options)}
-	}
-	return wrapped, nil
+	c := tmAviServiceEngineGroupAssignmentConfig(options)
+	c.queryParameters = queryParameters
+	outerType := TmAviServiceEngineGroupAssignment{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getAllOuterEntities(&vcdClient.Client, outerType, c)
 }
 
-// GetTmAviServiceEngineGroupAssignmentById retrieves a Avi Load Balancer Service Engine Group Assignment.
-// Requires TM API 40.1+.
-func (vcdClient *VCDClient) GetTmAviServiceEngineGroupAssignmentById(assignmentId string, options ...TmOperationOptions) (*TmAviServiceEngineGroupAssignment, error) {
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviServiceEngineGroupsAssignments",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviServiceEngineGroupsAssignments/%s",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-		endpointParams: []string{assignmentId},
-	}
-	result, err := getInnerEntity[types.TmAviServiceEngineGroupAssignment](&vcdClient.Client, c.withTmOptions(options))
-	if err != nil {
-		return nil, err
-	}
-	return &TmAviServiceEngineGroupAssignment{TmAviServiceEngineGroupAssignment: result, vcdClient: vcdClient, options: retainTmOptions(options)}, nil
+// GetTmAviServiceEngineGroupAssignmentById retrieves an Avi Load Balancer Service Engine Group Assignment by ID. Requires TM API 40.1+.
+func (vcdClient *VCDClient) GetTmAviServiceEngineGroupAssignmentById(id string, options ...TmOperationOptions) (*TmAviServiceEngineGroupAssignment, error) {
+	outerType := TmAviServiceEngineGroupAssignment{vcdClient: vcdClient, options: retainTmOptions(options)}
+	return getOuterEntity(&vcdClient.Client, outerType, tmAviServiceEngineGroupAssignmentConfig(options, id))
 }
 
-// Delete deletes the specified Avi Service Engine Group Assignment. Waits for task completion. Requires TM
-// API 40.1+.
+// Delete deletes an Avi Load Balancer Service Engine Group Assignment. Waits for task completion. Requires TM API 40.1+.
 func (o *TmAviServiceEngineGroupAssignment) Delete(options ...TmOperationOptions) error {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviServiceEngineGroupsAssignments",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviServiceEngineGroupsAssignments/%s",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-		endpointParams: []string{o.TmAviServiceEngineGroupAssignment.ID},
-	}
-	return runOpenApiOperation(&vcdClient.Client, c.withTmOptions(options), http.MethodDelete, nil)
+	c := tmAviServiceEngineGroupAssignmentConfig(options, o.TmAviServiceEngineGroupAssignment.ID)
+	return deleteEntityById(&o.vcdClient.Client, c)
 }
 
-// DeleteAsync deletes the specified Avi Service Engine Group Assignment. Returns the tracking task without
-// waiting. Requires TM API 40.1+.
+// DeleteAsync deletes an Avi Load Balancer Service Engine Group Assignment. Returns the tracking task without waiting. Requires TM API 40.1+.
 func (o *TmAviServiceEngineGroupAssignment) DeleteAsync(options ...TmOperationOptions) (*Task, error) {
-	vcdClient := o.vcdClient
 	options = inheritTmOptions(o.options, options)
-	c := crudConfig{
-		entityLabel:    "loadBalancer/aviServiceEngineGroupsAssignments",
-		endpoint:       types.OpenApiPathVcf + "loadBalancer/aviServiceEngineGroupsAssignments/%s",
-		requiresTm:     true,
-		minimumVersion: "40.1",
-		endpointParams: []string{o.TmAviServiceEngineGroupAssignment.ID},
-	}
-	return runOpenApiOperationAsync(&vcdClient.Client, c.withTmOptions(options), http.MethodDelete, nil)
+	c := tmAviServiceEngineGroupAssignmentConfig(options, o.TmAviServiceEngineGroupAssignment.ID)
+	return runOpenApiOperationAsync(&o.vcdClient.Client, c, http.MethodDelete, nil)
 }

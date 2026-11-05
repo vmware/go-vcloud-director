@@ -12,9 +12,10 @@ in the above project.
 
 ## Create new entities
 
-A new entity must have its type defined in `types/56/types.go`. If the type is not already there, it should be 
+A new entity must have its type defined in `types/v56`. If the type is not already there, it should be
 added using the [vCD API](https://code.vmware.com/apis/72/vcloud-director), and possibly reusing components already defined
-in `types.go`.
+in the package. Small entities go in `types.go` or in the file of their feature area (`tm.go`, `nsxt_types.go`, ...);
+larger Tenant Manager (TM) entities have their own file named after the entity (`tm_<entity>.go`).
 
 The new entity should have a structure in `entity.go` as
 
@@ -26,10 +27,21 @@ type Entity struct {
 }
 ```
 
+TM entities also retain the per-call options used to retrieve them, so that their methods run with the same API
+version and tenant context (see [TM entities](#tm-entities)):
+
+```go
+type TmEntity struct {
+	TmEntity  *types.TmEntity
+	vcdClient *VCDClient
+	options   []TmOperationOptions
+}
+```
+
 The entity should have at least the following:
 
 ```
-(parent *Parent) CreateEntityAsync(input *types.Entity) (Task, error)
+(parent *Parent) CreateEntityAsync(input *types.Entity) (*Task, error)
 (parent *Parent) CreateEntity(input *types.Entity) (*Entity, error)
 ```
 
@@ -67,7 +79,10 @@ resource in Terraform.
 
 ## Calling the API
 
-Calls to the vCD API should not be sent directly, but using one of the following functions from `api.go:
+Calls to the vCD API should not be sent directly. OpenAPI (JSON) endpoints should use the
+[generic CRUD functions](#generic-crud-functions-for-openapi-entity-implementation), which build the request, select
+the API version, handle tasks and pagination, and log the call. Legacy (XML) endpoints use one of the following
+functions from `api.go`:
 
 ```go
 // Helper function creates request, runs it, check responses and parses out interface from response.
@@ -140,10 +155,16 @@ If the entity is at the top level (such as `Org`, `ExternalNetwork`), the parent
 These methods return a pointer to the entity's structure and a nil error when the search was successful,
 a nil pointer and an error in every other case.
 When the method can establish that the entity was not found because it did not appear in the
-parent's list of entities, the method will return `ErrorEntityNotFound`.
+parent's list of entities, the method will return `ErrorEntityNotFound` (wrapped in the error message when the
+lookup uses `oneOrError`, so callers detect it with `ContainsNotFound`).
 In no cases we return a nil error when the method fails to find the entity.
 The "ALWAYS" methods can optionally add a Boolean `refresh` argument, signifying that the parent should be refreshed
 prior to attempting a search.
+
+Entities that are listed by an API endpoint also have a `GetAllEntities(queryParameters url.Values)` method.
+When the endpoint does not support filtering by name, `GetEntityByName` retrieves the list and matches the name
+exactly on the client side (see `tmEntityByName` and `tmEntityByNameOrId` in `generic_functions.go`).
+`GetEntityByNameOrId` only looks up by ID when the identifier looks like a URN or UUID.
 
 Note: We are in the process of replacing methods that don't adhere to the above principles (for example, return a
 structure instead of a pointer, return a nil error on not-found, etc).
@@ -368,6 +389,7 @@ the  given code.
 ## Tenant Context
 
 Tenant context is a mechanism in the VCD API to run calls as a tenant when connected as a system administrator.
+(TM entities pass it through `TmOperationOptions` instead, see [TM entities](#tm-entities).)
 It is used, for example, in the UI, to start a session as tenant administrator without having credentials for such a user,
 or even when there is no such user yet.
 The context change works by adding a header to the API call, containing these fields:
@@ -553,16 +575,17 @@ The entities that match below criteria are usually going to use `inner` crud fun
   Network Profiles `Vdc.UpdateVdcNetworkProfile`)
 * Read only entities (e.g. NSX-T Segment Profiles `VCDClient.GetAllIpDiscoveryProfiles`)
 
-Inner types are more simple as they can be directly used without any additional overhead. There are
-7 functions that can be used:
+Inner types are more simple as they can be directly used without any additional overhead. These functions can be
+used:
 
-* `createInnerEntity`
-* `updateInnerEntity`
-* `updateInnerEntityWithHeaders`
-* `getInnerEntity`
-* `getInnerEntityWithHeaders`
-* `deleteEntityById`
+* `createInnerEntity` and `createInnerEntityAsync`
+* `updateInnerEntity` and `updateInnerEntityWithHeaders`
+* `writeInnerEntity` and `writeInnerEntityWithHeaders` (any HTTP method that returns the entity)
+* `getInnerEntity` and `getInnerEntityWithHeaders`
 * `getAllInnerEntities`
+* `deleteEntityById`
+* `runOpenApiOperation` and `runOpenApiOperationAsync` for actions that don't return an entity (for example
+  `sync` or member updates), with the HTTP method and an optional payload
 
 Existing examples of the implementation are:
 
@@ -592,7 +615,8 @@ There are 5 functions for handling CRU(D).
 * `getAllOuterEntities`
 
 *Note*: `D` (deletion) in `CRUD` is a simple operation that does not additionally handle data and
-`deleteEntityById` is sufficient.
+`deleteEntityById` is sufficient. The asynchronous variants (`CreateEntityAsync`, `DeleteAsync`, ...) return the
+tracking task with `createInnerEntityAsync` or `runOpenApiOperationAsync`.
 
 Existing examples of the implementation are:
 * `IpSpace`
@@ -604,6 +628,38 @@ Existing examples of the implementation are:
 * `DefinedInterface`
 * `DefinedEntity`
 
+## TM entities
+
+Tenant Manager (TM) entities are implemented with the generic CRUD functions and follow these rules:
+
+* Define the endpoint as a constant `types.OpenApiEndpointTm<Entity>` in `types/v56/constants.go`, and register it in
+  `endpointMinApiVersions` (`openapi_endpoints.go`) with the minimum TM API version (`40.0`, `40.1`, ...). Sub-resources
+  and actions (`%s/sync`, `%s/members`) are separate constants.
+* Define a `label<Entity>` constant for error messages, and a small function that returns the `crudConfig` of the
+  entity (`requiresTm: true`, the endpoint, and the `minimumVersion` of the operation). Operations that need a newer
+  version than the endpoint-wide one (for example, a patch version such as `9.1.1`, which has no legacy alias) set it
+  in `minimumVersion`.
+* Every method accepts `options ...TmOperationOptions` to override the API version and the tenant context of a call.
+  Resources created or retrieved with options keep them (`retainTmOptions`), and their methods apply them with
+  `inheritTmOptions(o.options, options)`.
+* Implement `wrap` on the outer type and use the outer CRUD functions, building the outer type with the client and the
+  retained options: `Entity{vcdClient: vcdClient, options: retainTmOptions(options)}`.
+* When creating an entity whose task owner is not the entity (for example, an ID supplied by the caller), run the
+  `POST` with `runOpenApiOperation` and retrieve the entity by ID afterwards.
+* Operations with a `minimumVersion` do not translate a `403` into not found. TM answers `403` instead of `404` for
+  entities that were deleted or are not visible in the tenant context, so tests must not rely on a "not found" error to
+  confirm a deletion: check that the entity is missing from the list instead.
+
+## Changelog
+
+Every PR adds its changes as files in `.changes/<version>/`, named `<PR number>-<section>.md`, with every entry
+ending in `[GH-<PR number>]`. See [.changes/README.md](.changes/README.md). Group the methods that implement one
+operation (for example, the sync and async variants) in a single entry.
+
 ## Testing
 
 Every feature in the library must include testing. See [TESTING.md](https://github.com/vmware/go-vcloud-director/blob/main/TESTING.md) for more info.
+Generic helpers and input validation (for example, rejecting a `nil` configuration before calling the API) are
+covered with unit tests (`go test -tags unit`); resources are covered with functional tests, which for TM entities
+use `tmTestOptions` and `requireTmTestVersion`. Functional tests that need infrastructure that a test configuration
+does not describe must skip when it is not available.

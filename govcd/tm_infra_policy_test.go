@@ -20,6 +20,7 @@ func (vcd *TestVCD) Test_TmInfraPolicyInventory(check *C) {
 	if len(all) == 0 {
 		check.Skip("no InfraPolicy resources available")
 	}
+	names := tmNameCounts(all, func(e *TmInfraPolicy) string { return e.TmInfraPolicy.Name })
 	seen := make(map[string]bool)
 	for _, item := range all {
 		id := item.TmInfraPolicy.ID
@@ -29,6 +30,17 @@ func (vcd *TestVCD) Test_TmInfraPolicyInventory(check *C) {
 		byID, err := vcd.client.GetTmInfraPolicyById(id, options)
 		check.Assert(err, IsNil)
 		check.Assert(byID.TmInfraPolicy.ID, Equals, id)
+		if name := item.TmInfraPolicy.Name; name != "" && names[name] == 1 {
+			byName, err := vcd.client.GetTmInfraPolicyByName(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmInfraPolicy.ID, Equals, id)
+			byNameOrId, err := vcd.client.GetTmInfraPolicyByNameOrId(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmInfraPolicy.ID, Equals, id)
+			byNameOrId, err = vcd.client.GetTmInfraPolicyByNameOrId(id, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmInfraPolicy.ID, Equals, id)
+		}
 		statuses, err := item.GetAllVCenterPolicies(url.Values{"pageSize": {"1"}})
 		check.Assert(err, IsNil)
 		for _, status := range statuses {

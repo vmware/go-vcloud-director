@@ -20,6 +20,7 @@ func (vcd *TestVCD) Test_TmAviServiceEngineGroupInventory(check *C) {
 	if len(all) == 0 {
 		check.Skip("no AviServiceEngineGroup resources available")
 	}
+	names := tmNameCounts(all, func(e *TmAviServiceEngineGroup) string { return e.TmAviServiceEngineGroup.Name })
 	seen := make(map[string]bool)
 	for _, item := range all {
 		id := item.TmAviServiceEngineGroup.ID
@@ -29,6 +30,17 @@ func (vcd *TestVCD) Test_TmAviServiceEngineGroupInventory(check *C) {
 		byID, err := vcd.client.GetTmAviServiceEngineGroupById(id, options)
 		check.Assert(err, IsNil)
 		check.Assert(byID.TmAviServiceEngineGroup.ID, Equals, id)
+		if name := item.TmAviServiceEngineGroup.Name; name != "" && names[name] == 1 {
+			byName, err := vcd.client.GetTmAviServiceEngineGroupByName(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmAviServiceEngineGroup.ID, Equals, id)
+			byNameOrId, err := vcd.client.GetTmAviServiceEngineGroupByNameOrId(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmAviServiceEngineGroup.ID, Equals, id)
+			byNameOrId, err = vcd.client.GetTmAviServiceEngineGroupByNameOrId(id, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmAviServiceEngineGroup.ID, Equals, id)
+		}
 	}
 }
 

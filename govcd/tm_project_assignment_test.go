@@ -42,6 +42,12 @@ func (vcd *TestVCD) Test_TmProjectAssignmentLifecycle(check *C) {
 				}
 			}()
 			check.Assert(project.TmProjectAssignment.ID, Equals, config.ID)
+			byName, err := vcd.client.GetTmProjectAssignmentByName(config.Name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmProjectAssignment.ID, Equals, config.ID)
+			byNameOrId, err := vcd.client.GetTmProjectAssignmentByNameOrId(config.ID, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmProjectAssignment.ID, Equals, config.ID)
 			config.Description = "updated project description"
 			updated, err := project.Update(config)
 			check.Assert(err, IsNil)
@@ -94,6 +100,7 @@ func (vcd *TestVCD) Test_TmProjectAssignmentInventory(check *C) {
 	if len(all) == 0 {
 		check.Skip("no ProjectAssignment resources available")
 	}
+	names := tmNameCounts(all, func(e *TmProjectAssignment) string { return e.TmProjectAssignment.Name })
 	seen := make(map[string]bool)
 	for _, item := range all {
 		id := item.TmProjectAssignment.ID
@@ -103,6 +110,17 @@ func (vcd *TestVCD) Test_TmProjectAssignmentInventory(check *C) {
 		byID, err := vcd.client.GetTmProjectAssignmentById(id, options)
 		check.Assert(err, IsNil)
 		check.Assert(byID.TmProjectAssignment.ID, Equals, id)
+		if name := item.TmProjectAssignment.Name; name != "" && names[name] == 1 {
+			byName, err := vcd.client.GetTmProjectAssignmentByName(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byName.TmProjectAssignment.ID, Equals, id)
+			byNameOrId, err := vcd.client.GetTmProjectAssignmentByNameOrId(name, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmProjectAssignment.ID, Equals, id)
+			byNameOrId, err = vcd.client.GetTmProjectAssignmentByNameOrId(id, options)
+			check.Assert(err, IsNil)
+			check.Assert(byNameOrId.TmProjectAssignment.ID, Equals, id)
+		}
 		members, err := item.GetAllMembers(url.Values{"pageSize": {"1"}})
 		check.Assert(err, IsNil)
 		for _, member := range members {
