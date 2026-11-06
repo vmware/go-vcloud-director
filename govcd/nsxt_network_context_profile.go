@@ -11,6 +11,70 @@ import (
 	"github.com/vmware/go-vcloud-director/v3/types/v56"
 )
 
+const labelNsxtNetworkContextProfile = "NSX-T Network Context Profile"
+
+// NsxtNetworkContextProfile manages user-defined (TENANT or PROVIDER scoped) NSX-T Network Context
+// Profiles. SYSTEM profiles are read-only.
+type NsxtNetworkContextProfile struct {
+	NsxtNetworkContextProfile *types.NsxtNetworkContextProfile
+	vcdClient                 *VCDClient
+}
+
+// wrap is a hidden helper that facilitates the usage of a generic CRUD function
+//
+//lint:ignore U1000 this method is used in generic functions, but annoys staticcheck
+func (p NsxtNetworkContextProfile) wrap(inner *types.NsxtNetworkContextProfile) *NsxtNetworkContextProfile {
+	p.NsxtNetworkContextProfile = inner
+	return &p
+}
+
+func nsxtNetworkContextProfileConfig(endpointParams ...string) crudConfig {
+	return crudConfig{
+		endpoint:       types.OpenApiPathVersion1_0_0 + types.OpenApiEndpointNetworkContextProfiles,
+		endpointParams: endpointParams,
+		entityLabel:    labelNsxtNetworkContextProfile,
+	}
+}
+
+// CreateNetworkContextProfile creates a user-defined NSX-T Network Context Profile. Scope,
+// ContextEntityID (VDC, VDC Group or NSX-T Manager ID) and at least one attribute are required.
+func (vcdClient *VCDClient) CreateNetworkContextProfile(config *types.NsxtNetworkContextProfile) (*NsxtNetworkContextProfile, error) {
+	if config == nil {
+		return nil, fmt.Errorf("%s configuration must not be nil", labelNsxtNetworkContextProfile)
+	}
+	outerType := NsxtNetworkContextProfile{vcdClient: vcdClient}
+	return createOuterEntity(&vcdClient.Client, outerType, nsxtNetworkContextProfileConfig(), config)
+}
+
+// GetNetworkContextProfileById retrieves a single NSX-T Network Context Profile by ID
+func (vcdClient *VCDClient) GetNetworkContextProfileById(id string) (*NsxtNetworkContextProfile, error) {
+	if id == "" {
+		return nil, fmt.Errorf("%s ID must not be empty", labelNsxtNetworkContextProfile)
+	}
+	outerType := NsxtNetworkContextProfile{vcdClient: vcdClient}
+	return getOuterEntity(&vcdClient.Client, outerType, nsxtNetworkContextProfileConfig(id))
+}
+
+// Update updates a user-defined NSX-T Network Context Profile
+func (p *NsxtNetworkContextProfile) Update(config *types.NsxtNetworkContextProfile) (*NsxtNetworkContextProfile, error) {
+	if config == nil {
+		return nil, fmt.Errorf("%s configuration must not be nil", labelNsxtNetworkContextProfile)
+	}
+	if p == nil || p.NsxtNetworkContextProfile == nil || p.NsxtNetworkContextProfile.ID == "" {
+		return nil, fmt.Errorf("cannot update %s without ID", labelNsxtNetworkContextProfile)
+	}
+	outerType := NsxtNetworkContextProfile{vcdClient: p.vcdClient}
+	return updateOuterEntity(&p.vcdClient.Client, outerType, nsxtNetworkContextProfileConfig(p.NsxtNetworkContextProfile.ID), config)
+}
+
+// Delete deletes a user-defined NSX-T Network Context Profile
+func (p *NsxtNetworkContextProfile) Delete() error {
+	if p == nil || p.NsxtNetworkContextProfile == nil || p.NsxtNetworkContextProfile.ID == "" {
+		return fmt.Errorf("cannot delete %s without ID", labelNsxtNetworkContextProfile)
+	}
+	return deleteEntityById(&p.vcdClient.Client, nsxtNetworkContextProfileConfig(p.NsxtNetworkContextProfile.ID))
+}
+
 // GetAllNetworkContextProfiles retrieves a slice of types.NsxtNetworkContextProfile
 // This function requires at least a filter value for 'context_id' which can be one of:
 // * Org VDC ID - to get Network Context Profiles scoped for VDC
