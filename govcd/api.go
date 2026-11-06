@@ -39,7 +39,15 @@ type Client struct {
 	// MaxRetryTimeout specifies a time limit (in seconds) for retrying requests made by the SDK
 	// where VMware Cloud Director may take time to respond and retry mechanism is needed.
 	// This must be >0 to avoid instant timeout errors.
+	//
+	// It is also the time budget for transparently retrying transient HTTP failures (429, 503,
+	// "request rate exceeded" errors and, except for POST, network errors). 0 disables those retries.
 	MaxRetryTimeout int
+
+	// MaxRetryAttempts optionally caps the total number of attempts (the first try included) made
+	// for a request that is retried because of a transient failure. 0 (default) means no cap, so
+	// only MaxRetryTimeout limits the retries. A value of 1 disables retries.
+	MaxRetryAttempts int
 
 	// UseSamlAdfs specifies if SAML auth is used for authenticating vCD instead of local login.
 	// The following conditions must be met so that authentication SAML authentication works:

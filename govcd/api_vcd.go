@@ -186,6 +186,10 @@ func NewVCDClient(vcdEndpoint url.URL, insecure bool, options ...VCDClientOption
 			panic(fmt.Sprintf("unable to initialize VCD client: %s", err))
 		}
 	}
+
+	// Retry transient failures (429, 503, rate limit errors, network errors) within MaxRetryTimeout.
+	// It is installed after the options so that it wraps any transport that they set.
+	vcdClient.Client.Http.Transport = newRetryTransport(vcdClient.Client.Http.Transport, &vcdClient.Client)
 	return vcdClient
 }
 
@@ -311,6 +315,18 @@ func (vcdClient *VCDClient) Disconnect() error {
 func WithMaxRetryTimeout(timeoutSeconds int) VCDClientOption {
 	return func(vcdClient *VCDClient) error {
 		vcdClient.Client.MaxRetryTimeout = timeoutSeconds
+		return nil
+	}
+}
+
+// WithMaxRetryAttempts caps the total number of attempts (the first try included) for requests that
+// are retried because of transient failures. 0 means no cap (only MaxRetryTimeout applies).
+func WithMaxRetryAttempts(attempts int) VCDClientOption {
+	return func(vcdClient *VCDClient) error {
+		if attempts < 0 {
+			return fmt.Errorf("max retry attempts must not be negative")
+		}
+		vcdClient.Client.MaxRetryAttempts = attempts
 		return nil
 	}
 }
