@@ -178,14 +178,13 @@ func (sa *ServiceAccount) Authorize() error {
 		userDef = "provider"
 	}
 
-	endpoint := fmt.Sprintf("%s://%s/oauth/%s/device_authorization", client.VCDHREF.Scheme, client.VCDHREF.Host, userDef)
+	endpoint := client.rootVcdHref() + "/" + fmt.Sprintf(types.OpenApiEndpointServiceAccountAuthorization, userDef)
 	urlRef, err := url.ParseRequestURI(endpoint)
 	if err != nil {
 		return fmt.Errorf("error getting request url from %s: %s", urlRef.String(), err)
 	}
 
-	// Not an OpenAPI endpoint so hardcoding the Service Account minimal version
-	err = client.OpenApiPostUrlEncoded("37.0", urlRef, nil, data, &sa.authParams, nil)
+	err = client.OpenApiPostUrlEncoded(client.APIVersion, urlRef, nil, data, &sa.authParams, nil)
 	if err != nil {
 		return fmt.Errorf("error authorizing service account: %s", err)
 	}
