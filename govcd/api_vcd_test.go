@@ -180,6 +180,7 @@ type TestConfig struct {
 			Password              string `yaml:"password"`
 			BaseDistinguishedName string `yaml:"baseDistinguishedName"`
 			Type                  string `yaml:"type"`
+			ImportGroup           string `yaml:"importGroup"`
 		} `yaml:"ldap,omitempty"`
 	} `yaml:"tm,omitempty"`
 	VCD struct {
