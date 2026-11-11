@@ -576,6 +576,7 @@ const (
 	OpenApiEndpointTmVirtualNetworkApplianceClusterTransportNodeStatus = "virtualNetworkApplianceClusters/%s/transportNodesStatus"
 	OpenApiEndpointTmVirtualNetworkApplianceClustersSync               = "virtualNetworkApplianceClusters/sync"
 	OpenApiEndpointUsers                                               = "users/"
+	OpenApiEndpointGroups                                              = "groups/"
 	OpenApiEndpointFeatureFlags                                        = "featureFlags/"
 )
 

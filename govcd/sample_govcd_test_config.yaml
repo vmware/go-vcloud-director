@@ -331,3 +331,4 @@ tm:
     password: StrongPassword
     baseDistinguishedName: OU=demo,DC=foo,DC=bar,DC=test,DC=net
     type: ACTIVE_DIRECTORY # ACTIVE_DIRECTORY or OPEN_LDAP
+    importGroup: my-ldap-group # Name of an existing LDAP group, to be imported in tests

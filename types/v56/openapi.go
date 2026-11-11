@@ -931,3 +931,20 @@ type OpenApiUser struct {
 	// original identity source being removed
 	Stranded bool `json:"stranded,omitempty"`
 }
+
+// OpenApiGroup defines structure for Group management using OpenAPI based endpoint
+type OpenApiGroup struct {
+	ID string `json:"id,omitempty"`
+	// Name of the group
+	Name string `json:"name"`
+	// Description of the group
+	Description string `json:"description,omitempty"`
+	// The organization of the group. This property is read only starting in API version 40.0
+	OrgEntityRef *OpenApiReference `json:"orgEntityRef,omitempty"`
+	// The role(s) of the group
+	RoleEntityRefs []OpenApiReference `json:"roleEntityRefs,omitempty"`
+	// Name of the group in its source
+	NameInSource string `json:"nameInSource,omitempty"`
+	// Provider type of the group. It must be one of: LDAP, SAML, OAUTH
+	ProviderType string `json:"providerType"`
+}
